@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@theme {
+    --color-namira-teal: #009688;
+    --color-namira-blue: #003366;
+    --font-sans: 'Plus Jakarta Sans', sans-serif;
+}
