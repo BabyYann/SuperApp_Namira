@@ -18,7 +18,7 @@ Sistem ini adalah sebuah aplikasi web ("SuperApp") yang dibangun menggunakan fra
 * **Vision:** Unknown (Need Further Inspection)
 * **Mission:** Unknown (Need Further Inspection)
 * **Primary Objectives:** Unknown (Need Further Inspection)
-* **Current Development Status:** In Development / Upgrade (terlihat dari adanya skrip debug di root folder seperti `debug_roles.php` dan `fix_roles.php`).
+* **Current Development Status:** In Development / Active Cleanup (root directory cleaned, route splitting done, test suite added).
 
 ---
 
@@ -49,7 +49,7 @@ Sistem ini adalah sebuah aplikasi web ("SuperApp") yang dibangun menggunakan fra
 * **Backend:** PHP 8.2+, Laravel Framework 12.0
 * **Frontend:** Vue.js 3, Inertia.js, TailwindCSS 4, Vite
 * **Database:** MySQL
-* **Authentication:** Laravel Sanctum
+* **Authentication:** Laravel Breeze (session-based, Sanctum sebagai SPA session guard)
 * **Authorization:** Spatie Laravel Permission
 * **Queue:** Database
 * **Cache:** Database
@@ -93,7 +93,8 @@ Sistem merupakan aplikasi full-stack yang mendukung manajemen pengguna dengan ha
 **Backend Utama:**
 * `barryvdh/laravel-dompdf`: Pembuatan dokumen PDF.
 * `inertiajs/inertia-laravel`: Integrasi backend untuk SPA.
-* `laravel/sanctum`: Autentikasi API.
+* `laravel/breeze`: Autentikasi session-based (SPA login).
+* `laravel/sanctum`: Session guard untuk SPA (dependency Breeze).
 * `spatie/laravel-activitylog`: Pencatatan log aktivitas pengguna.
 * `spatie/laravel-permission`: Manajemen peran dan izin (RBAC).
 * `tightenco/ziggy`: Penggunaan route Laravel di sisi frontend (JavaScript).
@@ -114,10 +115,10 @@ Sistem merupakan aplikasi full-stack yang mendukung manajemen pengguna dengan ha
 
 * `README.md` (Dokumentasi bawaan Laravel)
 * `ADR.md` (Architecture Decision Records)
+* `AGENTS.md` (Agent instructions untuk AI assistants)
 * `PROJECT_MEMORY.md`
 * `memory.md`
 * `audit_review.md`
-* `structure.txt` & `structure_utf8.txt`
 
 *(Catatan: Sesuai aturan, isi dari dokumen-dokumen ini tidak digunakan sebagai dasar analisis pada tahap ini.)*
 
@@ -128,8 +129,8 @@ Sistem merupakan aplikasi full-stack yang mendukung manajemen pengguna dengan ha
 
 * Aplikasi dibangun di atas framework Laravel versi 12 dengan frontend Vue 3.
 * Proyek ini ditujukan untuk **Namira School Foundation**.
-* Terdapat skrip kustom di *root* direktori (`debug_roles.php`, `fix_roles.php`, `debug_classroom_data.php`) yang mengindikasikan adanya perbaikan atau pengembangan aktif terkait manajemen pengguna/kelas.
 * Basis data menggunakan MySQL dan menerapkan sistem *Role-Based Access Control* (Spatie).
+* Auth menggunakan Laravel Breeze (session-based) dengan Spatie Permission untuk RBAC.
 
 ---
 

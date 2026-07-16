@@ -365,7 +365,8 @@
     *   `barryvdh/laravel-dompdf` (v3.1)
     *   `inertiajs/inertia-laravel` (v2.0)
     *   `laravel/pulse`
-    *   `laravel/sanctum` (v4.0)
+    *   `laravel/breeze` (v2.3) — autentikasi session-based
+    *   `laravel/sanctum` (v4.0) — SPA session guard (dependency Breeze)
     *   `spatie/laravel-activitylog`
     *   `spatie/laravel-permission` (v6.24)
     *   `tightenco/ziggy` (v2.0)
