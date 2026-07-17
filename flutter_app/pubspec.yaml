@@ -1,0 +1,62 @@
+name: superapp_namira_flutter
+description: "SuperApp Namira - Multi-unit School Management Platform"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.16
+  shimmer: ^3.0.0
+  cached_network_image: ^3.4.1
+  flutter_staggered_animations: ^1.1.1
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Routing
+  go_router: ^14.8.1
+
+  # HTTP
+  dio: ^5.7.0
+
+  # Storage
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.4
+
+  # Utils
+  intl: ^0.20.1
+  url_launcher: ^6.3.1
+  connectivity_plus: ^6.1.2
+  flutter_dotenv: ^5.2.1
+
+  # QR Code Scanner
+  mobile_scanner: ^6.0.2
+
+  # Image Picker (for profile photo upload)
+  image_picker: ^1.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.14
+  riverpod_generator: ^2.6.3
+  json_serializable: ^6.9.4
+  json_annotation: ^4.9.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - .env
