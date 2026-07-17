@@ -91,8 +91,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> login(String email, String password) async {
+    debugPrint('[Auth] Login starting: $email');
     state = state.copyWith(status: AuthStatus.loading);
     final result = await _repository.login(email: email, password: password);
+
+    debugPrint('[Auth] Login result success: ${result.success}, message: ${result.message}');
 
     if (result.success && result.data != null) {
       final data = result.data!;

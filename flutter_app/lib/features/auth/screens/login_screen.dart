@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
-import 'package:superapp_namira_flutter/core/constants/app_constants.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -26,14 +25,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    debugPrint('[Login] Tapped login button');
+    if (!_formKey.currentState!.validate()) {
+      debugPrint('[Login] Form validation failed');
+      return;
+    }
 
+    debugPrint('[Login] Calling auth login...');
     final success = await ref.read(authProvider.notifier).login(
           _emailController.text.trim(),
           _passwordController.text,
         );
 
+    debugPrint('[Login] Login result: $success');
     if (success && mounted) {
+      debugPrint('[Login] Navigating to /home');
       context.go('/home');
     }
   }
@@ -44,6 +50,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.status == AuthStatus.error && next.errorMessage != null) {
+        debugPrint('[Login] Auth error: ${next.errorMessage}');
+        ScaffoldMessenger.of(context).removeCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
@@ -62,10 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.defaultPadding,
-              vertical: 24,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: Form(
               key: _formKey,
               child: Column(
