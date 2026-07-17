@@ -52,6 +52,26 @@ class CounselingRepository {
       return ApiResponse.error('Gagal memuat prestasi: $e');
     }
   }
+
+  Future<ApiResponse<Map<String, dynamic>>> getCategories({String? search}) async {
+    try {
+      final response = await _client.get('/counseling/categories', queryParameters: {
+        if (search != null && search.isNotEmpty) 'search': search,
+      });
+      return ApiResponse.success(response.data as Map<String, dynamic>);
+    } catch (e) {
+      return ApiResponse.error('Gagal memuat kategori: $e');
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getSessionDetail(int id) async {
+    try {
+      final response = await _client.get('/counseling/sessions/$id');
+      return ApiResponse.success(response.data as Map<String, dynamic>);
+    } catch (e) {
+      return ApiResponse.error('Gagal memuat detail sesi: $e');
+    }
+  }
 }
 
 final counselingRepositoryProvider = Provider<CounselingRepository>((ref) {

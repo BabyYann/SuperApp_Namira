@@ -3,16 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
+import 'package:superapp_namira_flutter/features/home/providers/dashboard_provider.dart';
 import 'package:superapp_namira_flutter/shared/widgets/avatar_widget.dart';
 import 'package:superapp_namira_flutter/shared/widgets/namira_badge.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _switching = false;
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
+    final units = authState.units ?? [];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -89,11 +98,7 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   _buildSectionTitle('Unit Aktif'),
                   const SizedBox(height: 8),
-                  _buildInfoTile(
-                    icon: Icons.business_outlined,
-                    label: 'Unit',
-                    value: _getActiveUnitName(authState),
-                  ),
+                  _buildUnitSwitcher(authState, units),
                   const SizedBox(height: 20),
                   _buildSectionTitle('Informasi Akun'),
                   const SizedBox(height: 8),
@@ -158,14 +163,125 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
+  Widget _buildUnitSwitcher(AuthState authState, List<dynamic> units) {
+    final currentName = _getActiveUnitName(authState);
+
+    return GestureDetector(
+      onTap: units.length > 1 ? () => _showUnitPicker(units) : null,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.business_outlined, size: 20, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Unit',
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  ),
+                  Text(
+                    currentName,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (units.length > 1)
+              _switching
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right, color: AppColors.textHint, size: 20),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showUnitPicker(List<dynamic> units) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Pilih Unit',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...units.map((unit) {
+                final isActive = unit['id'] == ref.read(authProvider).activeUnitId;
+                return ListTile(
+                  leading: Icon(
+                    Icons.business_outlined,
+                    color: isActive ? AppColors.primary : AppColors.textHint,
+                  ),
+                  title: Text(
+                    unit['name'] ?? '-',
+                    style: TextStyle(
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                      color: isActive ? AppColors.primary : AppColors.textPrimary,
+                    ),
+                  ),
+                  trailing: isActive
+                      ? const Icon(Icons.check_circle, color: AppColors.primary, size: 20)
+                      : null,
+                  onTap: isActive
+                      ? null
+                      : () async {
+                          Navigator.pop(ctx);
+                          setState(() => _switching = true);
+                          await ref
+                              .read(authProvider.notifier)
+                              .switchUnit(unit['id'] as int);
+                          if (mounted) {
+                            setState(() => _switching = false);
+                            ref.read(dashboardProvider.notifier).refresh();
+                          }
+                        },
+                );
+              }),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -176,6 +292,17 @@ class ProfileScreen extends ConsumerWidget {
       }
     }
     return '-';
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      ),
+    );
   }
 
   Widget _buildInfoTile({

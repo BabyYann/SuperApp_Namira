@@ -1,5 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/attendance/providers/attendance_provider.dart';
 import 'package:superapp_namira_flutter/shared/widgets/loading_widget.dart';
@@ -15,6 +20,10 @@ class AttendanceScreen extends ConsumerStatefulWidget {
 class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   String _selectedType = 'present';
   final _noteController = TextEditingController();
+  File? _photoFile;
+  Position? _currentPosition;
+  bool _gettingLocation = false;
+  String? _locationError;
 
   @override
   void initState() {
@@ -28,9 +37,82 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     super.dispose();
   }
 
+  Future<void> _getCurrentLocation() async {
+    setState(() => _gettingLocation = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
+          setState(() {
+            _locationError = 'Izin lokasi ditolak';
+            _gettingLocation = false;
+          });
+          return;
+        }
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      setState(() {
+        _currentPosition = position;
+        _gettingLocation = false;
+        _locationError = null;
+      });
+    } catch (e) {
+      setState(() {
+        _locationError = 'Gagal mendapatkan lokasi: $e';
+        _gettingLocation = false;
+      });
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+      maxWidth: 800,
+    );
+    if (image != null) {
+      setState(() => _photoFile = File(image.path));
+    }
+  }
+
+  String? _photoToBase64() {
+    if (_photoFile == null) return null;
+    final bytes = _photoFile!.readAsBytesSync();
+    return base64Encode(bytes);
+  }
+
   Future<void> _handleCheckIn() async {
+    if (_currentPosition == null) {
+      await _getCurrentLocation();
+      if (_currentPosition == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_locationError ?? 'Aktifkan GPS terlebih dahulu'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     final error = await ref.read(attendanceProvider.notifier).checkIn(
       type: _selectedType,
+      latitude: _currentPosition!.latitude,
+      longitude: _currentPosition!.longitude,
+      photo: _photoToBase64(),
       note: _noteController.text.isNotEmpty ? _noteController.text : null,
     );
 
@@ -44,6 +126,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         ),
       );
     } else if (mounted) {
+      setState(() => _photoFile = null);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Berhasil check-in!'),
@@ -56,9 +139,27 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   }
 
   Future<void> _handleCheckOut() async {
+    if (_currentPosition == null) {
+      await _getCurrentLocation();
+      if (_currentPosition == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_locationError ?? 'Aktifkan GPS terlebih dahulu'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     final error = await ref.read(attendanceProvider.notifier).checkOut(
-      latitude: -7.5361,
-      longitude: 112.2384,
+      latitude: _currentPosition!.latitude,
+      longitude: _currentPosition!.longitude,
+      photo: _photoToBase64(),
     );
 
     if (error != null && mounted) {
@@ -71,6 +172,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         ),
       );
     } else if (mounted) {
+      setState(() => _photoFile = null);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Berhasil check-out!'),
@@ -180,10 +282,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               const SizedBox(height: 4),
               Text(
                 'Terlambat ${attendance['late_minutes']} menit',
-                style: TextStyle(
-                  color: Colors.white.withAlpha(204),
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.white.withAlpha(204), fontSize: 12),
               ),
             ],
             if (hasCheckedOut) ...[
@@ -268,12 +367,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             decoration: InputDecoration(
               labelText: 'Keterangan',
               hintText: 'Masukkan keterangan...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
         ],
+        const SizedBox(height: 16),
+        _buildLocationStatus(),
+        const SizedBox(height: 12),
+        _buildPhotoPreview(),
         const SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
@@ -285,10 +386,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : const Icon(Icons.fingerprint, size: 24),
             label: const Text('Check-In Sekarang'),
@@ -296,9 +394,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
@@ -307,24 +403,139 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   }
 
   Widget _buildCheckOutSection() {
+    final attState = ref.watch(attendanceProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildLocationStatus(),
+        const SizedBox(height: 12),
+        _buildPhotoPreview(),
+        const SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: _handleCheckOut,
-            icon: const Icon(Icons.logout, size: 24),
+            onPressed: attState.status == AttendanceStatus.loading
+                ? null
+                : _handleCheckOut,
+            icon: attState.status == AttendanceStatus.loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.logout, size: 24),
             label: const Text('Check-Out Sekarang'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.secondary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLocationStatus() {
+    return GestureDetector(
+      onTap: _gettingLocation ? null : _getCurrentLocation,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _currentPosition != null
+                ? AppColors.success
+                : _locationError != null
+                    ? AppColors.error
+                    : AppColors.border,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              size: 18,
+              color: _currentPosition != null
+                  ? AppColors.success
+                  : _locationError != null
+                      ? AppColors.error
+                      : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _gettingLocation
+                  ? const Text('Mendapatkan lokasi...', style: TextStyle(fontSize: 12, color: AppColors.textSecondary))
+                  : _currentPosition != null
+                      ? Text(
+                          'Lat: ${_currentPosition!.latitude.toStringAsFixed(5)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(5)}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.success),
+                        )
+                      : Text(
+                          _locationError ?? 'Tap untuk ambil lokasi',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _locationError != null ? AppColors.error : AppColors.textSecondary,
+                          ),
+                        ),
+            ),
+            if (_gettingLocation)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoPreview() {
+    return Row(
+      children: [
+        Expanded(
+          child: _photoFile != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Stack(
+                    alignment: Alignment.topRight,
+                    children: [
+                      Image.file(_photoFile!, height: 120, width: double.infinity, fit: BoxFit.cover),
+                      GestureDetector(
+                        onTap: () => setState(() => _photoFile = null),
+                        child: Container(
+                          margin: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                          child: const Icon(Icons.close, color: Colors.white, size: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : GestureDetector(
+                  onTap: _takePhoto,
+                  child: Container(
+                    height: 80,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border, style: BorderStyle.solid),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.camera_alt_outlined, size: 24, color: AppColors.textSecondary),
+                        SizedBox(height: 4),
+                        Text('Ambil Foto (Opsional)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ),
         ),
       ],
     );
@@ -379,9 +590,7 @@ class _TypeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withAlpha(26)
-              : Colors.white,
+          color: isSelected ? AppColors.primary.withAlpha(26) : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
@@ -391,11 +600,7 @@ class _TypeChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-            ),
+            Icon(icon, size: 18, color: isSelected ? AppColors.primary : AppColors.textSecondary),
             const SizedBox(width: 6),
             Text(
               label,
@@ -443,20 +648,10 @@ class _InfoTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),

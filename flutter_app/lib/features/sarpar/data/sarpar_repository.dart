@@ -40,6 +40,36 @@ class SarparRepository {
       return ApiResponse.error('Gagal memuat peminjaman: $e');
     }
   }
+
+  Future<ApiResponse<Map<String, dynamic>>> getCategories() async {
+    try {
+      final response = await _client.get('/sarpar/categories');
+      return ApiResponse.success(response.data as Map<String, dynamic>);
+    } catch (e) {
+      return ApiResponse.error('Gagal memuat kategori: $e');
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getRooms() async {
+    try {
+      final response = await _client.get('/sarpar/rooms');
+      return ApiResponse.success(response.data as Map<String, dynamic>);
+    } catch (e) {
+      return ApiResponse.error('Gagal memuat ruangan: $e');
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getMaintenance({String? status, int page = 1}) async {
+    try {
+      final response = await _client.get('/sarpar/maintenance', queryParameters: {
+        if (status != null) 'status': status,
+        'page': page,
+      });
+      return ApiResponse.success(response.data as Map<String, dynamic>);
+    } catch (e) {
+      return ApiResponse.error('Gagal memuat pemeliharaan: $e');
+    }
+  }
 }
 
 final sarparRepositoryProvider = Provider<SarparRepository>((ref) {

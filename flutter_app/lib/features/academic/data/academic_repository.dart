@@ -57,6 +57,21 @@ class AcademicRepository {
       return ApiResponse.error('Gagal memuat absensi: $e');
     }
   }
+
+  Future<ApiResponse<Map<String, dynamic>>> getStudentAttendanceRecap({
+    required int classroomId,
+    String? month,
+  }) async {
+    try {
+      final response = await _client.get('/academic/student-attendance/recap', queryParameters: {
+        'classroom_id': classroomId,
+        if (month != null) 'month': month,
+      });
+      return ApiResponse.success(response.data as Map<String, dynamic>);
+    } catch (e) {
+      return ApiResponse.error('Gagal memuat rekap absensi: $e');
+    }
+  }
 }
 
 final academicRepositoryProvider = Provider<AcademicRepository>((ref) {
