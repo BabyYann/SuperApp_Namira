@@ -74,10 +74,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await _repository.getProfile();
       if (result.success && result.data != null) {
         final activeUnit = await StorageUtils.getActiveUnit();
+        final profile = result.data!;
+        var resolvedUnit = activeUnit;
+
+        if (resolvedUnit == null) {
+          final userUnits = profile['units'] as List<dynamic>?;
+          if (userUnits != null && userUnits.isNotEmpty) {
+            resolvedUnit = userUnits.first['id'] as int;
+            await StorageUtils.saveActiveUnit(resolvedUnit);
+          }
+        }
+
         state = state.copyWith(
           status: AuthStatus.authenticated,
           user: result.data,
-          activeUnitId: activeUnit,
+          units: profile['units'] as List<dynamic>?,
+          activeUnitId: resolvedUnit,
         );
       } else {
         await StorageUtils.clearAuth();
@@ -101,7 +113,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final data = result.data!;
       final user = data['user'] as Map<String, dynamic>?;
       final units = data['units'] as List<dynamic>?;
-      final activeUnit = await StorageUtils.getActiveUnit();
+      var activeUnit = await StorageUtils.getActiveUnit();
+
+      if (activeUnit == null && units != null && units.isNotEmpty) {
+        activeUnit = units.first['id'] as int;
+        await StorageUtils.saveActiveUnit(activeUnit);
+      }
 
       state = state.copyWith(
         status: AuthStatus.authenticated,

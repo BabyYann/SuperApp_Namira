@@ -7,29 +7,17 @@ use App\Modules\Counseling\Models\Violation;
 use App\Modules\Counseling\Models\ViolationCategory;
 use App\Modules\Counseling\Models\CounselingSession;
 use App\Modules\Counseling\Models\Achievement;
+use App\Http\Controllers\Api\Traits\HasUnitScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CounselingApiController extends Controller
 {
-    private function getUnitId(Request $request): ?int
-    {
-        $sessionUnit = session('active_unit_id');
-        if ($sessionUnit) return (int) $sessionUnit;
-
-        $user = $request->user();
-        $firstTeamId = \DB::table('model_has_roles')
-            ->where('model_id', $user->id)
-            ->where('model_type', get_class($user))
-            ->whereNotNull('team_id')
-            ->value('team_id');
-
-        return $firstTeamId ? (int) $firstTeamId : null;
-    }
+    use HasUnitScope;
 
     public function violations(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $query = Violation::with([
             'student:id,full_name',
@@ -65,7 +53,7 @@ class CounselingApiController extends Controller
 
     public function categories(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $query = ViolationCategory::where('unit_id', $unitId);
 
@@ -85,7 +73,7 @@ class CounselingApiController extends Controller
 
     public function sessions(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $query = CounselingSession::with([
             'student:id,full_name',
@@ -128,7 +116,7 @@ class CounselingApiController extends Controller
             'student:id,full_name',
             'student.classroom:id,name',
             'violation.category:id,name',
-        ])->where('unit_id', $this->getUnitId($request))->findOrFail($id);
+        ])->where('unit_id', $this->resolveUnitId($request))->findOrFail($id);
 
         return response()->json([
             'id' => $session->id,
@@ -146,7 +134,7 @@ class CounselingApiController extends Controller
 
     public function achievements(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $query = Achievement::with([
             'student:id,full_name',

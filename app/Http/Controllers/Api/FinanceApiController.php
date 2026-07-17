@@ -8,29 +8,17 @@ use App\Modules\Finance\Models\FinanceType;
 use App\Modules\Finance\Models\StudentBill;
 use App\Modules\Finance\Models\Transaction;
 use App\Modules\Yayasan\Models\AcademicYear;
+use App\Http\Controllers\Api\Traits\HasUnitScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class FinanceApiController extends Controller
 {
-    private function getUnitId(Request $request): ?int
-    {
-        $sessionUnit = session('active_unit_id');
-        if ($sessionUnit) return (int) $sessionUnit;
-
-        $user = $request->user();
-        $firstTeamId = \DB::table('model_has_roles')
-            ->where('model_id', $user->id)
-            ->where('model_type', get_class($user))
-            ->whereNotNull('team_id')
-            ->value('team_id');
-
-        return $firstTeamId ? (int) $firstTeamId : null;
-    }
+    use HasUnitScope;
 
     public function dashboard(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
         $user = $request->user();
         $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
 
@@ -101,7 +89,7 @@ class FinanceApiController extends Controller
 
     public function bills(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
         $user = $request->user();
         $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
 
@@ -144,7 +132,7 @@ class FinanceApiController extends Controller
 
     public function transactions(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
         $user = $request->user();
         $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
 

@@ -128,6 +128,10 @@ class _AuthInterceptor extends Interceptor {
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
+    final activeUnit = await StorageUtils.getActiveUnit();
+    if (activeUnit != null) {
+      options.headers['X-Active-Unit'] = activeUnit.toString();
+    }
     handler.next(options);
   }
 

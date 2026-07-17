@@ -8,29 +8,17 @@ use App\Modules\Sarpar\Models\Category;
 use App\Modules\Sarpar\Models\Room;
 use App\Modules\Sarpar\Models\Loan;
 use App\Modules\Sarpar\Models\MaintenanceLog;
+use App\Http\Controllers\Api\Traits\HasUnitScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SarparApiController extends Controller
 {
-    private function getUnitId(Request $request): ?int
-    {
-        $sessionUnit = session('active_unit_id');
-        if ($sessionUnit) return (int) $sessionUnit;
-
-        $user = $request->user();
-        $firstTeamId = \DB::table('model_has_roles')
-            ->where('model_id', $user->id)
-            ->where('model_type', get_class($user))
-            ->whereNotNull('team_id')
-            ->value('team_id');
-
-        return $firstTeamId ? (int) $firstTeamId : null;
-    }
+    use HasUnitScope;
 
     public function dashboard(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $itemQuery = Inventory::where('unit_id', $unitId);
 
@@ -71,7 +59,7 @@ class SarparApiController extends Controller
 
     public function inventories(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $query = Inventory::with(['category:id,name', 'room:id,name', 'classroom:id,name'])
             ->where('unit_id', $unitId);
@@ -123,7 +111,7 @@ class SarparApiController extends Controller
 
     public function rooms(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $rooms = Room::where('unit_id', $unitId)
             ->withCount('inventories')
@@ -136,7 +124,7 @@ class SarparApiController extends Controller
 
     public function loans(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $query = Loan::with(['inventory:id,name', 'borrower:id,name', 'processedBy:id,name'])
             ->whereHas('inventory', fn ($q) => $q->where('unit_id', $unitId));
@@ -164,7 +152,7 @@ class SarparApiController extends Controller
 
     public function maintenance(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
 
         $query = MaintenanceLog::with(['inventory:id,name', 'reporter:id,name', 'handler:id,name'])
             ->whereHas('inventory', fn ($q) => $q->where('unit_id', $unitId));

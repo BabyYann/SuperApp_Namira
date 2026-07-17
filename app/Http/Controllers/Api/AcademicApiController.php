@@ -11,25 +11,13 @@ use App\Models\EmployeeAttendance;
 use App\Models\StudentAttendance;
 use App\Models\User;
 use App\Modules\Yayasan\Models\AcademicYear;
+use App\Http\Controllers\Api\Traits\HasUnitScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AcademicApiController extends Controller
 {
-    private function getUnitId(Request $request): ?int
-    {
-        $sessionUnit = session('active_unit_id');
-        if ($sessionUnit) return (int) $sessionUnit;
-
-        $user = $request->user();
-        $firstTeamId = \DB::table('model_has_roles')
-            ->where('model_id', $user->id)
-            ->where('model_type', get_class($user))
-            ->whereNotNull('team_id')
-            ->value('team_id');
-
-        return $firstTeamId ? (int) $firstTeamId : null;
-    }
+    use HasUnitScope;
 
     private function getActiveYearId(): ?int
     {
@@ -39,7 +27,7 @@ class AcademicApiController extends Controller
 
     public function schedules(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
         $user = $request->user();
         $activeYear = AcademicYear::where('is_active', true)->first();
 
@@ -97,7 +85,7 @@ class AcademicApiController extends Controller
 
     public function students(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
         $academicYearId = $request->input('academic_year_id') ?? $this->getActiveYearId();
 
         $query = Student::with(['classroom:id,name,level', 'academicYear:id,name'])
@@ -183,7 +171,7 @@ class AcademicApiController extends Controller
 
     public function studentAttendance(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
         $date = $request->input('date', now()->toDateString());
         $classroomId = $request->input('classroom_id');
 
@@ -220,7 +208,7 @@ class AcademicApiController extends Controller
 
     public function studentAttendanceRecap(Request $request): JsonResponse
     {
-        $unitId = $this->getUnitId($request);
+        $unitId = $this->resolveUnitId($request);
         $month = $request->input('month', now()->format('Y-m'));
         $classroomId = $request->input('classroom_id');
 

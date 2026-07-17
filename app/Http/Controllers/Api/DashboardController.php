@@ -14,34 +14,13 @@ use App\Modules\Finance\Models\StudentBill;
 use App\Modules\Finance\Models\Transaction;
 use App\Modules\Yayasan\Models\AcademicYear;
 use App\Modules\Yayasan\Models\Unit;
+use App\Http\Controllers\Api\Traits\HasUnitScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    private function getActiveUnitId(Request $request): ?int
-    {
-        $sessionUnit = session('active_unit_id');
-        if ($sessionUnit) {
-            return (int) $sessionUnit;
-        }
-
-        $user = $request->user();
-        $hasGlobalRole = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan']);
-
-        if ($hasGlobalRole) {
-            $firstUnit = Unit::first();
-            return $firstUnit?->id;
-        }
-
-        $firstTeamId = \DB::table('model_has_roles')
-            ->where('model_id', $user->id)
-            ->where('model_type', get_class($user))
-            ->whereNotNull('team_id')
-            ->value('team_id');
-
-        return $firstTeamId ? (int) $firstTeamId : null;
-    }
+    use HasUnitScope;
 
     private function getActiveAcademicYearId(): ?int
     {
@@ -53,7 +32,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $roles = $user->getRoleNames()->toArray();
-        $unitId = $this->getActiveUnitId($request);
+        $unitId = $this->resolveUnitId($request);
         $academicYearId = $this->getActiveAcademicYearId();
 
         $unit = $unitId ? Unit::find($unitId) : null;
