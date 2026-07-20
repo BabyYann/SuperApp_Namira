@@ -36,7 +36,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark],
+                    colors: [AppColors.primary, Color(0xFF004D40)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

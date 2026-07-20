@@ -123,7 +123,7 @@ class _SarparScreenState extends ConsumerState<SarparScreen> {
           icon: Icons.bookmark_outline,
           label: 'Dipinjam',
           value: '${stats['loaned'] ?? 0}',
-          color: AppColors.accent,
+          color: AppColors.info,
         ),
       ],
     );

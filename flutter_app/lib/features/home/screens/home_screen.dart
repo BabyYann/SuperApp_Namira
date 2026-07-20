@@ -216,7 +216,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryDark],
+              colors: [AppColors.primary, Color(0xFF004D40)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -360,7 +360,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         icon: Icons.person_outlined,
         label: 'Guru',
         value: '${stats['total_teachers'] ?? 0}',
-        color: AppColors.accent,
+        color: AppColors.info,
       ),
       _StatCard(
         icon: Icons.people_outline,
@@ -402,7 +402,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         icon: Icons.home_outlined,
         label: 'Kelas',
         value: '${stats['total_classes'] ?? 0}',
-        color: AppColors.accent,
+        color: AppColors.info,
       ),
       _StatCard(
         icon: Icons.fingerprint,
@@ -468,18 +468,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       modules.addAll([
         {'icon': Icons.school_outlined, 'label': 'Akademik', 'color': AppColors.primary},
         {'icon': Icons.account_balance_wallet_outlined, 'label': 'Keuangan', 'color': AppColors.secondary},
-        {'icon': Icons.people_outline, 'label': 'Karyawan', 'color': AppColors.accent},
+        {'icon': Icons.people_outline, 'label': 'Karyawan', 'color': AppColors.info},
         {'icon': Icons.psychology_outlined, 'label': 'Konseling', 'color': AppColors.success},
         {'icon': Icons.inventory_2_outlined, 'label': 'Sarpar', 'color': AppColors.warning},
         {'icon': Icons.menu_book_outlined, 'label': 'LMS', 'color': const Color(0xFF805AD5)},
         {'icon': Icons.campaign_outlined, 'label': 'Humas', 'color': AppColors.secondary},
-        {'icon': Icons.notifications_outlined, 'label': 'Notifikasi', 'color': AppColors.accent},
+        {'icon': Icons.notifications_outlined, 'label': 'Notifikasi', 'color': AppColors.info},
       ]);
     } else {
       if (roles.any((r) => ['teacher', 'guru'].contains(r))) {
         modules.addAll([
           {'icon': Icons.schedule_outlined, 'label': 'Jadwal', 'color': AppColors.primary},
-          {'icon': Icons.edit_note, 'label': 'Jurnal', 'color': AppColors.accent},
+          {'icon': Icons.edit_note, 'label': 'Jurnal', 'color': AppColors.info},
           {'icon': Icons.fact_check_outlined, 'label': 'Absensi', 'color': AppColors.success},
           {'icon': Icons.menu_book_outlined, 'label': 'LMS', 'color': const Color(0xFF805AD5)},
         ]);
@@ -505,7 +505,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         {'icon': Icons.fingerprint, 'label': 'Presensi', 'color': AppColors.primary},
       );
       modules.add(
-        {'icon': Icons.notifications_outlined, 'label': 'Notifikasi', 'color': AppColors.accent},
+        {'icon': Icons.notifications_outlined, 'label': 'Notifikasi', 'color': AppColors.info},
       );
     }
 

@@ -289,7 +289,7 @@ class _UnitCard extends StatelessWidget {
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.primaryDark,
+                                      color: Color(0xFF004D40),
                                     ),
                                   ),
                                 ),

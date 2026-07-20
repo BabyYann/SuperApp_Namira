@@ -130,11 +130,11 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
           CircleAvatar(
             radius: 20,
             backgroundColor: gender == 'Laki-laki'
-                ? AppColors.accent.withAlpha(51)
+                ? AppColors.info.withAlpha(51)
                 : AppColors.primary.withAlpha(51),
             child: Icon(
               gender == 'Laki-laki' ? Icons.male : Icons.female,
-              color: gender == 'Laki-laki' ? AppColors.accent : AppColors.primary,
+              color: gender == 'Laki-laki' ? AppColors.info : AppColors.primary,
               size: 20,
             ),
           ),

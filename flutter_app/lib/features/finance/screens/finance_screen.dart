@@ -96,7 +96,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
           icon: Icons.receipt_long_outlined,
           label: 'Total Tagihan',
           value: _formatCurrency(stats['total_bills'] ?? 0),
-          color: AppColors.accent,
+          color: AppColors.info,
         ),
         _StatCard(
           icon: Icons.payments_outlined,

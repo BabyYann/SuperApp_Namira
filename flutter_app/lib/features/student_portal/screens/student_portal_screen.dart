@@ -122,7 +122,7 @@ class _StudentDashboardTabState extends ConsumerState<_StudentDashboardTab> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryDark],
+                colors: [AppColors.primary, Color(0xFF004D40)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
