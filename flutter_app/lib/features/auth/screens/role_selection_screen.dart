@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/core/utils/storage_utils.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
@@ -93,15 +94,22 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Pilih Workspace'),
+        title: Text(
+          'Pilih Workspace',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: AvatarWidget(
               name: authState.userName,
-              radius: 16,
-              backgroundColor: AppColors.primary.withAlpha(26),
-              textColor: AppColors.primary,
+              radius: 20,
+              backgroundColor: AppColors.primaryContainer,
+              textColor: AppColors.onPrimaryContainer,
             ),
           ),
         ],
@@ -146,7 +154,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               border: const Border(
-                top: BorderSide(color: AppColors.borderLight),
+                top: BorderSide(color: AppColors.outlineVariant),
               ),
               boxShadow: [
                 BoxShadow(
@@ -158,6 +166,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
             ),
             child: SizedBox(
               width: double.infinity,
+              height: 48,
               child: ElevatedButton(
                 onPressed:
                     (_selectedUnitId != null && _selectedRole != null && !_submitting)
@@ -223,7 +232,7 @@ class _UnitCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected ? AppColors.primary : AppColors.border,
+          color: isSelected ? AppColors.primary : AppColors.outlineVariant,
           width: isSelected ? 2 : 1,
         ),
         boxShadow: [
@@ -335,7 +344,7 @@ class _UnitCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
               decoration: const BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: AppColors.borderLight),
+                  top: BorderSide(color: AppColors.outlineVariant),
                 ),
               ),
               child: Column(
@@ -384,10 +393,10 @@ class _UnitCard extends StatelessWidget {
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: active
-                                    ? AppColors.primary
-                                    : AppColors.border,
-                                width: active ? 2 : 1,
+                              color: active
+                                  ? AppColors.primary
+                                  : AppColors.outlineVariant,
+                              width: active ? 2 : 1,
                               ),
                             ),
                             child: Row(

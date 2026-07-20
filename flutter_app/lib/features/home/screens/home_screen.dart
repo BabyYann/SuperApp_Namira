@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:superapp_namira_flutter/app.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
 import 'package:superapp_namira_flutter/features/home/providers/dashboard_provider.dart';
-import 'package:superapp_namira_flutter/shared/widgets/avatar_widget.dart';
+import 'package:superapp_namira_flutter/shared/widgets/app_bar_header.dart';
 import 'package:superapp_namira_flutter/shared/widgets/dashboard_card.dart';
 import 'package:superapp_namira_flutter/shared/widgets/loading_widget.dart';
-import 'package:superapp_namira_flutter/shared/widgets/namira_badge.dart';
 import 'package:superapp_namira_flutter/shared/widgets/scroll_to_top_provider.dart';
+import 'package:superapp_namira_flutter/shared/widgets/stat_card.dart';
+import 'package:superapp_namira_flutter/shared/widgets/stitch_badge.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -61,7 +62,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            _buildAppBar(context, authState),
+            SliverToBoxAdapter(
+              child: AppBarHeader(
+                userName: authState.userName.isNotEmpty
+                    ? authState.userName
+                    : 'Pengguna',
+                subtitle: authState.roles.isNotEmpty
+                    ? authState.roles.first.replaceAll('_', ' ').toUpperCase()
+                    : null,
+                notificationCount: 0,
+                onNotificationTap: () => context.push('/notifications'),
+              ),
+            ),
             if (dashState.status == DashboardStatus.loading)
               const SliverFillRemaining(
                 child: LoadingWidget(message: 'Memuat dashboard...'),
@@ -72,14 +84,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.error),
+                      const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                       const SizedBox(height: 16),
                       Text(dashState.errorMessage ?? 'Terjadi kesalahan'),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () =>
-                            ref.read(dashboardProvider.notifier).refresh(),
+                        onPressed: () => ref.read(dashboardProvider.notifier).refresh(),
                         child: const Text('Coba Lagi'),
                       ),
                     ],
@@ -89,180 +99,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             else ...[
               _buildStatsSection(dashState, authState),
               _buildModuleSection(context, authState),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context, AuthState authState) {
-    return SliverAppBar(
-      pinned: true,
-      expandedHeight: 160,
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      automaticallyImplyLeading: false,
-      title: const Text(
-        'SuperApp Namira',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          tooltip: 'Notifikasi',
-          onPressed: () => context.push('/notifications'),
-        ),
-        PopupMenuButton<String>(
-          icon: AvatarWidget(
-            name: authState.userName,
-            radius: 16,
-            backgroundColor: Colors.white.withAlpha(51),
-            textColor: Colors.white,
-          ),
-          onSelected: (value) {
-            if (value == 'logout') {
-              ref.read(authProvider.notifier).logout();
-              context.go('/login');
-            } else if (value == 'profile') {
-              context.push('/settings/profile');
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              enabled: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    authState.userName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    authState.userEmail,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const PopupMenuDivider(),
-            const PopupMenuItem(
-              value: 'profile',
-              child: Row(
-                children: [
-                  Icon(Icons.person_outline, size: 20),
-                  SizedBox(width: 8),
-                  Text('Profil Saya'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              enabled: false,
-              height: 1,
-              child: Divider(),
-            ),
-            PopupMenuItem(
-              value: 'theme',
-              child: Row(
-                children: [
-                  const Icon(Icons.dark_mode_outlined, size: 20),
-                  const SizedBox(width: 8),
-                  const Expanded(child: Text('Mode Gelap')),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final mode = ref.watch(themeModeProvider);
-                      final isDark = mode == ThemeMode.dark;
-                      return Switch(
-                        value: isDark,
-                        onChanged: (v) {
-                          ref.read(themeModeProvider.notifier).state =
-                              v ? ThemeMode.dark : ThemeMode.light;
-                        },
-                        activeThumbColor: AppColors.primary,
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'logout',
-              child: Row(
-                children: [
-                  Icon(Icons.logout, size: 20, color: AppColors.error),
-                  SizedBox(width: 8),
-                  Text('Keluar',
-                      style: TextStyle(color: AppColors.error)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(width: 8),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, Color(0xFF004D40)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 52, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    'Selamat Datang,',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withAlpha(204),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    authState.userName.isNotEmpty
-                        ? authState.userName
-                        : 'Pengguna',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: authState.roles.map((role) {
-                      return NamiraBadge(
-                        label: role.replaceAll('_', ' ').toUpperCase(),
-                        color: Colors.white.withAlpha(51),
-                        textColor: Colors.white,
-                        isSmall: true,
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -274,28 +113,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (stats == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     final isAdmin = roles.any((r) => [
-          'super_admin_yayasan',
-          'admin_yayasan',
-          'admin_unit',
-          'kepala_sekolah',
-          'staff_yayasan',
+          'super_admin_yayasan', 'admin_yayasan', 'admin_unit',
+          'kepala_sekolah', 'staff_yayasan',
         ].contains(r));
     final isTeacher = roles.any((r) => ['teacher', 'guru'].contains(r));
     final isStudent = roles.any((r) => ['siswa', 'student'].contains(r));
 
-    List<Widget> statCards = [];
+    List<Widget> cards = [];
 
     if (isAdmin) {
-      statCards = _buildAdminStats(stats);
+      cards = _buildAdminStats(stats);
     } else if (isTeacher) {
-      statCards = _buildTeacherStats(stats);
+      cards = _buildTeacherStats(stats);
     } else if (isStudent) {
-      statCards = _buildStudentStats(stats);
+      cards = _buildStudentStats(stats);
     } else {
-      statCards = _buildStaffStats(stats);
+      cards = _buildStaffStats(stats);
     }
 
-    if (statCards.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (cards.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Padding(
@@ -305,9 +141,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Row(
               children: [
-                const Text(
+                Text(
                   'Ringkasan',
-                  style: TextStyle(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -315,20 +151,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const Spacer(),
                 if (dashState.unit != null)
-                  NamiraBadge(
-                    label: dashState.unit!['name'] ?? '',
-                    color: AppColors.primary,
-                    textColor: Colors.white,
-                  ),
+                  StitchBadge.primary(dashState.unit!['name'] ?? ''),
               ],
             ),
             if (dashState.academicYear != null) ...[
               const SizedBox(height: 4),
               Text(
                 'Tahun Akademik ${dashState.academicYear!['name']} - ${dashState.academicYear!['semester']}',
-                style: const TextStyle(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: AppColors.textOnSurfaceVariant,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -337,10 +170,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.6,
-              children: statCards,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.4,
+              children: cards,
             ),
           ],
         ),
@@ -350,41 +183,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   List<Widget> _buildAdminStats(Map<String, dynamic> stats) {
     return [
-      _StatCard(
+      StatCard(
         icon: Icons.school_outlined,
+        iconColor: AppColors.primary,
         label: 'Siswa',
         value: '${stats['total_students'] ?? 0}',
-        color: AppColors.primary,
       ),
-      _StatCard(
+      StatCard(
         icon: Icons.person_outlined,
+        iconColor: AppColors.info,
         label: 'Guru',
         value: '${stats['total_teachers'] ?? 0}',
-        color: AppColors.info,
       ),
-      _StatCard(
+      StatCard(
         icon: Icons.people_outline,
+        iconColor: AppColors.secondary,
         label: 'Staf',
         value: '${stats['total_staff'] ?? 0}',
-        color: AppColors.secondary,
       ),
-      _StatCard(
+      StatCard(
         icon: Icons.home_outlined,
+        iconColor: AppColors.success,
         label: 'Kelas',
         value: '${stats['total_classes'] ?? 0}',
-        color: AppColors.success,
       ),
-      _StatCard(
+      StatCard(
         icon: Icons.receipt_long_outlined,
+        iconColor: AppColors.warning,
         label: 'Tagihan Aktif',
         value: '${stats['active_bills'] ?? 0}',
-        color: AppColors.warning,
       ),
-      _StatCard(
+      StatCard(
         icon: Icons.payments_outlined,
+        iconColor: AppColors.info,
         label: 'Terealisasi',
         value: '${stats['collection_rate'] ?? 0}%',
-        color: AppColors.info,
       ),
     ];
   }
@@ -392,26 +225,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Widget> _buildTeacherStats(Map<String, dynamic> stats) {
     final attendance = stats['attendance_today'];
     return [
-      _StatCard(
+      StatCard(
         icon: Icons.school_outlined,
+        iconColor: AppColors.primary,
         label: 'Siswa',
         value: '${stats['total_students'] ?? 0}',
-        color: AppColors.primary,
       ),
-      _StatCard(
+      StatCard(
         icon: Icons.home_outlined,
+        iconColor: AppColors.info,
         label: 'Kelas',
         value: '${stats['total_classes'] ?? 0}',
-        color: AppColors.info,
       ),
-      _StatCard(
+      StatCard(
         icon: Icons.fingerprint,
+        iconColor: attendance != null ? AppColors.success : AppColors.warning,
         label: 'Presensi',
         value: attendance != null
             ? (attendance['status'] ?? '-').toString().toUpperCase()
             : 'BELUM',
-        color: attendance != null ? AppColors.success : AppColors.warning,
-        valueFontSize: 12,
       ),
     ];
   }
@@ -419,20 +251,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Widget> _buildStudentStats(Map<String, dynamic> stats) {
     final attendance = stats['attendance_today'];
     return [
-      _StatCard(
+      StatCard(
         icon: Icons.fingerprint,
+        iconColor: attendance != null ? AppColors.success : AppColors.warning,
         label: 'Absen Hari Ini',
         value: attendance != null
             ? (attendance['status'] ?? '-').toString().toUpperCase()
             : 'BELUM',
-        color: attendance != null ? AppColors.success : AppColors.warning,
-        valueFontSize: 12,
       ),
-      _StatCard(
+      StatCard(
         icon: Icons.receipt_long_outlined,
+        iconColor: AppColors.error,
         label: 'Tagihan',
         value: '${stats['unpaid_bills'] ?? 0}',
-        color: AppColors.error,
       ),
     ];
   }
@@ -440,14 +271,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Widget> _buildStaffStats(Map<String, dynamic> stats) {
     final attendance = stats['attendance_today'];
     return [
-      _StatCard(
+      StatCard(
         icon: Icons.fingerprint,
+        iconColor: attendance != null ? AppColors.success : AppColors.warning,
         label: 'Presensi Hari Ini',
         value: attendance != null
             ? (attendance['status'] ?? '-').toString().toUpperCase()
             : 'BELUM',
-        color: attendance != null ? AppColors.success : AppColors.warning,
-        valueFontSize: 12,
       ),
     ];
   }
@@ -455,11 +285,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildModuleSection(BuildContext context, AuthState authState) {
     final roles = authState.roles;
     final isAdmin = roles.any((r) => [
-          'super_admin_yayasan',
-          'admin_yayasan',
-          'admin_unit',
-          'kepala_sekolah',
-          'staff_yayasan',
+          'super_admin_yayasan', 'admin_yayasan', 'admin_unit',
+          'kepala_sekolah', 'staff_yayasan',
         ].contains(r));
 
     final modules = <Map<String, dynamic>>[];
@@ -501,23 +328,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           {'icon': Icons.campaign_outlined, 'label': 'Humas', 'color': AppColors.secondary},
         ]);
       }
-      modules.add(
+      modules.addAll([
         {'icon': Icons.fingerprint, 'label': 'Presensi', 'color': AppColors.primary},
-      );
-      modules.add(
         {'icon': Icons.notifications_outlined, 'label': 'Notifikasi', 'color': AppColors.info},
-      );
+      ]);
     }
 
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Menu Utama',
-              style: TextStyle(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -575,67 +400,5 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
     }
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-  final double? valueFontSize;
-
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-    this.valueFontSize,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withAlpha(26),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 18, color: color),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: valueFontSize ?? 18,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
   }
 }
