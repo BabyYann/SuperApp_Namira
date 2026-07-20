@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
+import 'package:superapp_namira_flutter/shared/widgets/connectivity_banner.dart';
 import 'package:superapp_namira_flutter/shared/widgets/scroll_to_top_provider.dart';
 
 class MainShell extends ConsumerStatefulWidget {
@@ -125,7 +126,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         .toList();
 
     return Scaffold(
-      body: widget.child,
+      body: ConnectivityBanner(child: widget.child),
       bottomNavigationBar: ConvexAppBar(
         style: TabStyle.fixedCircle,
         backgroundColor: Colors.white,
