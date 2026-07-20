@@ -1,11 +1,10 @@
-import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
 import 'package:superapp_namira_flutter/shared/widgets/connectivity_banner.dart';
 import 'package:superapp_namira_flutter/shared/widgets/scroll_to_top_provider.dart';
+import 'package:superapp_namira_flutter/shared/widgets/stitch_bottom_nav.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
@@ -19,7 +18,7 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
 
-  late final List<_NavItem> _navItems;
+  late final List<NavItem> _navItems;
 
   @override
   void initState() {
@@ -27,34 +26,34 @@ class _MainShellState extends ConsumerState<MainShell> {
     _navItems = _buildNavItems();
   }
 
-  List<_NavItem> _buildNavItems() {
+  List<NavItem> _buildNavItems() {
     return const [
-      _NavItem(
+      NavItem(
         icon: Icons.home_outlined,
         activeIcon: Icons.home,
         label: 'Beranda',
         path: '/home',
       ),
-      _NavItem(
+      NavItem(
         icon: Icons.school_outlined,
         activeIcon: Icons.school,
         label: 'Akademik',
         path: '/academic',
       ),
-      _NavItem(
+      NavItem(
         icon: Icons.fingerprint_outlined,
         activeIcon: Icons.fingerprint,
         label: 'Presensi',
         path: '/attendance',
         isCenter: true,
       ),
-      _NavItem(
+      NavItem(
         icon: Icons.account_balance_wallet_outlined,
         activeIcon: Icons.account_balance_wallet,
         label: 'Keuangan',
         path: '/finance',
       ),
-      _NavItem(
+      NavItem(
         icon: Icons.person_outline,
         activeIcon: Icons.person,
         label: 'Akun',
@@ -108,68 +107,34 @@ class _MainShellState extends ConsumerState<MainShell> {
       visibleIndices.addAll([0, 2, 4]);
     }
 
-    final tabs = <TabItem>[];
+    final visibleItems = <NavItem>[];
+    final indexMapping = <int, int>{};
     for (var i = 0; i < _navItems.length; i++) {
-      if (!visibleIndices.contains(i)) continue;
-      final item = _navItems[i];
-      tabs.add(
-        TabItem(
-          icon: item.isCenter ? item.activeIcon : item.icon,
-          title: item.label,
-        ),
-      );
+      if (visibleIndices.contains(i)) {
+        indexMapping[visibleItems.length] = i;
+        visibleItems.add(_navItems[i]);
+      }
     }
 
-    final visibleItems = _navItems
-        .where((item) =>
-            visibleIndices.contains(_navItems.indexOf(item)))
-        .toList();
+    final clampedIndex = _clampIndex(visibleItems);
 
     return Scaffold(
       body: ConnectivityBanner(child: widget.child),
-      bottomNavigationBar: ConvexAppBar(
-        style: TabStyle.fixedCircle,
-        backgroundColor: Colors.white,
-        activeColor: AppColors.primary,
-        color: AppColors.textSecondary,
-        elevation: 8,
-        height: 60,
-        curveSize: 90,
-        top: -28,
-        items: tabs,
-        initialActiveIndex: _clampIndex(visibleItems),
+      bottomNavigationBar: StitchBottomNav(
+        items: visibleItems,
+        currentIndex: clampedIndex,
         onTap: (index) {
-          final realIndex = _realIndex(visibleItems, index);
+          final realIndex = indexMapping[index] ?? index;
           _onTap(realIndex);
         },
       ),
     );
   }
 
-  int _clampIndex(List<_NavItem> visibleItems) {
+  int _clampIndex(List<NavItem> visibleItems) {
     for (var i = 0; i < visibleItems.length; i++) {
       if (visibleItems[i].path == _navItems[_currentIndex].path) return i;
     }
     return 0;
   }
-
-  int _realIndex(List<_NavItem> visibleItems, int visibleIndex) {
-    return _navItems.indexOf(visibleItems[visibleIndex]);
-  }
-}
-
-class _NavItem {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final String path;
-  final bool isCenter;
-
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.path,
-    this.isCenter = false,
-  });
 }
