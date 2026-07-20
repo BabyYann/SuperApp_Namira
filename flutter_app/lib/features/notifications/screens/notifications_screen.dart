@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/notifications/data/notification_repository.dart';
 import 'package:superapp_namira_flutter/shared/widgets/empty_state.dart';
-import 'package:superapp_namira_flutter/shared/widgets/loading_widget.dart';
+import 'package:superapp_namira_flutter/shared/widgets/shimmer_loading.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -16,6 +16,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   List<dynamic> _items = [];
   bool _loading = true;
   bool _markingAll = false;
+  String _search = '';
 
   @override
   void initState() {
@@ -34,8 +35,26 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     }
   }
 
+  List<dynamic> get _filteredItems {
+    if (_search.isEmpty) return _items;
+    final q = _search.toLowerCase();
+    return _items.where((n) {
+      final title = (n['title'] ?? '').toString().toLowerCase();
+      final message = (n['message'] ?? '').toString().toLowerCase();
+      return title.contains(q) || message.contains(q);
+    }).toList();
+  }
+
   Future<void> _markRead(int id) async {
     await ref.read(notificationRepositoryProvider).markRead(id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notifikasi ditandai sudah dibaca'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
     _load();
   }
 
@@ -43,6 +62,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     setState(() => _markingAll = true);
     await ref.read(notificationRepositoryProvider).markAllRead();
     setState(() => _markingAll = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Semua notifikasi ditandai sudah dibaca'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
     _load();
   }
 
@@ -76,21 +103,56 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   ),
         ],
       ),
-      body: _loading
-          ? const LoadingWidget(message: 'Memuat notifikasi...')
-          : _items.isEmpty
-              ? const EmptyState(
-                  icon: Icons.notifications_off_outlined,
-                  title: 'Tidak ada notifikasi',
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _items.length,
-                    itemBuilder: (context, i) => _buildTile(_items[i]),
-                  ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: TextField(
+              onChanged: (v) => setState(() => _search = v),
+              decoration: InputDecoration(
+                hintText: 'Cari notifikasi...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: 4,
+                    itemBuilder: (context, index) => const ShimmerListTile(),
+                  )
+                : _filteredItems.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.notifications_off_outlined,
+                        title: 'Tidak ada notifikasi',
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _load,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _filteredItems.length,
+                          itemBuilder: (context, i) => _buildTile(_filteredItems[i]),
+                        ),
+                      ),
+          ),
+        ],
+      ),
     );
   }
 

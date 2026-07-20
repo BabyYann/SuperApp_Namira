@@ -79,6 +79,10 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     setState(() => _submitting = false);
   }
 
+  Future<void> _refreshUnits() async {
+    await ref.read(authProvider.notifier).refreshProfile();
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -105,9 +109,11 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              children: [
+            child: RefreshIndicator(
+              onRefresh: _refreshUnits,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                children: [
                 Text(
                   'Pilih unit sekolah dan peran Anda sebelum masuk ke aplikasi.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -132,6 +138,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                   );
                 }),
               ],
+            ),
             ),
           ),
           Container(
@@ -206,8 +213,8 @@ class _UnitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = unit['name'] as String? ?? '';
-    final type = unit['type'] as String? ?? '';
-    final location = unit['location'] as String? ?? '';
+    final category = unit['category'] as String? ?? '';
+    final level = unit['level'] as String? ?? '';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -262,12 +269,12 @@ class _UnitCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        if (type.isNotEmpty || location.isNotEmpty)
+                        if (category.isNotEmpty || level.isNotEmpty)
                           Wrap(
                             spacing: 6,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              if (type.isNotEmpty)
+                              if (category.isNotEmpty)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
@@ -278,7 +285,7 @@ class _UnitCard extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
-                                    type,
+                                    category,
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
@@ -286,24 +293,24 @@ class _UnitCard extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              if (location.isNotEmpty)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on_outlined,
-                                      size: 14,
-                                      color: AppColors.textHint,
+                              if (level.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondary.withAlpha(26),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    level,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.secondary,
                                     ),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      location,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                             ],
                           ),

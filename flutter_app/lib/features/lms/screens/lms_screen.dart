@@ -6,6 +6,7 @@ import 'package:superapp_namira_flutter/features/lms/data/lms_repository.dart';
 import 'package:superapp_namira_flutter/shared/widgets/empty_state.dart';
 import 'package:superapp_namira_flutter/shared/widgets/loading_widget.dart';
 import 'package:superapp_namira_flutter/shared/widgets/namira_badge.dart';
+import 'package:superapp_namira_flutter/shared/widgets/shimmer_loading.dart';
 
 class LmsScreen extends ConsumerStatefulWidget {
   const LmsScreen({super.key});
@@ -17,6 +18,7 @@ class LmsScreen extends ConsumerStatefulWidget {
 class _LmsScreenState extends ConsumerState<LmsScreen> {
   List<dynamic> _classrooms = [];
   bool _loading = true;
+  String _search = '';
 
   @override
   void initState() {
@@ -35,6 +37,16 @@ class _LmsScreenState extends ConsumerState<LmsScreen> {
     }
   }
 
+  List<dynamic> get _filteredClassrooms {
+    if (_search.isEmpty) return _classrooms;
+    final q = _search.toLowerCase();
+    return _classrooms.where((c) {
+      final subject = (c['subject'] ?? '').toString().toLowerCase();
+      final classroom = (c['classroom'] ?? '').toString().toLowerCase();
+      return subject.contains(q) || classroom.contains(q);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,23 +63,58 @@ class _LmsScreenState extends ConsumerState<LmsScreen> {
           ),
         ],
       ),
-      body: _loading
-          ? const LoadingWidget(message: 'Memuat kelas...')
-          : _classrooms.isEmpty
-              ? const EmptyState(
-                  icon: Icons.school_outlined,
-                  title: 'Belum ada kelas',
-                  subtitle: 'Kelas yang Anda ampu/ikuti akan muncul di sini.',
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _classrooms.length,
-                    itemBuilder: (context, index) =>
-                        _buildClassroomTile(_classrooms[index]),
-                  ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: TextField(
+              onChanged: (v) => setState(() => _search = v),
+              decoration: InputDecoration(
+                hintText: 'Cari kelas atau mata pelajaran...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF805AD5), width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: 4,
+                    itemBuilder: (context, index) => const ShimmerListTile(),
+                  )
+                : _filteredClassrooms.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.school_outlined,
+                        title: 'Belum ada kelas',
+                        subtitle: 'Kelas yang Anda ampu/ikuti akan muncul di sini.',
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _load,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _filteredClassrooms.length,
+                          itemBuilder: (context, index) =>
+                              _buildClassroomTile(_filteredClassrooms[index]),
+                        ),
+                      ),
+          ),
+        ],
+      ),
     );
   }
 

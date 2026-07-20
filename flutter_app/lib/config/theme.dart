@@ -152,4 +152,132 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get dark {
+    final textTheme = GoogleFonts.plusJakartaSansTextTheme(
+      ThemeData(brightness: Brightness.dark).textTheme,
+    );
+
+    const bg = Color(0xFF121212);
+    const surface = Color(0xFF1E1E1E);
+    const surfaceVariant = Color(0xFF2C2C2C);
+    const textPrimary = Color(0xFFE2E8F0);
+    const textSecondary = Color(0xFFA0AEC0);
+    const border = Color(0xFF3A3A3A);
+    const borderLight = Color(0xFF2A2A2A);
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: Brightness.dark,
+        primary: AppColors.primary,
+        secondary: AppColors.secondary,
+        error: AppColors.error,
+        surface: surface,
+      ),
+      scaffoldBackgroundColor: bg,
+      textTheme: textTheme.copyWith(
+        headlineLarge: textTheme.headlineLarge?.copyWith(
+          color: textPrimary,
+          fontWeight: FontWeight.w700,
+        ),
+        headlineMedium: textTheme.headlineMedium?.copyWith(
+          color: textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+        headlineSmall: textTheme.headlineSmall?.copyWith(
+          color: textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: textTheme.titleLarge?.copyWith(
+          color: textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+        titleMedium: textTheme.titleMedium?.copyWith(
+          color: textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+        bodyLarge: textTheme.bodyLarge?.copyWith(
+          color: textPrimary,
+        ),
+        bodyMedium: textTheme.bodyMedium?.copyWith(
+          color: textPrimary,
+        ),
+        labelLarge: textTheme.labelLarge?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: surface,
+        foregroundColor: textPrimary,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: textPrimary,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceVariant,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        hintStyle: GoogleFonts.plusJakartaSans(
+          color: textSecondary,
+          fontSize: 14,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: surface,
+        elevation: 1,
+        shadowColor: Colors.black.withAlpha(50),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: borderLight),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: border,
+        thickness: 1,
+        space: 1,
+      ),
+    );
+  }
 }

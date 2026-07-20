@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:superapp_namira_flutter/app.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
 import 'package:superapp_namira_flutter/features/home/providers/dashboard_provider.dart';
@@ -8,6 +9,7 @@ import 'package:superapp_namira_flutter/shared/widgets/avatar_widget.dart';
 import 'package:superapp_namira_flutter/shared/widgets/dashboard_card.dart';
 import 'package:superapp_namira_flutter/shared/widgets/loading_widget.dart';
 import 'package:superapp_namira_flutter/shared/widgets/namira_badge.dart';
+import 'package:superapp_namira_flutter/shared/widgets/scroll_to_top_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +19,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -24,9 +28,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final dashState = ref.watch(dashboardProvider);
+
+    ref.listen<int>(scrollToTopProvider, (prev, next) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -36,6 +56,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           await ref.read(authProvider.notifier).refreshProfile();
         },
         child: CustomScrollView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -108,6 +129,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             if (value == 'logout') {
               ref.read(authProvider.notifier).logout();
               context.go('/login');
+            } else if (value == 'profile') {
+              context.push('/settings/profile');
             }
           },
           itemBuilder: (context) => [
@@ -142,6 +165,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Icon(Icons.person_outline, size: 20),
                   SizedBox(width: 8),
                   Text('Profil Saya'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              enabled: false,
+              height: 1,
+              child: Divider(),
+            ),
+            PopupMenuItem(
+              value: 'theme',
+              child: Row(
+                children: [
+                  const Icon(Icons.dark_mode_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('Mode Gelap')),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final mode = ref.watch(themeModeProvider);
+                      final isDark = mode == ThemeMode.dark;
+                      return Switch(
+                        value: isDark,
+                        onChanged: (v) {
+                          ref.read(themeModeProvider.notifier).state =
+                              v ? ThemeMode.dark : ThemeMode.light;
+                        },
+                        activeThumbColor: AppColors.primary,
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -514,6 +566,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final route = routes[label];
     if (route != null) {
       context.push(route);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Modul $label segera hadir'),
+          backgroundColor: AppColors.textSecondary,
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/public_relations/data/public_relations_repository.dart';
 import 'package:superapp_namira_flutter/shared/widgets/loading_widget.dart';
 import 'package:superapp_namira_flutter/shared/widgets/namira_badge.dart';
+import 'package:superapp_namira_flutter/shared/widgets/shimmer_loading.dart';
 
 class PublicRelationsScreen extends ConsumerStatefulWidget {
   const PublicRelationsScreen({super.key});
@@ -72,6 +73,7 @@ class _NewsTab extends ConsumerStatefulWidget {
 class _NewsTabState extends ConsumerState<_NewsTab> {
   List<dynamic> _items = [];
   bool _loading = true;
+  String _search = '';
 
   @override
   void initState() {
@@ -90,66 +92,112 @@ class _NewsTabState extends ConsumerState<_NewsTab> {
     }
   }
 
+  List<dynamic> get _filteredItems {
+    if (_search.isEmpty) return _items;
+    final q = _search.toLowerCase();
+    return _items.where((n) => (n['title'] ?? '').toString().toLowerCase().contains(q)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return _loading
-        ? const LoadingWidget(message: 'Memuat berita...')
-        : ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _items.length,
-            itemBuilder: (context, i) {
-              final n = _items[i];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderLight),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => context.push('/pr/news/${n['id']}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: TextField(
+            onChanged: (v) => setState(() => _search = v),
+            decoration: InputDecoration(
+              hintText: 'Cari berita...',
+              prefixIcon: const Icon(Icons.search, size: 20),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.secondary, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+        ),
+        Expanded(
+          child: _loading
+              ? ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: 4,
+                  itemBuilder: (context, index) => const ShimmerListTile(),
+                )
+              : _filteredItems.isEmpty
+                  ? const Center(child: Text('Tidak ada berita', style: TextStyle(color: AppColors.textHint)))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _filteredItems.length,
+                        itemBuilder: (context, i) {
+                          final n = _filteredItems[i];
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withAlpha(26),
-                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.borderLight),
                             ),
-                            child: const Icon(Icons.article_outlined,
-                                color: AppColors.primary),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(n['title'] ?? '-',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600, fontSize: 14)),
-                                if (n['published_at'] != null)
-                                  Text(n['published_at'],
-                                      style: const TextStyle(
-                                          fontSize: 11, color: AppColors.textHint)),
-                              ],
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => context.push('/pr/news/${n['id']}'),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withAlpha(26),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(Icons.article_outlined,
+                                            color: AppColors.primary),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(n['title'] ?? '-',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w600, fontSize: 14)),
+                                            if (n['published_at'] != null)
+                                              Text(n['published_at'],
+                                                  style: const TextStyle(
+                                                      fontSize: 11, color: AppColors.textHint)),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.chevron_right,
+                                          color: AppColors.textHint),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                          const Icon(Icons.chevron_right,
-                              color: AppColors.textHint),
-                        ],
+                          );
+                        },
                       ),
                     ),
-                  ),
-                ),
-              );
-            },
-          );
+        ),
+      ],
+    );
   }
 }
 
@@ -163,6 +211,7 @@ class _EventsTab extends ConsumerStatefulWidget {
 class _EventsTabState extends ConsumerState<_EventsTab> {
   List<dynamic> _items = [];
   bool _loading = true;
+  String _search = '';
 
   @override
   void initState() {
@@ -181,77 +230,123 @@ class _EventsTabState extends ConsumerState<_EventsTab> {
     }
   }
 
+  List<dynamic> get _filteredItems {
+    if (_search.isEmpty) return _items;
+    final q = _search.toLowerCase();
+    return _items.where((e) => (e['title'] ?? '').toString().toLowerCase().contains(q)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return _loading
-        ? const LoadingWidget(message: 'Memuat agenda...')
-        : ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _items.length,
-            itemBuilder: (context, i) {
-              final e = _items[i];
-              final status = e['computed_status'] ?? e['status'] ?? '';
-              final statusColor = switch (status) {
-                'ongoing' => AppColors.success,
-                'completed' => AppColors.textHint,
-                'cancelled' => AppColors.error,
-                _ => AppColors.info,
-              };
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderLight),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => context.push('/pr/events/${e['id']}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: TextField(
+            onChanged: (v) => setState(() => _search = v),
+            decoration: InputDecoration(
+              hintText: 'Cari agenda...',
+              prefixIcon: const Icon(Icons.search, size: 20),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.secondary, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+        ),
+        Expanded(
+          child: _loading
+              ? ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: 4,
+                  itemBuilder: (context, index) => const ShimmerListTile(),
+                )
+              : _filteredItems.isEmpty
+                  ? const Center(child: Text('Tidak ada agenda', style: TextStyle(color: AppColors.textHint)))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _filteredItems.length,
+                        itemBuilder: (context, i) {
+                          final e = _filteredItems[i];
+                          final status = e['computed_status'] ?? e['status'] ?? '';
+                          final statusColor = switch (status) {
+                            'ongoing' => AppColors.success,
+                            'completed' => AppColors.textHint,
+                            'cancelled' => AppColors.error,
+                            _ => AppColors.info,
+                          };
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.secondary.withAlpha(26),
-                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.borderLight),
                             ),
-                            child: const Icon(Icons.event_outlined,
-                                color: AppColors.secondary),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(e['title'] ?? '-',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600, fontSize: 14)),
-                                if (e['start_date'] != null)
-                                  Text(e['start_date'],
-                                      style: const TextStyle(
-                                          fontSize: 11, color: AppColors.textHint)),
-                              ],
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => context.push('/pr/events/${e['id']}'),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.secondary.withAlpha(26),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(Icons.event_outlined,
+                                            color: AppColors.secondary),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(e['title'] ?? '-',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w600, fontSize: 14)),
+                                            if (e['start_date'] != null)
+                                              Text(e['start_date'],
+                                                  style: const TextStyle(
+                                                      fontSize: 11, color: AppColors.textHint)),
+                                          ],
+                                        ),
+                                      ),
+                                      NamiraBadge(
+                                        label: status.toUpperCase(),
+                                        color: statusColor,
+                                        textColor: Colors.white,
+                                        isSmall: true,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                          NamiraBadge(
-                            label: status.toUpperCase(),
-                            color: statusColor,
-                            textColor: Colors.white,
-                            isSmall: true,
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ),
-                  ),
-                ),
-              );
-            },
-          );
+        ),
+      ],
+    );
   }
 }
 
@@ -265,6 +360,7 @@ class _DestinationsTab extends ConsumerStatefulWidget {
 class _DestinationsTabState extends ConsumerState<_DestinationsTab> {
   List<dynamic> _items = [];
   bool _loading = true;
+  String _search = '';
 
   @override
   void initState() {
@@ -284,65 +380,111 @@ class _DestinationsTabState extends ConsumerState<_DestinationsTab> {
     }
   }
 
+  List<dynamic> get _filteredItems {
+    if (_search.isEmpty) return _items;
+    final q = _search.toLowerCase();
+    return _items.where((d) => (d['name'] ?? '').toString().toLowerCase().contains(q)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return _loading
-        ? const LoadingWidget(message: 'Memuat tujuan kunjungan...')
-        : ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _items.length,
-            itemBuilder: (context, i) {
-              final d = _items[i];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderLight),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => context.push('/pr/destinations/${d['id']}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: TextField(
+            onChanged: (v) => setState(() => _search = v),
+            decoration: InputDecoration(
+              hintText: 'Cari tujuan kunjungan...',
+              prefixIcon: const Icon(Icons.search, size: 20),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.secondary, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+        ),
+        Expanded(
+          child: _loading
+              ? ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: 4,
+                  itemBuilder: (context, index) => const ShimmerListTile(),
+                )
+              : _filteredItems.isEmpty
+                  ? const Center(child: Text('Tidak ada tujuan kunjungan', style: TextStyle(color: AppColors.textHint)))
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _filteredItems.length,
+                        itemBuilder: (context, i) {
+                          final d = _filteredItems[i];
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.success.withAlpha(26),
-                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.borderLight),
                             ),
-                            child: const Icon(Icons.place_outlined,
-                                color: AppColors.success),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(d['name'] ?? '-',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600, fontSize: 14)),
-                                Text('${d['city'] ?? ''} ${d['country'] ?? ''}',
-                                    style: const TextStyle(
-                                        fontSize: 12, color: AppColors.textSecondary)),
-                              ],
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => context.push('/pr/destinations/${d['id']}'),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.success.withAlpha(26),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(Icons.place_outlined,
+                                            color: AppColors.success),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(d['name'] ?? '-',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w600, fontSize: 14)),
+                                            Text('${d['city'] ?? ''} ${d['country'] ?? ''}',
+                                                style: const TextStyle(
+                                                    fontSize: 12, color: AppColors.textSecondary)),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.chevron_right,
+                                          color: AppColors.textHint),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                          const Icon(Icons.chevron_right,
-                              color: AppColors.textHint),
-                        ],
+                          );
+                        },
                       ),
                     ),
-                  ),
-                ),
-              );
-            },
-          );
+        ),
+      ],
+    );
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
+import 'package:superapp_namira_flutter/shared/widgets/scroll_to_top_provider.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
@@ -40,7 +41,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         path: '/academic',
       ),
       _NavItem(
-        icon: Icons.fingerprint,
+        icon: Icons.fingerprint_outlined,
         activeIcon: Icons.fingerprint,
         label: 'Presensi',
         path: '/attendance',
@@ -77,7 +78,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _onTap(int index) {
-    if (index == _currentIndex) return;
+    if (index == _currentIndex) {
+      ref.read(scrollToTopProvider.notifier).state++;
+      return;
+    }
     setState(() => _currentIndex = index);
     context.go(_navItems[index].path);
   }

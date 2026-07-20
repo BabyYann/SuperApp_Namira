@@ -20,6 +20,28 @@ import 'package:superapp_namira_flutter/features/sarpar/screens/sarpar_screen.da
 import 'package:superapp_namira_flutter/features/student_portal/screens/student_portal_screen.dart';
 import 'package:superapp_namira_flutter/shared/widgets/main_shell.dart';
 
+CustomTransitionPage<void> _slideUpTransition(
+  BuildContext context,
+  GoRouterState state,
+  Widget child,
+) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final tween = Tween(begin: const Offset(0, 0.05), end: Offset.zero)
+          .chain(CurveTween(curve: Curves.easeOutCubic));
+      return SlideTransition(
+        position: animation.drive(tween),
+        child: FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
 
@@ -156,35 +178,55 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/lms/classrooms/:id',
         name: 'lms-classroom-detail',
-        builder: (context, state) => LmsClassroomDetailScreen(
-          classroomId: int.parse(state.pathParameters['id']!),
+        pageBuilder: (context, state) => _slideUpTransition(
+          context,
+          state,
+          LmsClassroomDetailScreen(
+            classroomId: int.parse(state.pathParameters['id']!),
+          ),
         ),
       ),
       GoRoute(
         path: '/pr/news/:id',
         name: 'pr-news-detail',
-        builder: (context, state) => PrNewsDetailScreen(
-          id: int.parse(state.pathParameters['id']!),
+        pageBuilder: (context, state) => _slideUpTransition(
+          context,
+          state,
+          PrNewsDetailScreen(
+            id: int.parse(state.pathParameters['id']!),
+          ),
         ),
       ),
       GoRoute(
         path: '/pr/events/:id',
         name: 'pr-event-detail',
-        builder: (context, state) => PrEventDetailScreen(
-          id: int.parse(state.pathParameters['id']!),
+        pageBuilder: (context, state) => _slideUpTransition(
+          context,
+          state,
+          PrEventDetailScreen(
+            id: int.parse(state.pathParameters['id']!),
+          ),
         ),
       ),
       GoRoute(
         path: '/pr/destinations/:id',
         name: 'pr-destination-detail',
-        builder: (context, state) => PrDestinationDetailScreen(
-          id: int.parse(state.pathParameters['id']!),
+        pageBuilder: (context, state) => _slideUpTransition(
+          context,
+          state,
+          PrDestinationDetailScreen(
+            id: int.parse(state.pathParameters['id']!),
+          ),
         ),
       ),
       GoRoute(
         path: '/student/pickup',
         name: 'student-pickup',
-        builder: (context, state) => const StudentPickupScreen(),
+        pageBuilder: (context, state) => _slideUpTransition(
+          context,
+          state,
+          const StudentPickupScreen(),
+        ),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
