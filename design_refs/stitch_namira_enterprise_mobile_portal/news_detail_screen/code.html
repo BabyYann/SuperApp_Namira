@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduNews - SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-container": "#9fc2fe",
+                      "primary-fixed-dim": "#67d9c9",
+                      "secondary-fixed": "#d5e3ff",
+                      "tertiary-fixed": "#ffdbcb",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#005048",
+                      "inverse-surface": "#2a2f47",
+                      "on-primary-container": "#f4fffb",
+                      "surface-container-low": "#f3f2ff",
+                      "outline-variant": "#bcc9c6",
+                      "on-tertiary-fixed": "#341100",
+                      "on-secondary-fixed-variant": "#1f477b",
+                      "on-primary-fixed": "#00201c",
+                      "on-tertiary": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "surface": "#fbf8ff",
+                      "surface-container-high": "#e4e7ff",
+                      "on-error-container": "#93000a",
+                      "on-surface": "#151a31",
+                      "on-error": "#ffffff",
+                      "inverse-on-surface": "#f0efff",
+                      "on-secondary-fixed": "#001b3c",
+                      "error": "#ba1a1a",
+                      "secondary-fixed-dim": "#a7c8ff",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-container": "#008377",
+                      "surface-container": "#ececff",
+                      "on-background": "#151a31",
+                      "surface-variant": "#dde1ff",
+                      "outline": "#6d7a77",
+                      "on-surface-variant": "#3d4947",
+                      "tertiary-fixed-dim": "#ffb691",
+                      "tertiary-container": "#c25300",
+                      "surface-dim": "#d4d8f7",
+                      "primary": "#00685e",
+                      "inverse-primary": "#67d9c9",
+                      "secondary": "#3a5f94",
+                      "on-tertiary-fixed-variant": "#793100",
+                      "surface-container-highest": "#dde1ff",
+                      "on-tertiary-container": "#fffbff",
+                      "background": "#fbf8ff",
+                      "surface-tint": "#006a60",
+                      "primary-fixed": "#85f6e5",
+                      "error-container": "#ffdad6",
+                      "tertiary": "#9b4100",
+                      "on-secondary-container": "#294f83",
+                      "surface-bright": "#fbf8ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "unit": "8px",
+                      "xl": "32px",
+                      "sm": "8px",
+                      "gutter": "16px",
+                      "container-margin": "16px",
+                      "xs": "4px",
+                      "md": "16px"
+              },
+              "fontFamily": {
+                      "label-md": ["Plus Jakarta Sans"],
+                      "display-lg-mobile": ["Plus Jakarta Sans"],
+                      "body-md": ["Plus Jakarta Sans"],
+                      "title-lg": ["Plus Jakarta Sans"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "title-md": ["Plus Jakarta Sans"],
+                      "headline-md": ["Plus Jakarta Sans"],
+                      "body-lg": ["Plus Jakarta Sans"],
+                      "label-lg": ["Plus Jakarta Sans"],
+                      "display-lg": ["Plus Jakarta Sans"]
+              },
+              "fontSize": {
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                      "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                      "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .drop-cap::first-letter {
+            float: left;
+            font-size: 5rem;
+            line-height: 4rem;
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-left: 3px;
+            font-weight: 800;
+            color: #00685e;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopAppBar (JSON Map) -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex justify-between items-center px-gutter h-16">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container transition-colors p-2 rounded-full active:scale-95 duration-150 ease-in-out">arrow_back</button>
+<span class="font-headline-md text-headline-md font-bold text-primary">EduNews</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container transition-colors p-2 rounded-full active:scale-95 duration-150 ease-in-out">share</button>
+<button class="material-symbols-outlined text-primary hover:bg-surface-container transition-colors p-2 rounded-full active:scale-95 duration-150 ease-in-out">more_vert</button>
+</div>
+</header>
+<main class="pt-16 pb-24 max-w-screen-md mx-auto">
+<!-- Header Section -->
+<section class="relative">
+<div class="aspect-[16/10] md:aspect-[21/9] w-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional wide-angle photograph of a modern university library interior, featuring sunlight streaming through massive architectural windows. The scene showcases a high-ceilinged space with students quietly studying at sleek wooden tables, with minimalist white walls and lush indoor plants. The lighting is warm and natural, creating a serene, scholarly atmosphere. The aesthetic is clean and high-stakes enterprise, with a primary palette of white, wood, and soft teal accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIHj2WjL19azoL4tthzNWiizuQdVHgWkv0URis9EGvtW9Hbj2EZfYjYWQmcrkfDl6TrcSb6UbC0i5V6S840Oj07VYAvQlmQAQ5LFrmXU0g_ODuJA4GQ-1chWyk6qtqmQXmZM8zp1hQzpyph9GSLsqXmab4bXiik8Oqi93bfa_vkTkuvxO5byKJwL-ga8yjE-y65Jblmb8J52gNstCNG5qcwpZCnDTq2iGWBvOAYSuJi-y87LwemoUF"/>
+</div>
+<div class="px-container-margin mt-8">
+<span class="inline-block px-3 py-1 rounded-full bg-primary-container text-on-primary-container font-label-lg text-label-lg mb-4">Academic</span>
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg mb-6 leading-tight text-on-surface">The Future of AI in Higher Education: A Comprehensive Study</h1>
+<div class="flex items-center justify-between border-y border-outline-variant py-4 mb-10">
+<div class="flex items-center gap-3">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="A professional headshot of a female academic researcher with a friendly yet authoritative expression. She is wearing a modern navy blazer and thin-framed glasses, posed against a soft-focus office background. The lighting is professional studio-quality, emphasizing a trustworthy and intellectual personality. The style is clean and polished, fitting for a high-end educational news platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCH39VLyd1MQbT7h4Ck-7Z5MJcjWwU0AmTBaZcYxALOZm3wNSeY4mu6pAZAHzuNXAyTTpLs3-RFRwat6o7q7QrozUM3VVd_3Hx9v3sTCvoGKicsNMEICknTsbJkAgqHxkxHOh9GMDyuGdZySLDLJDxBjByzxV-m-kaOcexRSRmOKldlExFmvWymGutKB16U0aZU8vqTkGkEGoFGdsuCiYGhN-xU70Kti2ZbDPmoZmZOfYTLlHFzgNTM"/>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Dr. Elena Thorne</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Senior Research Fellow • Oct 24, 2023</p>
+</div>
+</div>
+<div class="flex items-center text-on-surface-variant gap-1">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span class="font-label-md text-label-md">12 min read</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Article Content -->
+<article class="px-container-margin">
+<div class="prose prose-lg max-w-none">
+<p class="drop-cap font-body-lg text-body-lg text-on-surface leading-relaxed mb-8">
+                    In the rapidly evolving landscape of global education, the integration of artificial intelligence is no longer a peripheral conversation but a central mandate for institutional survival. As universities worldwide grapple with the implications of generative models, a new paradigm of pedagogical strategy is emerging—one that balances technological efficiency with the irreplaceable value of human mentorship.
+                </p>
+<p class="font-body-lg text-body-lg text-on-surface leading-relaxed mb-8">
+                    Recent data from the Global Academic Consortium suggests that over 70% of top-tier research institutions have already initiated formal AI ethics committees. These bodies are not merely looking at academic integrity but are reimagining the entire architecture of how knowledge is distributed and validated. The transition from "information gathering" to "synthesis-based learning" marks the most significant shift in educational theory since the digital revolution of the 1990s.
+                </p>
+<!-- Pull Quote -->
+<blockquote class="my-12 border-l-4 border-primary bg-surface-container-low p-8 rounded-r-xl">
+<p class="font-title-lg text-title-lg italic text-primary leading-snug">
+                        "The goal of AI in the classroom is not to replace the professor, but to liberate them from administrative burden, allowing for deeper, more focused human-to-human engagement."
+                    </p>
+<cite class="block mt-4 font-label-lg text-label-lg text-on-surface-variant">— Chancellor Marcus Vane</cite>
+</blockquote>
+<p class="font-body-lg text-body-lg text-on-surface leading-relaxed mb-8">
+                    Consider the case of the Neo-Cambridge Initiative. By implementing specialized large language models as personalized tutors, the university saw a 40% increase in student retention within STEM departments. These models do not provide answers; they facilitate inquiry, providing scaffolding for complex problem-solving that adjusts in real-time to the individual student's cognitive pace.
+                </p>
+<!-- Embedded Image -->
+<figure class="my-10">
+<img class="w-full rounded-xl object-cover shadow-sm" data-alt="A sleek, modern classroom setup where students are using augmented reality headsets and tablet devices to interact with a complex 3D holographic projection of a DNA molecule. The environment is clean, brightly lit with neutral tones, and filled with high-tech equipment. The lighting is crisp and modern, emphasizing the sophisticated and futuristic nature of the education technology being demonstrated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_OSbaplzpfH405ooQA_dJIxc1vl90mBBLqDsVdUhP_KiP5g0eUVQCqtitj95UZFjBWDDDBOAZwygtkzZTDb7d5bnZgUYNarDEvAwQhtL1eJKTRaair_8ibNPPgh4zR6J-UjwXt6qRmOaz3WMtjNSoAxznfQsLTRHtWhXCY4MgCkMeZXSWkQMOitGAL51NfFh_y34fj_mOLcttl9G1TrXDlG3_l6qY8DUrlMm57ykwUdjrlG66Uc0g"/>
+<figcaption class="mt-3 text-center font-body-md text-body-md text-on-surface-variant italic">Students at the Neo-Cambridge Lab using real-time synthesis tools.</figcaption>
+</figure>
+<!-- Gallery Section -->
+<div class="grid grid-cols-2 gap-4 my-10">
+<img class="aspect-square rounded-xl object-cover" data-alt="Close-up of a high-resolution tablet screen displaying a sophisticated educational dashboard with data visualizations and progress charts. The UI is clean, minimalist, and professional, using a primary palette of teal and navy. The image has a shallow depth of field, focusing on the interface design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFbZdO_q-bRyddr_25zRn0Dq4wHGNbLIs3fPvR1GIZTt9bbrR1jbiiGP_xcMfnIW1grWD2MPtkpuZpgbt6TokalydFRJqSkZ6JqwcIFZbbufRKwwL3sjsZpQMm4Jcl9aJEUMhscVJVog6PDNJlNjWnSsWxO7l_EUYLn-teCbnxsBsDALJ2sPqcpLOFk3ecq8-6UVz8QHFoUsSIRaS37SYNaclqBzmmJk-HJGitSrCj1N0kh3WzR89q"/>
+<img class="aspect-square rounded-xl object-cover" data-alt="A collaborative workspace in a modern university, featuring modular furniture and a glass wall covered in post-it notes and diagrams. Two students are discussing a project, pointing at a laptop screen. The atmosphere is vibrant, professional, and intellectually charged." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzCbGi6Q_6tJ8WWQqI0e8ZKkU9EWGk1Uf65hjt_DOC0X6zwe-Jf5z3Pmtb_jXrTuUNfWl3HtDTUOte1UQn9w7PLkzYXY9xlboXLkt3dsqxHF7D9AXRkxaAloV2rSLsJY3AYUrEYit_JEEPOwZjEWGnxQp8e01aDy4gsy6wbb1S-s5PXRXngiIGYMHdLQJ8ClJot9s5BbMYiqZwZHraGfdUndtX36Vkz7whnZcRw3SRibU8IK2iBnkF"/>
+<img class="aspect-square rounded-xl object-cover" data-alt="An abstract representation of neural networks and data flows, rendered in a sophisticated dark mode palette with glowing teal and white lines. The style is clean and architectural, representing the complexity of machine learning in a polished, non-cluttered way." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxdJTidaiw7wpjuqiAeUZR9NKOZJy-bMZdcxnv5Zujii9wEc9yJnM_uZQd2tNC4K_HdF3PwegJmUqmjBkFGEHTldEdAA0anDrogdqYQjMH6iDhAxbQTOP5A4V7SuZqXN_0PeDSl47AjLsr3TKUTbhuy3I6lUTmZiksLGToOz_vku8nyzTALGvJX9scEhl0jW3h_ywmc9Wi6c3gZSB1rxeDN3AiEX80GFYQmMj7gSqum3Lah7G1dhxl"/>
+<img class="aspect-square rounded-xl object-cover" data-alt="A wide shot of a futuristic university campus at dusk, with glowing geometric glass buildings and manicured green spaces. The lighting is soft and atmospheric, highlighting the premium, institutional reliability of the school." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3zEFvPJQyoBUDVgjfz5AStVe_XlsGGA9UkOoolHHrPhBl6PSso4RqbqRuh7VOd7QedsJwHSGLS9ZaDxDoy2PFltXOa6fSmArQmA1eRq4vhXAoTmUpo45Wgo8B1jAT_2cUu8hKX-EN_6phu0uVSqn8Zri0iGoxtADDN7LY4DP-pkgLJV_2IlJl9-TUNSmBg0Ymxcrs9PA-drr_WJECmwjcnZTklNk2S-TJCOtDJDxCnW1Hkbzk5Pgo"/>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface leading-relaxed mb-12">
+                    As we look toward the 2030 horizon, the challenge remains clear: how to build systems that are robust enough for institutional use yet flexible enough to respect the diverse needs of a global student body. The future of education is not just digital; it is personalized, adaptive, and fundamentally human-centric.
+                </p>
+</div>
+</article>
+<!-- Related News -->
+<section class="mt-16 pt-12 border-t border-outline-variant px-container-margin">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6">More Stories</h2>
+<div class="flex gap-6 overflow-x-auto hide-scrollbar pb-8">
+<!-- Related Card 1 -->
+<div class="flex-shrink-0 w-64 group cursor-pointer">
+<div class="aspect-[4/3] w-full rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A high-altitude drone shot of a solar-powered school in a rural community. The architecture is modern and efficient, blending with the natural landscape. The lighting is golden hour, creating a hopeful and inspiring mood. The visual style is crisp and editorial." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATFONeDR88ATb8vl--zp_C7yeb4Q_OyhqYnpIIwfdHOUQySiMVohLOgkFFP1YdF8MMpc4_QIsfOCgnPC8h305IdQtn6HFw6gACAf5Xp1MAJnvOsV0D70PDGK7oU8CAbPMw_Xpxjh7RnGmxOQyb-Xew5xtFPe-F7UaMeuhUMehb7bWpYj2V5pfDW9_uOZGwNhmCxT2HQ69gHHFCfcNyj-kdEOtB4BZRgx8U0CNM39Yso2TpFwQXShBy"/>
+</div>
+<span class="font-label-md text-label-md text-primary mb-1 block uppercase tracking-wider">Sustainability</span>
+<h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors line-clamp-2">Green Campus: The Rise of Net-Zero Universities</h3>
+</div>
+<!-- Related Card 2 -->
+<div class="flex-shrink-0 w-64 group cursor-pointer">
+<div class="aspect-[4/3] w-full rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A close-up of two people of different backgrounds shaking hands in a professional setting. They are wearing formal attire. The background is a blurred office lobby with architectural glass. The lighting is neutral and clear, conveying trust and partnership." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhNxJkN24REGP7bb6XF8HBALnvk98A3aK_2f5QXKpd-jX54qnohj2QUCdz0GsP4x14pokKOf6ET9knVtbfwuoAQItTplQ0Yvipaxl6B4oqJjbPLF2QSmEW_XOokaS7TlQ-wgtsfjGuWVgs8RJxtvtgpUlDlmoHQx5ZFn2C5k9-QIoIW9hFREbR9QDNO3RF47w_cnEjYqCQp_mxb8-h6zWSYblQrGVQmU79RQ71ufqYYhnXbvUMAWcb"/>
+</div>
+<span class="font-label-md text-label-md text-primary mb-1 block uppercase tracking-wider">Economics</span>
+<h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors line-clamp-2">Funding the Future: Global Education Grants 2024</h3>
+</div>
+<!-- Related Card 3 -->
+<div class="flex-shrink-0 w-64 group cursor-pointer">
+<div class="aspect-[4/3] w-full rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A person's hands typing on a high-end mechanical keyboard with a glowing backlight. In the background, a large monitor shows lines of elegant code. The setting is a dark, focused workspace with a professional, productive vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdE237aCNQavHWjpIiLNQWwu-AbYyf72wybjjKK_J-kyFRnX2psaTGuenPxWg03AyLoxAPlNOj5j0Ze0CpruIhPLEIGSbTZ2PRoWThX5myVspHLk9LXnr42y6fQlXuidigBjVbX7AfQthI256q7QJ2x7Lmz-_v0eSDfgF8MKiHFub8WFn6DZWajk6GyH2gygZq76YphVGTAR2Sfer2lhUtUSHjKwe1u2hLMjxhyxF4XSPCYSyI5149"/>
+</div>
+<span class="font-label-md text-label-md text-primary mb-1 block uppercase tracking-wider">Tech</span>
+<h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors line-clamp-2">The Coding Mandate: Why Literacy is Being Redefined</h3>
+</div>
+</div>
+</section>
+</main>
+<!-- Sticky Bottom Actions -->
+<div class="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-screen-md px-container-margin z-40 pointer-events-none">
+<div class="pointer-events-auto bg-surface/90 backdrop-blur-md border border-outline-variant shadow-lg rounded-full h-14 flex items-center justify-around px-8 mb-4">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-label-lg text-label-lg">2.4k</span>
+</button>
+<div class="w-px h-6 bg-outline-variant"></div>
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-label-lg text-label-lg">Save</span>
+</button>
+<div class="w-px h-6 bg-outline-variant"></div>
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined">forum</span>
+<span class="font-label-lg text-label-lg">124</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar (JSON Map) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-surface border-t border-outline-variant">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:text-primary transition-colors active:scale-90 duration-200">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 active:scale-90 duration-200">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-md text-label-md">Library</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:text-primary transition-colors active:scale-90 duration-200">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-md text-label-md">Learn</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:text-primary transition-colors active:scale-90 duration-200">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</div>
+</nav>
+<script>
+        // Simple micro-interaction for reading progress
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            
+            // Note: We could add a thin progress bar at the top of the app bar
+            // but for simplicity, let's keep it clean as requested.
+        });
+
+        // Hover effect for images
+        const articleImages = document.querySelectorAll('article img');
+        articleImages.forEach(img => {
+            img.addEventListener('mouseenter', () => {
+                img.classList.add('brightness-95', 'transition-all', 'duration-300');
+            });
+            img.addEventListener('mouseleave', () => {
+                img.classList.remove('brightness-95');
+            });
+        });
+    </script>
+</body></html>

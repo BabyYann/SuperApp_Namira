@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Counseling Session Detail - SuperApp Namira</title>
+<!-- Fonts and Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d4d8f7",
+                    "primary": "#00685e",
+                    "primary-fixed-dim": "#67d9c9",
+                    "surface-tint": "#006a60",
+                    "outline": "#6d7a77",
+                    "secondary-fixed-dim": "#a7c8ff",
+                    "on-secondary-container": "#294f83",
+                    "surface-container-low": "#f3f2ff",
+                    "surface-container-highest": "#dde1ff",
+                    "surface": "#fbf8ff",
+                    "inverse-on-surface": "#f0efff",
+                    "on-secondary-fixed-variant": "#1f477b",
+                    "tertiary-container": "#c25300",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#3d4947",
+                    "secondary-fixed": "#d5e3ff",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#e4e7ff",
+                    "surface-variant": "#dde1ff",
+                    "on-tertiary-fixed-variant": "#793100",
+                    "primary-fixed": "#85f6e5",
+                    "surface-bright": "#fbf8ff",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#341100",
+                    "on-secondary-fixed": "#001b3c",
+                    "on-surface": "#151a31",
+                    "on-primary-container": "#f4fffb",
+                    "on-background": "#151a31",
+                    "background": "#fbf8ff",
+                    "surface-container": "#ececff",
+                    "outline-variant": "#bcc9c6",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed": "#ffdbcb",
+                    "tertiary": "#9b4100",
+                    "inverse-primary": "#67d9c9",
+                    "on-tertiary": "#ffffff",
+                    "primary-container": "#008377",
+                    "on-primary-fixed-variant": "#005048",
+                    "secondary-container": "#9fc2fe",
+                    "on-tertiary-container": "#fffbff",
+                    "inverse-surface": "#2a2f47",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "secondary": "#3a5f94",
+                    "on-primary-fixed": "#00201c",
+                    "tertiary-fixed-dim": "#ffb691"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "lg": "24px",
+                    "container-margin": "16px",
+                    "unit": "8px",
+                    "xl": "32px",
+                    "gutter": "16px",
+                    "xs": "4px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "title-md": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "title-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scrolling-touch {
+            -webkit-overflow-scrolling: touch;
+        }
+        body {
+            background-color: #F5F7FA;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top App Bar -->
+<header class="bg-surface sticky top-0 z-50 w-full border-b border-outline-variant shadow-sm flex items-center justify-between px-md h-16">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg font-bold text-primary">SuperApp Namira</h1>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a male school counselor in a modern office setting. He is wearing a neat navy blue blazer over a light shirt, smiling warmly at the camera. The background is softly blurred, showing book-filled shelves and a bright window, suggesting a trustworthy and academic environment. High-quality corporate photography style with clean lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwxlTzyWfMgyklEA3Ggvu_rigxZKAwCDcCU1yUtzrpvYFUXLAQHdtNwlbGgtb8r0C2-_y6nUlOmeKaKQT0z1iKH7V6Q05VJS6F4l3Ujb6TN11FdMbyBACjJXnt_09iloXccUCfZtgi8aemiGo2dG5yN87oFoJG8I2Tw9zJiUwRgUMQ1ZCgDluq1GfEIaeA41H9JHUfOiUj9FH8PEJ41sSMhCmTUMqotwvJflB8lUqfnjTAAr6KskWN"/>
+</div>
+</header>
+<main class="max-w-4xl mx-auto p-md pb-32 space-y-lg">
+<!-- Student Profile Section -->
+<section class="bg-surface rounded-xl p-lg border border-outline-variant shadow-sm flex flex-col md:flex-row items-center md:items-start gap-lg">
+<div class="relative">
+<div class="w-32 h-32 rounded-xl overflow-hidden shadow-md border-4 border-surface">
+<img class="w-full h-full object-cover" data-alt="A portrait of a teenage boy named Ahmad Zakaria, wearing a neat school uniform with a light blue shirt. He has a friendly and intelligent expression, looking slightly away from the camera. The setting is a bright, modern school hallway with soft architectural lines. The image is captured with professional depth of field, highlighting the student while maintaining a clean, institutional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVGbR5x6zVm-DAvCX3gt3b42Ae62TdBlQV9BgfzhyLS23thRD_WCz9E4phB3C4g1T81jE6CYnJPgi2xHFqeREEPLbC6U8Sze9uaXZPpbdarFWUZ0ttaxiAqo15lHiTOptf6oUNkQMQwbYcv6Bob2k-jVNQ5-aXodwVQkbqRp-4DooxUPkALImKA7PzmPVXaADkokzzQKpi-UXUjUkaADrBbirpaUKald8Y-GznkYCn2M1bhdXRmZpD"/>
+</div>
+<div class="absolute -bottom-2 -right-2 bg-primary text-on-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
+                    Student
+                </div>
+</div>
+<div class="flex-1 text-center md:text-left">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-md mb-md">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Ahmad Zakaria</h2>
+<p class="text-on-surface-variant font-body-lg">Grade 10-A • Student ID: 20230491</p>
+</div>
+<div class="flex flex-col items-center md:items-end">
+<span class="inline-flex items-center gap-2 bg-secondary-container text-on-secondary-container px-4 py-1.5 rounded-full text-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                            In Progress
+                        </span>
+</div>
+</div>
+<div class="flex flex-wrap items-center justify-center md:justify-start gap-lg text-sm border-t border-outline-variant pt-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">person_2</span>
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant uppercase tracking-tighter">Assigned Counselor</span>
+<span class="font-semibold text-on-surface">Mr. Rahman</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">meeting_room</span>
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant uppercase tracking-tighter">Department</span>
+<span class="font-semibold text-on-surface">Student Affairs</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Session Information Card -->
+<div class="lg:col-span-1">
+<div class="bg-surface rounded-xl p-lg border border-outline-variant shadow-sm h-full">
+<h3 class="font-title-md text-title-md text-primary mb-md flex items-center gap-2">
+<span class="material-symbols-outlined">info</span> Session Information
+                    </h3>
+<div class="space-y-lg">
+<div class="flex items-start gap-4">
+<div class="p-2 bg-primary-container/10 rounded-lg text-primary">
+<span class="material-symbols-outlined">school</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-semibold">Category</p>
+<p class="font-body-lg text-on-surface">Academic Counseling</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="p-2 bg-primary-container/10 rounded-lg text-primary">
+<span class="material-symbols-outlined">calendar_today</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-semibold">Date</p>
+<p class="font-body-lg text-on-surface">Oct 24, 2023</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="p-2 bg-primary-container/10 rounded-lg text-primary">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-semibold">Duration</p>
+<p class="font-body-lg text-on-surface">45 Minutes</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="p-2 bg-primary-container/10 rounded-lg text-primary">
+<span class="material-symbols-outlined">location_on</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-semibold">Location</p>
+<p class="font-body-lg text-on-surface">Room 302 - Counseling Office</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Notes & Attachments -->
+<div class="lg:col-span-2 space-y-lg">
+<!-- Discussion Card -->
+<div class="bg-surface rounded-xl p-lg border border-outline-variant shadow-sm">
+<div class="flex items-center justify-between mb-md">
+<h3 class="font-title-md text-title-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined">forum</span> Discussion
+                        </h3>
+<span class="text-xs text-on-surface-variant">Last updated: 10:45 AM</span>
+</div>
+<p class="text-on-surface-variant leading-relaxed">
+                        Ahmad expressed concern regarding his recent performance in Mathematics and Physics. He feels overwhelmed by the increasing complexity of the curriculum in Grade 10. We discussed his current study habits and identified that he often procrastinates until the night before major assessments. Ahmad is motivated to improve but needs structured guidance on time management and effective note-taking strategies.
+                    </p>
+</div>
+<!-- Recommendations & Follow-up (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="bg-primary-container/5 rounded-xl p-lg border border-primary/10 shadow-sm border-l-4 border-l-primary">
+<h3 class="font-title-md text-title-md text-primary mb-md flex items-center gap-2">
+<span class="material-symbols-outlined">task_alt</span> Recommendation
+                        </h3>
+<ul class="space-y-sm text-sm text-on-surface-variant">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-xs mt-1">fiber_manual_record</span>
+                                Start using a digital planner for all assignments.
+                            </li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-xs mt-1">fiber_manual_record</span>
+                                Join the after-school Math tutoring sessions.
+                            </li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-xs mt-1">fiber_manual_record</span>
+                                Break down study blocks into 25-minute Pomodoro sessions.
+                            </li>
+</ul>
+</div>
+<div class="bg-secondary-container/5 rounded-xl p-lg border border-secondary/10 shadow-sm border-l-4 border-l-secondary">
+<h3 class="font-title-md text-title-md text-secondary mb-md flex items-center gap-2">
+<span class="material-symbols-outlined">event_repeat</span> Follow-up
+                        </h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                            Scheduled next meeting for Oct 31, 2023, to review progress on the Math assignments and check if the new study routine is being implemented effectively.
+                        </p>
+</div>
+</div>
+<!-- Attachments Section -->
+<div class="bg-surface rounded-xl p-lg border border-outline-variant shadow-sm">
+<h3 class="font-title-md text-title-md text-primary mb-md flex items-center gap-2">
+<span class="material-symbols-outlined">attach_file</span> Attachments
+                    </h3>
+<div class="flex gap-md overflow-x-auto pb-sm scrolling-touch">
+<!-- PDF Attachment -->
+<div class="flex-shrink-0 w-36 bg-surface-container-low p-md rounded-xl border border-outline-variant hover:border-primary transition-colors cursor-pointer group">
+<div class="flex flex-col items-center text-center gap-2">
+<span class="material-symbols-outlined text-red-500 text-3xl group-hover:scale-110 transition-transform">picture_as_pdf</span>
+<span class="text-xs font-semibold text-on-surface truncate w-full">Behavior_Report.pdf</span>
+<span class="text-[10px] text-on-surface-variant">1.2 MB</span>
+</div>
+</div>
+<!-- Image Attachment -->
+<div class="flex-shrink-0 w-36 h-28 rounded-xl overflow-hidden relative group cursor-pointer border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A clean, flat-lay photograph of a student's handwritten math notebook. The page shows neatly organized equations and diagrams with some corrections in red ink. The lighting is bright and even, highlighting the paper texture and the blue ink of the handwriting. The overall mood is academic and diligent." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfF8o6rVTjMnUVQjwKPs3Ugg7nX5-eDbYhyzWCsfXaBVZJ2EP8FsOX8E6hHNNzlLThjZtT8Ne7e3Sub0N7SzF4XKN40udT0d1e8ycUi_YQey_yU9w9VztZU07Rbsydc3Gp09DhW8Vn2ksUWmt-LZPmLeUYwxYDDcF6sXZsYemySiV_v1lmRORJbxEquIwLphX-CN7nYgab-yVZ7arpWnUbiiuBaLCRaVW-9s9GGPKN0MxapBpeVOe6"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white">zoom_in</span>
+</div>
+</div>
+<!-- DOC Attachment -->
+<div class="flex-shrink-0 w-36 bg-surface-container-low p-md rounded-xl border border-outline-variant hover:border-primary transition-colors cursor-pointer group">
+<div class="flex flex-col items-center text-center gap-2">
+<span class="material-symbols-outlined text-blue-500 text-3xl group-hover:scale-110 transition-transform">description</span>
+<span class="text-xs font-semibold text-on-surface truncate w-full">Study_Plan.docx</span>
+<span class="text-[10px] text-on-surface-variant">450 KB</span>
+</div>
+</div>
+<!-- Add Button -->
+<button class="flex-shrink-0 w-36 border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">add</span>
+<span class="text-xs mt-1">Add File</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Bar -->
+<footer class="fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant z-50">
+<div class="max-w-4xl mx-auto px-md h-20 flex items-center justify-between gap-md">
+<button class="flex-1 max-w-[200px] h-12 flex items-center justify-center gap-2 rounded-xl border border-secondary text-secondary font-semibold hover:bg-secondary-container/10 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">edit</span>
+                Edit Session
+            </button>
+<button class="flex-[2] h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-on-primary font-bold shadow-md hover:bg-primary/90 active:scale-95 transition-all" id="completeBtn">
+<span class="material-symbols-outlined">check_circle</span>
+                Complete Session
+            </button>
+</div>
+</footer>
+<!-- Simple Interaction Script -->
+<script>
+        document.getElementById('completeBtn').addEventListener('click', function() {
+            this.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Saving...';
+            this.classList.add('opacity-80', 'pointer-events-none');
+            
+            setTimeout(() => {
+                this.innerHTML = '<span class="material-symbols-outlined">done_all</span> Completed';
+                this.classList.replace('bg-primary', 'bg-green-600');
+                
+                // Show a brief success toast-like effect
+                const statusBadge = document.querySelector('.bg-secondary-container');
+                if (statusBadge) {
+                    statusBadge.innerHTML = '<span class="material-symbols-outlined text-xs">verified</span> Completed';
+                    statusBadge.className = 'inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-500';
+                }
+            }, 1500);
+        });
+
+        // Horizontal scroll with mouse wheel for attachments
+        const scrollContainer = document.querySelector('.overflow-x-auto');
+        if (scrollContainer) {
+            scrollContainer.addEventListener('wheel', (evt) => {
+                evt.preventDefault();
+                scrollContainer.scrollLeft += evt.deltaY;
+            });
+        }
+    </script>
+</body></html>

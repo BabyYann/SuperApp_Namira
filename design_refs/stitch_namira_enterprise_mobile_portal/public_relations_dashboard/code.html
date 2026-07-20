@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduConnect PR - Public Relations Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#006a60",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "surface": "#fbf8ff",
+                    "tertiary": "#9b4100",
+                    "on-tertiary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdbcb",
+                    "primary": "#00685e",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#d5e3ff",
+                    "on-secondary-container": "#294f83",
+                    "surface-container-highest": "#dde1ff",
+                    "on-tertiary-container": "#fffbff",
+                    "tertiary-container": "#c25300",
+                    "on-error": "#ffffff",
+                    "on-surface-variant": "#3d4947",
+                    "background": "#fbf8ff",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#bcc9c6",
+                    "on-primary-fixed": "#00201c",
+                    "on-background": "#151a31",
+                    "outline": "#6d7a77",
+                    "on-tertiary-fixed": "#341100",
+                    "secondary-container": "#9fc2fe",
+                    "on-secondary-fixed-variant": "#1f477b",
+                    "inverse-primary": "#67d9c9",
+                    "secondary-fixed-dim": "#a7c8ff",
+                    "surface-variant": "#dde1ff",
+                    "on-primary-container": "#f4fffb",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed": "#85f6e5",
+                    "on-primary-fixed-variant": "#005048",
+                    "on-secondary-fixed": "#001b3c",
+                    "primary-container": "#008377",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#f3f2ff",
+                    "surface-container": "#ececff",
+                    "primary-fixed-dim": "#67d9c9",
+                    "surface-dim": "#d4d8f7",
+                    "surface-bright": "#fbf8ff",
+                    "on-surface": "#151a31",
+                    "on-tertiary-fixed-variant": "#793100",
+                    "inverse-surface": "#2a2f47",
+                    "surface-container-high": "#e4e7ff",
+                    "secondary": "#3a5f94",
+                    "inverse-on-surface": "#f0efff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "container-margin": "16px",
+                    "md": "16px",
+                    "gutter": "16px",
+                    "unit": "8px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "title-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "title-md": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F5F7FA;
+            scroll-behavior: smooth;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .magazine-shadow {
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-container-margin h-16 bg-surface dark:bg-surface-container-high shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary overflow-hidden border-2 border-primary-fixed">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly school administrator in a modern office, bright natural lighting, soft focus background of a library, clean corporate photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmEeSPKC0tvi0ZHVASQvbVanHnICmqCt9Q7liab9ymEv1aZ4rusLkQoDjWGVbWFyvteEyl8eLm_DdnKaCp2y4q78CBe7IGSHM9zVM9ql2RM2eojOoeBBZnvZdY1zn0yfnRKGDUEyr8tFRs7Sg_A4lMdv8D8JuTt54MB-bNr0Bp1XqNYDN7f9ubUcFAujJYarzZzBVPFCWPeXMkXS_16w0BtGMBomwOpxgB-skh_UosHbhSMk4NtZal"/>
+</div>
+<h1 class="font-display-lg-mobile text-display-lg-mobile font-bold text-primary dark:text-primary-fixed tracking-tight">Public Relations</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-200 relative">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-surface"></span>
+</button>
+</div>
+</header>
+<main class="pt-20 pb-24 px-4 max-w-screen-md mx-auto">
+<!-- Section 1: Featured News -->
+<section class="mb-8">
+<div class="bg-white rounded-xl overflow-hidden magazine-shadow group cursor-pointer transition-transform duration-300 active:scale-[0.98]">
+<div class="relative h-64 w-full">
+<div class="w-full h-full bg-cover bg-center" data-alt="Wide-angle architectural shot of a stunning modern school campus with glass facades, green sustainable gardens, and students walking between buildings. Bright sunlight, blue sky, cinematic architectural photography, vibrant yet professional teal accents." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB-rVnljg6sqyU5Ex6f7kWuls59UJQjxIxH0KfMgz5yXGQO6_Gw48TPWSIZRy5e6aveBIHyGnLiWI6A9tzkBX_Y-Ie_bnp4i0w6UzW_Hbar6AjyOtD7CnR_c23mI_G3JhUahqylVcnSgW_bl1GRxalrLeXJaPY-O6ZEqBW1OGCSEMJpvBupKnyN7YnP8mV4Cy2vNsIoRKtXklw4_JH-q10L7mVP4ghkpuBbfF88hZtOKV9KMnnUcJCR')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-4 left-4">
+<span class="bg-primary px-3 py-1 rounded-full text-white font-label-md text-label-md uppercase tracking-wider">Featured</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex items-center gap-2 text-on-surface-variant mb-2">
+<span class="font-label-md text-label-md">Oct 30, 2024</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="font-label-md text-label-md">5 min read</span>
+</div>
+<h2 class="font-headline-md text-headline-md mb-3 text-on-background leading-tight">Namira Academy Wins National Excellence Award 2024</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Celebrating our commitment to academic innovation and student leadership on a global stage with a focus on sustainable education.</p>
+<button class="w-full sm:w-auto bg-primary hover:bg-primary-container text-white font-label-lg text-label-lg px-8 py-3 rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                        Read Full Story
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Section 2: News Categories -->
+<section class="mb-8 overflow-hidden">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-title-lg text-title-lg text-on-surface">Browse by Topic</h3>
+<button class="text-primary font-label-lg text-label-lg">View All</button>
+</div>
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4">
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-primary text-white font-label-lg text-label-lg shadow-md transition-all active:scale-90">School News</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-all active:scale-90">Academic</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-all active:scale-90">Achievement</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-all active:scale-90">Announcement</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-all active:scale-90">Events</button>
+<button class="whitespace-nowrap px-6 py-2 rounded-full bg-white border border-outline-variant text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-all active:scale-90">Partnership</button>
+</div>
+</section>
+<!-- Section 3: Latest News -->
+<section class="mb-8">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-title-lg text-title-lg text-on-surface">Latest Updates</h3>
+</div>
+<div class="grid gap-4">
+<!-- Card 1 -->
+<div class="bg-white rounded-xl p-4 flex gap-4 magazine-shadow border border-outline-variant/30 active:scale-[0.98] transition-transform">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="High-tech classroom setting with students using robotic kits and 3D printers, bright teal and navy blue color scheme, crisp focus on technology, modern education laboratory aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0prT8R6WcaEEppsTXECdGoRLOCLlevTTY0ooYFJ_K8pTkYQ2lr9Ibd6VAVflaXg4X6XpUMnXwSOMPsgfP8wGIipAV6v1UDrlosAm7DpjMa3d4ffHxexlu1ErF-MPTFDFKXr_2POof7HUp8tc_n8ZptQSPxaaarh9oOi1wRlvMAE9fCwg-5WUBh9N70C1ci52VQbUKyok_-jeLg7rrju3xzJ_IsTJzxfzlIa8qymqKiMtUevjRAA4F"/>
+</div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Academic</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="text-[10px] font-semibold text-on-surface-variant">Oct 28</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface leading-tight line-clamp-2">New STEM Lab Opening Next Week</h4>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">By Dr. Arisandi • 3 min read</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white rounded-xl p-4 flex gap-4 magazine-shadow border border-outline-variant/30 active:scale-[0.98] transition-transform">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A diverse group of parents and teachers engaged in a friendly conversation within a bright, minimalist school meeting room. Soft lighting, professional atmosphere, educational setting, clean and warm colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHuwL2TAHpKiBChKEVuRgKxzBF4Q9xbQkBkSBd8uUkkK0WpW_INawcKvirI_biKXkjocCESA7qWxzA9QCaJFskHbx3X4Bvfm4C5lGyaVCH2ZZIEMAsfR-5f_1ucVjnFHGeeTlad6OuyGNrH7dxSWH-K4w4sceJIcPWG3j5mCZYDNCX_iizbUbpuc-RJgOGXOzh3sjQfCSXpVl4J3avlrMKdtdzQfGpRIus_1UbuphYVcGAbCrWDH7z"/>
+</div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Announcement</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="text-[10px] font-semibold text-on-surface-variant">Oct 27</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface leading-tight line-clamp-2">Parent-Teacher Conference Schedule</h4>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">Humas Center • 2 min read</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Upcoming Events -->
+<section class="mb-8">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-4">Calendar & Events</h3>
+<div class="space-y-4">
+<div class="relative pl-8 before:absolute before:left-3 before:top-4 before:bottom-0 before:w-0.5 before:bg-outline-variant">
+<!-- Event 1 -->
+<div class="mb-6 relative">
+<div class="absolute -left-[26px] top-1 w-4 h-4 rounded-full bg-primary border-4 border-surface shadow-sm"></div>
+<div class="bg-white p-4 rounded-xl magazine-shadow border-l-4 border-primary">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-title-md text-title-md text-on-surface">Annual Sports Meet</h4>
+<span class="bg-primary-container text-on-primary-container px-2 py-0.5 rounded text-[10px] font-bold">UPCOMING</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span class="font-label-md text-label-md">Nov 5, 2024</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span class="font-label-md text-label-md">Main Stadium</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Event 2 -->
+<div class="relative">
+<div class="absolute -left-[26px] top-1 w-4 h-4 rounded-full bg-secondary border-4 border-surface shadow-sm"></div>
+<div class="bg-white p-4 rounded-xl magazine-shadow border-l-4 border-secondary">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-title-md text-title-md text-on-surface">Digital Literacy Seminar</h4>
+<span class="bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded text-[10px] font-bold">WORKSHOP</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span class="font-label-md text-label-md">Nov 12, 2024</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span class="font-label-md text-label-md">Auditorium</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 5: Partner Schools -->
+<section class="mb-8">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-4">Our Ecosystem</h3>
+<div class="flex gap-4 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-2">
+<div class="flex-shrink-0 w-48 bg-white p-6 rounded-xl magazine-shadow flex flex-col items-center justify-center border border-outline-variant/30 text-center">
+<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-primary">public</span>
+</div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Global International School</span>
+</div>
+<div class="flex-shrink-0 w-48 bg-white p-6 rounded-xl magazine-shadow flex flex-col items-center justify-center border border-outline-variant/30 text-center">
+<div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-secondary">church</span>
+</div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">St. Marys Academy</span>
+</div>
+<div class="flex-shrink-0 w-48 bg-white p-6 rounded-xl magazine-shadow flex flex-col items-center justify-center border border-outline-variant/30 text-center">
+<div class="w-12 h-12 bg-tertiary/10 rounded-full flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-tertiary">memory</span>
+</div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Tech High Institute</span>
+</div>
+</div>
+</section>
+<!-- Section 6: School Gallery Preview -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-title-lg text-title-lg text-on-surface">Gallery</h3>
+<button class="text-primary font-label-lg text-label-lg">View Moments</button>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<div class="aspect-square rounded-lg overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A group of smiling middle-school students wearing teal uniforms working together on a group project in a sunny hallway. Candid photography, natural lighting, high-quality professional shot." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBe_dOohy1-3IQDBhEWGFIRX7fzICV6jwNrNJ0hstRt3XPVoJSmje-06M9PxYi5hfLl-ATEX79hAqHW_ArGeXjT6aWOokFGWl7wFZ1PhTlLSB55RLzQQlp5tf0wA7mMzHqzcIVhkHsiFT96oXDwhLqREC5suz0npKf9q-DNEb-0lwI6hIP26AncMzzDuTVZBzqHCdvPGGQ5aHFeeeeikMiZx2WC9sbINmd0Jo3lUnnYD3eLq5QpMRpg"/>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Close up of a student athlete crossing the finish line in a track event, motion blur in the background, vibrant colors, expressive joy, bright outdoor lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtrjQQYXziIGUknKrq37wLlUv7PMkW3zx8RLV43-9a0b7mHzQ9HTvRWDHzGot9-pM1v0gM7kjxIVevjyKhF91dxBVJa9lPqvcsfJX2OMJGsrGoDDXux98Aznb8mQ6vH_qNcJU1njp2beuxEGp0ahZX4HsBLWAIL2zAeMq6xHB6DSiaoemY0EiwGCO84Y5PajRygnAzNW8VX9lGkOyV4Y5wmquQ-lmaBqII5w-p_WYzwtU2TFLZ-N9Z"/>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A teacher playing a musical instrument for a group of young children in a brightly colored art room. Soft focus, warm atmosphere, professional photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXsy19BmR1yyZsPgLaAPaX1LZKEKrE_1hnVveZCUPEor_eHRd-K3G50pUuVb1XHrhxRtXoYHB-IMxQzm1ja5A5PttyWiZAHAyh7R0_qCpnes9mf5zKkRWKmqlnOKHG_YLLdalJ0q3X1EbYukjYrXcchNx8X6Pt0nFQR7ibvB_MpqHPVTQRNI-YK_uUB2ShJmLhU3PpgkbZyQJiC--VEc7SEKubPQ7DsC6SqD129m27ksWrI1iZxjWs"/>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A clean, modern school cafeteria with healthy food options and students dining in a social atmosphere. Bright high-key lighting, minimalist architecture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCukEuprfnS4frfpXyvH1cXe2A_OQmAs10nnzhSvUVXh3tM-a0LFPPwXYas8yUqo8dSBiGHYc1eiCyoIE9Cu_DsOala-h7yy1sxI1dkC18DjEXF75bgbyCFGFuVDU5cIgiPRUykYyMR9SBsQJMjiOlxwSnSDMMz_kTB1RcXgcUXjNvIetumryUTCk2OqFUb_qjRLy5rH-XUc_MUfzG5k5coN7u01yMAxZmRGnc4mkbAkHK_2KdF4V8e"/>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Award ceremony stage with a large banner of Namira Academy, a student receiving a trophy, bright spotlights, professional event photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDd4cZtOZ-H4FVp3YQluxydTj-9N_5Yx_bhiJfEXHuLsTJd2qdXxrKrzh9HCdQEzsNgUJFbXLOt7qG2aAebIxrmhoIzxrLJ8_HLCJDdqurmO1N5HIQJa7hcjQ6gM2--DFeqPHps2cxTvTWWQwPagrH73hLSmIetSSAPt3z4DNCffKU3H9fTR8ebFpashAhEemkBf-DY0n7ZCx7xOxPewRHWOq0hX95aiSH71aSDFMUHGzyVT5GE0hap"/>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden shadow-sm bg-primary/20 flex items-center justify-center relative">
+<div class="absolute inset-0 bg-cover opacity-30" data-alt="A wide shot of students tossing their caps at a graduation ceremony under a clear blue sky. Cinematic, emotional, bright corporate colors." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCS0wQ1fqGK7cBhDFIDnQiLp6VgpxIabz1_1_erniv0w2tvdrsnI4oONu_L8-_3FK7En_FQTUWqJAKrVN_jp3ZM9CXnsCGf3ZAmOIIszopFCs8lUMrft9_v0n26pYLJ8tQAgYQuvyLgS-v2PEA6Qhy4ZK8okTW5P4t_58zB_po1VNV3DQy6Na8mhZQcrfvgAHMbXj0m4HHm75s2a-M-Mb5UDUV4EmasjZnAKR_aOikQZ6kMg6kiTt0V')"></div>
+<span class="relative font-bold text-primary font-label-lg text-label-lg">+24</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-xs pb-2 pt-2 bg-surface dark:bg-surface-container-lowest border-t border-outline-variant dark:border-outline shadow-lg rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+<span class="font-label-md text-label-md">Academic</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-full px-4 py-1 active:scale-90 duration-150 transition-all">
+<span class="material-symbols-outlined" data-icon="person" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</button>
+</nav>
+<script>
+        // Simple logic for category selection
+        const categoryButtons = document.querySelectorAll('section:nth-of-type(2) button');
+        categoryButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                categoryButtons.forEach(b => {
+                    b.classList.remove('bg-primary', 'text-white', 'shadow-md');
+                    b.classList.add('bg-white', 'text-on-surface-variant', 'border-outline-variant');
+                });
+                btn.classList.add('bg-primary', 'text-white', 'shadow-md');
+                btn.classList.remove('bg-white', 'text-on-surface-variant', 'border-outline-variant');
+            });
+        });
+
+        // Pull to refresh simulation / atmospheric interaction
+        let touchstartY = 0;
+        let touchendY = 0;
+        
+        document.addEventListener('touchstart', e => {
+            touchstartY = e.changedTouches[0].screenY;
+        }, false);
+
+        document.addEventListener('touchend', e => {
+            touchendY = e.changedTouches[0].screenY;
+            handleGesture();
+        }, false);
+
+        function handleGesture() {
+            if (touchendY > touchstartY + 100 && window.scrollY === 0) {
+                // Mimic a refresh
+                const header = document.querySelector('header');
+                header.classList.add('translate-y-2');
+                setTimeout(() => header.classList.remove('translate-y-2'), 300);
+            }
+        }
+    </script>
+</body></html>

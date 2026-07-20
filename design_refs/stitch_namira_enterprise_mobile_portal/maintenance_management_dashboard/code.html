@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EduMaintain Pro - Maintenance Management</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#dde1ff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "surface-dim": "#d4d8f7",
+                        "on-background": "#151a31",
+                        "surface-container": "#ececff",
+                        "surface": "#fbf8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#9fc2fe",
+                        "background": "#fbf8ff",
+                        "primary-fixed": "#85f6e5",
+                        "secondary": "#3a5f94",
+                        "primary-container": "#008377",
+                        "inverse-primary": "#67d9c9",
+                        "outline": "#6d7a77",
+                        "on-primary-container": "#f4fffb",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "tertiary-fixed": "#ffdbcb",
+                        "on-tertiary-fixed": "#341100",
+                        "outline-variant": "#bcc9c6",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#9b4100",
+                        "secondary-fixed": "#d5e3ff",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f3f2ff",
+                        "surface-container-highest": "#dde1ff",
+                        "on-secondary-container": "#294f83",
+                        "surface-tint": "#006a60",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-container": "#c25300",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "on-primary-fixed-variant": "#005048",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "on-surface": "#151a31",
+                        "surface-bright": "#fbf8ff",
+                        "on-surface-variant": "#3d4947",
+                        "primary-fixed-dim": "#67d9c9",
+                        "inverse-on-surface": "#f0efff",
+                        "primary": "#00685e",
+                        "inverse-surface": "#2a2f47",
+                        "on-secondary-fixed": "#001b3c",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#e4e7ff",
+                        "on-primary-fixed": "#00201c",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "container-margin": "16px",
+                        "xl": "32px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F5F7FA;
+        }
+        .tonal-card {
+            background-color: #FFFFFF;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #E5E7EB;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #bcc9c6;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Navigation Drawer (Desktop) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full w-80 bg-surface-container-low flex-col shadow-lg z-40 transition-all duration-200 ease-in-out">
+<div class="p-lg flex items-center gap-md">
+<div class="w-12 h-12 bg-primary-container rounded-xl flex items-center justify-center text-on-primary-container shadow-sm">
+<span class="material-symbols-outlined text-2xl">school</span>
+</div>
+<div>
+<h1 class="font-title-lg text-title-lg font-bold text-primary">EduMaintain Pro</h1>
+<p class="text-on-surface-variant text-xs font-label-md">Enterprise Management</p>
+</div>
+</div>
+<nav class="flex-1 mt-md px-sm space-y-sm">
+<a class="flex items-center gap-md bg-secondary-container text-on-secondary-container rounded-full px-md py-sm transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-highest rounded-full px-md py-sm transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">build</span>
+<span class="font-label-lg text-label-lg">Work Orders</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-highest rounded-full px-md py-sm transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-lg text-label-lg">Assets</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-highest rounded-full px-md py-sm transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">engineering</span>
+<span class="font-label-lg text-label-lg">Technicians</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-highest rounded-full px-md py-sm transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-lg text-label-lg">Reports</span>
+</a>
+</nav>
+<div class="p-md mt-auto border-t border-outline-variant/30">
+<div class="flex items-center gap-sm px-sm py-xs">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a school maintenance administrator, looking confident and approachable, set against a blurred modern educational office background. High quality photography with soft natural lighting and a primary teal color accent." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyq8gGqNwXLddqQq36LT8Ard3YD9QxFGeOHhNLt8VEeBKr76xjDqSMu45PDQigMLIyasc3epn7SiB7Hjf9KTGal14HAAWM5F8J_K04cTMyNjW8fmoM13Q3pbypWhBRd0EtMB51NTVmw-qMaGhA4tR8n2cggy-ilzdGJeD9vV_iBcUyCnH7zNKjWdum_kmVusA4i2a7gPBwyt5ilnMKz7HoFJMZhsuvRHsVcnV0Dc9Km767gucg3pN6"/>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface">Admin Profile</span>
+<span class="text-xs text-on-surface-variant">v2.4.0</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:ml-80 min-h-screen pb-32">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-30 bg-surface border-b border-outline-variant flex items-center justify-between px-md h-16">
+<div class="flex items-center gap-md">
+<button class="md:hidden p-sm text-primary transition-all active:scale-95">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="font-headline-md text-headline-md font-semibold text-primary">Maintenance Management</h2>
+</div>
+<div class="flex items-center gap-sm">
+<div class="hidden md:flex flex-col text-right mr-xs">
+<span class="text-xs font-bold text-on-surface">School Maintenance Dept</span>
+<span class="text-[10px] uppercase tracking-wider text-on-surface-variant">Central Region</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center cursor-pointer active:scale-95 transition-all">
+<span class="material-symbols-outlined text-on-primary-container">person</span>
+</div>
+</div>
+</header>
+<!-- Summary Section -->
+<section class="p-gutter">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- Pending Card -->
+<div class="tonal-card rounded-xl p-lg border-l-4 border-l-error">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-label-md text-on-surface-variant mb-xs">Pending</p>
+<h3 class="font-display-lg text-on-surface font-bold">12</h3>
+</div>
+<div class="bg-error-container p-sm rounded-lg text-on-error-container">
+<span class="material-symbols-outlined">priority_high</span>
+</div>
+</div>
+<div class="mt-md flex items-center gap-xs text-xs text-error font-medium">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span>4 from yesterday</span>
+</div>
+</div>
+<!-- In Progress Card -->
+<div class="tonal-card rounded-xl p-lg border-l-4 border-l-secondary">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-label-md text-on-surface-variant mb-xs">In Progress</p>
+<h3 class="font-display-lg text-on-surface font-bold">08</h3>
+</div>
+<div class="bg-secondary-container p-sm rounded-lg text-on-secondary-container">
+<span class="material-symbols-outlined">sync</span>
+</div>
+</div>
+<div class="mt-md flex items-center gap-xs text-xs text-on-surface-variant">
+<span>On track for today</span>
+</div>
+</div>
+<!-- Completed Card -->
+<div class="tonal-card rounded-xl p-lg border-l-4 border-l-primary">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-label-md text-on-surface-variant mb-xs">Completed</p>
+<h3 class="font-display-lg text-on-surface font-bold">45</h3>
+</div>
+<div class="bg-primary-container p-sm rounded-lg text-on-primary-container">
+<span class="material-symbols-outlined">task_alt</span>
+</div>
+</div>
+<div class="mt-md flex items-center gap-xs text-xs text-primary font-medium">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span>Last 7 days</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Filter Section -->
+<section class="px-gutter pb-md">
+<div class="flex flex-col gap-md">
+<div class="flex items-center gap-sm overflow-x-auto custom-scrollbar pb-xs">
+<span class="text-on-surface-variant font-label-md shrink-0">Priority:</span>
+<button class="bg-primary-container text-on-primary-container px-md py-xs rounded-full font-label-md shadow-sm active:scale-95 transition-all">All</button>
+<button class="bg-surface-container-highest text-on-surface-variant px-md py-xs rounded-full font-label-md hover:bg-surface-variant transition-all active:scale-95">High</button>
+<button class="bg-surface-container-highest text-on-surface-variant px-md py-xs rounded-full font-label-md hover:bg-surface-variant transition-all active:scale-95">Medium</button>
+<button class="bg-surface-container-highest text-on-surface-variant px-md py-xs rounded-full font-label-md hover:bg-surface-variant transition-all active:scale-95">Low</button>
+</div>
+<div class="flex items-center gap-sm overflow-x-auto custom-scrollbar pb-xs">
+<span class="text-on-surface-variant font-label-md shrink-0">Filter by:</span>
+<div class="flex items-center gap-xs bg-surface border border-outline-variant px-sm py-xs rounded-lg cursor-pointer hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-sm">list</span>
+<span class="font-label-md">Status</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+<div class="flex items-center gap-xs bg-surface border border-outline-variant px-sm py-xs rounded-lg cursor-pointer hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-sm">person</span>
+<span class="font-label-md">Technician</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Work Order List -->
+<section class="px-gutter space-y-md">
+<div class="flex items-center justify-between">
+<h3 class="font-title-lg text-title-lg text-on-surface">Recent Work Orders</h3>
+<span class="text-primary font-label-lg cursor-pointer hover:underline">View All</span>
+</div>
+<!-- Card 1 -->
+<div class="tonal-card rounded-xl p-md flex flex-col md:flex-row md:items-center justify-between gap-md transition-all hover:shadow-md cursor-pointer group">
+<div class="flex gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">videocam</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Projector - Room 302</h4>
+<p class="text-body-md text-on-surface-variant">Bulb failure, screen flickering intermittently</p>
+<div class="flex items-center gap-sm mt-sm">
+<span class="px-sm py-0.5 bg-error-container text-error text-[10px] font-bold rounded uppercase">High Priority</span>
+<span class="flex items-center gap-xs text-on-surface-variant text-xs">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                                Oct 24, 2023
+                            </span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-lg">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a male maintenance technician wearing a professional navy blue uniform, smiling subtly. Close up, clean lighting, professional enterprise application style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSxoRUjBIuyb2Qb9L8bvxqH_-k95K9cu0j36o6dMT6HKViclK5bVoOp3pmP0g2NRXv_74UfgRGK2lmoBm2e00c9A9VNtncHfLfjinWnKliWCFe4UfFCH_vTSg6oRDfPy6sBhGIdHRlX8xaKDKsEUxrxDucrxS2ib9TBlVLuFXDSE7DMtjIjeIMqAsxlWLImnmK4D8LxgFAzOlykPig4DtOV6J5HL-Sbemdirsab1Ib_BVSDqIMqntY"/>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-on-surface">John Smith</span>
+<span class="text-[10px] text-on-surface-variant">Electrical Spec.</span>
+</div>
+</div>
+<div class="px-md py-sm bg-surface-container rounded-lg border border-outline-variant/30 flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-error animate-pulse"></div>
+<span class="text-xs font-bold uppercase text-on-surface-variant">Pending</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="tonal-card rounded-xl p-md flex flex-col md:flex-row md:items-center justify-between gap-md transition-all hover:shadow-md cursor-pointer group">
+<div class="flex gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">ac_unit</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">AC Unit - Library East</h4>
+<p class="text-body-md text-on-surface-variant">Standard filter cleaning and routine inspection</p>
+<div class="flex items-center gap-sm mt-sm">
+<span class="px-sm py-0.5 bg-surface-variant text-secondary text-[10px] font-bold rounded uppercase">Medium Priority</span>
+<span class="flex items-center gap-xs text-on-surface-variant text-xs">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                                Oct 26, 2023
+                            </span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-lg">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a female maintenance technician with her hair tied back, wearing a professional work vest, looking professional and capable. Bright, high-key enterprise lighting style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpQv8U2E8tKXTsZYibErmz018qQxny2b2Ja8KfK_fOqwqITD8b63w68_xh_J-eV5YzY7bNuKLVbnMoJDddMXxbk-a1C1rFAHeVm4FZtH08_iH2a6auBupUC4asqC84J1-jdGlB_xcawuDKhXzvYRKPRYGiA2SfQ2Au3EhGzwK6B-2PynWKFptlOIPd0L8nw-tHAmEk6WKCl0Wr1eFVSU5wHYThPkbPN2KlnK2NHWb0vc0Z8XWVy_dG"/>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-on-surface">Sarah Chen</span>
+<span class="text-[10px] text-on-surface-variant">HVAC Lead</span>
+</div>
+</div>
+<div class="px-md py-sm bg-secondary-container/20 rounded-lg border border-secondary/20 flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="text-xs font-bold uppercase text-secondary">In Progress</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="tonal-card rounded-xl p-md flex flex-col md:flex-row md:items-center justify-between gap-md transition-all hover:shadow-md cursor-pointer group">
+<div class="flex gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">water_drop</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Leaking Tap - Science Lab B</h4>
+<p class="text-body-md text-on-surface-variant">Minor drip from faucet in Lab Station 4</p>
+<div class="flex items-center gap-sm mt-sm">
+<span class="px-sm py-0.5 bg-surface-container-low text-on-surface-variant text-[10px] font-bold rounded uppercase">Low Priority</span>
+<span class="flex items-center gap-xs text-on-surface-variant text-xs">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                                Oct 28, 2023
+                            </span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-lg">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a senior male maintenance technician with a friendly expression, wearing a professional uniform. Enterprise style lighting, clear background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjGuWvHtLpaLSTs1422suPOB1YP23drCksd8zHUAU5F-WviDaW3t4N2hjPlovyusyhjVCo-lrl3JQXcr_7Hw2JsvtynqCny7VGNxKDMHsWxqJUOIwKWT5y9y8eF6L4V7ooVluiiVkbsZbRmuLnRrPeNmcsxhU5hA6_zKuekNhHcJJVr52liIl5Bhk8owQ6ht_-chB0UYnshbjnc7jAxMQcfXfD-C4UKX_mvK3zh0foxUvNrC9Cdl6M"/>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-on-surface">Mike Miller</span>
+<span class="text-[10px] text-on-surface-variant">Plumbing Dept.</span>
+</div>
+</div>
+<div class="px-md py-sm bg-primary-container/10 rounded-lg border border-primary/20 flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-xs font-bold uppercase text-primary">Assigned</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Floating Action Button (FAB) Area -->
+<div class="fixed bottom-24 right-md z-50 md:hidden">
+<button class="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<!-- Create Request Button (Desktop Fix) -->
+<div class="fixed bottom-0 right-0 p-lg w-full md:w-auto md:ml-80 flex justify-center md:justify-end">
+<button class="bg-primary-container text-on-primary-container px-xl py-md rounded-full shadow-xl flex items-center gap-md font-label-lg transition-all active:scale-95 hover:shadow-2xl md:mr-md">
+<span class="material-symbols-outlined">assignment_add</span>
+                Create Maintenance Request
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-gutter pb-safe bg-surface-container border-t border-outline-variant z-40">
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-md text-label-md">Orders</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">rule</span>
+<span class="font-label-md text-label-md">Tasks</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction for hover states and card activation
+        document.querySelectorAll('.tonal-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Toggle Drawer logic (for mobile menu)
+        const menuBtn = document.querySelector('header button');
+        const drawer = document.querySelector('aside');
+        if (menuBtn) {
+            menuBtn.addEventListener('click', () => {
+                drawer.classList.toggle('hidden');
+                drawer.classList.toggle('flex');
+            });
+        }
+    </script>
+</body></html>

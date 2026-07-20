@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Namira - School News</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#fbf8ff",
+                        "on-primary-fixed": "#00201c",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#005048",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d4d8f7",
+                        "on-background": "#151a31",
+                        "on-tertiary-container": "#fffbff",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#006a60",
+                        "primary": "#00685e",
+                        "error-container": "#ffdad6",
+                        "secondary": "#3a5f94",
+                        "background": "#fbf8ff",
+                        "on-tertiary-fixed": "#341100",
+                        "primary-container": "#008377",
+                        "surface-container-highest": "#dde1ff",
+                        "on-primary-container": "#f4fffb",
+                        "tertiary-fixed": "#ffdbcb",
+                        "primary-fixed": "#85f6e5",
+                        "primary-fixed-dim": "#67d9c9",
+                        "inverse-on-surface": "#f0efff",
+                        "tertiary-container": "#c25300",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "surface-container": "#ececff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e4e7ff",
+                        "secondary-container": "#9fc2fe",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "inverse-surface": "#2a2f47",
+                        "surface-container-low": "#f3f2ff",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#6d7a77",
+                        "on-secondary-container": "#294f83",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "tertiary": "#9b4100",
+                        "on-surface-variant": "#3d4947",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#bcc9c6",
+                        "secondary-fixed": "#d5e3ff",
+                        "on-surface": "#151a31",
+                        "surface-variant": "#dde1ff",
+                        "on-secondary-fixed": "#001b3c",
+                        "inverse-primary": "#67d9c9",
+                        "surface-bright": "#fbf8ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "sm": "8px",
+                        "unit": "8px",
+                        "container-margin": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fbf8ff;
+            background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLsXpKYvoNXHMurtKW7Oy4stDS3rR780wAJRoyTDla11yV7nG-3kV3qz-G2dm3FrqX4-NQUeNig4Fn2eAgNTKUq27pc0N9acTX7UgZKiKjDySZ3eOroXaGfdGI5NAUrEauNOBNDXmu0eLRSWjB1MUz6tQETZGynEkME-xZItee_y6iRvNRIrpSYNOIeJkIC4y4I3iPPnAwb_YnHJcMa_xZP2k9-j1jXXMwRPiGvcCBG6CbuykFHS5oSYJA');
+            background-repeat: repeat;
+            background-attachment: fixed;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .news-card-hover {
+            transition: all 0.2s ease-in-out;
+        }
+        .news-card-hover:active {
+            transform: scale(0.98);
+            background-color: #f3f2ff;
+        }
+    </style>
+</head>
+<body class="text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm w-full top-0 sticky z-40 flex items-center justify-between px-gutter h-16">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">school</span>
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">School News</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female school administrator with a warm smile, wearing business casual attire. The background is a blurred office environment with soft natural lighting, maintaining a clean and trustworthy enterprise aesthetic with a teal and navy color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1KyaVCPCDQbuqsy7nZJukn0oQR3LKGv6TX6lhaQXjR9hURYHgIu3KZqwbbbfH00PjcFXcyUWXnayEg4oJWeQNvlSJc_H_Bx4ayznd01RhMa1BjZtdODSeWZhNPLxEiOUHtUE7P5uVv-BTMsI3B3cENnNke5A0C3eSEVB6zESUz-KREO0EcqxH3h9JmzbikeLoIGMl3KoAb1z6FTm5-vwP3ez7Ti4kT_XbDRAbm4zHDEhkhEzxkwGI"/>
+</div>
+</div>
+</header>
+<main class="max-w-3xl mx-auto px-gutter py-md space-y-lg">
+<!-- Filter Chips -->
+<section class="flex overflow-x-auto gap-sm hide-scrollbar -mx-gutter px-gutter pb-2">
+<button class="flex-shrink-0 px-4 py-2 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg transition-transform active:scale-95 shadow-sm">All</button>
+<button class="flex-shrink-0 px-4 py-2 rounded-xl bg-surface-container text-on-surface-variant border border-outline-variant font-label-lg text-label-lg hover:bg-surface-container-high transition-colors active:scale-95">Academic</button>
+<button class="flex-shrink-0 px-4 py-2 rounded-xl bg-surface-container text-on-surface-variant border border-outline-variant font-label-lg text-label-lg hover:bg-surface-container-high transition-colors active:scale-95">Achievement</button>
+<button class="flex-shrink-0 px-4 py-2 rounded-xl bg-surface-container text-on-surface-variant border border-outline-variant font-label-lg text-label-lg hover:bg-surface-container-high transition-colors active:scale-95">Events</button>
+<button class="flex-shrink-0 px-4 py-2 rounded-xl bg-surface-container text-on-surface-variant border border-outline-variant font-label-lg text-label-lg hover:bg-surface-container-high transition-colors active:scale-95">Announcement</button>
+</section>
+<!-- Featured News -->
+<section class="relative group cursor-pointer overflow-hidden rounded-2xl bg-surface shadow-md border border-outline-variant hover:shadow-lg transition-shadow">
+<div class="aspect-video w-full overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A wide-angle professional photograph of a modern school campus at sunset. The architectural design features glass and sustainable wood elements with warm interior lighting. Students are seen walking in the foreground across a manicured green lawn. The overall atmosphere is prestigious, high-tech, and serene, utilizing Namira's teal and navy primary colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtP1xE1XN29UDkKI78RL1VGzk4OiIZ--YYZzeOcsJCFddjxcSikai_BsgirezLIUTCym03IXDFY4kByxv0JBvHnSmB8PTBkrNVeRGzcM0N4JLaSv6OrMIJIcx_QKidC4k1HDOUCuEd91zac1PChDMff2Cim94r-aPjP_85G8GUsEBRZb-ig8l1qJVo1zAnaSfE4cJPYB91cznE3Sc8xLzrJL6Z9vMbffpPqjl2Nzl_HNShG7E-xfSO"/>
+</div>
+<div class="p-lg space-y-md">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-label-md text-label-md">FEATURED</span>
+<span class="text-on-surface-variant font-label-md text-label-md">• 12 May 2024</span>
+</div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface group-hover:text-primary transition-colors">Namira Academy Ranked Top 10 for Innovation in Education</h2>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-3">Our commitment to digital transformation and architectural clarity in learning spaces has been recognized globally by the Educational Excellence Forum for the third consecutive year.</p>
+<div class="flex items-center justify-between pt-sm">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-on-secondary-container">person</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Dr. Sarah Jenkins</span>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">bookmark</span>
+</button>
+</div>
+</div>
+</section>
+<!-- News List -->
+<div class="space-y-6">
+<h3 class="font-title-lg text-title-lg text-on-surface px-1">Latest Updates</h3>
+<!-- News Item 1 -->
+<article class="flex gap-md items-start p-1 news-card-hover rounded-2xl">
+<div class="flex-1 space-y-2">
+<div class="flex items-center gap-2 text-primary">
+<span class="font-label-md text-label-md font-bold uppercase tracking-wider">Academic</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface leading-snug line-clamp-2">New STEM Curriculum launching for High School Students this Summer</h4>
+<div class="flex items-center gap-3 text-on-surface-variant font-label-md text-label-md">
+<span>Office of Provost</span>
+<span>•</span>
+<span>4 min read</span>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-on-surface-variant font-label-md text-label-md">2 hours ago</span>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">bookmark</button>
+</div>
+</div>
+<div class="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden flex-shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A focused high-school student in a high-tech science laboratory, wearing safety goggles and adjusting a robotic arm. The laboratory is clean, minimalist, and bright, with teal equipment accents and whiteboard walls filled with mathematical formulas. The lighting is crisp and professional, conveying a sense of advanced academic excellence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBI_46wumFEt8holCWHzv1qF1AAd0W2q6rL44S59NkxGKGR84Z-F1_KbeZ-fNw10WPeCnWA-8n9km70uysburflxS33Ks1BULhTn6vrMtzfld3bo8I8kFbeThg-UztLBOr5Vagxu-NQQb0Np3LRIWmt053ll5gyEfEKcKUQ8nrYWgODfkIK70lPt_QMSG0uKJeJ2Hj-uQYFYdjWFJK9lix4pU3PNzignLI2WdSEbMDt6AxZ3Er8gB00"/>
+</div>
+</article>
+<div class="h-px bg-outline-variant opacity-30 mx-1"></div>
+<!-- News Item 2 -->
+<article class="flex gap-md items-start p-1 news-card-hover rounded-2xl">
+<div class="flex-1 space-y-2">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="font-label-md text-label-md font-bold uppercase tracking-wider">Achievement</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface leading-snug line-clamp-2">Robotics Team Secures First Place in Regional Competition</h4>
+<div class="flex items-center gap-3 text-on-surface-variant font-label-md text-label-md">
+<span>Sports & Tech Dept</span>
+<span>•</span>
+<span>6 min read</span>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-on-surface-variant font-label-md text-label-md">Yesterday</span>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">bookmark</button>
+</div>
+</div>
+<div class="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden flex-shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A group of diverse, excited students holding a large silver trophy in front of a colorful robotics competition backdrop. They are wearing matching teal school polo shirts. Confetti is visible in the air, and the lighting is dynamic with a shallow depth of field. The mood is triumphant and celebratory, reflecting institutional pride." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnZEBDCoc-pBxNJFbJ-9zkJHn3caUJcJJdpAE-oypJUTdQc4fKxctHpKhaFczxUk-DQssMm8lzRCG-pRQIb-S0VXM_8ugvLAhVu5qxfzC4PP5mEIlDZeTAJ_jOcrj1Kui9CkGxFuUX7INPIG6-3yusyKGIG6kaKYgwVJe_r6ZH_xZLePSNsngUA0mU4yDr-C-iksag40ZWVeaSDXUoz87nTjRdnl9JuyYBX7ziXhyNJHz4bY8SSq34"/>
+</div>
+</article>
+<div class="h-px bg-outline-variant opacity-30 mx-1"></div>
+<!-- News Item 3 -->
+<article class="flex gap-md items-start p-1 news-card-hover rounded-2xl">
+<div class="flex-1 space-y-2">
+<div class="flex items-center gap-2 text-secondary">
+<span class="font-label-md text-label-md font-bold uppercase tracking-wider">Events</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface leading-snug line-clamp-2">Annual Arts Gala: Reserve your tickets for the evening of performance</h4>
+<div class="flex items-center gap-3 text-on-surface-variant font-label-md text-label-md">
+<span>Creative Arts Guild</span>
+<span>•</span>
+<span>3 min read</span>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-on-surface-variant font-label-md text-label-md">3 days ago</span>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">bookmark</button>
+</div>
+</div>
+<div class="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden flex-shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="An elegant, dimly lit theater stage with a single spotlight shining on a grand piano. Deep navy velvet curtains are draped in the background. The scene is sophisticated and high-end, suggesting a premium cultural event at Namira Academy. The composition is artistic and minimalist, with a focus on dramatic lighting and professional production quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCicXDwF06fUksB-j80OHDqa73bu-aUUT0caj4gyJxAHYt8_FSqnebZTvNaqpcyrwynEGE9wu9EkJOeXoHrjZQupbqGy1RT0vjjbPBlH0_Zk7ZSSMbd94SBAd4uOgBn-mAc7Pum1VFquXMedi3ezIFsb4ZWeYcfJdXfNBhfCTXEkAmCp1hqTPKQdEtQKz2AR6JK5pwFci7B6Okrwj2TX_QmTLHU1eGRxpFsYXbMyBwraRstkCNMDQv"/>
+</div>
+</article>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-surface dark:bg-surface-dim shadow-lg rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline px-4 py-1 hover:bg-surface-container-low transition-all active:scale-90">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-on-primary-fixed-variant text-on-primary-container dark:text-primary-fixed-dim rounded-2xl px-4 py-1 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-md text-label-md">Academic</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline px-4 py-1 hover:bg-surface-container-low transition-all active:scale-90">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline px-4 py-1 hover:bg-surface-container-low transition-all active:scale-90">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline px-4 py-1 hover:bg-surface-container-low transition-all active:scale-90">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</button>
+</nav>
+<script>
+        // Micro-interactions for chips
+        const chips = document.querySelectorAll('section button');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => {
+                    c.classList.remove('bg-primary', 'text-on-primary');
+                    c.classList.add('bg-surface-container', 'text-on-surface-variant');
+                });
+                chip.classList.remove('bg-surface-container', 'text-on-surface-variant');
+                chip.classList.add('bg-primary', 'text-on-primary');
+            });
+        });
+
+        // Bookmark toggle
+        const bookmarks = document.querySelectorAll('.material-symbols-outlined');
+        bookmarks.forEach(icon => {
+            if (icon.innerText === 'bookmark') {
+                icon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isFilled = icon.style.fontVariationSettings.includes("'FILL' 1");
+                    icon.style.fontVariationSettings = isFilled ? "'FILL' 0" : "'FILL' 1";
+                    icon.classList.toggle('text-primary');
+                });
+            }
+        });
+    </script>
+</body></html>

@@ -29,6 +29,8 @@ class ApiEndpoints {
   static const String profile = '/profile';
   static const String units = '/units';
   static const String switchUnit = '/switch-unit';
+  static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
 
   static const String dashboard = '/dashboard';
 

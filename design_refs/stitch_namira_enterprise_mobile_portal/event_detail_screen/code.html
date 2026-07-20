@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Event Details - SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F5F7FA; /* Level 0 Background from Style Guidance */
+        }
+        /* Custom scrollbar for better enterprise feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bcc9c6;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#e4e7ff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#67d9c9",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#f4fffb",
+                        "inverse-surface": "#2a2f47",
+                        "inverse-primary": "#67d9c9",
+                        "surface": "#fbf8ff",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "outline": "#6d7a77",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f3f2ff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#00201c",
+                        "on-background": "#151a31",
+                        "surface-container-highest": "#dde1ff",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "primary-container": "#008377",
+                        "background": "#fbf8ff",
+                        "on-secondary-container": "#294f83",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#85f6e5",
+                        "on-error": "#ffffff",
+                        "tertiary": "#9b4100",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f0efff",
+                        "secondary-fixed": "#d5e3ff",
+                        "secondary": "#3a5f94",
+                        "on-surface": "#151a31",
+                        "on-tertiary-fixed": "#341100",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#ffdbcb",
+                        "outline-variant": "#bcc9c6",
+                        "surface-bright": "#fbf8ff",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "surface-container": "#ececff",
+                        "surface-tint": "#006a60",
+                        "tertiary-container": "#c25300",
+                        "surface-variant": "#dde1ff",
+                        "surface-dim": "#d4d8f7",
+                        "primary": "#00685e",
+                        "on-primary-fixed-variant": "#005048",
+                        "on-secondary-fixed": "#001b3c",
+                        "secondary-container": "#9fc2fe",
+                        "on-surface-variant": "#3d4947"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "container-margin": "16px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#F5F7FA] text-on-surface mb-24">
+<!-- TopAppBar -->
+<nav class="w-full top-0 sticky bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-gutter h-16 w-full z-[100]">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 duration-150 transition-transform hover:bg-surface-container-low dark:hover:bg-surface-container-high p-2 rounded-full">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg-mobile text-primary dark:text-primary-fixed-dim">Event Details</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="active:scale-95 duration-150 transition-transform hover:bg-surface-container-low dark:hover:bg-surface-container-high p-2 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant">share</span>
+</button>
+<button class="active:scale-95 duration-150 transition-transform hover:bg-surface-container-low dark:hover:bg-surface-container-high p-2 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+</div>
+</nav>
+<main class="max-w-screen-md mx-auto">
+<!-- Hero Section -->
+<header class="relative w-full h-[280px] md:h-[400px]">
+<div class="w-full h-full bg-cover bg-center shadow-inner" data-alt="A cinematic, high-resolution photograph of a modern, brightly lit science laboratory filled with students in white lab coats engaged in experiments. The atmosphere is vibrant and intellectual, with sunlight streaming through large windows of a contemporary educational building. Soft teal and navy blue accents are visible in the background, matching the enterprise institutional aesthetic. Professional lighting highlights the curiosity and collaboration of the participants." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBc2D-cg-gleWoPUfUzfPUT9RiwCMxnOjspNEkD9aU3rFr2M6cIvzK1etLOWBLqFSioZ-8QOto0aMdza1aLIOcjiWlTb1HUaqRjorPxeOn0fx5HpvkZR7cFAXXAu4YEZaDY1-GxQu1Dh8znZZRlrP1Je5tDtrdAtYOWsD-SoupmjAKjoR0yofRmOoWrkcCyvdemxhEruOSH6-RaQwP4ra-pPlN2O_vtXolTjg6nYm1Caif6WbcRxZZO')"></div>
+<div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-gutter pb-8">
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-primary text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider">Education</span>
+<span class="bg-secondary-container text-on-secondary-container text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider">Registration Open</span>
+</div>
+<h1 class="text-white font-headline-lg text-headline-lg-mobile mb-2">Annual Science Fair 2024</h1>
+<div class="flex flex-wrap gap-4 text-white/90 text-sm font-medium">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">account_balance</span>
+<span>Science Dept.</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span>Nov 15, 2024</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span>Main Auditorium, Wing B</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Bento Layout Content -->
+<div class="px-gutter -mt-4 space-y-6 relative z-10">
+<!-- Registration Status Card -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm">
+<div class="flex justify-between items-center mb-3">
+<h3 class="font-title-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">group</span>
+                        Participants
+                    </h3>
+<span class="text-label-lg font-bold text-primary">150 / 200 Joined</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden mb-4">
+<div class="bg-primary h-full rounded-full transition-all duration-1000" style="width: 75%;"></div>
+</div>
+<div class="flex gap-2">
+<div class="flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="Close-up portrait of a smiling young student in a modern educational setting, high-key lighting, bright atmosphere, enterprise profile style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBI4HsX93lhJftwsQIpHSahOSTKnh3DnsGEmyksQiegAUDLuKSn3Pf9PADwV7_xjupTagCbqzzk47NwB7a-wE2Bhwq8FBT3_BSpmO8Ecj4wLUHsC8jTmMHVyePaz0wgkJ54_QaILsbCeeXqLuqP2oNVqhd7HPAmJmYT4pBEMEgv6BOyH97NTQ05dLYc46TfVMRMZJjAc9lKJMyJ3vueFTO-Lg4OLm_ew-xodCjcw-xhA8bhx3ow2E9k"/>
+<img class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="Portrait of a diverse academic professional, neutral background, soft professional lighting, high-quality enterprise photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9dVgdOtjW75TfDwVeRq_bl3YnLepdn3ZDQXwMwNwfUULyJYA1fV5eRblV1bR-Jr9tzCoUlz_Oj8BcHw2PpHR8nxhUoj-GxErxO8QZtPZTmRICjg1HgV13HotWCqNVAhZt5rKW5dbpOJw7u5vtbexm6R-nPIF7GO5GP6_kW2xRtirilvQIU20jLTqDZC7Urd7SU1QP2Aqx9xMKoKsEryULQRuuJoU8erFwGkFPamFcV1XhbpHEPEw2"/>
+<img class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="Candid shot of a teacher pointing at a whiteboard, academic environment, soft primary teal highlights, professional and focused mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUakCiw2iWbXbKBYqFxON84hJIXq3u-VbLH-2iG0c8Jx-is6d26G4e9KtagNu3rQIYRlnChzVecMAQPZTaZq1Z3s4gese6uIR357PKDEkaLCgI_UIBzyqH5sz1O76TrX23BbsgYMY-LARxyh8-cJcQdTWppy24GQfn4rUiTLmTlHU9GYGbDTDdwsrq66YZntEp4ihGdPKDnj3F09pmN9FYSehgiFomOyjzox97e47UhTARR7RFXaxy"/>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-white flex items-center justify-center text-[10px] font-bold text-secondary">+147</div>
+</div>
+<span class="text-body-md text-on-surface-variant flex items-center">Join your peers from the Faculty</span>
+</div>
+</section>
+<!-- Description -->
+<section class="bg-white border border-outline-variant rounded-xl p-md shadow-sm">
+<h3 class="font-title-md text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">description</span>
+                    About Event
+                </h3>
+<p class="text-body-md text-on-surface-variant leading-relaxed">
+                    The Annual Science Fair 2024 is Namira’s premier showcase of innovation and academic excellence. This year, we focus on "Sustainable Future: AI & Ecology." Join over 50 student teams as they present groundbreaking research and functional prototypes designed to solve real-world environmental challenges. The event includes keynote speeches, interactive workshops, and a prize ceremony for top-tier projects.
+                </p>
+</section>
+<!-- Agenda Timeline -->
+<section class="bg-white border border-outline-variant rounded-xl p-md shadow-sm">
+<h3 class="font-title-md text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">schedule</span>
+                    Agenda
+                </h3>
+<div class="space-y-6 relative border-l-2 border-primary-container ml-3 pl-6">
+<div class="relative">
+<div class="absolute -left-[31px] top-0 w-3 h-3 rounded-full bg-primary ring-4 ring-white"></div>
+<div class="flex flex-col">
+<span class="text-label-md font-bold text-primary">09:00 AM - 10:00 AM</span>
+<span class="font-title-md text-on-surface">Opening Ceremony</span>
+<span class="text-body-md text-on-surface-variant">Keynote speech by Dr. Helena Vance in Hall A.</span>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[31px] top-0 w-3 h-3 rounded-full bg-outline-variant ring-4 ring-white"></div>
+<div class="flex flex-col">
+<span class="text-label-md font-bold text-on-surface-variant">10:30 AM - 01:00 PM</span>
+<span class="font-title-md text-on-surface">Project Showcase</span>
+<span class="text-body-md text-on-surface-variant">Students present their research posters to the jury.</span>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[31px] top-0 w-3 h-3 rounded-full bg-outline-variant ring-4 ring-white"></div>
+<div class="flex flex-col">
+<span class="text-label-md font-bold text-on-surface-variant">02:00 PM - 04:00 PM</span>
+<span class="font-title-md text-on-surface">Workshops & Awards</span>
+<span class="text-body-md text-on-surface-variant">Hands-on AI workshops followed by the Grand Prize announcement.</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Speakers -->
+<section>
+<h3 class="font-title-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">record_voice_over</span>
+                    Guests & Speakers
+                </h3>
+<div class="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+<div class="flex-shrink-0 w-32 flex flex-col items-center text-center group">
+<img class="w-20 h-20 rounded-full object-cover border-2 border-primary shadow-sm mb-2 group-hover:scale-105 transition-transform" data-alt="Professional corporate headshot of a female scientist in a clean laboratory setting, wearing a white coat and glasses, soft neutral lighting, high-end enterprise portrait style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGzumjt-HPRnv8J_4WSET8vqgmWWbQb7AHmyIUqyjBzazF8Ox3n3EBE7fF5--NEysuavMIMfbQO51uiU2rj7RHttfBzJD5G6gN1sj6oy1fB7OXtd0haOKJcZvBNOqFZA1zoCrxkSHeEnzcAeCRzvjp6NW4j-fGKIqFqOSC9SqB_sqKcUimB-NSuuxI1ab_8R-7cLu6eFokgf0lpZWbIqvwLit4ZMY4tNzL_bZz0UeP6alNAysG8aZm"/>
+<span class="font-label-lg text-on-surface block truncate w-full">Dr. Helena Vance</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Keynote Speaker</span>
+</div>
+<div class="flex-shrink-0 w-32 flex flex-col items-center text-center group">
+<img class="w-20 h-20 rounded-full object-cover border-2 border-transparent shadow-sm mb-2 group-hover:scale-105 transition-transform" data-alt="Portrait of a young tech innovator, wearing a casual professional navy blazer, modern workspace background with soft teal bokeh, professional lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6tOrJyo8FwmiOHsZaSdPpxs9ohKd4QZ8uoBG-c3TTUSLPSKMm2QZc74ZGbgcujRIWQS4UE5bNoh46q1xndahAQ5T7GLvfeCqUrANqwWJvDY-bsqFWaTShSGpftX9Eb49fMvRqXjVbC2P5xlHUTlNZ5xsA07f4Gbys7SlUa9FNNklqORaMsw0IDN04_OUlLgJ5JjIQOgn_Up_h1WCmuhnROl8b_XEMsRWXa0o66uazbq1lyLejntPz"/>
+<span class="font-label-lg text-on-surface block truncate w-full">Marcus Cheng</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Guest Judge</span>
+</div>
+<div class="flex-shrink-0 w-32 flex flex-col items-center text-center group">
+<img class="w-20 h-20 rounded-full object-cover border-2 border-transparent shadow-sm mb-2 group-hover:scale-105 transition-transform" data-alt="Professional portrait of a mature male professor in an academic library, high contrast lighting, intelligent and authoritative atmosphere, enterprise quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHfOcnPmWD-HbcgmJEn9gDMU-GS8J2LP1e8MriVC6euubs3B1yF6NqYzhgY3rc8-LHe4rRfIu0jY6GEWNylja1uVpdI4rWQPf7cl-M8GIajw9IDbaZu-6fB43KUVlKUu_-Rdxq0k1Cff3cXYmF1jJMatpGFBjfBCdRfj8clwbSeBrGgceOcAIX55u8jp0ZaKg0DR_UdAdkb82r86SxGh8uaLOKriPz6sKJTiWna7nqxY4JJ_R2dqy_"/>
+<span class="font-label-lg text-on-surface block truncate w-full">Prof. Arthur Wells</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Lead Mentor</span>
+</div>
+</div>
+</section>
+<!-- Gallery -->
+<section>
+<h3 class="font-title-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">photo_library</span>
+                    Event Gallery
+                </h3>
+<div class="grid grid-cols-3 gap-2 h-48">
+<div class="col-span-2 row-span-2 rounded-xl bg-cover bg-center border border-outline-variant" data-alt="A wide-angle shot of a previous year's science fair, featuring many colorful project booths and busy students. The lighting is bright and cheerful, reflecting a vibrant academic environment with high-quality resolution." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHvvSGnvRgv5C3ioKeozBRDNF66pR071qk68hIXS4jz3SHpO2SyxWoOXyO1qk9jlTY4dlvqpTDHqTBlquiUl4Y-qjVe1hmX9LPoQ86TRTKhuhi4vxMZHG7p0CYqUWP_ydcw0gno6H72lUYKRqLwyyv7rIkQq8jrT8NGnzK3GljJg0cMcFoWfv244iXDl0LhrsLNGAsI760N0Co8QLxOKvIb9SRjNeFz-n7Ztr5UbX3mxKMNs_BiGqk')"></div>
+<div class="rounded-xl bg-cover bg-center border border-outline-variant" data-alt="Macro photograph of a scientific glass beaker with a blue glowing chemical reaction, professional lab setting, clean and sharp focus." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDP6kHWmcSAgUPMWgI9bFxXHCSKXGtAzTgdMpRAmRbyilf72WTnDHWwMRLgrUAffHkviBTSZkr-FpI1W2h6P8fS5sTMYsCDYqzh30XN_-YMtExyq5Oawx62MaBuEbDVDAhT4YKjWno3eCAlgYlrJ2FsjPbDmUhzeof-b9vIB05mGH9x_dElCI7kDrnexr1Dx15sY2LHoVGqa6iMqNfJEyKyZjWWH5b1v7SyjHllGp4K7t8Iul9ArZCJ')"></div>
+<div class="rounded-xl bg-cover bg-center border border-outline-variant relative overflow-hidden" data-alt="Students shaking hands with a judge during a presentation, academic award ceremony atmosphere, professional lighting, teal and white color palette." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAKXIc4uhWTxmPSD-NCLEinFk0o7EVUD0HEkKQwQ56ncsPPJkyvmZvb66ADWWQVcNGJaJiaY5cdbFDYCsm8ZrBgm_ceGcbENL11H5MAhlW8Isvl8Gon6luIxn3uFt6-5DfGipQSySCTbuRna7d7bU0ogAdcGsX1KITyiK6exelONRS2E9qP6RpYxItj6OdRDYjI50nzw-u2nQWCQn3wClskzqlsa9npX_9900q_BvDAziT1M5jMAsjp')">
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-sm">+12</div>
+</div>
+</div>
+</section>
+<!-- Files -->
+<section class="bg-white border border-outline-variant rounded-xl p-md shadow-sm mb-12">
+<h3 class="font-title-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">attachment</span>
+                    Resources
+                </h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 border border-surface-container rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error">picture_as_pdf</span>
+<div>
+<p class="text-label-lg text-on-surface">Event Handbook 2024</p>
+<p class="text-[10px] text-on-surface-variant">PDF • 2.4 MB</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">download</span>
+</div>
+<div class="flex items-center justify-between p-3 border border-surface-container rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">description</span>
+<div>
+<p class="text-label-lg text-on-surface">Registration Form.docx</p>
+<p class="text-[10px] text-on-surface-variant">DOCX • 512 KB</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">download</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Sticky Bottom Actions -->
+<div class="fixed bottom-20 left-0 w-full px-gutter z-50 md:max-w-screen-md md:left-1/2 md:-translate-x-1/2">
+<div class="bg-surface border border-outline-variant shadow-2xl rounded-2xl p-3 flex items-center gap-3">
+<button class="w-12 h-12 flex items-center justify-center rounded-xl border border-outline-variant hover:bg-surface-container-low active:scale-95 transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">calendar_add_on</span>
+</button>
+<button class="flex-1 h-12 bg-[#009688] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-[#009688]/20">
+<span class="material-symbols-outlined fill-icon">how_to_reg</span>
+                Register Now
+            </button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl border border-outline-variant hover:bg-surface-container-low active:scale-95 transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">bookmark_border</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar -->
+<div class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 pb-safe bg-surface-container dark:bg-surface-container-lowest border-t border-outline-variant shadow-lg">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined fill-icon">school</span>
+<span class="font-label-md text-label-md">Academic</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</button>
+</div>
+<script>
+        // Micro-interactions
+        document.addEventListener('DOMContentLoaded', () => {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Simple tactile feedback simulation
+                    if (window.navigator && window.navigator.vibrate) {
+                        window.navigator.vibrate(5);
+                    }
+                });
+            });
+
+            // Intersection Observer for scroll reveal effects
+            const observerOptions = {
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('opacity-100', 'translate-y-0');
+                        entry.target.classList.remove('opacity-0', 'translate-y-4');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('section').forEach(section => {
+                section.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-4');
+                observer.observe(section);
+            });
+        });
+    </script>
+</body></html>

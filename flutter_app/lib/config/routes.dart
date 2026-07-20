@@ -7,6 +7,8 @@ import 'package:superapp_namira_flutter/features/attendance/screens/attendance_h
 import 'package:superapp_namira_flutter/features/attendance/screens/attendance_screen.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
 import 'package:superapp_namira_flutter/features/auth/screens/login_screen.dart';
+import 'package:superapp_namira_flutter/features/auth/screens/forgot_password_screen.dart';
+import 'package:superapp_namira_flutter/features/auth/screens/reset_password_screen.dart';
 import 'package:superapp_namira_flutter/features/auth/screens/role_selection_screen.dart';
 import 'package:superapp_namira_flutter/features/auth/screens/splash_screen.dart';
 import 'package:superapp_namira_flutter/features/counseling/screens/counseling_screen.dart';
@@ -51,7 +53,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isAuthenticated = authState.isAuthenticated;
       final location = state.matchedLocation;
-      final isAuthRoute = location == '/login' || location == '/';
+      final isAuthRoute = location == '/login' || location == '/' || location == '/forgot-password' || location.startsWith('/reset-password');
       final isSplashRoute = location == '/';
       final isRoleSelection = location == '/role-selection';
 
@@ -91,6 +93,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/role-selection',
         name: 'role-selection',
         builder: (context, state) => const RoleSelectionScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        name: 'forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        name: 'reset-password',
+        builder: (context, state) => ResetPasswordScreen(
+          token: state.uri.queryParameters['token'],
+          email: state.uri.queryParameters['email'],
+        ),
       ),
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),

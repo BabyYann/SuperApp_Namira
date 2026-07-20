@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Academic Recap | SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .chart-bar {
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        
+        /* Custom scrollbar for horizontal chips */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed": "#d5e3ff",
+                      "tertiary-fixed-dim": "#ffb691",
+                      "surface-tint": "#006a60",
+                      "on-background": "#151a31",
+                      "on-error-container": "#93000a",
+                      "surface-container": "#ececff",
+                      "on-primary-fixed-variant": "#005048",
+                      "on-primary-fixed": "#00201c",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#fbf8ff",
+                      "primary-fixed": "#85f6e5",
+                      "tertiary-fixed": "#ffdbcb",
+                      "inverse-primary": "#67d9c9",
+                      "surface-dim": "#d4d8f7",
+                      "primary-container": "#008377",
+                      "on-secondary-fixed": "#001b3c",
+                      "surface": "#fbf8ff",
+                      "on-tertiary-container": "#fffbff",
+                      "error": "#ba1a1a",
+                      "on-surface": "#151a31",
+                      "inverse-surface": "#2a2f47",
+                      "secondary-container": "#9fc2fe",
+                      "surface-variant": "#dde1ff",
+                      "tertiary-container": "#c25300",
+                      "on-tertiary-fixed": "#341100",
+                      "on-secondary-container": "#294f83",
+                      "primary-fixed-dim": "#67d9c9",
+                      "outline": "#6d7a77",
+                      "primary": "#00685e",
+                      "on-primary": "#ffffff",
+                      "surface-container-low": "#f3f2ff",
+                      "on-surface-variant": "#3d4947",
+                      "on-secondary-fixed-variant": "#1f477b",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-high": "#e4e7ff",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-container": "#f4fffb",
+                      "secondary-fixed-dim": "#a7c8ff",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#793100",
+                      "inverse-on-surface": "#f0efff",
+                      "surface-container-highest": "#dde1ff",
+                      "background": "#fbf8ff",
+                      "tertiary": "#9b4100",
+                      "secondary": "#3a5f94",
+                      "outline-variant": "#bcc9c6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "gutter": "16px",
+                      "lg": "24px",
+                      "md": "16px",
+                      "container-margin": "16px",
+                      "xs": "4px",
+                      "sm": "8px",
+                      "unit": "8px"
+              },
+              "fontFamily": {
+                      "title-lg": ["Plus Jakarta Sans"],
+                      "display-lg-mobile": ["Plus Jakarta Sans"],
+                      "display-lg": ["Plus Jakarta Sans"],
+                      "title-md": ["Plus Jakarta Sans"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "label-md": ["Plus Jakarta Sans"],
+                      "body-md": ["Plus Jakarta Sans"],
+                      "label-lg": ["Plus Jakarta Sans"],
+                      "body-lg": ["Plus Jakarta Sans"],
+                      "headline-md": ["Plus Jakarta Sans"]
+              },
+              "fontSize": {
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-[#F5F7FA] font-body-md text-on-surface selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden pb-24">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-container-margin py-sm">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg text-on-surface">Academic Recap</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary">ios_share</span>
+</button>
+</header>
+<main class="max-w-7xl mx-auto px-container-margin py-lg space-y-lg">
+<!-- Filters / Chips -->
+<section class="flex items-center gap-sm overflow-x-auto no-scrollbar pb-2">
+<div class="flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-2 rounded-full font-label-lg whitespace-nowrap shadow-sm">
+<span>Semester 1</span>
+<span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</div>
+<div class="flex items-center gap-2 bg-white border border-outline-variant text-on-surface-variant px-4 py-2 rounded-full font-label-lg whitespace-nowrap hover:bg-surface-container transition-colors">
+<span>2023/2024</span>
+</div>
+<div class="flex items-center gap-2 bg-white border border-outline-variant text-on-surface-variant px-4 py-2 rounded-full font-label-lg whitespace-nowrap hover:bg-surface-container transition-colors">
+<span>Grade 10 - Alpha</span>
+</div>
+<button class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full border border-outline-variant bg-white">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</section>
+<!-- Dashboard Stats Grid -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Average Grade -->
+<div class="bg-white p-md rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.03)] fade-in-up stagger-1">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-on-surface-variant font-label-md">Average Grade</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">auto_stories</span>
+</div>
+</div>
+<div class="text-headline-md font-headline-md text-primary">88.5</div>
+<div class="text-label-md text-outline mt-1">Class Average: 84.2</div>
+</div>
+<!-- Attendance Rate -->
+<div class="bg-white p-md rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.03)] fade-in-up stagger-1">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-on-surface-variant font-label-md">Attendance</span>
+<div class="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">fingerprint</span>
+</div>
+</div>
+<div class="text-headline-md font-headline-md text-secondary">96%</div>
+<div class="text-label-md text-outline mt-1">2 days absent</div>
+</div>
+<!-- Completed Journals -->
+<div class="bg-white p-md rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.03)] fade-in-up stagger-2">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-on-surface-variant font-label-md">Journals</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+</div>
+</div>
+<div class="text-headline-md font-headline-md text-primary">42/45</div>
+<div class="w-full bg-outline-variant h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full w-[93%]"></div>
+</div>
+</div>
+<!-- Performance Trend -->
+<div class="bg-white p-md rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.03)] fade-in-up stagger-2">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-on-surface-variant font-label-md">Trend</span>
+<div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+</div>
+</div>
+<div class="text-headline-md font-headline-md text-green-600">+2.4%</div>
+<div class="text-label-md text-outline mt-1">vs Last Month</div>
+</div>
+</section>
+<!-- Charts Section -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+<!-- Academic Trend (Bar Chart) -->
+<div class="bg-white p-lg rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.05)] fade-in-up stagger-3">
+<div class="flex items-center justify-between mb-xl">
+<h3 class="font-title-md text-title-md">Academic Performance</h3>
+<button class="text-primary font-label-lg">Detailed View</button>
+</div>
+<div class="h-64 flex items-end justify-between gap-2 px-2 relative">
+<!-- Background Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8">
+<div class="border-b border-outline-variant/30 w-full"></div>
+<div class="border-b border-outline-variant/30 w-full"></div>
+<div class="border-b border-outline-variant/30 w-full"></div>
+<div class="border-b border-outline-variant/30 w-full"></div>
+</div>
+<!-- Bars -->
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0 group-hover:bg-primary-container" style="height: 85%"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-inverse-surface text-inverse-on-surface text-[10px] px-2 py-1 rounded transition-opacity">85</div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">Math</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0" style="height: 92%"></div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">Science</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0" style="height: 78%"></div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">History</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0" style="height: 88%"></div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">Lang</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0" style="height: 95%"></div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">Arts</span>
+</div>
+</div>
+</div>
+<!-- Attendance Trend (Line Chart Area) -->
+<div class="bg-white p-lg rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.05)] fade-in-up stagger-3">
+<div class="flex items-center justify-between mb-xl">
+<h3 class="font-title-md text-title-md">Attendance Trend</h3>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="text-[12px] text-outline">Weekly %</span>
+</div>
+</div>
+<div class="h-64 relative overflow-hidden">
+<svg class="w-full h-full" viewbox="0 0 400 200">
+<!-- Line Path Animation -->
+<path class="chart-line" d="M0,180 Q50,160 100,170 T200,120 T300,100 T400,110" fill="none" stroke="#3a5f94" stroke-linecap="round" stroke-width="3">
+<animate attributename="stroke-dasharray" dur="2s" fill="freeze" from="0,1000" to="1000,0"></animate>
+</path>
+<!-- Dots -->
+<circle cx="100" cy="170" fill="#3a5f94" r="5"></circle>
+<circle cx="200" cy="120" fill="#3a5f94" r="5"></circle>
+<circle cx="300" cy="100" fill="#3a5f94" r="5"></circle>
+<circle cx="400" cy="110" fill="#3a5f94" r="5"></circle>
+</svg>
+<!-- Y-Axis Labels -->
+<div class="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-[10px] text-outline pr-2">
+<span>100%</span>
+<span>75%</span>
+<span>50%</span>
+<span>25%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Reports -->
+<section class="space-y-md">
+<div class="flex items-center justify-between">
+<h3 class="font-title-md text-title-md">Generated Reports</h3>
+<button class="text-primary font-label-lg">See All</button>
+</div>
+<div class="space-y-sm">
+<!-- Report Item 1 -->
+<div class="bg-white p-md rounded-xl border border-outline-variant flex items-center justify-between hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div>
+<div class="font-label-lg text-on-surface">Monthly Recap - December 2023</div>
+<div class="text-label-md text-outline">Jan 02, 2024 • 1.4 MB</div>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary border border-primary px-3 py-1.5 rounded-full font-label-md hover:bg-primary hover:text-white transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download</span>
+</button>
+</div>
+<!-- Report Item 2 -->
+<div class="bg-white p-md rounded-xl border border-outline-variant flex items-center justify-between hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<div class="font-label-lg text-on-surface">Academic Performance Grid (XLS)</div>
+<div class="text-label-md text-outline">Dec 20, 2023 • 840 KB</div>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary border border-primary px-3 py-1.5 rounded-full font-label-md hover:bg-primary hover:text-white transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download</span>
+</button>
+</div>
+<!-- Report Item 3 -->
+<div class="bg-white p-md rounded-xl border border-outline-variant flex items-center justify-between hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<div>
+<div class="font-label-lg text-on-surface">Semester 1 Comprehensive Review</div>
+<div class="text-label-md text-outline">Dec 15, 2023 • 2.8 MB</div>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary border border-primary px-3 py-1.5 rounded-full font-label-md hover:bg-primary hover:text-white transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Actions Section -->
+<div class="fixed bottom-24 right-container-margin z-50 flex flex-col items-end gap-3 pointer-events-none">
+<button class="pointer-events-auto flex items-center gap-2 bg-white text-on-surface px-4 py-3 rounded-xl border border-outline-variant shadow-lg hover:bg-surface-container transition-all translate-y-4 opacity-0 scale-90 duration-300" id="excel-btn">
+<span class="material-symbols-outlined text-green-600">description</span>
+<span class="font-label-lg">Export Excel</span>
+</button>
+<button class="pointer-events-auto flex items-center gap-2 bg-white text-on-surface px-4 py-3 rounded-xl border border-outline-variant shadow-lg hover:bg-surface-container transition-all translate-y-4 opacity-0 scale-90 duration-300" id="pdf-btn">
+<span class="material-symbols-outlined text-red-600">picture_as_pdf</span>
+<span class="font-label-lg">Export PDF</span>
+</button>
+<button class="pointer-events-auto w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl flex items-center justify-center active:scale-90 transition-transform duration-200" id="main-fab">
+<span class="material-symbols-outlined text-[28px]" id="fab-icon">file_download</span>
+</button>
+</div>
+<!-- Bottom Navigation Bar (Shell) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-2 h-16 bg-surface border-t border-outline-variant shadow-sm">
+<div class="flex flex-col items-center justify-center text-on-surface-variant py-1 hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-md text-label-md">Academic</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant py-1 hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">fingerprint</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant py-1 hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant py-1 hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction for the FAB
+        const fab = document.getElementById('main-fab');
+        const pdfBtn = document.getElementById('pdf-btn');
+        const excelBtn = document.getElementById('excel-btn');
+        const fabIcon = document.getElementById('fab-icon');
+        let isOpen = false;
+
+        fab.addEventListener('click', () => {
+            isOpen = !isOpen;
+            if(isOpen) {
+                pdfBtn.classList.remove('translate-y-4', 'opacity-0', 'scale-90');
+                excelBtn.classList.remove('translate-y-4', 'opacity-0', 'scale-90');
+                fabIcon.textContent = 'close';
+            } else {
+                pdfBtn.classList.add('translate-y-4', 'opacity-0', 'scale-90');
+                excelBtn.classList.add('translate-y-4', 'opacity-0', 'scale-90');
+                fabIcon.textContent = 'file_download';
+            }
+        });
+
+        // Trigger chart animation on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const bars = document.querySelectorAll('.chart-bar');
+            bars.forEach((bar, index) => {
+                setTimeout(() => {
+                    const h = bar.style.height;
+                    bar.style.height = '0';
+                    setTimeout(() => {
+                        bar.style.height = h;
+                    }, 50);
+                }, index * 100);
+            });
+        });
+    </script>
+</body></html>

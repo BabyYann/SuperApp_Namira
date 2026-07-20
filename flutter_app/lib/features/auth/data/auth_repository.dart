@@ -103,6 +103,50 @@ class AuthRepository {
       return ApiResponse.error('Terjadi kesalahan: $e');
     }
   }
+
+  Future<ApiResponse<void>> forgotPassword(String email) async {
+    try {
+      final response = await _client.post(
+        ApiEndpoints.forgotPassword,
+        data: {'email': email},
+      );
+      return ApiResponse.success(null, message: response.data['message'] ?? 'Link reset telah dikirim');
+    } on DioException catch (e) {
+      return ApiResponse.error(
+        e.response?.data?['message'] ?? 'Gagal mengirim link reset',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse.error('Terjadi kesalahan: $e');
+    }
+  }
+
+  Future<ApiResponse<void>> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final response = await _client.post(
+        ApiEndpoints.resetPassword,
+        data: {
+          'email': email,
+          'token': token,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
+      return ApiResponse.success(null, message: response.data['message'] ?? 'Password berhasil direset');
+    } on DioException catch (e) {
+      return ApiResponse.error(
+        e.response?.data?['message'] ?? 'Gagal mereset password',
+        statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse.error('Terjadi kesalahan: $e');
+    }
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Counseling Session Details - SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#3a5f94",
+                        "secondary-container": "#9fc2fe",
+                        "surface-tint": "#006a60",
+                        "tertiary-container": "#c25300",
+                        "surface-container-low": "#f3f2ff",
+                        "inverse-surface": "#2a2f47",
+                        "on-tertiary-fixed": "#341100",
+                        "background": "#fbf8ff",
+                        "surface": "#fbf8ff",
+                        "on-background": "#151a31",
+                        "surface-bright": "#fbf8ff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "tertiary": "#9b4100",
+                        "primary-container": "#008377",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#f0efff",
+                        "surface-container-high": "#e4e7ff",
+                        "on-primary-fixed": "#00201c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "surface-dim": "#d4d8f7",
+                        "on-secondary-container": "#294f83",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#dde1ff",
+                        "secondary-fixed": "#d5e3ff",
+                        "outline": "#6d7a77",
+                        "on-primary-container": "#f4fffb",
+                        "primary-fixed-dim": "#67d9c9",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#bcc9c6",
+                        "primary-fixed": "#85f6e5",
+                        "error": "#ba1a1a",
+                        "surface-container": "#ececff",
+                        "on-surface": "#151a31",
+                        "on-primary-fixed-variant": "#005048",
+                        "surface-variant": "#dde1ff",
+                        "primary": "#00685e",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#001b3c",
+                        "tertiary-fixed": "#ffdbcb",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "inverse-primary": "#67d9c9",
+                        "on-surface-variant": "#3d4947",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin": "16px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "gutter": "16px",
+                        "xs": "4px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- Top App Bar -->
+<header class="bg-surface sticky top-0 z-40 shadow-sm flex items-center justify-between px-md py-sm w-full">
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150">arrow_back</button>
+<h1 class="font-headline-md text-headline-md text-primary font-bold">Session Detail</h1>
+</div>
+<div class="flex items-center gap-sm">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95">share</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95">more_vert</button>
+</div>
+</header>
+<main class="pb-32 px-md pt-md space-y-lg max-w-4xl mx-auto">
+<!-- HEADER: Student Profile Card -->
+<section class="bg-white rounded-xl p-md custom-shadow border border-outline-variant/30">
+<div class="flex flex-col md:flex-row md:items-center gap-md">
+<div class="relative">
+<img class="w-20 h-20 rounded-full object-cover border-2 border-primary-container p-1 shadow-sm" data-alt="A professional studio portrait of a high school student named Ahmad Zakaria. He is smiling warmly, wearing a clean school uniform. The lighting is soft and even, highlighting his features against a neutral, light gray backdrop. The overall mood is academic, professional, and positive, fitting a premium counseling app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOGWnQ6xPWBO4tT0WBbhd7239KoEtQg56nHxQrU8Hr6MBxjbc_n-ztLIxLLV5YaQIRPHOynDa2wNKH48cpn9DILU2tHvURwf49Plgi3Alb-E4PiY4HR5cy1H1uzV443gLnag4cEFvLiJJQzpPuAS5mCT2FWWwGs44hQpkM-bD_jrEny8m7nJ9eI-d_OVzXY89ifnsUoUxyNABY5PhpW0kd7X9akXYLTnYikwivY4sIyTYp8iTo_ZqE"/>
+<div class="absolute -bottom-1 -right-1 bg-primary text-on-primary rounded-full p-1 flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+</div>
+</div>
+<div class="flex-grow space-y-1">
+<div class="flex items-center justify-between">
+<h2 class="font-title-lg text-title-lg text-on-surface">Ahmad Zakaria</h2>
+<span class="bg-primary-container/20 text-primary px-3 py-1 rounded-full font-label-md text-label-md">In Progress</span>
+</div>
+<div class="flex flex-wrap gap-x-md gap-y-1 text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">school</span>
+<span class="font-body-md text-body-md">Grade 10-A</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">fingerprint</span>
+<span class="font-body-md text-body-md">ID: 20230491</span>
+</div>
+</div>
+<div class="pt-sm mt-sm border-t border-outline-variant/50 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-[16px]">support_agent</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Mr. Rahman</p>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Student Affairs</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SESSION INFORMATION: Grid Items -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<div class="bg-white rounded-xl p-md border border-outline-variant/30 custom-shadow flex flex-col items-center text-center space-y-2">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">Category</p>
+<p class="font-label-lg text-label-lg text-on-surface">Academic</p>
+</div>
+</div>
+<div class="bg-white rounded-xl p-md border border-outline-variant/30 custom-shadow flex flex-col items-center text-center space-y-2">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">calendar_today</span>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">Date</p>
+<p class="font-label-lg text-label-lg text-on-surface">Oct 24, 2023</p>
+</div>
+</div>
+<div class="bg-white rounded-xl p-md border border-outline-variant/30 custom-shadow flex flex-col items-center text-center space-y-2">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">Duration</p>
+<p class="font-label-lg text-label-lg text-on-surface">45 Minutes</p>
+</div>
+</div>
+<div class="bg-white rounded-xl p-md border border-outline-variant/30 custom-shadow flex flex-col items-center text-center space-y-2">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">meeting_room</span>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-tight">Location</p>
+<p class="font-label-lg text-label-lg text-on-surface">Room 302</p>
+</div>
+</div>
+</section>
+<!-- NOTES SECTION -->
+<section class="space-y-md">
+<h3 class="font-title-md text-title-md text-on-surface px-xs">Session Content</h3>
+<!-- Discussion -->
+<div class="bg-white rounded-xl p-md border-l-4 border-l-primary custom-shadow">
+<div class="flex items-center gap-2 mb-sm text-primary">
+<span class="material-symbols-outlined">forum</span>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Discussion Summary</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+                    The session primarily focused on Ahmad's recent decline in Math and Physics grades. We explored his current study habits and identified that he feels overwhelmed by the complexity of calculus topics. We discussed strategies for breaking down complex problems and emphasized the importance of effective time management during exam preparation.
+                </p>
+</div>
+<!-- Recommendation -->
+<div class="bg-white rounded-xl p-md border-l-4 border-l-secondary custom-shadow">
+<div class="flex items-center gap-2 mb-sm text-secondary">
+<span class="material-symbols-outlined">task_alt</span>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Recommendations</span>
+</div>
+<ul class="space-y-2">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Implement a digital planner for daily task tracking.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Attend weekly tutoring sessions for advanced Physics.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[18px] mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Adopt the Pomodoro technique (25/5 min) for focused studying.</span>
+</li>
+</ul>
+</div>
+<!-- Follow-up -->
+<div class="bg-surface-container-low rounded-xl p-md border border-outline-variant/30 custom-shadow">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined">event_repeat</span>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Follow-up Meeting</span>
+</div>
+<div class="bg-white px-3 py-1 rounded-lg font-title-md text-title-md text-primary">
+                        Oct 31, 2023
+                    </div>
+</div>
+</div>
+</section>
+<!-- ATTACHMENTS -->
+<section class="space-y-md">
+<h3 class="font-title-md text-title-md text-on-surface px-xs">Attachments</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- PDF Item -->
+<div class="bg-white rounded-xl p-md border border-outline-variant/30 flex items-center gap-md hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="w-12 h-12 bg-error/10 rounded-lg flex items-center justify-center text-error group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[32px]">picture_as_pdf</span>
+</div>
+<div class="flex-grow overflow-hidden">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Behavior_Report.pdf</p>
+<p class="font-label-md text-label-md text-on-surface-variant">1.2 MB • Oct 24</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">download</span>
+</div>
+<!-- Image Preview Item -->
+<div class="bg-white rounded-xl p-sm border border-outline-variant/30 flex items-center gap-md hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A close-up, high-angle shot of a student's handwritten journal. The pages are filled with neat, cursive writing and small sketches in blue ink. The paper has a slight texture, and a wooden desk surface is visible in the periphery. Soft, natural sunlight falls across the page, creating a serene and reflective mood. The image is crisp and professional, fitting an educational context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMX8Xu-12eB_aSiWO4WcLw3RkwCsfUMX4f30rcpl_iK5Vrth_zEy6buGs81P5Xq6pZT56iPKDF7J6DVBkUcM47EA1HalK550POhhLkKxITeXU0SpUBHLwMFil5n7pBAALFAyVMf8yY-2AtjfnLn8IGbIXti5jpS2WI9vG0IPxnFq-2PFdky08Lb4kC-7mI1KSjGnMD2JiGjh85O89FfYbu8R_-VrIXApxgly67S8c4go2qB4XmMdV3"/>
+</div>
+<div class="flex-grow overflow-hidden">
+<p class="font-label-lg text-label-lg text-on-surface truncate">handwritten_notes.jpg</p>
+<p class="font-label-md text-label-md text-on-surface-variant">2.4 MB • Oct 24</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant mr-md">visibility</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Action Bar (Contextual) -->
+<div class="fixed bottom-16 left-0 right-0 z-40 bg-white p-md border-t border-outline-variant/30 flex items-center gap-md max-w-4xl mx-auto shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+<button class="flex-1 h-12 border-2 border-primary text-primary rounded-xl font-label-lg text-label-lg hover:bg-primary/5 transition-colors active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+            Edit Session
+        </button>
+<button class="flex-1 h-12 bg-primary text-on-primary rounded-xl font-label-lg text-label-lg hover:bg-primary-container transition-colors active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            Complete Session
+        </button>
+</div>
+<!-- Bottom Navigation Bar (Mandatory Shell) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface border-t border-outline-variant shadow-lg flex justify-around items-center h-16 px-sm">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-md text-label-md">Academic</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</a>
+<!-- Active Tab: More (Mapping to counseling/details as a sub-feature of More) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-transform duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">more_horiz</span>
+<span class="font-label-md text-label-md">More</span>
+</a>
+</nav>
+<script>
+        // Simple click interaction for buttons
+        document.querySelectorAll('button, a').forEach(elem => {
+            elem.addEventListener('click', (e) => {
+                if(elem.tagName === 'A') e.preventDefault();
+                console.log('Action triggered:', elem.innerText || elem.querySelector('span')?.innerText);
+            });
+        });
+    </script>
+</body></html>

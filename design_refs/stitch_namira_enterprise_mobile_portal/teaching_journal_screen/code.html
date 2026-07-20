@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Teaching Journal | SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F5F7FA; /* Level 0 Background from Style Guidance */
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #bcc9c6;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#ffb691",
+                        "tertiary-fixed": "#ffdbcb",
+                        "surface-container-low": "#f3f2ff",
+                        "primary-container": "#008377",
+                        "tertiary": "#9b4100",
+                        "secondary-container": "#9fc2fe",
+                        "outline": "#6d7a77",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#dde1ff",
+                        "outline-variant": "#bcc9c6",
+                        "on-surface-variant": "#3d4947",
+                        "on-primary-fixed": "#00201c",
+                        "inverse-surface": "#2a2f47",
+                        "on-error": "#ffffff",
+                        "primary": "#00685e", /* Closest to #009688 */
+                        "error": "#ba1a1a",
+                        "background": "#fbf8ff",
+                        "surface-bright": "#fbf8ff",
+                        "surface": "#fbf8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#d5e3ff",
+                        "on-primary-container": "#f4fffb",
+                        "tertiary-container": "#c25300",
+                        "surface-container": "#ececff",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "inverse-on-surface": "#f0efff",
+                        "secondary": "#3a5f94",
+                        "surface-tint": "#006a60",
+                        "primary-fixed": "#85f6e5",
+                        "on-secondary-fixed": "#001b3c",
+                        "surface-dim": "#d4d8f7",
+                        "surface-variant": "#dde1ff",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "on-surface": "#151a31",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#67d9c9",
+                        "on-secondary-container": "#294f83",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#005048",
+                        "on-error-container": "#93000a",
+                        "on-background": "#151a31",
+                        "on-tertiary-container": "#fffbff",
+                        "on-tertiary-fixed": "#341100",
+                        "surface-container-high": "#e4e7ff",
+                        "inverse-primary": "#67d9c9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "16px", /* Mandated 16px */
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "gutter": "16px",
+                        "container-margin": "16px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface flex flex-col min-h-screen">
+<!-- Top App Bar -->
+<header class="bg-surface sticky top-0 z-50 border-b border-outline-variant w-full h-16 flex items-center justify-between px-container-margin">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container-low transition-colors rounded-full active:scale-95">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg text-on-surface">Teaching Journal</h1>
+</div>
+<button class="text-primary font-label-lg px-4 py-2 hover:bg-primary/10 rounded-full transition-colors active:scale-95">
+            Save Draft
+        </button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto pb-32 px-container-margin pt-lg space-y-lg max-w-screen-md mx-auto w-full">
+<!-- Section 1: Basic Info -->
+<section class="bg-surface rounded-xl p-md border border-outline-variant shadow-sm space-y-md">
+<div class="flex items-center gap-2 mb-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">info</span>
+<h2 class="font-title-md text-title-md">Basic Information</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Subject Dropdown -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-on-surface-variant">Subject</label>
+<div class="relative">
+<select class="w-full bg-surface border border-outline-variant rounded-lg px-md py-sm appearance-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md">
+<option>Advanced Mathematics</option>
+<option>World History</option>
+<option>Computer Science</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Class Dropdown -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-on-surface-variant">Class</label>
+<div class="relative">
+<select class="w-full bg-surface border border-outline-variant rounded-lg px-md py-sm appearance-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md">
+<option>Grade 10 - Alpha</option>
+<option>Grade 10 - Beta</option>
+<option>Grade 11 - Gamma</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Meeting Number -->
+<div class="flex flex-col gap-xs md:col-span-2">
+<label class="font-label-md text-on-surface-variant">Meeting Number</label>
+<div class="flex items-center gap-md">
+<div class="flex-1 border border-outline-variant rounded-lg px-md py-sm bg-surface-container-lowest font-body-lg font-semibold flex items-center justify-center">
+                            12
+                        </div>
+<div class="flex gap-sm">
+<button class="w-10 h-10 rounded-lg border border-outline-variant flex items-center justify-center hover:bg-surface-container-low active:scale-90 transition-all">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<button class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center hover:bg-primary-container active:scale-90 transition-all">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Content -->
+<section class="bg-surface rounded-xl p-md border border-outline-variant shadow-sm space-y-md">
+<div class="flex items-center gap-2 mb-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">book_2</span>
+<h2 class="font-title-md text-title-md">Teaching Content</h2>
+</div>
+<div class="space-y-md">
+<!-- Teaching Material -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-on-surface-variant">Teaching Material</label>
+<input class="w-full bg-surface border border-outline-variant rounded-lg px-md py-sm focus:border-primary focus:ring-1 focus:ring-primary font-body-md outline-none" placeholder="e.g., Introduction to Quadratic Equations" type="text"/>
+</div>
+<!-- Learning Objective -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-on-surface-variant">Learning Objective</label>
+<textarea class="w-full bg-surface border border-outline-variant rounded-lg px-md py-sm focus:border-primary focus:ring-1 focus:ring-primary font-body-md outline-none resize-none" placeholder="Define what students should achieve..." rows="3"></textarea>
+</div>
+<!-- Teaching Method Chips -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-on-surface-variant">Teaching Method</label>
+<div class="flex flex-wrap gap-sm pt-xs">
+<button class="px-md py-sm rounded-full bg-primary text-on-primary font-label-md flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-sm">check</span> Lecture
+                        </button>
+<button class="px-md py-sm rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant font-label-md hover:bg-surface-container transition-all">
+                            Discussion
+                        </button>
+<button class="px-md py-sm rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant font-label-md hover:bg-surface-container transition-all">
+                            Practical
+                        </button>
+<button class="px-md py-sm rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant font-label-md hover:bg-surface-container transition-all">
+                            Presentation
+                        </button>
+<button class="px-sm py-sm rounded-full bg-surface-container-low text-primary border border-primary/20 font-label-md hover:bg-primary/5">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Outcomes -->
+<section class="bg-surface rounded-xl p-md border border-outline-variant shadow-sm space-y-md">
+<div class="flex items-center gap-2 mb-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<h2 class="font-title-md text-title-md">Outcomes & Attendance</h2>
+</div>
+<!-- Attendance Summary -->
+<div class="grid grid-cols-3 gap-sm mb-md">
+<div class="bg-primary/5 rounded-lg p-sm border border-primary/10 flex flex-col items-center">
+<span class="text-primary font-bold text-headline-md">28</span>
+<span class="font-label-md text-on-surface-variant">Present</span>
+</div>
+<div class="bg-error/5 rounded-lg p-sm border border-error/10 flex flex-col items-center">
+<span class="text-error font-bold text-headline-md">2</span>
+<span class="font-label-md text-on-surface-variant">Absent</span>
+</div>
+<div class="bg-secondary/5 rounded-lg p-sm border border-secondary/10 flex flex-col items-center">
+<span class="text-secondary font-bold text-headline-md">1</span>
+<span class="font-label-md text-on-surface-variant">Late</span>
+</div>
+</div>
+<div class="space-y-md">
+<!-- Learning Outcome -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-on-surface-variant">Learning Outcome</label>
+<textarea class="w-full bg-surface border border-outline-variant rounded-lg px-md py-sm focus:border-primary focus:ring-1 focus:ring-primary font-body-md outline-none resize-none" placeholder="Summary of what was achieved today..." rows="3"></textarea>
+</div>
+<!-- Additional Notes -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-on-surface-variant">Additional Notes</label>
+<textarea class="w-full bg-surface border border-outline-variant rounded-lg px-md py-sm focus:border-primary focus:ring-1 focus:ring-primary font-body-md outline-none resize-none" placeholder="Incidents, follow-ups, or special mentions..." rows="2"></textarea>
+</div>
+</div>
+</section>
+<!-- Section 4: Attachments -->
+<section class="bg-surface rounded-xl p-md border border-outline-variant shadow-sm">
+<div class="flex items-center gap-2 mb-md">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">attachment</span>
+<h2 class="font-title-md text-title-md">Attachments</h2>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<button class="flex flex-col items-center justify-center gap-sm p-lg border-2 border-dashed border-outline-variant rounded-xl hover:bg-surface-container-low hover:border-primary transition-all group active:scale-95">
+<div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">add_a_photo</span>
+</div>
+<span class="font-label-lg text-on-surface">Upload Photo</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-sm p-lg border-2 border-dashed border-outline-variant rounded-xl hover:bg-surface-container-low hover:border-primary transition-all group active:scale-95">
+<div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">upload_file</span>
+</div>
+<span class="font-label-lg text-on-surface">Upload File</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Bottom Actions Container -->
+<div class="fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant p-container-margin z-50 flex flex-col gap-sm shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+<div class="max-w-screen-md mx-auto w-full flex flex-col gap-sm">
+<button class="w-full h-12 bg-primary text-on-primary font-label-lg rounded-xl flex items-center justify-center gap-2 hover:bg-primary-container transition-all active:scale-95 shadow-sm">
+                Submit Journal
+            </button>
+<button class="w-full h-12 bg-surface text-primary border border-primary font-label-lg rounded-xl flex items-center justify-center gap-2 hover:bg-primary/5 transition-all active:scale-95">
+                Save to Drafts
+            </button>
+</div>
+</div>
+<!-- Background Decorative Element (Atmospheric) -->
+<div class="fixed top-0 right-0 -z-10 opacity-5 pointer-events-none">
+<svg fill="none" height="400" viewbox="0 0 400 400" width="400" xmlns="http://www.w3.org/2000/svg">
+<circle cx="200" cy="200" fill="url(#paint0_radial)" r="200"></circle>
+<defs>
+<radialgradient cx="0" cy="0" gradienttransform="translate(200 200) rotate(90) scale(200)" gradientunits="userSpaceOnUse" id="paint0_radial" r="1">
+<stop stop-color="#00685e"></stop>
+<stop offset="1" stop-color="#00685e" stop-opacity="0"></stop>
+</radialgradient>
+</defs>
+</svg>
+</div>
+<script>
+        // Simple Micro-interaction for Chip Toggles
+        document.querySelectorAll('.flex-wrap button').forEach(button => {
+            button.addEventListener('click', function() {
+                if(this.classList.contains('bg-primary')) {
+                    this.classList.remove('bg-primary', 'text-on-primary');
+                    this.classList.add('bg-surface-container-low', 'text-on-surface-variant', 'border', 'border-outline-variant');
+                    const icon = this.querySelector('.material-symbols-outlined');
+                    if(icon) icon.remove();
+                } else if(!this.querySelector('.material-symbols-outlined:not(.text-sm)')) {
+                    this.classList.add('bg-primary', 'text-on-primary');
+                    this.classList.remove('bg-surface-container-low', 'text-on-surface-variant', 'border', 'border-outline-variant');
+                    const check = document.createElement('span');
+                    check.className = 'material-symbols-outlined text-sm mr-1';
+                    check.textContent = 'check';
+                    this.prepend(check);
+                }
+            });
+        });
+
+        // Numeric Counter Interaction
+        const counterVal = document.querySelector('.flex-1.border-outline-variant');
+        document.querySelectorAll('.flex.gap-sm button').forEach((btn, idx) => {
+            btn.addEventListener('click', () => {
+                let current = parseInt(counterVal.textContent);
+                if(idx === 0 && current > 1) counterVal.textContent = current - 1;
+                if(idx === 1) counterVal.textContent = current + 1;
+            });
+        });
+    </script>
+</body></html>

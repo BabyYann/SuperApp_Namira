@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Asset Inventory - Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#dde1ff",
+                        "on-background": "#151a31",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "on-tertiary-container": "#fffbff",
+                        "primary-container": "#008377",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#294f83",
+                        "background": "#fbf8ff",
+                        "inverse-surface": "#2a2f47",
+                        "inverse-primary": "#67d9c9",
+                        "primary-fixed-dim": "#67d9c9",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#f4fffb",
+                        "surface-container-high": "#e4e7ff",
+                        "error-container": "#ffdad6",
+                        "outline": "#6d7a77",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "surface": "#fbf8ff",
+                        "surface-container-low": "#f3f2ff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#00201c",
+                        "outline-variant": "#bcc9c6",
+                        "tertiary-fixed": "#ffdbcb",
+                        "surface-tint": "#006a60",
+                        "surface-container": "#ececff",
+                        "surface-bright": "#fbf8ff",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "surface-dim": "#d4d8f7",
+                        "primary": "#00685e",
+                        "on-primary-fixed-variant": "#005048",
+                        "tertiary-container": "#c25300",
+                        "surface-variant": "#dde1ff",
+                        "secondary-container": "#9fc2fe",
+                        "on-surface-variant": "#3d4947",
+                        "on-secondary-fixed": "#001b3c",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#85f6e5",
+                        "tertiary": "#9b4100",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f0efff",
+                        "secondary-fixed": "#d5e3ff",
+                        "secondary": "#3a5f94",
+                        "on-tertiary-fixed": "#341100",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#151a31"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "lg": "24px",
+                        "container-margin": "16px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F5F7FA;
+            scroll-behavior: smooth;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-pattern {
+            background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLsXpKYvoNXHMurtKW7Oy4stDS3rR780wAJRoyTDla11yV7nG-3kV3qz-G2dm3FrqX4-NQUeNig4Fn2eAgNTKUq27pc0N9acTX7UgZKiKjDySZ3eOroXaGfdGI5NAUrEauNOBNDXmu0eLRSWjB1MUz6tQETZGynEkME-xZItee_y6iRvNRIrpSYNOIeJkIC4y4I3iPPnAwb_YnHJcMa_xZP2k9-j1jXXMwRPiGvcCBG6CbuykFHS5oSYJA');
+            background-repeat: repeat;
+            opacity: 0.04;
+        }
+        .asset-card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .asset-card-shadow:active {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- Global Background Pattern -->
+<div class="fixed inset-0 bg-pattern pointer-events-none z-0"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex items-center justify-between px-md h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">menu</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Asset Inventory</h1>
+</div>
+<div class="flex items-center">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">qr_code_scanner</span>
+</button>
+</div>
+</header>
+<main class="relative z-10 pt-20 px-container-margin">
+<!-- Search & Filter Bar -->
+<section class="mt-lg space-y-md">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">search</span>
+</div>
+<input class="w-full h-12 pl-12 pr-4 bg-surface border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all font-body-md text-on-surface outline-none" placeholder="Search Asset, Code, or QR..." type="text"/>
+</div>
+<!-- Horizontal Filter Chips -->
+<div class="flex overflow-x-auto gap-sm pb-2 no-scrollbar scroll-smooth">
+<button class="flex items-center gap-xs px-4 py-2 bg-primary-container text-on-primary-container rounded-full font-label-lg whitespace-nowrap active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+<span>All Filters</span>
+</button>
+<button class="flex items-center gap-xs px-4 py-2 bg-surface border border-outline-variant text-on-surface-variant rounded-full font-label-lg whitespace-nowrap hover:bg-surface-container-high transition-colors">
+<span>Category</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<button class="flex items-center gap-xs px-4 py-2 bg-surface border border-outline-variant text-on-surface-variant rounded-full font-label-lg whitespace-nowrap hover:bg-surface-container-high transition-colors">
+<span>Location</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<button class="flex items-center gap-xs px-4 py-2 bg-surface border border-outline-variant text-on-surface-variant rounded-full font-label-lg whitespace-nowrap hover:bg-surface-container-high transition-colors">
+<span>Condition</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<button class="flex items-center gap-xs px-4 py-2 bg-surface border border-outline-variant text-on-surface-variant rounded-full font-label-lg whitespace-nowrap hover:bg-surface-container-high transition-colors">
+<span>Status</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+</section>
+<!-- Stats Overview (Asymmetric/Premium Touch) -->
+<section class="mt-lg grid grid-cols-2 gap-md">
+<div class="bg-secondary-container p-md rounded-2xl flex flex-col justify-between h-32">
+<span class="font-label-md text-on-secondary-container opacity-80">Total Assets</span>
+<span class="font-display-lg-mobile text-on-secondary-container">1,284</span>
+</div>
+<div class="grid grid-rows-2 gap-md">
+<div class="bg-surface border border-outline-variant p-sm px-md rounded-2xl flex items-center justify-between">
+<span class="font-label-md text-on-surface-variant">Maintenance</span>
+<span class="font-title-md text-tertiary">12</span>
+</div>
+<div class="bg-surface border border-outline-variant p-sm px-md rounded-2xl flex items-center justify-between">
+<span class="font-label-md text-on-surface-variant">In Use</span>
+<span class="font-title-md text-primary">84%</span>
+</div>
+</div>
+</section>
+<!-- Asset List -->
+<section class="mt-xl space-y-md">
+<div class="flex items-center justify-between">
+<h2 class="font-title-lg text-on-surface">Recent Inventory</h2>
+<button class="text-primary font-label-lg">View All</button>
+</div>
+<div class="space-y-md">
+<!-- Asset Card 1 -->
+<div class="bg-surface border border-outline-variant rounded-2xl p-md flex gap-md asset-card-shadow transition-all group cursor-pointer">
+<div class="w-20 h-20 bg-surface-container-high rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A professional studio product shot of a modern Epson projector on a minimalist white surface. The lighting is soft and bright, emphasizing a clean corporate educational environment with a teal accent in the background. The style is sharp and high-definition enterprise photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFtfMlo55lYDgfuxbT3bolE6R3TMoBDOS-xILDjVou7NUxs7mZqp5EcoF2Bq6G3t8p17sTGY6-Q-ttpcfR9fcOmzby7rTQA_bTu1Nk6lyrWV_0-MmLhxgETkYY7_YeeNck5Tr2UmY4jrnEDX55-iGgKi36QR98-9X18QrzCAdGgyMCuG4dEp1WpP--TxayeT_7cf_Y_o2f6aB-oR7-2XtxRuS6CRUk_GMi3PMNmw-Mo8rldIDLlHpQ"/>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-on-surface truncate pr-2">Projector Epson X41</h3>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<p class="font-label-md text-outline-variant mt-0.5">NAM-ELC-001 • Electronics</p>
+<div class="flex items-center gap-xs mt-2">
+<span class="material-symbols-outlined text-[14px] text-outline">location_on</span>
+<span class="font-body-md text-on-surface-variant">Room 302</span>
+</div>
+<div class="flex gap-xs mt-3">
+<span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 font-label-md text-[10px]">GOOD</span>
+<span class="px-2 py-0.5 rounded-md bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-[10px]">IN USE</span>
+</div>
+</div>
+</div>
+<!-- Asset Card 2 -->
+<div class="bg-surface border border-outline-variant rounded-2xl p-md flex gap-md asset-card-shadow transition-all group cursor-pointer">
+<div class="w-20 h-20 bg-surface-container-high rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="High-end ergonomic office chair with black mesh and teal fabric accents. The photograph is taken from a low angle in a brightly lit, modern educational office setting. The style is crisp, clean, and professional, reflecting an institutional reliability aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtifpqmj3vsOEB9TCx0rGXzxqIzx-UXWLQbBVSgdEEI7Ea8ntn2QAg_ai41TL_gx8uJsBRxeKsu1GHqkrfiShuTwk8nmGvZg-kTJufxo3blOyZulu9S_gMISD0XxIZGLfdh4v5C7s6E171OlzZcLqgRAJX4O-KvXu8s8W67LdCCRljwc7_8A0b_EseMVqUkc-nqhVq4tPkS-6z2KTcN90MpWj9QJpvNLykcvBx1RCPnSS-6yCwtZqr"/>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-on-surface truncate pr-2">Ergonomic Office Chair</h3>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<p class="font-label-md text-outline-variant mt-0.5">NAM-FUR-082 • Furniture</p>
+<div class="flex items-center gap-xs mt-2">
+<span class="material-symbols-outlined text-[14px] text-outline">location_on</span>
+<span class="font-body-md text-on-surface-variant">Staff Room</span>
+</div>
+<div class="flex gap-xs mt-3">
+<span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 font-label-md text-[10px]">GOOD</span>
+<span class="px-2 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed-variant font-label-md text-[10px]">AVAILABLE</span>
+</div>
+</div>
+</div>
+<!-- Asset Card 3 -->
+<div class="bg-surface border border-outline-variant rounded-2xl p-md flex gap-md asset-card-shadow transition-all group cursor-pointer">
+<div class="w-20 h-20 bg-surface-container-high rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A close-up high-resolution photograph of a high-performance Apple iMac computer on a sleek oak desk in a bright classroom. The lighting is natural and airy, with soft shadows creating a sense of professional clarity. The color palette features whites, light woods, and corporate teal accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-U509rXxKHCBGJacV1yZ3lxKXTduv_CS9QjswZDO9tbQUbmCb_AyKGJOwYJvkxUVZn3cfjyov7J7VcTsTHF3Q-sUfKL-Bf5UnCUnlLDkUTAp0TFx-p5e0nt9h9g-HslXEzx-aAz59jqKdRwDph86IfaurCBzMozs17E_z3cFrH2vtXU52qm1YLk_MqSCDPJy_u-0BmwBf2qpUEiGsAPQsvI63z_vpmJ1FulvjTrmsq4svHgTMFeae"/>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-on-surface truncate pr-2">Apple iMac 24" M3</h3>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<p class="font-label-md text-outline-variant mt-0.5">NAM-ELC-254 • Electronics</p>
+<div class="flex items-center gap-xs mt-2">
+<span class="material-symbols-outlined text-[14px] text-outline">location_on</span>
+<span class="font-body-md text-on-surface-variant">Computer Lab B</span>
+</div>
+<div class="flex gap-xs mt-3">
+<span class="px-2 py-0.5 rounded-md bg-yellow-100 text-yellow-800 font-label-md text-[10px]">FAIR</span>
+<span class="px-2 py-0.5 rounded-md bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-md text-[10px]">REPAIR</span>
+</div>
+</div>
+</div>
+<!-- Asset Card 4 -->
+<div class="bg-surface border border-outline-variant rounded-2xl p-md flex gap-md asset-card-shadow transition-all group cursor-pointer">
+<div class="w-20 h-20 bg-surface-container-high rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A modern commercial-grade air conditioning unit mounted on a clean white wall of a school corridor. The image is taken in bright daylight, showcasing a sterile and well-maintained educational facility. The focus is sharp on the technical details of the hardware." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHY-IApJOA96VLH2DEfHYMT7SPvjxKIFEnCxEezkM-oEWcyeWyzZNi_RUhWStbOueFF0DhijomGcQvLXUmUwiL-futy-LwpmLIeAg7WkqNr-tpqIV-TgAQfGtc3OwZmibSgAMwse0LXj9-C63wv7eNAvfFSIcg9OIfgMa5Uk7wX5Hvmd12ILREPGe_Yf4UyFr4hUR1FvTV4K3UfctUFCEltFiIM8A276vdOsKFsXlO8Jahh70nP0DL"/>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-md text-on-surface truncate pr-2">AC Unit Daikin 2PK</h3>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<p class="font-label-md text-outline-variant mt-0.5">NAM-FAC-019 • Facilities</p>
+<div class="flex items-center gap-xs mt-2">
+<span class="material-symbols-outlined text-[14px] text-outline">location_on</span>
+<span class="font-body-md text-on-surface-variant">Main Auditorium</span>
+</div>
+<div class="flex gap-xs mt-3">
+<span class="px-2 py-0.5 rounded-md bg-red-100 text-red-700 font-label-md text-[10px]">DAMAGED</span>
+<span class="px-2 py-0.5 rounded-md bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-md text-[10px]">REPAIR</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Extended FAB -->
+<button class="fixed bottom-24 right-container-margin z-[60] bg-primary text-on-primary flex items-center gap-2 px-6 py-4 rounded-2xl shadow-xl hover:bg-primary-container transition-all active:scale-95 group">
+<span class="material-symbols-outlined">add</span>
+<span class="font-title-md">Add Asset</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-surface-container-lowest dark:bg-inverse-surface border-t border-outline-variant dark:border-outline">
+<!-- Dashboard -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 transition-opacity active:opacity-80 cursor-pointer">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md mt-1">Dashboard</span>
+</div>
+<!-- Assets (Active) -->
+<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-on-primary-fixed-variant text-on-primary-container dark:text-primary-fixed rounded-full px-5 py-1 transition-opacity active:opacity-80 cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-md text-label-md mt-1">Assets</span>
+</div>
+<!-- Maintenance -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 transition-opacity active:opacity-80 cursor-pointer">
+<span class="material-symbols-outlined">build</span>
+<span class="font-label-md text-label-md mt-1">Maintenance</span>
+</div>
+<!-- Settings -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1 transition-opacity active:opacity-80 cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md mt-1">Settings</span>
+</div>
+</nav>
+<script>
+        // Micro-interactions for chips
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (this.classList.contains('bg-surface')) {
+                    this.classList.toggle('bg-primary-container');
+                    this.classList.toggle('text-on-primary-container');
+                    this.classList.toggle('border-transparent');
+                }
+            });
+        });
+
+        // Hide FAB on scroll down, show on scroll up
+        let lastScrollTop = 0;
+        const fab = document.querySelector('button.fixed.bottom-24');
+        window.addEventListener('scroll', function() {
+            let st = window.pageYOffset || document.documentElement.scrollTop;
+            if (st > lastScrollTop && st > 100){
+                fab.style.transform = 'translateY(120px)';
+                fab.style.opacity = '0';
+            } else {
+                fab.style.transform = 'translateY(0)';
+                fab.style.opacity = '1';
+            }
+            lastScrollTop = st <= 0 ? 0 : st;
+        }, false);
+    </script>
+</body></html>

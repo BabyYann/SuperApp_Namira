@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Academic Recap | SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .animate-slide-in-right {
+            animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+        .stagger-5 { animation-delay: 0.5s; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .chart-bar {
+            transition: height 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed": "#d5e3ff",
+                      "tertiary-fixed-dim": "#ffb691",
+                      "surface-tint": "#006a60",
+                      "on-background": "#151a31",
+                      "on-error-container": "#93000a",
+                      "surface-container": "#ececff",
+                      "on-primary-fixed-variant": "#005048",
+                      "on-primary-fixed": "#00201c",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#fbf8ff",
+                      "primary-fixed": "#85f6e5",
+                      "tertiary-fixed": "#ffdbcb",
+                      "inverse-primary": "#67d9c9",
+                      "surface-dim": "#d4d8f7",
+                      "primary-container": "#008377",
+                      "on-secondary-fixed": "#001b3c",
+                      "surface": "#fbf8ff",
+                      "on-tertiary-container": "#fffbff",
+                      "error": "#ba1a1a",
+                      "on-surface": "#151a31",
+                      "inverse-surface": "#2a2f47",
+                      "secondary-container": "#9fc2fe",
+                      "surface-variant": "#dde1ff",
+                      "tertiary-container": "#c25300",
+                      "on-tertiary-fixed": "#341100",
+                      "on-secondary-container": "#294f83",
+                      "primary-fixed-dim": "#67d9c9",
+                      "outline": "#6d7a77",
+                      "primary": "#00685e",
+                      "on-primary": "#ffffff",
+                      "surface-container-low": "#f3f2ff",
+                      "on-surface-variant": "#3d4947",
+                      "on-secondary-fixed-variant": "#1f477b",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-high": "#e4e7ff",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-container": "#f4fffb",
+                      "secondary-fixed-dim": "#a7c8ff",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#793100",
+                      "inverse-on-surface": "#f0efff",
+                      "surface-container-highest": "#dde1ff",
+                      "background": "#fbf8ff",
+                      "tertiary": "#9b4100",
+                      "secondary": "#3a5f94",
+                      "outline-variant": "#bcc9c6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "gutter": "16px",
+                      "lg": "24px",
+                      "md": "16px",
+                      "container-margin": "16px",
+                      "xs": "4px",
+                      "sm": "8px",
+                      "unit": "8px"
+              },
+              "fontFamily": {
+                      "title-lg": ["Plus Jakarta Sans"],
+                      "display-lg-mobile": ["Plus Jakarta Sans"],
+                      "display-lg": ["Plus Jakarta Sans"],
+                      "title-md": ["Plus Jakarta Sans"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "label-md": ["Plus Jakarta Sans"],
+                      "body-md": ["Plus Jakarta Sans"],
+                      "label-lg": ["Plus Jakarta Sans"],
+                      "body-lg": ["Plus Jakarta Sans"],
+                      "headline-md": ["Plus Jakarta Sans"]
+              },
+              "fontSize": {
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background font-body-md text-on-surface selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden pb-32">
+<!-- Background Shader -->
+<!-- STITCH_SHADER_START:ANIMATION_53 class="fixed inset-0 w-full h-full -z-10 opacity-40" -->
+<div class="fixed inset-0 w-full h-full -z-10 opacity-40" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_53" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_53');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+varying vec2 v_texCoord;
+uniform float u_time;
+uniform vec2 u_resolution;
+
+void main() {
+    vec2 uv = v_texCoord;
+    
+    // Subtle gradient movement
+    float wave = sin(uv.x * 2.0 + u_time * 0.5) * 0.02;
+    float wave2 = cos(uv.y * 3.0 - u_time * 0.3) * 0.01;
+    
+    vec3 color1 = vec3(0.0, 0.588, 0.533); // #009688 Namira Primary
+    vec3 color2 = vec3(0.965, 0.961, 0.984); // #f6f5fb Background
+    
+    float mixFactor = uv.y + wave + wave2;
+    mixFactor = smoothstep(0.0, 1.2, mixFactor);
+    
+    vec3 finalColor = mix(color1 * 0.05, color2, mixFactor);
+    
+    gl_FragColor = vec4(finalColor, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_53 -->
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant flex justify-between items-center px-container-margin py-sm">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg text-on-surface">Academic Recap</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary">ios_share</span>
+</button>
+</header>
+<main class="max-w-7xl mx-auto px-container-margin py-lg space-y-lg">
+<!-- Filters / Chips -->
+<section class="flex items-center gap-sm overflow-x-auto no-scrollbar pb-2 animate-fade-in-up">
+<div class="flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-2 rounded-full font-label-lg whitespace-nowrap shadow-sm">
+<span>Semester 1</span>
+<span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</div>
+<div class="flex items-center gap-2 bg-white/90 backdrop-blur-md border border-outline-variant text-on-surface-variant px-4 py-2 rounded-full font-label-lg whitespace-nowrap hover:bg-surface-container transition-colors">
+<span>2023/2024</span>
+</div>
+<div class="flex items-center gap-2 bg-white/90 backdrop-blur-md border border-outline-variant text-on-surface-variant px-4 py-2 rounded-full font-label-lg whitespace-nowrap hover:bg-surface-container transition-colors">
+<span>Grade 10 - Alpha</span>
+</div>
+<button class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full border border-outline-variant bg-white/90 backdrop-blur-md">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</section>
+<!-- Dashboard Stats Grid -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Average Grade -->
+<div class="bg-white/90 backdrop-blur-md p-md rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.03)] animate-fade-in-up stagger-1">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-on-surface-variant font-label-md">Average Grade</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">auto_stories</span>
+</div>
+</div>
+<div class="text-headline-md font-headline-md text-primary">88.5</div>
+<div class="text-label-md text-outline mt-1">Class Average: 84.2</div>
+</div>
+<!-- Attendance Rate -->
+<div class="bg-white/90 backdrop-blur-md p-md rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.03)] animate-fade-in-up stagger-2">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-on-surface-variant font-label-md">Attendance</span>
+<div class="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">fingerprint</span>
+</div>
+</div>
+<div class="text-headline-md font-headline-md text-secondary">96%</div>
+<div class="text-label-md text-outline mt-1">2 days absent</div>
+</div>
+<!-- Completed Journals -->
+<div class="bg-white/90 backdrop-blur-md p-md rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.03)] animate-fade-in-up stagger-3">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-on-surface-variant font-label-md">Journals</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+</div>
+</div>
+<div class="text-headline-md font-headline-md text-primary">42/45</div>
+<div class="w-full bg-outline-variant h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full w-[93%]"></div>
+</div>
+</div>
+<!-- Performance Trend -->
+<div class="bg-white/90 backdrop-blur-md p-md rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.03)] animate-fade-in-up stagger-4">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-on-surface-variant font-label-md">Trend</span>
+<div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+</div>
+</div>
+<div class="text-headline-md font-headline-md text-green-600">+2.4%</div>
+<div class="text-label-md text-outline mt-1">vs Last Month</div>
+</div>
+</section>
+<!-- Charts Section -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+<!-- Academic Trend (Bar Chart) -->
+<div class="bg-white/90 backdrop-blur-md p-lg rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.05)] animate-scale-in stagger-3">
+<div class="flex items-center justify-between mb-xl">
+<h3 class="font-title-md text-title-md">Academic Performance</h3>
+<button class="text-primary font-label-lg">Detailed View</button>
+</div>
+<div class="h-64 flex items-end justify-between gap-2 px-2 relative">
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8">
+<div class="border-b border-outline-variant/30 w-full"></div>
+<div class="border-b border-outline-variant/30 w-full"></div>
+<div class="border-b border-outline-variant/30 w-full"></div>
+<div class="border-b border-outline-variant/30 w-full"></div>
+</div>
+<!-- Bars with interactive heights -->
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0 group-hover:bg-primary-container" style="height: 85%"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-inverse-surface text-inverse-on-surface text-[10px] px-2 py-1 rounded transition-opacity">85</div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">Math</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0" style="height: 92%"></div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">Science</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0" style="height: 78%"></div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">History</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0" style="height: 88%"></div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">Lang</span>
+</div>
+<div class="flex flex-col items-center flex-1 gap-2 z-10">
+<div class="w-full bg-primary/20 rounded-t-lg relative group">
+<div class="chart-bar w-full bg-primary rounded-t-lg h-0" style="height: 95%"></div>
+</div>
+<span class="text-[10px] font-label-md text-outline truncate w-full text-center">Arts</span>
+</div>
+</div>
+</div>
+<!-- Attendance Trend (Line Chart Area) -->
+<div class="bg-white/90 backdrop-blur-md p-lg rounded-xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.05)] animate-scale-in stagger-4">
+<div class="flex items-center justify-between mb-xl">
+<h3 class="font-title-md text-title-md">Attendance Trend</h3>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="text-[12px] text-outline">Weekly %</span>
+</div>
+</div>
+<div class="h-64 relative overflow-hidden">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 400 200">
+<!-- Curved path for realistic trend -->
+<path class="chart-line" d="M0,180 C50,180 80,160 120,165 C160,170 200,120 240,110 C280,100 320,130 360,120 L400,115" fill="none" stroke="#3a5f94" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+<animate attributename="stroke-dasharray" dur="2s" fill="freeze" from="0,1000" to="1000,0"></animate>
+</path>
+<!-- Data Points -->
+<circle cx="120" cy="165" fill="#3a5f94" r="6" stroke="white" stroke-width="2"></circle>
+<circle cx="240" cy="110" fill="#3a5f94" r="6" stroke="white" stroke-width="2"></circle>
+<circle cx="360" cy="120" fill="#3a5f94" r="6" stroke="white" stroke-width="2"></circle>
+</svg>
+<div class="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-[10px] text-outline pr-2 py-4">
+<span>100%</span>
+<span>75%</span>
+<span>50%</span>
+<span>25%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Recent Reports -->
+<section class="space-y-md">
+<div class="flex items-center justify-between">
+<h3 class="font-title-md text-title-md">Generated Reports</h3>
+<button class="text-primary font-label-lg">See All</button>
+</div>
+<div class="space-y-sm">
+<!-- Report Item 1 -->
+<div class="bg-white/90 backdrop-blur-md p-md rounded-xl border border-outline-variant flex items-center justify-between hover:bg-surface-container-low transition-all group animate-slide-in-right stagger-1">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div>
+<div class="font-label-lg text-on-surface">Monthly Recap - December 2023</div>
+<div class="text-label-md text-outline">Jan 02, 2024 • 1.4 MB</div>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary border border-primary px-3 py-1.5 rounded-full font-label-md hover:bg-primary hover:text-white transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download</span>
+</button>
+</div>
+<!-- Report Item 2 -->
+<div class="bg-white/90 backdrop-blur-md p-md rounded-xl border border-outline-variant flex items-center justify-between hover:bg-surface-container-low transition-all group animate-slide-in-right stagger-2">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<div class="font-label-lg text-on-surface">Academic Performance Grid (XLS)</div>
+<div class="text-label-md text-outline">Dec 20, 2023 • 840 KB</div>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary border border-primary px-3 py-1.5 rounded-full font-label-md hover:bg-primary hover:text-white transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download</span>
+</button>
+</div>
+<!-- Report Item 3 -->
+<div class="bg-white/90 backdrop-blur-md p-md rounded-xl border border-outline-variant flex items-center justify-between hover:bg-surface-container-low transition-all group animate-slide-in-right stagger-3">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<div>
+<div class="font-label-lg text-on-surface">Semester 1 Comprehensive Review</div>
+<div class="text-label-md text-outline">Dec 15, 2023 • 2.8 MB</div>
+</div>
+</div>
+<button class="flex items-center gap-1 text-primary border border-primary px-3 py-1.5 rounded-full font-label-md hover:bg-primary hover:text-white transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<div class="fixed bottom-24 right-container-margin z-50 animate-fade-in-up stagger-5">
+<button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform duration-200 hover:brightness-110" title="Generate New Report">
+<span class="material-symbols-outlined text-[28px]">download</span>
+</button>
+</div>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 h-20 bg-surface/90 backdrop-blur-xl border-t border-outline-variant shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors py-1 flex-1">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary relative py-1 flex-1">
+<div class="absolute -top-1 w-8 h-1 bg-primary rounded-full"></div>
+<span class="material-symbols-outlined font-bold">menu_book</span>
+<span class="font-label-md text-label-md font-bold">Academic</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors py-1 flex-1">
+<span class="material-symbols-outlined">fingerprint</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors py-1 flex-1">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors py-1 flex-1">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for bar charts
+        window.addEventListener('DOMContentLoaded', () => {
+            const bars = document.querySelectorAll('.chart-bar');
+            bars.forEach((bar, index) => {
+                const targetHeight = bar.style.height;
+                bar.style.height = '0';
+                setTimeout(() => {
+                    bar.style.height = targetHeight;
+                }, 400 + (index * 100));
+            });
+        });
+    </script>
+</body></html>

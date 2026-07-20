@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:superapp_namira_flutter/config/theme.dart';
-import 'package:superapp_namira_flutter/core/utils/storage_utils.dart';
 import 'package:superapp_namira_flutter/features/auth/providers/auth_provider.dart';
 import 'package:superapp_namira_flutter/shared/widgets/avatar_widget.dart';
 
@@ -75,7 +74,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     if (_selectedUnitId == null || _selectedRole == null) return;
     setState(() => _submitting = true);
     await ref.read(authProvider.notifier).switchUnit(_selectedUnitId!);
-    await StorageUtils.saveActiveRole(_selectedRole!);
+    await ref.read(authProvider.notifier).setActiveRole(_selectedRole!);
     if (mounted) context.go('/home');
     setState(() => _submitting = false);
   }

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bill Details - SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#1f477b",
+                    "inverse-on-surface": "#f0efff",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdbcb",
+                    "surface-container-low": "#f3f2ff",
+                    "background": "#fbf8ff",
+                    "on-tertiary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#85f6e5",
+                    "on-primary-fixed": "#00201c",
+                    "on-tertiary-fixed-variant": "#793100",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-variant": "#dde1ff",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "tertiary-container": "#c25300",
+                    "tertiary": "#9b4100",
+                    "surface-bright": "#fbf8ff",
+                    "surface-dim": "#d4d8f7",
+                    "outline": "#6d7a77",
+                    "on-secondary-fixed": "#001b3c",
+                    "secondary-fixed-dim": "#a7c8ff",
+                    "on-tertiary-fixed": "#341100",
+                    "on-primary": "#ffffff",
+                    "secondary": "#3a5f94",
+                    "on-surface": "#151a31",
+                    "on-primary-fixed-variant": "#005048",
+                    "inverse-surface": "#2a2f47",
+                    "primary": "#00685e",
+                    "surface-container-high": "#e4e7ff",
+                    "on-secondary": "#ffffff",
+                    "surface-container": "#ececff",
+                    "inverse-primary": "#67d9c9",
+                    "on-primary-container": "#f4fffb",
+                    "outline-variant": "#bcc9c6",
+                    "on-background": "#151a31",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#3d4947",
+                    "secondary-container": "#9fc2fe",
+                    "primary-fixed-dim": "#67d9c9",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#d5e3ff",
+                    "surface-tint": "#006a60",
+                    "surface-container-highest": "#dde1ff",
+                    "surface": "#fbf8ff",
+                    "on-secondary-container": "#294f83",
+                    "primary-container": "#008377"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-margin": "16px",
+                    "gutter": "16px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "unit": "8px",
+                    "sm": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "title-md": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fbf8ff; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .custom-shadow { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        .active-method { border-color: #00685e; background-color: #f4fffb; }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-surface shadow-sm">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container-high transition-colors active:scale-95 duration-150 rounded-full">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg text-primary font-bold">Student Details</h1>
+</div>
+<button class="p-2 hover:bg-surface-container-high transition-colors active:scale-95 duration-150 rounded-full">
+<span class="material-symbols-outlined text-primary">more_vert</span>
+</button>
+</header>
+<main class="pt-20 pb-32 px-4 space-y-6 max-w-2xl mx-auto">
+<!-- Header Billing Info -->
+<section class="bg-surface rounded-xl p-6 custom-shadow border border-outline-variant/30 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full font-label-lg text-label-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">priority_high</span>
+                    Overdue
+                </span>
+</div>
+<div class="space-y-1">
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Invoice Number</p>
+<h2 class="font-title-md text-title-md text-on-surface">INV/2023/X/0491</h2>
+</div>
+<div class="mt-6 flex flex-col items-center justify-center py-4">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Outstanding Amount</p>
+<p class="font-display-lg-mobile text-display-lg-mobile text-on-surface font-extrabold mt-1">Rp 1.500.000</p>
+<div class="flex items-center gap-2 mt-2 text-error">
+<span class="material-symbols-outlined text-sm">event</span>
+<p class="font-body-md text-body-md font-semibold">Due Oct 15, 2023</p>
+</div>
+</div>
+</section>
+<!-- Student Info Card -->
+<section class="bg-surface-container-lowest rounded-xl p-4 custom-shadow border border-outline-variant/20 flex items-center gap-4">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional, high-quality studio portrait of a high school student named Adrian Wijaya. He is wearing a neat white school uniform with a dark navy blazer, smiling warmly against a soft-focus library background. The lighting is crisp and clean, reflecting a prestigious institutional atmosphere with cool teal undertones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgJbZ_F5zmATBUF8vFBRPRAT-9ZK_r518VtUHzZ_uqP-Ke_AuJIibnw2XViP5PYihFX4YWirt6OT5qEjTY15TpDBZJtWMWDsFLX1zh0QQbrUfj548s_VXrWJ9WTmaLwYocsiuOuOkf6xpduDbBec1qAR2sZ3WOFiV4A2aGEXcrEUk38kbKE0WaWNEAXuT5mT6t7X_JNH1NifTNC5CFoMoUO-4W1lsd7epTz0_XephfHaR7mg3W79ah"/>
+</div>
+<div class="flex-1">
+<h3 class="font-title-md text-title-md text-on-surface">Adrian Wijaya</h3>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded font-label-md text-label-md">Grade 10 - Alpha</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+<span class="font-semibold">Parent:</span> Budi Wijaya
+                </p>
+</div>
+<button class="p-2 text-primary hover:bg-primary-container/10 rounded-full">
+<span class="material-symbols-outlined">contact_page</span>
+</button>
+</section>
+<!-- Payment Details Itemized List -->
+<section class="bg-surface rounded-xl p-6 custom-shadow border border-outline-variant/30">
+<h3 class="font-title-md text-title-md text-on-surface mb-4">Payment Details</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface-variant">Tuition Fee</span>
+<span class="font-body-md text-body-md font-medium text-on-surface">Rp 1.200.000</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface-variant">Books & Materials</span>
+<span class="font-body-md text-body-md font-medium text-on-surface">Rp 200.000</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface-variant">Uniform</span>
+<span class="font-body-md text-body-md font-medium text-on-surface">Rp 150.000</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface-variant">Activities Fee</span>
+<span class="font-body-md text-body-md font-medium text-on-surface">Rp 50.000</span>
+</div>
+<div class="flex justify-between items-center py-2 border-t border-dashed border-outline-variant/40">
+<span class="font-body-md text-body-md text-primary font-medium">Early Bird Discount</span>
+<span class="font-body-md text-body-md font-bold text-primary">-Rp 100.000</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-on-surface-variant">Tax (11%)</span>
+<span class="font-body-md text-body-md font-medium text-on-surface">Included</span>
+</div>
+<div class="pt-4 mt-2 border-t border-outline-variant flex justify-between items-center">
+<span class="font-title-lg text-title-lg text-on-surface font-bold">Grand Total</span>
+<span class="font-title-lg text-title-lg text-primary font-extrabold">Rp 1.500.000</span>
+</div>
+</div>
+</section>
+<!-- Payment Method Options -->
+<section class="space-y-4">
+<h3 class="font-title-md text-title-md text-on-surface px-1">Payment Method</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="cursor-pointer bg-surface p-4 rounded-xl border-2 border-outline-variant/30 hover:border-primary/50 transition-all active:scale-95 active-method" onclick="selectMethod(this)">
+<span class="material-symbols-outlined text-primary mb-2">account_balance</span>
+<p class="font-label-lg text-label-lg text-on-surface">Virtual Account</p>
+</div>
+<div class="cursor-pointer bg-surface p-4 rounded-xl border-2 border-outline-variant/30 hover:border-primary/50 transition-all active:scale-95" onclick="selectMethod(this)">
+<span class="material-symbols-outlined text-primary mb-2">qr_code_2</span>
+<p class="font-label-lg text-label-lg text-on-surface">QRIS</p>
+</div>
+<div class="cursor-pointer bg-surface p-4 rounded-xl border-2 border-outline-variant/30 hover:border-primary/50 transition-all active:scale-95" onclick="selectMethod(this)">
+<span class="material-symbols-outlined text-primary mb-2">send_money</span>
+<p class="font-label-lg text-label-lg text-on-surface">Bank Transfer</p>
+</div>
+<div class="cursor-pointer bg-surface p-4 rounded-xl border-2 border-outline-variant/30 hover:border-primary/50 transition-all active:scale-95" onclick="selectMethod(this)">
+<span class="material-symbols-outlined text-primary mb-2">payments</span>
+<p class="font-label-lg text-label-lg text-on-surface">Cash</p>
+</div>
+</div>
+</section>
+<!-- Secondary Actions -->
+<section class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-2 py-3 rounded-xl border border-outline-variant hover:bg-surface-container transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">download</span>
+<span class="font-label-lg text-label-lg text-on-surface">Invoice PDF</span>
+</button>
+<button class="flex items-center justify-center gap-2 py-3 rounded-xl border border-outline-variant hover:bg-surface-container transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">share</span>
+<span class="font-label-lg text-label-lg text-on-surface">Share Bill</span>
+</button>
+</section>
+</main>
+<!-- Bottom Actions Container -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-container p-4 border-t border-outline-variant z-40">
+<div class="max-w-2xl mx-auto">
+<button class="w-full py-4 bg-primary text-on-primary rounded-xl font-title-md text-title-md shadow-lg active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                Mark as Paid
+            </button>
+</div>
+</div>
+<!-- Bottom Nav Bar (Shared Component Context) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-1 bg-surface-container border-t border-outline-variant md:hidden hidden">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2">
+<span class="material-symbols-outlined">call</span>
+<span class="font-label-md text-label-md">Contact Parent</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2">
+<span class="material-symbols-outlined">mail</span>
+<span class="font-label-md text-label-md">Send Message</span>
+</div>
+</nav>
+<script>
+        function selectMethod(el) {
+            // Remove active class from all method cards
+            document.querySelectorAll('[onclick="selectMethod(this)"]').forEach(card => {
+                card.classList.remove('active-method', 'border-primary');
+                card.classList.add('border-outline-variant/30');
+            });
+            // Add active class to clicked card
+            el.classList.add('active-method', 'border-primary');
+            el.classList.remove('border-outline-variant/30');
+            
+            // Micro-interaction haptic simulation
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(10);
+            }
+        }
+
+        // Add subtle entrance animation
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = document.querySelectorAll('section');
+            sections.forEach((s, i) => {
+                s.style.opacity = '0';
+                s.style.transform = 'translateY(10px)';
+                s.style.transition = 'all 0.4s ease-out';
+                setTimeout(() => {
+                    s.style.opacity = '1';
+                    s.style.transform = 'translateY(0)';
+                }, i * 100);
+            });
+        });
+    </script>
+</body></html>

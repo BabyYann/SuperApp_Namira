@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>School Partners | SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#005048",
+                        "on-surface-variant": "#3d4947",
+                        "error-container": "#ffdad6",
+                        "surface": "#fbf8ff",
+                        "surface-container": "#ececff",
+                        "surface-container-low": "#f3f2ff",
+                        "primary-fixed-dim": "#67d9c9",
+                        "on-primary-container": "#f4fffb",
+                        "on-tertiary": "#ffffff",
+                        "outline": "#6d7a77",
+                        "inverse-on-surface": "#f0efff",
+                        "inverse-surface": "#2a2f47",
+                        "surface-bright": "#fbf8ff",
+                        "secondary-container": "#9fc2fe",
+                        "secondary-fixed": "#d5e3ff",
+                        "surface-container-highest": "#dde1ff",
+                        "primary-fixed": "#85f6e5",
+                        "secondary": "#3a5f94",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "tertiary-container": "#c25300",
+                        "surface-container-high": "#e4e7ff",
+                        "inverse-primary": "#67d9c9",
+                        "surface-variant": "#dde1ff",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "primary-container": "#008377",
+                        "on-secondary-container": "#294f83",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#001b3c",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#006a60",
+                        "primary": "#00685e",
+                        "surface-dim": "#d4d8f7",
+                        "outline-variant": "#bcc9c6",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-fixed": "#ffdbcb",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "on-background": "#151a31",
+                        "on-tertiary-fixed": "#341100",
+                        "on-surface": "#151a31",
+                        "background": "#fbf8ff",
+                        "on-primary-fixed": "#00201c",
+                        "tertiary": "#9b4100",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#1f477b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "md": "16px",
+                        "container-margin": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "unit": "8px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F5F7FA;
+            color: #151A31;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bg-pattern {
+            background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLsXpKYvoNXHMurtKW7Oy4stDS3rR780wAJRoyTDla11yV7nG-3kV3qz-G2dm3FrqX4-NQUeNig4Fn2eAgNTKUq27pc0N9acTX7UgZKiKjDySZ3eOroXaGfdGI5NAUrEauNOBNDXmu0eLRSWjB1MUz6tQETZGynEkME-xZItee_y6iRvNRIrpSYNOIeJkIC4y4I3iPPnAwb_YnHJcMa_xZP2k9-j1jXXMwRPiGvcCBG6CbuykFHS5oSYJA');
+            background-repeat: repeat;
+            background-size: 400px;
+        }
+        .custom-card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .btn-hover-effect {
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
+        }
+        .btn-hover-effect:active {
+            transform: scale(0.96);
+        }
+        .scrolling-touch {
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="bg-pattern min-h-screen pb-24">
+<!-- Top Bar Component -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm h-16 flex justify-between items-center px-4 max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">School Partners</h1>
+</div>
+<div class="hidden md:flex flex-1 max-w-md mx-8">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 focus:ring-2 focus:ring-primary text-body-md" placeholder="Search destinations or partners..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-variant border-2 border-primary-container flex items-center justify-center overflow-hidden cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female educator in her late 30s, wearing a navy blazer and white blouse. She has a warm, confident smile and is framed against a soft-focus office background with high-key lighting. The style is crisp and professional, fitting an enterprise education platform with Teal accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbsQ9SmNvBnD4g4C2cQoAvhzTJWst5fSnaDyPDM38e-38LoYGFx7iJl_Mdg0f6PQDW12FWQHdy_4-OKLabV-KXeDUk7mmdvBT6Me4Ri82FbY_NylRVo3zZBYNl5soP_oey52HOltsK-fxFgzSqfz7hYp-2qqzy4qb-d_2bEyR34qfP3KbtyxbWxmnG_Xrv5pL3MrUoPkNSmcSpb1caEHpUproBsf_zJupPNSl4_56Lgu8wCnGh3tRn"/>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<main class="pt-20 px-4 md:px-xl max-w-4xl mx-auto">
+<!-- Mobile Search (Hidden on Desktop) -->
+<div class="md:hidden mt-4 mb-6">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface border-outline-variant rounded-xl py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary text-body-md shadow-sm" placeholder="Find a school..." type="text"/>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="flex gap-2 mb-6 overflow-x-auto pb-2 scrolling-touch no-scrollbar">
+<span class="bg-primary text-on-primary px-4 py-1.5 rounded-full font-label-lg whitespace-nowrap cursor-pointer">All Partners</span>
+<span class="bg-surface text-on-surface-variant border border-outline-variant px-4 py-1.5 rounded-full font-label-lg whitespace-nowrap cursor-pointer hover:bg-surface-container-high">International</span>
+<span class="bg-surface text-on-surface-variant border border-outline-variant px-4 py-1.5 rounded-full font-label-lg whitespace-nowrap cursor-pointer hover:bg-surface-container-high">Vocational</span>
+<span class="bg-surface text-on-surface-variant border border-outline-variant px-4 py-1.5 rounded-full font-label-lg whitespace-nowrap cursor-pointer hover:bg-surface-container-high">Higher Ed</span>
+</div>
+<!-- List of Partner School Cards -->
+<div class="space-y-6">
+<!-- Card 1: St. George International -->
+<section class="bg-surface rounded-2xl border border-outline-variant custom-card-shadow overflow-hidden">
+<div class="p-4 md:p-6">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-4">
+<div class="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-surface-container-high flex items-center justify-center p-2">
+<img class="w-full h-full object-contain" data-alt="A modern, minimalist school crest featuring an open book and a stylized globe in deep navy and teal. The design is flat and elegant, presented on a clean white circular background. The lighting is perfectly even, maintaining a premium institutional feel for a high-end school partner identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBll0vkX9msEKaZg-pHrTO22o2SzQWpXuEOVbMrO1XvkWIaKIKA06gft4aaHNzHHIj_LP4PCBojy-oPB2tjLiKQh2uz00f7AV18sADRXLM_qTQMs0FTe23y_K8y07kug4gRYWcv4jywNYZNDgAV3T6Ovo5oSqIi6SUDcNnTfzzCet1Um4p9rvO8jdNINLIEPqiN264NNX0liql2eyN-NNPJpZzSZ66Fwh2QgMAJD4OxcNKXNpNLrobg"/>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface mb-1">St. George International School</h2>
+<div class="flex items-center gap-3 text-on-surface-variant text-body-md">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span> London, UK
+                                    </span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">public</span> United Kingdom
+                                    </span>
+</div>
+</div>
+</div>
+<div class="hidden sm:flex flex-col items-end gap-2">
+<span class="bg-primary-container/10 text-primary px-3 py-1 rounded-full font-label-md">International Partner</span>
+<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
+                            </span>
+</div>
+</div>
+<!-- Details Area (Inline Expandable Concept) -->
+<div class="mt-6 border-t border-outline-variant/30 pt-4">
+<p class="text-on-surface-variant text-body-md leading-relaxed mb-4 line-clamp-3">
+                            A leading institution specializing in global exchange programs and STEM curricula. St. George provides a rich cultural environment and state-of-the-art laboratory facilities for visiting scholars.
+                        </p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+<div>
+<h3 class="font-label-lg text-on-surface-variant uppercase tracking-wider mb-2">Common Programs</h3>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-container-low text-on-surface-variant px-2 py-1 rounded font-body-md text-xs border border-outline-variant/20">Student Exchange</span>
+<span class="bg-surface-container-low text-on-surface-variant px-2 py-1 rounded font-body-md text-xs border border-outline-variant/20">Summer Intensive</span>
+<span class="bg-surface-container-low text-on-surface-variant px-2 py-1 rounded font-body-md text-xs border border-outline-variant/20">Teacher Training</span>
+</div>
+</div>
+<div>
+<h3 class="font-label-lg text-on-surface-variant uppercase tracking-wider mb-2">Recent Visits</h3>
+<div class="flex items-center -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-slate-200 flex items-center justify-center text-[10px] font-bold">JD</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-teal-200 flex items-center justify-center text-[10px] font-bold">MK</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-orange-200 flex items-center justify-center text-[10px] font-bold">RL</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-surface-variant flex items-center justify-center text-[10px] font-medium">+4</div>
+<span class="ml-4 text-xs text-on-surface-variant">Last visit: Oct 2023</span>
+</div>
+</div>
+</div>
+<!-- Mini Gallery -->
+<div class="mb-6">
+<h3 class="font-label-lg text-on-surface-variant uppercase tracking-wider mb-2">Campus Preview</h3>
+<div class="flex gap-2 overflow-x-auto no-scrollbar">
+<div class="min-w-[100px] h-20 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A wide-angle shot of a grand, historic red-brick school building in London, framed by lush green lawns and autumn leaves. The lighting is soft and golden, accentuating the architectural heritage. The image is clean and bright, maintaining the educational and professional theme of the SuperApp Namira platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfUoodlC1zMnUmNbwVD2oSCtjavQHKAphv_ieyY5DgvziJDXBI0pLihS8A9z9jb8rPGD9bYtXAwvFMuarHv7MN7g45BOtxjQUBC4aUZYzLLSone9aqsBZTGfSZjb3yV6RClv4JyejctR4FuWGu19g2XulERGSvu28H_TravB59mC6MRmh_MovPWFeU-njYiF45BJ-orKmSlpEx44KygkoFbAk7np6fhRY1uYBwGcQo5FLYn_EUBCxt"/>
+</div>
+<div class="min-w-[100px] h-20 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A modern high-tech science laboratory inside an international school. The room features bright white workstations, sleek glass equipment, and teal-accented cabinetry. Students are blurred in the background to focus on the advanced learning environment. The mood is clinical, professional, and forward-thinking." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGj3BIChTrJ0PIA5YMgFk1TMXkJPCqtym765mqcdLWX0ltQ6HvBMgIG2qnOUZ-2F1BTSQzbVHaxXWf5cOgB33GloSVtGKA3cv4oR1rinjc0jmZwt41JbdhNXrfWf613uKeD1SUvbGf-um14DbVXjWIHsGQZVtFiPY09VRj__V4JaY82itHr5V_gdRIVizYbcr5N1HwReTQMKTqAmAwEh4xqqlvGgIFZA2LE2NHbCtbH3L1pAFGfU9y"/>
+</div>
+<div class="min-w-[100px] h-20 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A bright, airy school library with floor-to-ceiling windows and rows of modern white shelving. Pops of Teal and Navy blue are present in the seating. The environment is serene and intellectually stimulating, shot with a high-key lighting style to match the UI design system's clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApHgDq94nWKpI25NbDX0Lli0CJVCPeNpfy8NmUfYwDj6zDmDixbTAPnVqCHktw3LnAwoG8gTTNdnEiSRLZV9cMpE5sDw5_0q_T0IeitLj12nJOPKqemZh8XRYU-DFwcP64K82KxDb9jaB4luaQBIf9hBFtYLM4Ud0oCWmq-MQUxWsqjhJYHZDSwbGoDYMjU8l70yvGXC9WB0AUC4I5fM6ZEGvSuKG733uOHJba4nQDbmTf6Ym4hfJO"/>
+</div>
+<div class="min-w-[100px] h-20 rounded-lg overflow-hidden bg-surface-container flex items-center justify-center bg-primary-container/10">
+<span class="material-symbols-outlined text-primary">add</span>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex gap-3">
+<button class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-label-lg btn-hover-effect flex items-center justify-center gap-2">
+                                View Detail
+                                <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<button class="px-6 border border-secondary text-secondary py-3 rounded-xl font-label-lg btn-hover-effect flex items-center justify-center gap-2 hover:bg-secondary/5">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+                                Contact
+                            </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Card 2: Kyoto Institute of Technology -->
+<section class="bg-surface rounded-2xl border border-outline-variant custom-card-shadow overflow-hidden">
+<div class="p-4 md:p-6">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-4">
+<div class="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-surface-container-high flex items-center justify-center p-2">
+<img class="w-full h-full object-contain" data-alt="A minimalist logo for a Japanese technical institute, featuring a stylized red sun and a precise teal geometric gear shape. The design is balanced and symmetrical, emphasizing technical precision and institutional heritage. Flat vector style on a clean white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2A9LkBDydMYqqmOKTAzdUjuokcO0iQMH2ZOgL2aPTCi8kpJsW2EoJ3MVPGehqMnajXHHDgRsgNmY5tq6zAh3EkOsLZT36MiT2i31vjGweLxPOStQBKrDnmoM5FaIyn2nzGUGlOnoLfzTYn36g6ehxZbGPmGmbyJafTQdxu3HC4XcIFUI6Ylk_0DmNKi24CtIogMTeAfBvAvQOc391gDjqnOEkWvBK0m02Yg32YM7c4hHRcxW3umqj"/>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface mb-1">Kyoto Tech Institute</h2>
+<div class="flex items-center gap-3 text-on-surface-variant text-body-md">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span> Kyoto, JPN
+                                    </span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">public</span> Japan
+                                    </span>
+</div>
+</div>
+</div>
+<div class="hidden sm:flex flex-col items-end gap-2">
+<span class="bg-tertiary-container/10 text-tertiary px-3 py-1 rounded-full font-label-md">Vocational Exchange</span>
+<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Pending Renewal
+                            </span>
+</div>
+</div>
+<div class="mt-6 border-t border-outline-variant/30 pt-4">
+<p class="text-on-surface-variant text-body-md leading-relaxed mb-4 line-clamp-3">
+                            Specializing in robotics and traditional design integration. This partner offers unique vocational training programs that bridge modern engineering with classic craftsmanship.
+                        </p>
+<div class="flex gap-3">
+<button class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-label-lg btn-hover-effect">View Detail</button>
+<button class="px-6 border border-secondary text-secondary py-3 rounded-xl font-label-lg btn-hover-effect">Contact</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Card 3: Melbourne Academy -->
+<section class="bg-surface rounded-2xl border border-outline-variant custom-card-shadow overflow-hidden">
+<div class="p-4 md:p-6">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-4">
+<div class="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-surface-container-high flex items-center justify-center p-2">
+<img class="w-full h-full object-contain" data-alt="A clean academic logo for an Australian school, showing a stylized blue wave and an torch icon. The colors are navy, teal, and a touch of gold. The design is modern yet respects traditional academic values, set on a bright white background with soft ambient lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-_-vzYwxNXiFj5S60Ivaevqq1jPgARkCPrmJ35cRAKEEr3_Uz1fiU3umVVEsQ3K59g_68dj7uZ6JUpqAv9biJWml5nMQX4ly1SnZ-3gzs-mbOp2sWaor26jFXhBEtqEEXXSqWWA1m5zooZOG-5DtkaPIfHs7PsYUXDMj_AeXOxU3o84-BQuiJHvoppOdpe6MDZtAykSqLAiu454bsVzPOYkeJ6h77mVIP7n9Qo4E_HScQ4AX-7Wvn"/>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface mb-1">Melbourne Academy</h2>
+<div class="flex items-center gap-3 text-on-surface-variant text-body-md">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">location_on</span> Melbourne, AUS
+                                    </span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">public</span> Australia
+                                    </span>
+</div>
+</div>
+</div>
+<div class="hidden sm:flex flex-col items-end gap-2">
+<span class="bg-primary-container/10 text-primary px-3 py-1 rounded-full font-label-md">International Partner</span>
+<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
+                            </span>
+</div>
+</div>
+<div class="mt-6 border-t border-outline-variant/30 pt-4">
+<div class="flex gap-3">
+<button class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-label-lg btn-hover-effect">View Detail</button>
+<button class="px-6 border border-secondary text-secondary py-3 rounded-xl font-label-lg btn-hover-effect">Contact</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation Component -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 pb-safe bg-surface border-t border-outline-variant">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">school</span>
+<span class="font-label-md text-label-md">Academic</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">event_available</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<script>
+        // Simple Micro-interaction for search bar focusing
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary');
+        });
+
+        // Add active states to navigation items
+        const navItems = document.querySelectorAll('nav a');
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                navItems.forEach(i => {
+                    i.className = "flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 transition-all active:scale-90 duration-200";
+                    i.querySelector('span.material-symbols-outlined').style.fontVariationSettings = "'FILL' 0";
+                });
+                item.className = "flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 transition-all active:scale-90 duration-200";
+                item.querySelector('span.material-symbols-outlined').style.fontVariationSettings = "'FILL' 1";
+            });
+        });
+    </script>
+</body></html>

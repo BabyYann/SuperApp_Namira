@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<title>Student Attendance - SuperApp Namira</title>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#fbf8ff",
+                        "outline-variant": "#bcc9c6",
+                        "surface-container-low": "#f3f2ff",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "outline": "#6d7a77",
+                        "tertiary-fixed": "#ffdbcb",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#00201c",
+                        "surface-tint": "#006a60",
+                        "surface-container": "#ececff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "secondary-container": "#9fc2fe",
+                        "on-surface-variant": "#3d4947",
+                        "on-secondary-fixed": "#001b3c",
+                        "primary-fixed": "#85f6e5",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#008377",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "tertiary": "#9b4100",
+                        "surface-container-high": "#e4e7ff",
+                        "tertiary-container": "#c25300",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#dde1ff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "background": "#fbf8ff",
+                        "inverse-surface": "#2a2f47",
+                        "secondary-fixed": "#d5e3ff",
+                        "primary": "#00685e",
+                        "surface-bright": "#fbf8ff",
+                        "secondary": "#3a5f94",
+                        "inverse-on-surface": "#f0efff",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "surface-container-highest": "#dde1ff",
+                        "on-primary-fixed-variant": "#005048",
+                        "primary-fixed-dim": "#67d9c9",
+                        "inverse-primary": "#67d9c9",
+                        "surface-dim": "#d4d8f7",
+                        "on-secondary-container": "#294f83",
+                        "on-tertiary-container": "#fffbff",
+                        "on-surface": "#151a31",
+                        "on-background": "#151a31",
+                        "on-primary-container": "#f4fffb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "unit": "8px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "container-margin": "16px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .segmented-button input:checked + label {
+            background-color: #006a60; /* primary */
+            color: #ffffff; /* on-primary */
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top App Bar (Shared Component Strategy) -->
+<header class="bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed-dim font-title-lg-mobile text-title-lg-mobile w-full top-0 sticky z-50 border-b border-outline-variant dark:border-outline flex justify-between items-center px-container-margin py-sm">
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined hover:bg-surface-container-low transition-colors p-2 rounded-full active:scale-95 duration-100">arrow_back</button>
+<span class="font-headline-md text-headline-md font-bold text-primary">SuperApp Namira</span>
+</div>
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female educator in her late 30s, wearing business casual attire and glasses. She is smiling warmly against a soft-focus classroom background. The lighting is bright and natural, maintaining a clean and institutional professional aesthetic for a high-end education app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHW3BU2DPAj9tAaXuX1lcLEGXtSFW8frFv0kB_eAHgv40bXiiSMKoQo2sAxpvtBNO0NSv0xCAyXkYlm0LKOcqK88sh4YvBAI1sS2tjozTUaIOKkbRc9vEQdIALN7SHWciNkqyK7TFAWMwZoq4DrvABPFQRDKXvzK8y628U7npERTHTanVnOOMByYERzjG76YD7RtKhDwP9OU2XJFgeSDeFnMIa8gjjkG4ZKyr6gnkz_Yz_zQiKF1ta"/>
+</div>
+<span class="material-symbols-outlined hover:bg-surface-container-low transition-colors p-2 rounded-full active:scale-95 duration-100">school</span>
+</div>
+</header>
+<main class="max-w-3xl mx-auto px-container-margin pb-32">
+<!-- Class Context Header -->
+<section class="mt-lg p-xl bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-lg">
+<div class="space-y-sm">
+<div class="flex items-center gap-xs text-primary">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+<span class="font-label-lg text-label-lg">Grade 10 - Alpha</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">Advanced Mathematics</h1>
+<div class="inline-flex items-center px-md py-xs bg-secondary-container text-on-secondary-container rounded-full font-label-md text-label-md">
+                    Meeting #12
+                </div>
+</div>
+<div class="flex items-end">
+<button class="flex items-center gap-sm bg-primary text-on-primary font-label-lg text-label-lg px-lg py-md rounded-xl hover:bg-primary-container transition-all active:scale-95" onclick="markAllPresent()">
+<span class="material-symbols-outlined">done_all</span>
+                    Mark All Present
+                </button>
+</div>
+</section>
+<!-- Search & Filter (Contextual Addition) -->
+<div class="mt-lg flex gap-md">
+<div class="relative flex-1 group">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-xl pr-md py-md bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-body-md" placeholder="Search student name..." type="text"/>
+</div>
+</div>
+<!-- Student List -->
+<section class="mt-lg space-y-md">
+<div class="flex items-center justify-between mb-sm">
+<h2 class="font-title-md text-title-md text-on-surface-variant">Class Roster (24 Students)</h2>
+</div>
+<!-- Student Card Loop -->
+<div class="space-y-md" id="student-list">
+<!-- Template Student Card 1 -->
+<div class="student-card p-md bg-white border border-outline-variant rounded-xl shadow-sm hover:border-primary/30 transition-colors flex flex-col md:flex-row md:items-center gap-md">
+<div class="flex items-center gap-md flex-1">
+<div class="w-12 h-12 rounded-full bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A candid profile photo of a teenage male student with curly hair, smiling and wearing a smart blue school uniform. The background is a brightly lit school hallway with soft focus. The overall mood is academic and friendly, adhering to a high-quality institution visual standard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBo-ijkijoA5UGZ_h24mk4DiMEHSyW6UbyBHIhAR13Zw0oR7TqaVjmRQ6CAJ9nZYMgpyZPSew4KczTUaImPyAWiqCUpTdEcx7tGdpqTlA-q4qm_VAQHwrj79pmyqbWmYl7A3JXnYe4z0lrFGwQ9ZNebCsDFChsWEI2Ocv00jX_eOBTvdpWeRabSskUY9jV9r158EXLsJ34JMNef9da_sk6-X8Eibj9Bt1IYDuvYtFpvlFK8UywT71EC"/>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Ahmad Rizky Pratama</p>
+<p class="font-label-md text-label-md text-outline">Student ID: 20241001</p>
+</div>
+</div>
+<!-- Segmented Button (Attendance Status) -->
+<div class="flex items-center w-full md:w-auto overflow-x-auto hide-scrollbar border border-outline-variant rounded-lg overflow-hidden h-10">
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input checked="" class="hidden" id="p-01" name="attendance-01" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="p-01">Present</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="s-01" name="attendance-01" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="s-01">Sick</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="pe-01" name="attendance-01" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="pe-01">Permit</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="a-01" name="attendance-01" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="a-01">Absent</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="l-01" name="attendance-01" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors" for="l-01">Late</label>
+</div>
+</div>
+</div>
+<!-- Template Student Card 2 -->
+<div class="student-card p-md bg-white border border-outline-variant rounded-xl shadow-sm hover:border-primary/30 transition-colors flex flex-col md:flex-row md:items-center gap-md">
+<div class="flex items-center gap-md flex-1">
+<div class="w-12 h-12 rounded-full bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional school portrait of a young female student with braided hair, wearing a white and maroon school blazer. She is smiling confidently. The image is set against a solid light gray background with soft, even studio lighting that emphasizes clarity and a professional educational environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFMjm4bu9sPBx-Zs9eS44Of61Z7jt7ZWRBVDCUednUWm1DQ1fj9TyRPbQ9Oz2brrHjC8DehZBHrcWk2WWedLWRU45y8bRf1XknkIYzyih8WoeBPEWBYyqNs-T0cFfUm8-XAXoNAKNg2gCriL8OjPcIAtPz3kxLwDpSR3JqUd7qEfJzTQsNnRlqDss0aDwoOEfValPhu8aYgQNeqgZVMTTkXsHEtS9Ds4Z-VRGchOl8jSHQphLkA8rN"/>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Siti Aisyah Putri</p>
+<p class="font-label-md text-label-md text-outline">Student ID: 20241002</p>
+</div>
+</div>
+<div class="flex items-center w-full md:w-auto overflow-x-auto hide-scrollbar border border-outline-variant rounded-lg overflow-hidden h-10">
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input checked="" class="hidden" id="p-02" name="attendance-02" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="p-02">Present</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="s-02" name="attendance-02" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="s-02">Sick</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="pe-02" name="attendance-02" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="pe-02">Permit</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="a-02" name="attendance-02" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="a-02">Absent</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="l-02" name="attendance-02" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors" for="l-02">Late</label>
+</div>
+</div>
+</div>
+<!-- Template Student Card 3 -->
+<div class="student-card p-md bg-white border border-outline-variant rounded-xl shadow-sm hover:border-primary/30 transition-colors flex flex-col md:flex-row md:items-center gap-md">
+<div class="flex items-center gap-md flex-1">
+<div class="w-12 h-12 rounded-full bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A close-up photograph of a male teenage student with a tidy appearance and glasses, looking at the camera with a neutral, focused expression. He is wearing a grey educational institution sweater. The lighting is crisp and clear, emphasizing a clean, high-stakes academic atmosphere in a modern school setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsJAMUZ86TTRjCOBAoFbbodpY_BmcZpvWIjFfufE7Y-_cyMhFsve8ZXrFCFXgUpVU1xwUb1CXYLpsKXB2KaseuHUASQsFrbEe2BBcT7aRano9TYnUOOBzK26Smkyj9ib85rGYID5pXEexOfdl-EZaBNX9qMyp6yH3z7zECdlhL78F_yLEsYZH6KKQNhhkxozv7sTk8yTKQrmVah3z7lGA102fzazOB7e20vZq0EbAWdUNE3XBDD3zl"/>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Budi Santoso</p>
+<p class="font-label-md text-label-md text-outline">Student ID: 20241003</p>
+</div>
+</div>
+<div class="flex items-center w-full md:w-auto overflow-x-auto hide-scrollbar border border-outline-variant rounded-lg overflow-hidden h-10">
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="p-03" name="attendance-03" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="p-03">Present</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input checked="" class="hidden" id="s-03" name="attendance-03" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="s-03">Sick</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="pe-03" name="attendance-03" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="pe-03">Permit</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="a-03" name="attendance-03" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="a-03">Absent</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="l-03" name="attendance-03" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors" for="l-03">Late</label>
+</div>
+</div>
+</div>
+<!-- Template Student Card 4 -->
+<div class="student-card p-md bg-white border border-outline-variant rounded-xl shadow-sm hover:border-primary/30 transition-colors flex flex-col md:flex-row md:items-center gap-md">
+<div class="flex items-center gap-md flex-1">
+<div class="w-12 h-12 rounded-full bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A portrait of a young female student with long black hair, smiling gently. She wears a clean white collared shirt suitable for a formal school environment. The background is a soft blue-grey, with bright and flattering lighting that suggests a professional student database photograph for an elite educational institution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGUqae5jImUpwSHP0S_FPJpVUiVS3X0A_tZ1dc3e4FfPBNyvaH5X4u9_Sp7U_LVwNk7W5FM4vpvPY4eby36CPeBdwaaamfjJve8OssmRQdGKnDx-1MRDUb30tdXzKGfo8gZTAHurDZHaVWtJ61Z74MpxtX_atrJucpwWHjmoR-WNQcW2YdTh_Fr5f7ghe8XZlKyQug2dYm3-Qu_P5EuQNioMXG19pIaiArEwax-K_z8Z-7S6qIYP64"/>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Laila Sari</p>
+<p class="font-label-md text-label-md text-outline">Student ID: 20241004</p>
+</div>
+</div>
+<div class="flex items-center w-full md:w-auto overflow-x-auto hide-scrollbar border border-outline-variant rounded-lg overflow-hidden h-10">
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input checked="" class="hidden" id="p-04" name="attendance-04" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="p-04">Present</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="s-04" name="attendance-04" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="s-04">Sick</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="pe-04" name="attendance-04" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="pe-04">Permit</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="a-04" name="attendance-04" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="a-04">Absent</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="l-04" name="attendance-04" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors" for="l-04">Late</label>
+</div>
+</div>
+</div>
+<!-- Template Student Card 5 -->
+<div class="student-card p-md bg-white border border-outline-variant rounded-xl shadow-sm hover:border-primary/30 transition-colors flex flex-col md:flex-row md:items-center gap-md">
+<div class="flex items-center gap-md flex-1">
+<div class="w-12 h-12 rounded-full bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A portrait of a male student with short black hair, wearing a grey school vest over a white shirt. He has a friendly but disciplined look. The setting is a modern library with books softly blurred in the background. The lighting is warm and natural, creating a high-trust, professional educational atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0pyPnaz26ElDHXuU7fmW6WmXmEZQRcIx2o1rdY5FDybNRe27VlkgLUFnnMJMPVuLPivz_6mB_yOQVnsUhcvNE-fWuCBWQST4S_JHiMNgPDNvKSnDwiUVH0WWuV47DLdkcJW27R8SpGqv_qmjuP0o1tdsvr1LSZm12HC4smqg36ciMiINEd4m13z5ztuR5hZvEpLfa5ZuIMdez8FeqPjcQbm3_jcdCrUOdixiRJnbbK4B3Lbv-JiCL"/>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Dewi Lestari</p>
+<p class="font-label-md text-label-md text-outline">Student ID: 20241005</p>
+</div>
+</div>
+<div class="flex items-center w-full md:w-auto overflow-x-auto hide-scrollbar border border-outline-variant rounded-lg overflow-hidden h-10">
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="p-05" name="attendance-05" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="p-05">Present</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="s-05" name="attendance-05" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="s-05">Sick</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="pe-05" name="attendance-05" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="pe-05">Permit</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input checked="" class="hidden" id="a-05" name="attendance-05" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors border-r border-outline-variant" for="a-05">Absent</label>
+</div>
+<div class="segmented-button shrink-0 flex-1 md:flex-none">
+<input class="hidden" id="l-05" name="attendance-05" type="radio"/>
+<label class="flex items-center justify-center px-md h-full font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors" for="l-05">Late</label>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Action Bar -->
+<footer class="fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] z-[60]">
+<div class="max-w-3xl mx-auto px-container-margin py-md flex items-center justify-between gap-md">
+<div class="hidden md:flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Selected Attendance</span>
+<span class="font-title-md text-title-md text-primary" id="attendance-stats">3 Present, 1 Sick, 1 Absent</span>
+</div>
+<button class="w-full md:w-auto flex-1 md:flex-none bg-primary text-on-primary font-title-md text-title-md h-12 px-xl rounded-xl shadow-sm hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-sm" onclick="saveAttendance()">
+<span class="material-symbols-outlined">save</span>
+                Save Attendance
+            </button>
+</div>
+</footer>
+<!-- Bottom Nav Bar (Mobile Placeholder for Context) -->
+<nav class="fixed bottom-0 left-0 w-full z-40 flex md:hidden justify-around items-center px-2 pb-2 h-16 bg-surface border-t border-outline-variant opacity-20 pointer-events-none">
+<div class="flex flex-col items-center justify-center text-on-surface-variant py-1">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-md text-label-md">Academic</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant py-1">
+<span class="material-symbols-outlined">fingerprint</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</div>
+</nav>
+<script>
+        function markAllPresent() {
+            const radioButtons = document.querySelectorAll('input[type="radio"]');
+            radioButtons.forEach(radio => {
+                if (radio.id.startsWith('p-')) {
+                    radio.checked = true;
+                }
+            });
+            updateStats();
+            
+            // Interaction feedback
+            const btn = event.currentTarget;
+            btn.innerHTML = '<span class="material-symbols-outlined">done_all</span> All Marked!';
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">done_all</span> Mark All Present';
+            }, 2000);
+        }
+
+        function updateStats() {
+            const present = document.querySelectorAll('input[id^="p-"]:checked').length;
+            const sick = document.querySelectorAll('input[id^="s-"]:checked').length;
+            const permit = document.querySelectorAll('input[id^="pe-"]:checked').length;
+            const absent = document.querySelectorAll('input[id^="a-"]:checked').length;
+            const late = document.querySelectorAll('input[id^="l-"]:checked').length;
+            
+            const statsElement = document.getElementById('attendance-stats');
+            if(statsElement) {
+                statsElement.innerText = `${present} Present, ${sick} Sick, ${absent} Absent`;
+            }
+        }
+
+        function saveAttendance() {
+            const btn = event.currentTarget;
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Saving...';
+            
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Success';
+                btn.classList.replace('bg-primary', 'bg-tertiary-container');
+                btn.classList.add('text-on-tertiary-container');
+                
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('bg-tertiary-container', 'bg-primary');
+                    btn.classList.remove('text-on-tertiary-container');
+                }, 2000);
+            }, 1500);
+        }
+
+        // Add change listeners to update stats
+        document.addEventListener('change', (e) => {
+            if(e.target.type === 'radio') {
+                updateStats();
+            }
+        });
+
+        // Initialize stats
+        updateStats();
+    </script>
+</body></html>

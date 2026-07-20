@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Global Academy - Financial Transactions</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#e4e7ff",
+                        "on-primary-fixed": "#00201c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "surface-bright": "#fbf8ff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "tertiary": "#9b4100",
+                        "primary-container": "#008377",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#f0efff",
+                        "tertiary-container": "#c25300",
+                        "surface-tint": "#006a60",
+                        "on-tertiary-fixed": "#341100",
+                        "surface-container-low": "#f3f2ff",
+                        "inverse-surface": "#2a2f47",
+                        "surface": "#fbf8ff",
+                        "background": "#fbf8ff",
+                        "on-background": "#151a31",
+                        "secondary": "#3a5f94",
+                        "secondary-container": "#9fc2fe",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "inverse-primary": "#67d9c9",
+                        "on-surface-variant": "#3d4947",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#dde1ff",
+                        "primary": "#00685e",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#151a31",
+                        "on-primary-fixed-variant": "#005048",
+                        "on-secondary-fixed": "#001b3c",
+                        "tertiary-fixed": "#ffdbcb",
+                        "outline-variant": "#bcc9c6",
+                        "primary-fixed-dim": "#67d9c9",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#85f6e5",
+                        "error": "#ba1a1a",
+                        "surface-container": "#ececff",
+                        "surface-dim": "#d4d8f7",
+                        "on-secondary-container": "#294f83",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#d5e3ff",
+                        "outline": "#6d7a77",
+                        "on-primary-container": "#f4fffb",
+                        "surface-container-highest": "#dde1ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "gutter": "16px",
+                        "container-margin": "16px",
+                        "xs": "4px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F5F7FA;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #ececf1 25%, #f7f7f9 50%, #ececf1 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite ease-in-out;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .fab-animation {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .fab-animation:active {
+            transform: scale(0.9);
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 right-0 z-40 bg-surface shadow-sm h-16 flex justify-between items-center px-container-margin">
+<div class="flex items-center gap-4">
+<button class="p-2 -ml-2 rounded-full active:bg-surface-container-high transition-colors ripple">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Transactions</h1>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 rounded-full active:bg-surface-container-high transition-colors ripple">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<button class="p-2 rounded-full active:bg-surface-container-high transition-colors ripple">
+<span class="material-symbols-outlined text-on-surface-variant">filter_list</span>
+</button>
+<button class="p-2 rounded-full active:bg-surface-container-high transition-colors ripple">
+<span class="material-symbols-outlined text-on-surface-variant">calendar_today</span>
+</button>
+</div>
+</header>
+<main class="pt-20 pb-24 px-container-margin">
+<!-- Summary Cards Section -->
+<section class="mb-lg">
+<div class="flex gap-4 overflow-x-auto hide-scrollbar -mx-container-margin px-container-margin pb-2">
+<!-- Income Card -->
+<div class="min-w-[160px] flex-1 bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm">
+<div class="flex items-center justify-between mb-xs">
+<span class="text-primary font-label-md">Income</span>
+<span class="material-symbols-outlined text-primary text-[20px]">trending_up</span>
+</div>
+<div class="font-title-lg text-primary">$42,500</div>
+<div class="text-[10px] text-primary mt-1 flex items-center font-medium">
+<span class="material-symbols-outlined text-[12px] mr-1">arrow_upward</span> 12.5%
+                    </div>
+</div>
+<!-- Expense Card -->
+<div class="min-w-[160px] flex-1 bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm">
+<div class="flex items-center justify-between mb-xs">
+<span class="text-error font-label-md">Expense</span>
+<span class="material-symbols-outlined text-error text-[20px]">trending_down</span>
+</div>
+<div class="font-title-lg text-error">$18,240</div>
+<div class="text-[10px] text-error mt-1 flex items-center font-medium">
+<span class="material-symbols-outlined text-[12px] mr-1">arrow_downward</span> 4.2%
+                    </div>
+</div>
+<!-- Balance Card -->
+<div class="min-w-[160px] flex-1 bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm">
+<div class="flex items-center justify-between mb-xs">
+<span class="text-on-surface font-label-md">Balance</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">account_balance_wallet</span>
+</div>
+<div class="font-title-lg text-on-surface">$24,260</div>
+<div class="text-[10px] text-outline mt-1 flex items-center font-medium">
+                        Current Month
+                    </div>
+</div>
+</div>
+</section>
+<!-- Filters Row -->
+<section class="mb-lg overflow-x-auto hide-scrollbar -mx-container-margin px-container-margin flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded-full font-label-lg whitespace-nowrap">
+                All Date <span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg whitespace-nowrap active:bg-outline-variant transition-colors">
+                All Category <span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg whitespace-nowrap active:bg-outline-variant transition-colors">
+                All Method <span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-lg whitespace-nowrap active:bg-outline-variant transition-colors">
+                All Status <span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</button>
+</section>
+<!-- Transaction List -->
+<section class="space-y-md" id="transaction-list">
+<!-- Loading Skeleton (Initial state, will be hidden by JS) -->
+<div class="space-y-4" id="skeleton-container">
+<div class="h-28 w-full rounded-xl skeleton"></div>
+<div class="h-28 w-full rounded-xl skeleton"></div>
+<div class="h-28 w-full rounded-xl skeleton"></div>
+</div>
+<!-- Actual List Items (Hidden initially for demo loading effect) -->
+<div class="hidden space-y-4" id="actual-content">
+<!-- Item 1: Income -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm active:bg-surface-container transition-colors ripple">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-title-md text-on-surface">Tuition - Alexander Pierce</h3>
+<p class="font-label-md text-outline">TRN-0941</p>
+</div>
+<div class="text-right">
+<span class="font-title-lg text-primary">+$1,200.00</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="px-2 py-0.5 bg-primary-container/10 text-primary rounded-md font-label-md">Tuition</span>
+<div class="flex items-center gap-1 text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-md font-label-md">
+<span class="material-symbols-outlined text-[16px]">account_balance</span>
+                            Virtual Account
+                        </div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant">
+<span class="font-label-md text-outline">Oct 24, 2023 • 09:41 AM</span>
+<span class="px-3 py-1 bg-primary text-on-primary rounded-full font-label-md">Success</span>
+</div>
+</div>
+<!-- Item 2: Expense -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm active:bg-surface-container transition-colors ripple">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-title-md text-on-surface">Library Books Purchase</h3>
+<p class="font-label-md text-outline">TRN-0822</p>
+</div>
+<div class="text-right">
+<span class="font-title-lg text-on-surface">-$350.00</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="px-2 py-0.5 bg-tertiary-container/10 text-tertiary rounded-md font-label-md">Books</span>
+<div class="flex items-center gap-1 text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-md font-label-md">
+<span class="material-symbols-outlined text-[16px]">credit_card</span>
+                            Transfer
+                        </div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant">
+<span class="font-label-md text-outline">Oct 23, 2023 • 02:15 PM</span>
+<span class="px-3 py-1 bg-primary text-on-primary rounded-full font-label-md">Success</span>
+</div>
+</div>
+<!-- Item 3: Pending -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm active:bg-surface-container transition-colors ripple">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-title-md text-on-surface">Uniform - Elena Gilbert</h3>
+<p class="font-label-md text-outline">TRN-0955</p>
+</div>
+<div class="text-right">
+<span class="font-title-lg text-primary">+$85.00</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="px-2 py-0.5 bg-secondary-container/20 text-secondary rounded-md font-label-md">Supplies</span>
+<div class="flex items-center gap-1 text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-md font-label-md">
+<span class="material-symbols-outlined text-[16px]">payments</span>
+                            Cash
+                        </div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant">
+<span class="font-label-md text-outline">Oct 24, 2023 • 10:05 AM</span>
+<span class="px-3 py-1 bg-outline text-surface rounded-full font-label-md">Pending</span>
+</div>
+</div>
+<!-- Item 4: Failed -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm active:bg-surface-container transition-colors ripple">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-title-md text-on-surface">Lab Equipment Repair</h3>
+<p class="font-label-md text-outline">TRN-0741</p>
+</div>
+<div class="text-right">
+<span class="font-title-lg text-on-surface">-$1,500.00</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="px-2 py-0.5 bg-error-container/20 text-error rounded-md font-label-md">Maintenance</span>
+<div class="flex items-center gap-1 text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-md font-label-md">
+<span class="material-symbols-outlined text-[16px]">account_balance</span>
+                            Virtual Account
+                        </div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant">
+<span class="font-label-md text-outline">Oct 22, 2023 • 11:30 AM</span>
+<span class="px-3 py-1 bg-error text-on-error rounded-full font-label-md">Failed</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB for Export -->
+<div class="fixed bottom-24 right-6 flex flex-col items-end gap-3 z-50">
+<!-- Hidden Export Options (Triggered by main FAB) -->
+<div class="hidden flex-col gap-2 mb-2 scale-0 origin-bottom transition-transform duration-300" id="export-options">
+<button class="flex items-center gap-2 bg-surface p-3 rounded-xl shadow-lg border border-outline-variant text-on-surface font-label-lg ripple active:scale-95">
+<span class="material-symbols-outlined text-primary">picture_as_pdf</span>
+                Export PDF
+            </button>
+<button class="flex items-center gap-2 bg-surface p-3 rounded-xl shadow-lg border border-outline-variant text-on-surface font-label-lg ripple active:scale-95">
+<span class="material-symbols-outlined text-primary">table_view</span>
+                Export Excel
+            </button>
+</div>
+<!-- Main FAB -->
+<button class="w-14 h-14 bg-primary text-on-primary rounded-xl shadow-xl flex items-center justify-center fab-animation" id="fab-main">
+<span class="material-symbols-outlined text-[28px]" id="fab-icon">download</span>
+</button>
+</div>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full h-20 bg-surface-container dark:bg-surface-container-low flex justify-around items-center px-4 pb-safe z-40 border-t border-outline-variant">
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-md text-label-md">Academic</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</div>
+</nav>
+<script>
+        // Loading animation simulation
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.getElementById('skeleton-container').classList.add('hidden');
+                const content = document.getElementById('actual-content');
+                content.classList.remove('hidden');
+                // Simple entrance animation
+                content.classList.add('animate-fade-in-up');
+            }, 1200);
+        });
+
+        // FAB Export Toggle Logic
+        const fabMain = document.getElementById('fab-main');
+        const exportOptions = document.getElementById('export-options');
+        const fabIcon = document.getElementById('fab-icon');
+        let isExportOpen = false;
+
+        fabMain.addEventListener('click', () => {
+            isExportOpen = !isExportOpen;
+            if (isExportOpen) {
+                exportOptions.classList.remove('hidden');
+                setTimeout(() => {
+                    exportOptions.classList.remove('scale-0');
+                    exportOptions.classList.add('scale-100');
+                }, 10);
+                fabIcon.innerText = 'close';
+                fabMain.classList.remove('bg-primary');
+                fabMain.classList.add('bg-error');
+            } else {
+                exportOptions.classList.add('scale-0');
+                exportOptions.classList.remove('scale-100');
+                setTimeout(() => {
+                    exportOptions.classList.add('hidden');
+                }, 300);
+                fabIcon.innerText = 'download';
+                fabMain.classList.remove('bg-error');
+                fabMain.classList.add('bg-primary');
+            }
+        });
+
+        // Close export menu on clicking outside
+        window.addEventListener('click', (e) => {
+            if (isExportOpen && !fabMain.contains(e.target) && !exportOptions.contains(e.target)) {
+                fabMain.click();
+            }
+        });
+    </script>
+<style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+    </style>
+</body></html>

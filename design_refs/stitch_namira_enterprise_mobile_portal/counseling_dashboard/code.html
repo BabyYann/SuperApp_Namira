@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Namira Counseling Dashboard</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d4d8f7",
+                    "tertiary-container": "#c25300",
+                    "tertiary": "#9b4100",
+                    "outline-variant": "#bcc9c6",
+                    "on-secondary-fixed-variant": "#1f477b",
+                    "on-primary-container": "#f4fffb",
+                    "tertiary-fixed": "#ffdbcb",
+                    "surface-container-low": "#f3f2ff",
+                    "on-tertiary-fixed-variant": "#793100",
+                    "on-surface": "#151a31",
+                    "on-primary-fixed": "#00201c",
+                    "secondary": "#3a5f94",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#9fc2fe",
+                    "on-tertiary-fixed": "#341100",
+                    "on-background": "#151a31",
+                    "background": "#fbf8ff",
+                    "primary-fixed-dim": "#67d9c9",
+                    "primary": "#00685e",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#e4e7ff",
+                    "surface": "#fbf8ff",
+                    "inverse-primary": "#67d9c9",
+                    "inverse-on-surface": "#f0efff",
+                    "secondary-fixed": "#d5e3ff",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-variant": "#dde1ff",
+                    "surface-container-highest": "#dde1ff",
+                    "primary-container": "#008377",
+                    "inverse-surface": "#2a2f47",
+                    "surface-bright": "#fbf8ff",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "on-surface-variant": "#3d4947",
+                    "on-primary-fixed-variant": "#005048",
+                    "primary-fixed": "#85f6e5",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#006a60",
+                    "outline": "#6d7a77",
+                    "on-secondary-fixed": "#001b3c",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-secondary-container": "#294f83",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#ececff",
+                    "secondary-fixed-dim": "#a7c8ff",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "16px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "8px",
+                    "lg": "24px",
+                    "xl": "32px",
+                    "gutter": "16px",
+                    "xs": "4px",
+                    "container-margin": "16px",
+                    "md": "16px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "title-md": ["Plus Jakarta Sans"],
+                    "title-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F5F7FA; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-on-surface pb-24 md:pb-0">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex items-center justify-between px-md py-sm">
+<div class="flex items-center gap-sm">
+<button class="p-sm rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Counseling</h1>
+</div>
+<div class="flex items-center gap-xs">
+<button class="p-sm rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<button class="p-sm rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">filter_list</span>
+</button>
+</div>
+</header>
+<main class="pt-20 px-gutter md:px-xl max-w-7xl mx-auto space-y-lg">
+<!-- Summary Section (Bento Style) -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<div class="bg-surface-container-lowest p-md rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">gavel</span>
+<span class="text-label-md font-label-md text-error bg-error-container px-2 py-0.5 rounded-full">+4 new</span>
+</div>
+<div>
+<div class="text-display-lg-mobile md:text-display-lg font-display-lg leading-none">24</div>
+<div class="text-label-md font-label-md text-on-surface-variant">Violations</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="text-label-md font-label-md text-primary bg-primary-fixed-dim/20 px-2 py-0.5 rounded-full">Today</span>
+</div>
+<div>
+<div class="text-display-lg-mobile md:text-display-lg font-display-lg leading-none">12</div>
+<div class="text-label-md font-label-md text-on-surface-variant">Sessions</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+<span class="text-label-md font-label-md text-tertiary bg-tertiary-fixed px-2 py-0.5 rounded-full">Monthly</span>
+</div>
+<div>
+<div class="text-display-lg-mobile md:text-display-lg font-display-lg leading-none">88</div>
+<div class="text-label-md font-label-md text-on-surface-variant">Achievements</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-2xl shadow-sm border border-outline-variant/10 flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">priority_high</span>
+<span class="text-label-md font-label-md text-on-secondary-container bg-secondary-container px-2 py-0.5 rounded-full">Critical</span>
+</div>
+<div>
+<div class="text-display-lg-mobile md:text-display-lg font-display-lg leading-none">5</div>
+<div class="text-label-md font-label-md text-on-surface-variant">Pending Cases</div>
+</div>
+</div>
+</section>
+<!-- Tabs -->
+<nav class="flex border-b border-outline-variant/30">
+<button class="px-lg py-sm border-b-2 border-primary text-primary font-title-md text-title-md">Violations</button>
+<button class="px-lg py-sm text-on-surface-variant hover:text-on-surface font-title-md text-title-md transition-colors">Sessions</button>
+<button class="px-lg py-sm text-on-surface-variant hover:text-on-surface font-title-md text-title-md transition-colors">Achievements</button>
+</nav>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Case List (Active Tab Content) -->
+<div class="lg:col-span-2 space-y-md">
+<div class="flex justify-between items-center px-xs">
+<h2 class="font-title-lg text-title-lg">Recent Violations</h2>
+<button class="text-primary font-label-lg text-label-lg flex items-center gap-xs">
+                        View All <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+<!-- Case Card 1 -->
+<div class="bg-surface-container-lowest p-md rounded-2xl shadow-sm border border-outline-variant/10 hover:shadow-md transition-all group">
+<div class="flex gap-md items-start">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A portrait of a male student named Ahmad Zakaria with a friendly expression, wearing a clean white school uniform against a soft blurred background of an educational institution. The lighting is bright and professional, conveying a clean light-mode enterprise UI aesthetic with primary teal accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAEnGch67Gn80fQ0WLtJOGuLW5fZWA74CQLOpuNpVGOgPaI8jWA79aE1NC9KC9lY04REvJ0OVVjI_idJLEatR9ZJyAyCD1rxYsO5N8J_m0sz2HN9m9nqinJYfHFMB7Y3GGl2bOtYqk31xqhYtAfKR7ORyCyY0N8VzAl0IlE94MLSp73ERDOQtdBSukepfGqS3d7O6HJLd7TKFn_pwKVXjih7Q8Kq0cL5kKmx1kIFWvBhFxppdA8K0n"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Ahmad Zakaria</h3>
+<p class="text-body-md text-on-surface-variant">Grade 10-A • Student ID: #8291</p>
+</div>
+<span class="bg-error/10 text-error px-3 py-1 rounded-full font-label-md text-label-md">High Priority</span>
+</div>
+<div class="mt-sm flex flex-wrap gap-sm">
+<span class="inline-flex items-center gap-xs text-on-surface-variant text-body-md bg-surface-container py-1 px-3 rounded-lg">
+<span class="material-symbols-outlined text-[16px]">schedule</span> Late arrival
+                                </span>
+<span class="inline-flex items-center gap-xs text-primary text-body-md bg-primary-container/10 py-1 px-3 rounded-lg">
+<span class="material-symbols-outlined text-[16px]">person</span> Counselor: Mr. Rahman
+                                </span>
+<span class="inline-flex items-center gap-xs text-on-surface-variant text-body-md bg-surface-container py-1 px-3 rounded-lg">
+                                    Status: <span class="font-bold text-on-surface">Open</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Case Card 2 -->
+<div class="bg-surface-container-lowest p-md rounded-2xl shadow-sm border border-outline-variant/10 hover:shadow-md transition-all group">
+<div class="flex gap-md items-start">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A portrait of a female student with a modest and studious look, wearing a school uniform. The scene is brightly lit with high-key professional photography, maintaining a professional education ecosystem vibe. The overall atmosphere is trustworthy and clear, following the Namira premium UI style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2o1aTwkyDUYxLCle3gWu-cVZ-U8_BhoMaprFTCVMvlD37crj6z1H7u-QDDQyUhDqLEu_l-TE5zx1GoMsIxHJJIvM8XfUO2iRsNN9TYRGQ796Pyv7wMSucWXIHPP2ciLoj_tsEGxqtCrfOYtvh16aHbaQfbzZJBRTATIJ5c3bjw55V5RYAZcAhffIQRC0NbRapWa8C8BYPLCzHdGQ3WcqONttX8rCd7CwqvFer5pgB7VW5mm3bTaM9"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Siti Fatimah</h3>
+<p class="text-body-md text-on-surface-variant">Grade 11-C • Student ID: #7412</p>
+</div>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-md text-label-md">Medium Priority</span>
+</div>
+<div class="mt-sm flex flex-wrap gap-sm">
+<span class="inline-flex items-center gap-xs text-on-surface-variant text-body-md bg-surface-container py-1 px-3 rounded-lg">
+<span class="material-symbols-outlined text-[16px]">checkroom</span> Attire violation
+                                </span>
+<span class="inline-flex items-center gap-xs text-primary text-body-md bg-primary-container/10 py-1 px-3 rounded-lg">
+<span class="material-symbols-outlined text-[16px]">person</span> Counselor: Ms. Namira
+                                </span>
+<span class="inline-flex items-center gap-xs text-on-surface-variant text-body-md bg-surface-container py-1 px-3 rounded-lg">
+                                    Status: <span class="font-bold text-on-surface">Under Review</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Panels -->
+<div class="space-y-lg">
+<!-- Quick Actions -->
+<section>
+<h2 class="font-title-lg text-title-lg mb-md">Quick Actions</h2>
+<div class="grid grid-cols-1 gap-sm">
+<button class="flex items-center gap-md p-md bg-primary text-on-primary rounded-2xl hover:bg-primary-container transition-colors shadow-sm active:scale-95 duration-100">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="font-title-md text-title-md">New Counseling Session</span>
+</button>
+<button class="flex items-center gap-md p-md bg-surface-container-lowest text-on-surface rounded-2xl border border-outline-variant/10 hover:bg-surface-container-low transition-colors shadow-sm active:scale-95 duration-100">
+<span class="material-symbols-outlined text-tertiary text-2xl" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+<span class="font-title-md text-title-md">New Achievement</span>
+</button>
+<button class="flex items-center gap-md p-md bg-surface-container-lowest text-on-surface rounded-2xl border border-outline-variant/10 hover:bg-surface-container-low transition-colors shadow-sm active:scale-95 duration-100">
+<span class="material-symbols-outlined text-error text-2xl" style="font-variation-settings: 'FILL' 1;">gavel</span>
+<span class="font-title-md text-title-md">New Violation</span>
+</button>
+</div>
+</section>
+<!-- Recent Activity -->
+<section>
+<h2 class="font-title-lg text-title-lg mb-md">Recent Activity</h2>
+<div class="space-y-sm relative before:absolute before:left-6 before:top-4 before:bottom-4 before:w-[1px] before:bg-outline-variant/30">
+<div class="flex gap-md relative">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center z-10 flex-shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">psychology</span>
+</div>
+<div class="py-xs">
+<p class="text-body-md leading-tight"><span class="font-bold">Siti Aminah's</span> session completed by Ms. Namira.</p>
+<p class="text-label-md text-on-surface-variant mt-xs">10 mins ago</p>
+</div>
+</div>
+<div class="flex gap-md relative">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center z-10 flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary text-[20px]">military_tech</span>
+</div>
+<div class="py-xs">
+<p class="text-body-md leading-tight">Achievement added for <span class="font-bold">Budi Utomo</span> (National Science Fair).</p>
+<p class="text-label-md text-on-surface-variant mt-xs">2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-md relative">
+<div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center z-10 flex-shrink-0">
+<span class="material-symbols-outlined text-error text-[20px]">gavel</span>
+</div>
+<div class="py-xs">
+<p class="text-body-md leading-tight">New violation logged: <span class="font-bold">Ahmad Zakaria</span> (Late Arrival).</p>
+<p class="text-label-md text-on-surface-variant mt-xs">3 hours ago</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full h-16 bg-surface shadow-[0_-1px_4px_rgba(0,0,0,0.05)] rounded-t-xl flex justify-around items-center px-gutter pb-safe z-50">
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-transform duration-200 active:scale-90">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md font-label-md">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90">
+<span class="material-symbols-outlined">diversity_3</span>
+<span class="text-label-md font-label-md">Sessions</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90">
+<span class="material-symbols-outlined">school</span>
+<span class="text-label-md font-label-md">Students</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant/50 transition-transform duration-200 active:scale-90">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="text-label-md font-label-md">More</span>
+</div>
+</nav>
+<!-- FAB for Quick Start (Desktop Contextual) -->
+<button class="hidden md:flex fixed bottom-8 right-8 bg-primary text-on-primary p-md rounded-2xl shadow-xl hover:shadow-2xl transition-all items-center gap-sm active:scale-95 z-[70]">
+<span class="material-symbols-outlined">add</span>
+<span class="font-title-md">Start New Entry</span>
+</button>
+</body></html>

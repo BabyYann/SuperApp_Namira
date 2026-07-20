@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        try {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        "colors": {
+                            "primary": "#009688",
+                            "secondary": "#003366",
+                            "surface": "#fbf8ff",
+                            "on-surface": "#151a31",
+                            "on-surface-variant": "#5F6368",
+                            "outline-variant": "#bcc9c6",
+                            "background": "#fbf8ff"
+                        },
+                        "fontFamily": {
+                            "sans": ["Plus Jakarta Sans", "sans-serif"]
+                        },
+                        "animation": {
+                            "fade-scale": "fadeScale 1200ms cubic-bezier(0.4, 0, 0.2, 1) forwards",
+                            "m3-spin": "m3Spin 1.4s linear infinite"
+                        },
+                        "keyframes": {
+                            "fadeScale": {
+                                "0%": { opacity: "0", transform: "scale(0.95)" },
+                                "100%": { opacity: "1", transform: "scale(1)" }
+                            },
+                            "m3Spin": {
+                                "0%": { transform: "rotate(0deg)" },
+                                "100%": { transform: "rotate(360deg)" }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (_e) {}
+    </script>
+<style>
+        .bg-pattern {
+            background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLsXpKYvoNXHMurtKW7Oy4stDS3rR780wAJRoyTDla11yV7nG-3kV3qz-G2dm3FrqX4-NQUeNig4Fn2eAgNTKUq27pc0N9acTX7UgZKiKjDySZ3eOroXaGfdGI5NAUrEauNOBNDXmu0eLRSWjB1MUz6tQETZGynEkME-xZItee_y6iRvNRIrpSYNOIeJkIC4y4I3iPPnAwb_YnHJcMa_xZP2k9-j1jXXMwRPiGvcCBG6CbuykFHS5oSYJA');
+            background-size: cover;
+            opacity: 0.05;
+        }
+    </style>
+</head>
+<body class="bg-surface font-sans min-h-screen flex flex-col items-center relative overflow-hidden">
+<!-- Subtle Background Pattern -->
+<div class="absolute inset-0 z-0 bg-pattern pointer-events-none"></div>
+<!-- Main Branding Content: Centered Vertically -->
+<main class="flex-grow flex flex-col items-center justify-center relative z-10 px-lg animate-fade-scale">
+<!-- Logo -->
+<div class="mb-8">
+<img alt="Namira Education Logo" class="w-32 h-32 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKWz8AtgVrvWRKyPZNuiviRyBe2_Bp9nhh5fIf00uwahIxz6duafdZwMrhW8bhycWd2IzaJIoK-zjEzpFGhmWkH63JHu1WqwZWMW9EyQd0BMW0bhNtisHAcouwaZI9o2NIvwLfQR3m2LpEtQQ-tCh9xLqtP9yr0DzERBhUovhZbzTXxMJX36XwM4oQ1OWadphQzcY1WApuyQYYr7ERg2yJkAxveiBfYsSSBvNQ2bwlKfzSeKRSWgvuvQ1NAagRZv4qJA"/>
+</div>
+<!-- Identity -->
+<div class="space-y-2 text-center">
+<h1 class="text-[40px] font-bold text-secondary tracking-tight">
+                Namira
+            </h1>
+<p class="text-base font-normal text-on-surface-variant">
+                Modern Education Ecosystem
+            </p>
+</div>
+</main>
+<!-- Bottom Actions and Info -->
+<footer class="pb-12 flex flex-col items-center gap-10 w-full z-10">
+<!-- Material 3 Circular Progress Indicator -->
+<div class="relative w-8 h-8">
+<svg class="animate-m3-spin w-full h-full text-primary" viewbox="0 0 40 40">
+<circle class="opacity-10" cx="20" cy="20" fill="transparent" r="18" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-100" d="M20 2 A18 18 0 0 1 38 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="4"></path>
+</svg>
+</div>
+<!-- Versioning and Copyright -->
+<div class="text-center space-y-1">
+<p class="text-[11px] font-medium text-on-surface-variant/80 uppercase tracking-wider">
+                Version 1.0.0
+            </p>
+<p class="text-[11px] text-on-surface-variant/60">
+                © 2024 Namira Education Foundation. All rights reserved.
+            </p>
+</div>
+</footer>
+</body></html>

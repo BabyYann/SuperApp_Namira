@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>School Events | SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#00201c",
+                    "primary-fixed": "#85f6e5",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "primary": "#00685e",
+                    "surface-bright": "#fbf8ff",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "tertiary-container": "#c25300",
+                    "tertiary-fixed": "#ffdbcb",
+                    "surface-container": "#ececff",
+                    "on-primary-container": "#f4fffb",
+                    "on-tertiary": "#ffffff",
+                    "primary-container": "#008377",
+                    "on-secondary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#dde1ff",
+                    "surface-container-high": "#e4e7ff",
+                    "inverse-primary": "#67d9c9",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed-dim": "#a7c8ff",
+                    "surface": "#fbf8ff",
+                    "surface-dim": "#d4d8f7",
+                    "surface-container-low": "#f3f2ff",
+                    "on-primary-fixed-variant": "#005048",
+                    "on-tertiary-fixed-variant": "#793100",
+                    "background": "#fbf8ff",
+                    "surface-tint": "#006a60",
+                    "surface-variant": "#dde1ff",
+                    "on-secondary-container": "#294f83",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "on-background": "#151a31",
+                    "on-tertiary-fixed": "#341100",
+                    "secondary": "#3a5f94",
+                    "inverse-surface": "#2a2f47",
+                    "on-secondary-fixed-variant": "#1f477b",
+                    "on-surface-variant": "#3d4947",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#bcc9c6",
+                    "on-surface": "#151a31",
+                    "on-secondary-fixed": "#001b3c",
+                    "secondary-container": "#9fc2fe",
+                    "tertiary": "#9b4100",
+                    "secondary-fixed": "#d5e3ff",
+                    "primary-fixed-dim": "#67d9c9",
+                    "outline": "#6d7a77",
+                    "inverse-on-surface": "#f0efff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "16px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "lg": "24px",
+                    "container-margin": "16px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "unit": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "title-md": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "title-lg": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F5F7FA; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface pb-24">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-40 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline flex justify-between items-center px-container-margin py-sm">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary font-bold">event</span>
+<h1 class="font-title-lg-mobile text-title-lg-mobile text-on-surface font-bold">Events</h1>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant">calendar_month</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant">filter_list</span>
+</button>
+</div>
+</header>
+<main class="px-container-margin py-md space-y-lg">
+<!-- Interactive Calendar Section -->
+<section class="bg-surface rounded-xl shadow-sm border border-outline-variant p-md">
+<div class="flex justify-between items-center mb-md">
+<h2 class="font-title-md text-title-md text-on-surface">November 2024</h2>
+<div class="flex gap-2">
+<button class="material-symbols-outlined text-on-surface-variant">chevron_left</button>
+<button class="material-symbols-outlined text-on-surface-variant">chevron_right</button>
+</div>
+</div>
+<div class="grid grid-cols-7 text-center mb-sm">
+<span class="text-label-md text-on-surface-variant opacity-60">S</span>
+<span class="text-label-md text-on-surface-variant opacity-60">M</span>
+<span class="text-label-md text-on-surface-variant opacity-60">T</span>
+<span class="text-label-md text-on-surface-variant opacity-60">W</span>
+<span class="text-label-md text-on-surface-variant opacity-60">T</span>
+<span class="text-label-md text-on-surface-variant opacity-60">F</span>
+<span class="text-label-md text-on-surface-variant opacity-60">S</span>
+</div>
+<div class="grid grid-cols-7 text-center gap-y-2">
+<!-- Row 1 -->
+<span class="py-2 text-body-md text-on-surface-variant opacity-40">27</span>
+<span class="py-2 text-body-md text-on-surface-variant opacity-40">28</span>
+<span class="py-2 text-body-md text-on-surface-variant opacity-40">29</span>
+<span class="py-2 text-body-md text-on-surface-variant opacity-40">30</span>
+<span class="py-2 text-body-md text-on-surface-variant opacity-40">31</span>
+<div class="relative flex flex-col items-center justify-center">
+<span class="py-2 text-body-md font-medium">1</span>
+<div class="w-1 h-1 rounded-full bg-primary mb-1"></div>
+</div>
+<span class="py-2 text-body-md font-medium">2</span>
+<!-- Row 2 -->
+<span class="py-2 text-body-md font-medium">3</span>
+<div class="relative flex flex-col items-center justify-center">
+<span class="py-2 text-body-md font-medium">4</span>
+<div class="w-1 h-1 rounded-full bg-primary mb-1"></div>
+</div>
+<span class="py-2 text-body-md font-medium">5</span>
+<span class="py-2 text-body-md font-medium">6</span>
+<span class="py-2 text-body-md font-medium">7</span>
+<div class="relative flex flex-col items-center justify-center">
+<span class="py-2 text-body-md font-medium">8</span>
+<div class="w-1 h-1 rounded-full bg-primary mb-1"></div>
+</div>
+<span class="py-2 text-body-md font-medium">9</span>
+<!-- Row 3 -->
+<span class="py-2 text-body-md font-medium">10</span>
+<span class="py-2 text-body-md font-medium">11</span>
+<span class="py-2 text-body-md font-medium">12</span>
+<span class="py-2 text-body-md font-medium">13</span>
+<span class="py-2 text-body-md font-medium">14</span>
+<div class="relative flex flex-col items-center justify-center bg-primary text-on-primary rounded-full aspect-square">
+<span class="text-body-md font-bold">15</span>
+<div class="w-1 h-1 rounded-full bg-on-primary absolute bottom-1"></div>
+</div>
+<span class="py-2 text-body-md font-medium">16</span>
+<!-- Row 4 -->
+<span class="py-2 text-body-md font-medium">17</span>
+<div class="relative flex flex-col items-center justify-center">
+<span class="py-2 text-body-md font-medium">18</span>
+<div class="w-1 h-1 rounded-full bg-primary mb-1"></div>
+</div>
+<span class="py-2 text-body-md font-medium">19</span>
+<span class="py-2 text-body-md font-medium">20</span>
+<div class="relative flex flex-col items-center justify-center">
+<span class="py-2 text-body-md font-medium">21</span>
+<div class="w-1 h-1 rounded-full bg-primary mb-1"></div>
+</div>
+<span class="py-2 text-body-md font-medium">22</span>
+<span class="py-2 text-body-md font-medium">23</span>
+</div>
+</section>
+<!-- Events List -->
+<section class="space-y-md">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md text-on-surface">Upcoming Events</h2>
+<span class="text-label-lg text-primary font-bold">View All</span>
+</div>
+<!-- Card 1 -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden group">
+<div class="relative aspect-[16/9] w-full bg-surface-container">
+<div class="w-full h-full bg-cover bg-center" data-alt="A professional aerial view of a modern school science fair, featuring glowing exhibits, bright teal and white lighting, students in lab coats engaging with interactive displays, and a clean, high-tech academic environment in a large auditorium. High contrast and premium quality." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDyqFiGra75j29qvL2ITEVVGdokvsP4a4NfRZ38ZV5oIA3UJSTXKc_5YwJL7hxuCZwXmY-j4E8H_uV4nrhv0RpD39hrI3yPuM-hxvt2DuY9mVLLZV17XsEsQJx4gmcV-hAb3vmyre4tW9r5JTS1Qyn1D13fyFP1XUeDKCoEO6bfOtkMAvhHuNEJ2sqv8OCcDGIN5xXGAUN34TaQnZQSrStnmrV1w3IhUNElIRvcdV2YlGVwt2SXYhZ6')"></div>
+<div class="absolute top-md right-md bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-label-md font-bold">
+                        Registration Open
+                    </div>
+</div>
+<div class="p-md space-y-md">
+<div class="space-y-xs">
+<h3 class="font-title-lg text-title-lg text-on-surface group-hover:text-primary transition-colors">Annual Science Fair 2024</h3>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span class="text-body-md">Main Auditorium, Wing B</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<span class="text-label-md text-on-surface-variant uppercase tracking-wider font-bold">Organizer</span>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-secondary-container" data-weight="fill">school</span>
+</div>
+<span class="text-body-md font-medium">Science Dept.</span>
+</div>
+</div>
+<div class="space-y-1">
+<span class="text-label-md text-on-surface-variant uppercase tracking-wider font-bold">Participants</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">groups</span>
+<span class="text-body-md font-medium">All Students</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 p-3 bg-surface-container-low rounded-lg">
+<span class="material-symbols-outlined text-primary">event_upcoming</span>
+<span class="text-body-md font-semibold text-on-surface">Nov 15, 2024 | 09:00 AM</span>
+</div>
+<div class="flex items-center gap-3 pt-2">
+<button class="flex-1 bg-primary text-on-primary h-12 rounded-xl font-label-lg active:scale-95 transition-transform">
+                            Register
+                        </button>
+<button class="flex-1 border border-outline text-primary h-12 rounded-xl font-label-lg active:scale-95 transition-transform">
+                            View Detail
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden group">
+<div class="relative aspect-[16/9] w-full bg-surface-container">
+<div class="w-full h-full bg-cover bg-center" data-alt="A dynamic shot of a school basketball tournament in a bright, modern gymnasium. The image shows high-energy athletes in teal jerseys, polished wooden floors reflecting cool white overhead lights, and a cheering crowd. Sharp focus, vibrant athletic atmosphere, and premium institutional style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA_Ko__MVb_un5bIYfwb4Ul83OBRFyFSXps9EX7kO3ZXaBDwJwtNH9VB_Pslvet2D4pHvbpKHXvhCoA7KIH5qo2bZmDqF7fLOsalPakv3YSVwbcmEzwDxIqW_btanV2INU7-yjYP2jNtRAT0FUFbtg5zYRHfE_K9ZGn5zF3VKIIcYVY7z9mIBMNVY1qQ9mHkzQkCWz9Hto9AktY6tEd89GXs4mR4MfcPU-QCsP5QBW6IXv_1u7lLlpH')"></div>
+<div class="absolute top-md right-md bg-secondary text-on-secondary px-3 py-1 rounded-full text-label-md font-bold">
+                        Upcoming
+                    </div>
+</div>
+<div class="p-md space-y-md">
+<div class="space-y-xs">
+<h3 class="font-title-lg text-title-lg text-on-surface group-hover:text-primary transition-colors">Inter-School Sports Meet</h3>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span class="text-body-md">Namira Sports Complex</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<span class="text-label-md text-on-surface-variant uppercase tracking-wider font-bold">Organizer</span>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-secondary-container" data-weight="fill">sports_basketball</span>
+</div>
+<span class="text-body-md font-medium">PE Council</span>
+</div>
+</div>
+<div class="space-y-1">
+<span class="text-label-md text-on-surface-variant uppercase tracking-wider font-bold">Participants</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">groups</span>
+<span class="text-body-md font-medium">Senior Teams</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 p-3 bg-surface-container-low rounded-lg">
+<span class="material-symbols-outlined text-primary">event_upcoming</span>
+<span class="text-body-md font-semibold text-on-surface">Nov 21, 2024 | 08:30 AM</span>
+</div>
+<div class="flex items-center gap-3 pt-2">
+<button class="flex-1 bg-primary text-on-primary h-12 rounded-xl font-label-lg active:scale-95 transition-transform">
+                            Join Team
+                        </button>
+<button class="flex-1 border border-outline text-primary h-12 rounded-xl font-label-lg active:scale-95 transition-transform">
+                            View Detail
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-2 h-16 bg-surface dark:bg-surface-dim border-t border-outline-variant shadow-sm">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant py-1 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-md text-label-md">Academic</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant py-1 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">fingerprint</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant py-1 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant py-1 hover:bg-surface-container dark:hover:bg-surface-container-highest transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 100);
+            });
+        });
+    </script>
+</body></html>

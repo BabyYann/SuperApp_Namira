@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperApp Namira - Choose Your Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#341100",
+                    "on-secondary-fixed-variant": "#1f477b",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#151a31",
+                    "secondary-fixed": "#d5e3ff",
+                    "secondary": "#3a5f94",
+                    "tertiary": "#9b4100",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#f0efff",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#85f6e5",
+                    "secondary-container": "#9fc2fe",
+                    "on-surface-variant": "#3d4947",
+                    "on-secondary-fixed": "#001b3c",
+                    "tertiary-container": "#c25300",
+                    "surface-variant": "#dde1ff",
+                    "surface-dim": "#d4d8f7",
+                    "primary": "#00685e",
+                    "on-primary-fixed-variant": "#005048",
+                    "surface-container": "#ececff",
+                    "surface-tint": "#006a60",
+                    "surface-bright": "#fbf8ff",
+                    "secondary-fixed-dim": "#a7c8ff",
+                    "tertiary-fixed": "#ffdbcb",
+                    "outline-variant": "#bcc9c6",
+                    "surface-container-low": "#f3f2ff",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed": "#00201c",
+                    "outline": "#6d7a77",
+                    "error": "#ba1a1a",
+                    "surface": "#fbf8ff",
+                    "on-tertiary-fixed-variant": "#793100",
+                    "inverse-surface": "#2a2f47",
+                    "inverse-primary": "#67d9c9",
+                    "surface-container-high": "#e4e7ff",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#67d9c9",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#f4fffb",
+                    "on-secondary-container": "#294f83",
+                    "on-error-container": "#93000a",
+                    "background": "#fbf8ff",
+                    "primary-container": "#008377",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-highest": "#dde1ff",
+                    "on-background": "#151a31"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "container-margin": "16px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "unit": "8px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "title-md": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "title-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F8FAFC;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="text-on-surface antialiased">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-surface dark:bg-inverse-surface border-b border-outline-variant shadow-sm flex items-center justify-between px-md py-sm">
+<div class="flex items-center gap-md">
+<button class="p-xs rounded-full hover:bg-surface-container transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<h1 class="font-title-md text-title-md text-on-surface">Choose Your Workspace</h1>
+<p class="font-label-md text-label-md text-outline">SuperApp Namira</p>
+</div>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a corporate educator, clean lighting, wearing a navy blue blazer against a neutral gray background. The style is modern, professional, and corporate, resembling LinkedIn profile aesthetics with high-end photography quality. The image reflects trust and leadership within an enterprise educational setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjeoqEiegN5L4OF7aAiQg8leGzFS1ZrmRo0sob3ev98UJRmdVqe0J8aEgTP60xknP1QQLjH-dQn3Wq486yv8J5gaE6Dtb2RcNkwkUdeolK2wd6jW4BOiayXrJA1nNtDe08F2u1ZmgMAVLXhMNKQdcPtcNHCSDLrBLGYL7Cx9AIhPnit4Roic_oSxldzUZ_V7T425QerQnKp7qUDKym3vRilvziqLuuKwYiGLxMVzxQ84MmwXCKX1NW"/>
+</div>
+</header>
+<main class="max-w-3xl mx-auto px-md py-lg pb-32">
+<!-- Subtitle -->
+<section class="mb-lg">
+<p class="font-body-lg text-body-lg text-on-surface-variant">Select your active school unit and role before entering the application.</p>
+</section>
+<!-- School Unit Cards Container -->
+<div class="space-y-md">
+<!-- Card 1: Expanded (Active) -->
+<div class="bg-white rounded-xl border-2 border-primary custom-shadow overflow-hidden transition-all duration-300">
+<div class="flex items-center p-md gap-md">
+<div class="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center flex-shrink-0 border border-outline-variant">
+<img class="w-8 h-8 object-contain" data-alt="A minimalist logo for a premium international school. The design features a stylized shield and open book icon in deep teal and navy colors. The aesthetic is clean, academic, and professional, reflecting institutional heritage and modern educational values. The logo is centered on a clean white square background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzoYyQ9QE54JIboamMt9zepjiMoD0gLM9tPmdsU-pPOfsDQS3eysN6XPBvA3VVozhu_wc1JLX1Hk7zIwPhv0yg4uuhRQ0IzxltBSEBXq4GRHs5l7yw1o4kS-vdj7E0zflzp72cbfgF5wW0iU2JbdLxttWL24FnabFmCLGoHcGwrxAg79Fy587piVw30tqvj0XrzUOgwpQOKjRTm2sFFO3Y-htU8QrP9YdY-1CBkEfglJsTqTB95xi2"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface">Namira International School</h3>
+<div class="flex items-center gap-sm mt-xs">
+<span class="font-label-md text-label-md bg-primary-fixed text-on-primary-fixed-variant px-sm py-xs rounded-full">Senior High School</span>
+<div class="flex items-center text-outline text-[12px]">
+<span class="material-symbols-outlined text-[14px] mr-xs">location_on</span>
+                                Jakarta, Indonesia
+                            </div>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary rotate-180 transition-transform">expand_more</span>
+</div>
+<!-- Role Selection Section -->
+<div class="bg-surface-container-lowest px-md pb-md border-t border-outline-variant/30">
+<h4 class="font-label-lg text-label-lg text-on-surface py-md">Select Your Role</h4>
+<div class="grid grid-cols-2 gap-sm">
+<!-- Role: Teacher (Selected) -->
+<button class="flex items-center gap-sm p-md rounded-lg border-2 border-primary bg-primary-container/10 text-left transition-all active:scale-[0.98]">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]">school</span>
+</div>
+<span class="font-label-lg text-label-lg text-primary">Teacher</span>
+</button>
+<!-- Role: Principal -->
+<button class="flex items-center gap-sm p-md rounded-lg border border-outline-variant bg-white text-left hover:bg-surface-container-low transition-all active:scale-[0.98]">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Principal</span>
+</button>
+<!-- Role: Finance Staff -->
+<button class="flex items-center gap-sm p-md rounded-lg border border-outline-variant bg-white text-left hover:bg-surface-container-low transition-all active:scale-[0.98]">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Finance Staff</span>
+</button>
+<!-- Role: Foundation Admin -->
+<button class="flex items-center gap-sm p-md rounded-lg border border-outline-variant bg-white text-left hover:bg-surface-container-low transition-all active:scale-[0.98]">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Foundation Admin</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2: Inactive -->
+<div class="bg-white rounded-xl border border-outline-variant custom-shadow overflow-hidden transition-all hover:border-primary/50 cursor-pointer">
+<div class="flex items-center p-md gap-md">
+<div class="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center flex-shrink-0 border border-outline-variant grayscale">
+<img class="w-8 h-8 object-contain" data-alt="A minimalist logo for a junior high school featuring an abstract geometric owl icon. Professional and academic color scheme of navy blue and soft gray. The visual style is enterprise-ready, flat, and modern, suitable for a school management system interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEQUz9q5ELSVY4tdrUCIwokvh6FV8-9aGFP6rki-3FdG86jqnHKbGYN6jnkiSvbH46oDqU9-zF4HZhqlXp67X__W21KmcMxIq2j6t0cbA8HOrrJ2muA9aIq8nk4oY0dJK3uVRQeabh_NdG2rVoIhx7AjudcFHgz-MQ9BLkh3ue64yR93LFG1F44kzlPVcHrm4NEgsySEFcaCqfQU8SIDLRBe4SVBmO1mKBMBGRVyHWVhc8AAdKY8Kq"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface">Namira Junior High</h3>
+<div class="flex items-center gap-sm mt-xs">
+<span class="font-label-md text-label-md bg-secondary-fixed text-on-secondary-fixed-variant px-sm py-xs rounded-full">Junior High School</span>
+<div class="flex items-center text-outline text-[12px]">
+<span class="material-symbols-outlined text-[14px] mr-xs">location_on</span>
+                                Medan, Indonesia
+                            </div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+<!-- Card 3: Inactive -->
+<div class="bg-white rounded-xl border border-outline-variant custom-shadow overflow-hidden transition-all hover:border-primary/50 cursor-pointer">
+<div class="flex items-center p-md gap-md">
+<div class="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center flex-shrink-0 border border-outline-variant grayscale">
+<img class="w-8 h-8 object-contain" data-alt="A minimalist logo for an elementary school, featuring a simplified rising sun and sprout icon. Colors are subtle navy and professional gray. Clean lines, academic feel, enterprise design system aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYIQ849gI3XkvDafuPkqVLHuthHS8EuG0DOzlhVsuuqzpot5wYU6PEQgEmeqduEF9vPsOuWRQPaSjdFJMXN_-jUOaQ9TFIX0voFEk8a6ZUpjmh1Iu1KehPgQitxJjBpX4EeI3hauPcCpP58U-x7uBKVNTQPBdxaxRLSsHWw2WoB4EOA32VrrfTwbyoiAtbyxMI0QrYtNG8sIaYPy-z8sezaQg0GLJ6iVVYQl2vnBauEXE_OBa3DTDN"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface">Namira Primary School</h3>
+<div class="flex items-center gap-sm mt-xs">
+<span class="font-label-md text-label-md bg-secondary-fixed text-on-secondary-fixed-variant px-sm py-xs rounded-full">Elementary</span>
+<div class="flex items-center text-outline text-[12px]">
+<span class="material-symbols-outlined text-[14px] mr-xs">location_on</span>
+                                Jakarta, Indonesia
+                            </div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+<!-- Card 4: Inactive -->
+<div class="bg-white rounded-xl border border-outline-variant custom-shadow overflow-hidden transition-all hover:border-primary/50 cursor-pointer opacity-80">
+<div class="flex items-center p-md gap-md">
+<div class="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center flex-shrink-0 border border-outline-variant grayscale">
+<img class="w-8 h-8 object-contain" data-alt="A professional architectural corporate logo featuring a stylized 'N' letterform integrated with a pillar icon. Deep navy blue and charcoal gray colors. The vibe is institutional, reliable, and administrative, perfect for a school foundation office." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB9GUtJ34p0GJ-v1n-L7mfrvRNcDKEcAbPQC7BObpEX3QdvtZkwVfEmt4uCWj-qo93pwYGOF9n_XyjzGYV6Vm7MWe_42OASRNNfLHaRfcymu3yzIN08MjB3AW-B1txS-kdraduUmG6uw0VPbCDJipJdlTBneojbidof0ob7wanVfzsueKBp__cLmi6EPmljvd2u5zh4ldK6GSVXDdOJoIaJcqtnLS-ukRrDxExia8SX83UaLctWHEo"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-title-md text-title-md text-on-surface">Namira Education Foundation</h3>
+<div class="flex items-center gap-sm mt-xs">
+<span class="font-label-md text-label-md bg-secondary-fixed text-on-secondary-fixed-variant px-sm py-xs rounded-full">Corporate</span>
+<div class="flex items-center text-outline text-[12px]">
+<span class="material-symbols-outlined text-[14px] mr-xs">location_on</span>
+                                Jakarta Pusat
+                            </div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Section (Fixed Button) -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant px-md py-lg z-50">
+<div class="max-w-3xl mx-auto">
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary font-title-md text-title-md py-md rounded-lg transition-all duration-200 active:scale-95 flex items-center justify-center gap-sm">
+                Continue
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<script>
+        // Simple interactivity for demonstration
+        document.querySelectorAll('.rounded-xl').forEach(card => {
+            card.addEventListener('click', function() {
+                // In a real app, this would toggle the expansion logic
+                // For this UI demo, we keep the first one active as requested
+            });
+        });
+    </script>
+</body></html>

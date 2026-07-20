@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Facilities Management - SuperApp Namira</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#dde1ff",
+                        "primary": "#00685e",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#151a31",
+                        "on-primary-fixed-variant": "#005048",
+                        "on-secondary-fixed": "#001b3c",
+                        "tertiary-fixed": "#ffdbcb",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "inverse-primary": "#67d9c9",
+                        "on-surface-variant": "#3d4947",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#d4d8f7",
+                        "on-secondary-container": "#294f83",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#d5e3ff",
+                        "outline": "#6d7a77",
+                        "on-primary-container": "#f4fffb",
+                        "surface-container-highest": "#dde1ff",
+                        "outline-variant": "#bcc9c6",
+                        "primary-fixed-dim": "#67d9c9",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#85f6e5",
+                        "error": "#ba1a1a",
+                        "surface-container": "#ececff",
+                        "surface-bright": "#fbf8ff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "tertiary": "#9b4100",
+                        "primary-container": "#008377",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#f0efff",
+                        "surface-container-high": "#e4e7ff",
+                        "on-primary-fixed": "#00201c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "secondary": "#3a5f94",
+                        "secondary-container": "#9fc2fe",
+                        "tertiary-container": "#c25300",
+                        "surface-tint": "#006a60",
+                        "on-tertiary-fixed": "#341100",
+                        "surface-container-low": "#f3f2ff",
+                        "inverse-surface": "#2a2f47",
+                        "surface": "#fbf8ff",
+                        "background": "#fbf8ff",
+                        "on-background": "#151a31"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "gutter": "16px",
+                        "container-margin": "16px",
+                        "xs": "4px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fbf8ff;
+            background-image: url('https://lh3.googleusercontent.com/aida/AP1WRLsXpKYvoNXHMurtKW7Oy4stDS3rR780wAJRoyTDla11yV7nG-3kV3qz-G2dm3FrqX4-NQUeNig4Fn2eAgNTKUq27pc0N9acTX7UgZKiKjDySZ3eOroXaGfdGI5NAUrEauNOBNDXmu0eLRSWjB1MUz6tQETZGynEkME-xZItee_y6iRvNRIrpSYNOIeJkIC4y4I3iPPnAwb_YnHJcMa_xZP2k9-j1jXXMwRPiGvcCBG6CbuykFHS5oSYJA');
+            background-repeat: repeat;
+            background-attachment: fixed;
+        }
+        .bento-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bento-card:active {
+            transform: scale(0.98);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="pb-24">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-50 bg-surface dark:bg-background border-b border-outline-variant dark:border-outline shadow-sm flex items-center justify-between px-gutter py-md">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCApyGQxku_HluMBUjlNvaxOYXrNx45h-V2aqdJ94k6UJln8BZloLnGgY6aTYQKgBGj5qblwCk2rpXDjq-72y1I_J11bUBS06fOdtrOOM0gf3ylB_eYtV6HQPEJoACjMA4KDBriVvLyTC-GuRKoYSbcbQFhZCJ-HLlQ92omweJ-ysNpPmmLw36rgC2yEGgA8yVeBk5IiOrMfqICBHYtz6s_QZkaQcobdXVllL_12WdBhFX5oq4o-ttLbgOwKH33obH6BA"/>
+</div>
+<h1 class="font-headline-md text-headline-md-mobile md:text-headline-md text-primary dark:text-primary-fixed-dim">Facilities</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant active:scale-95 transition-transform relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-10 h-10 ml-1 rounded-full border-2 border-outline-variant overflow-hidden cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="Professional headshot of a female school administrator with a warm smile, wearing modern business casual attire, against a clean studio background. The lighting is bright and professional, emphasizing an enterprise education environment with a soft, clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBgENcEX0UY8akB3p8SZMo16KR-AkhoaE_Htu8ZX13AX9qy3RamiJGOIViRsFJ_Cml9ucpLnSELoy5X6Hm-GdhU6kf1aO0mIiguThVr2Cb6cAWlABl7786PzUQXyDE4rleIiRQpN_CQia_g9KzRrxm1N10X5ePnamvnEqYZxL0dPjE3qBiVRLjS9f4aN49itbODfM0ayhGUSwF2jq3iIs4ncvzRM_sp5akU6Ztiq5ZeZNC6rJ3K9nL"/>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-gutter py-lg space-y-xl">
+<!-- Section 1: Summary Cards -->
+<section>
+<div class="flex overflow-x-auto gap-md pb-xs hide-scrollbar">
+<div class="min-w-[160px] flex-1 bg-surface-container-lowest p-lg rounded-2xl border border-outline-variant shadow-sm bento-card">
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Total Assets</p>
+<h2 class="font-headline-lg text-headline-lg text-primary">1,240</h2>
+<div class="mt-2 text-[10px] text-primary flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +4% vs last mo
+                    </div>
+</div>
+<div class="min-w-[160px] flex-1 bg-primary-container p-lg rounded-2xl border border-primary/10 shadow-sm bento-card">
+<p class="font-label-md text-label-md text-on-primary-container mb-1">Available</p>
+<h2 class="font-headline-lg text-headline-lg text-on-primary-container">1,180</h2>
+<div class="mt-2 text-[10px] text-on-primary-container/80 flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Ready to use
+                    </div>
+</div>
+<div class="min-w-[160px] flex-1 bg-tertiary-container p-lg rounded-2xl border border-tertiary/10 shadow-sm bento-card">
+<p class="font-label-md text-label-md text-on-tertiary-container mb-1">In Maintenance</p>
+<h2 class="font-headline-lg text-headline-lg text-on-tertiary-container">12</h2>
+<div class="mt-2 text-[10px] text-on-tertiary-container/80 flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[14px]">build</span> Pending action
+                    </div>
+</div>
+<div class="min-w-[160px] flex-1 bg-secondary-container p-lg rounded-2xl border border-secondary/10 shadow-sm bento-card">
+<p class="font-label-md text-label-md text-on-secondary-container mb-1">Borrowed</p>
+<h2 class="font-headline-lg text-headline-lg text-on-secondary-container">48</h2>
+<div class="mt-2 text-[10px] text-on-secondary-container/80 flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[14px]">assignment_return</span> Due this week
+                    </div>
+</div>
+</div>
+</section>
+<!-- Section 5: Quick Actions (Priority Placement) -->
+<section>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-md">Quick Actions</h3>
+<div class="flex justify-between items-center bg-surface-container-low p-md rounded-2xl border border-outline-variant/30">
+<button class="flex flex-col items-center gap-2 group">
+<div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-active:scale-90 transition-all border border-outline-variant/20">
+<span class="material-symbols-outlined text-[28px]">inventory_2</span>
+</div>
+<span class="font-label-md text-[10px] uppercase tracking-wider text-on-surface-variant">Inventory</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-active:scale-90 transition-all border border-outline-variant/20">
+<span class="material-symbols-outlined text-[28px]">engineering</span>
+</div>
+<span class="font-label-md text-[10px] uppercase tracking-wider text-on-surface-variant">Service</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-active:scale-90 transition-all border border-outline-variant/20">
+<span class="material-symbols-outlined text-[28px]">move_item</span>
+</div>
+<span class="font-label-md text-[10px] uppercase tracking-wider text-on-surface-variant">Loan</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary group-active:scale-90 transition-all border border-outline-variant/20">
+<span class="material-symbols-outlined text-[28px]">meeting_room</span>
+</div>
+<span class="font-label-md text-[10px] uppercase tracking-wider text-on-surface-variant">Room</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="w-16 h-16 -mt-4 rounded-full bg-primary text-white shadow-lg flex items-center justify-center group-active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[32px]">qr_code_scanner</span>
+</div>
+<span class="font-label-md text-[10px] uppercase tracking-wider text-primary font-bold">Scan</span>
+</button>
+</div>
+</section>
+<!-- Section 2: Asset Categories -->
+<section>
+<div class="flex items-center justify-between mb-md">
+<h3 class="font-title-lg text-title-lg text-on-surface">Asset Categories</h3>
+<button class="text-primary font-label-lg text-label-lg">View All</button>
+</div>
+<div class="grid grid-cols-3 gap-md">
+<div class="aspect-square bg-white border border-outline-variant rounded-2xl flex flex-col items-center justify-center p-md shadow-sm active:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary mb-2">chair</span>
+<span class="font-label-md text-label-md text-center">Furniture</span>
+</div>
+<div class="aspect-square bg-white border border-outline-variant rounded-2xl flex flex-col items-center justify-center p-md shadow-sm active:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary mb-2">devices</span>
+<span class="font-label-md text-label-md text-center">Electronics</span>
+</div>
+<div class="aspect-square bg-white border border-outline-variant rounded-2xl flex flex-col items-center justify-center p-md shadow-sm active:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary mb-2">science</span>
+<span class="font-label-md text-label-md text-center">Laboratory</span>
+</div>
+<div class="aspect-square bg-white border border-outline-variant rounded-2xl flex flex-col items-center justify-center p-md shadow-sm active:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary mb-2">sports_basketball</span>
+<span class="font-label-md text-label-md text-center">Sports</span>
+</div>
+<div class="aspect-square bg-white border border-outline-variant rounded-2xl flex flex-col items-center justify-center p-md shadow-sm active:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary mb-2">library_books</span>
+<span class="font-label-md text-label-md text-center">Library</span>
+</div>
+<div class="aspect-square bg-white border border-outline-variant rounded-2xl flex flex-col items-center justify-center p-md shadow-sm active:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[32px] text-primary mb-2">apartment</span>
+<span class="font-label-md text-label-md text-center">Buildings</span>
+</div>
+</div>
+</section>
+<!-- Section 3 & 4: Maintenance and Reservations (Asymmetric Layout) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Section 3: Recent Maintenance -->
+<section>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-md">Maintenance</h3>
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="p-md border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+<span class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Active Ticket</span>
+<span class="bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full text-[10px] font-bold">In Progress</span>
+</div>
+<div class="p-md flex gap-md">
+<div class="w-16 h-16 bg-surface-container-high rounded-xl flex items-center justify-center overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="High-resolution close-up of a modern professional multimedia projector installed on a classroom ceiling. Minimalist design, clean white plastic casing, metallic lens details. Soft architectural lighting creates a professional education environment mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD05uoy4coE-jlTv5T4RzaPKQn7kC7Ofkxfe7GIeEjT_tIEPmnsAei1nOcyg_1eEQimPmDTH6AlUfNW6AGBNjPndu5CouuyhxNkfvhobqy4cYaKb5LSwyFWgOlCTByv6l1htVnqssHwincr7eRkkv8KgJTP69UPYoUgJLHyL5R8PR_7HW1LJfkpx5VVOLpzKDHw84paBBGZKIRxVlalCsJEC1j2knFMc5DCEr0icRzYtV7QVgQgLcQG"/>
+</div>
+<div class="flex-1">
+<h4 class="font-title-md text-title-md text-on-surface">Projector - Room 302</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Issue: Bulb failure</p>
+<div class="mt-3 flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-fixed flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-[14px]">person</span>
+</div>
+<span class="font-label-md text-label-md text-secondary">Budi Santoso</span>
+</div>
+</div>
+</div>
+<div class="px-md pb-md flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span class="font-label-md text-label-md">Scheduled: Today, 14:00</span>
+</div>
+</div>
+</section>
+<!-- Section 4: Room Reservation Today -->
+<section>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-md">Reservations</h3>
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="p-md border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+<span class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Next Event</span>
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[10px] font-bold">Confirmed</span>
+</div>
+<div class="p-md flex gap-md">
+<div class="w-16 h-16 bg-surface-container-high rounded-xl flex items-center justify-center overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A spacious, modern multi-purpose hall in a high-end school. Features light wood flooring, floor-to-ceiling windows with soft daylight, minimalist stage setup, and premium seating. The atmosphere is professional, airy, and organized." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwHlXnjiFxewRU0y6VTlIZ2UpN0mYyMlNwCWMdPKkZxapAfcOW-0_CWHQSW16SnV2mYrtc4CEctuv6sWgOrTAyNDigqRGk6ca4w7dg_GOLTWiKVQP1sNE_CGvHGKtJl_e4ankoS0tJPxwKP37Jc99ONI7lrlxshpzVLDoxdl2PYTatIT4Gy8hMC1bVhU_l168YomxVWp9SowENs11NEc8e-bpN1-CgbsfddwyfNVGzdhPquRcQ6E4Z"/>
+</div>
+<div class="flex-1">
+<h4 class="font-title-md text-title-md text-on-surface">Multi-purpose Hall</h4>
+<p class="font-body-md text-body-md text-primary font-semibold">08:00 - 10:00</p>
+<div class="mt-3 flex items-center gap-2">
+<img class="w-4 h-4 rounded-full" data-alt="A portrait of a professional female teacher with glasses and a friendly, intelligent expression. She is in a clean, modern school environment. Soft natural lighting, enterprise-level professional photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAa6VoaYFDGAjxTHbr0Todw7jjf0yPbt8cGcPLLnVvaRV9xvlWNoV4lJ_U9NTTcbTnbwY-UOS_NWeUyMni1Pnui1XGKdDZeEWeMGpBcxlLuLyQj_-khfquSNmK603KpMDSWwPq7N3M0zaNB-LJo9Kz16u5FX5eoFfme4Y-sReMhkzUJzNpUMmDTVsEQ8sjT7og4wBz1_PAVx50PwwmatBESClpsr6hdNPZAeoy7zG1ZIBEbwPLngcLz"/>
+<span class="font-label-md text-label-md text-on-surface-variant">Sarah Wijaya</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Section 6: Recent Activities -->
+<section>
+<h3 class="font-title-lg text-title-lg text-on-surface mb-md">Timeline Activities</h3>
+<div class="space-y-sm">
+<!-- Activity 1 -->
+<div class="flex gap-md group">
+<div class="flex flex-col items-center">
+<div class="w-3 h-3 rounded-full bg-primary mt-2"></div>
+<div class="w-0.5 flex-1 bg-outline-variant group-last:hidden"></div>
+</div>
+<div class="flex-1 bg-white border border-outline-variant p-md rounded-2xl shadow-sm mb-2">
+<div class="flex justify-between">
+<h4 class="font-title-md text-title-md text-on-surface">Asset Checked: Microscope (Lab A)</h4>
+<span class="font-label-md text-label-md text-on-surface-variant">10m ago</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 italic">Monthly calibration check completed.</p>
+</div>
+</div>
+<!-- Activity 2 -->
+<div class="flex gap-md group">
+<div class="flex flex-col items-center">
+<div class="w-3 h-3 rounded-full bg-secondary-fixed-dim mt-2"></div>
+<div class="w-0.5 flex-1 bg-outline-variant group-last:hidden"></div>
+</div>
+<div class="flex-1 bg-white border border-outline-variant p-md rounded-2xl shadow-sm mb-2">
+<div class="flex justify-between">
+<h4 class="font-title-md text-title-md text-on-surface">Asset Returned: Laptop (Admin)</h4>
+<span class="font-label-md text-label-md text-on-surface-variant">1h ago</span>
+</div>
+</div>
+</div>
+<!-- Activity 3 -->
+<div class="flex gap-md group">
+<div class="flex flex-col items-center">
+<div class="w-3 h-3 rounded-full bg-tertiary-container mt-2"></div>
+<div class="w-0.5 flex-1 bg-outline-variant group-last:hidden"></div>
+</div>
+<div class="flex-1 bg-white border border-outline-variant p-md rounded-2xl shadow-sm mb-2">
+<div class="flex justify-between">
+<h4 class="font-title-md text-title-md text-on-surface">Maintenance Completed: AC Unit 04</h4>
+<span class="font-label-md text-label-md text-on-surface-variant">3h ago</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Refrigerant refilled by Budi S.</p>
+</div>
+</div>
+<!-- Activity 4 -->
+<div class="flex gap-md group">
+<div class="flex flex-col items-center">
+<div class="w-3 h-3 rounded-full bg-primary mt-2"></div>
+<div class="w-0.5 flex-1 bg-outline-variant group-last:hidden"></div>
+</div>
+<div class="flex-1 bg-white border border-outline-variant p-md rounded-2xl shadow-sm mb-2">
+<div class="flex justify-between">
+<h4 class="font-title-md text-title-md text-on-surface">New Loan: DSLR Camera</h4>
+<span class="font-label-md text-label-md text-on-surface-variant">Yesterday</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-surface-container dark:bg-surface-container-low border-t border-outline-variant shadow-lg rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 p-2 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 p-2 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-md text-label-md mt-1">Academic</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 p-2 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">event_available</span>
+<span class="font-label-md text-label-md mt-1">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 p-2 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md mt-1">Finance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 p-2 rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('.bento-card, .aspect-square, button').forEach(el => {
+            el.addEventListener('touchstart', () => {
+                el.style.transform = 'scale(0.97)';
+            });
+            el.addEventListener('touchend', () => {
+                el.style.transform = 'scale(1)';
+            });
+        });
+
+        // Simple observer for reveal animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-4');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-4');
+            observer.observe(section);
+        });
+    </script>
+</body></html>

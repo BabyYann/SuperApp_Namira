@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Violations History | Namira High School</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#f4fffb",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#9b4100",
+                        "surface": "#fbf8ff",
+                        "secondary-fixed-dim": "#a7c8ff",
+                        "primary": "#00685e",
+                        "tertiary-fixed": "#ffdbcb",
+                        "on-primary-fixed": "#00201c",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#341100",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#008377",
+                        "on-surface": "#151a31",
+                        "surface-container": "#ececff",
+                        "tertiary-container": "#c25300",
+                        "surface-bright": "#fbf8ff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#1f477b",
+                        "surface-tint": "#006a60",
+                        "inverse-surface": "#2a2f47",
+                        "surface-variant": "#dde1ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d4d8f7",
+                        "primary-fixed-dim": "#67d9c9",
+                        "secondary-container": "#9fc2fe",
+                        "on-primary-fixed-variant": "#005048",
+                        "inverse-primary": "#67d9c9",
+                        "secondary-fixed": "#d5e3ff",
+                        "surface-container-high": "#e4e7ff",
+                        "inverse-on-surface": "#f0efff",
+                        "surface-container-low": "#f3f2ff",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "on-surface-variant": "#3d4947",
+                        "on-error": "#ffffff",
+                        "outline": "#6d7a77",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#151a31",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary-fixed": "#001b3c",
+                        "background": "#fbf8ff",
+                        "primary-fixed": "#85f6e5",
+                        "surface-container-highest": "#dde1ff",
+                        "secondary": "#3a5f94",
+                        "outline-variant": "#bcc9c6",
+                        "on-secondary-container": "#294f83",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "container-margin": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                        "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fbf8ff;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-24">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline flex justify-between items-center px-gutter h-16">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform p-2 rounded-full hover:bg-surface-container-high" data-icon="menu">menu</button>
+<h1 class="font-title-lg text-title-lg text-primary font-bold">Violations History</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-transform p-2 rounded-full hover:bg-surface-container-high" data-icon="search">search</button>
+<button class="material-symbols-outlined text-on-surface-variant cursor-pointer active:scale-95 transition-transform p-2 rounded-full hover:bg-surface-container-high" data-icon="filter_list">filter_list</button>
+<button class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform p-2" data-icon="account_circle">account_circle</button>
+</div>
+</header>
+<main class="pt-20 px-gutter space-y-6">
+<!-- Filter Bar -->
+<section class="flex overflow-x-auto hide-scrollbar gap-2 py-2 -mx-4 px-4">
+<button class="px-5 py-2 rounded-full bg-primary text-on-primary font-label-lg text-label-lg shadow-sm whitespace-nowrap active:scale-95 transition-transform">All</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg whitespace-nowrap hover:bg-surface-variant active:scale-95 transition-transform">Critical</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg whitespace-nowrap hover:bg-surface-variant active:scale-95 transition-transform">Moderate</button>
+<button class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-lg text-label-lg whitespace-nowrap hover:bg-surface-variant active:scale-95 transition-transform">Minor</button>
+<div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+<button class="flex items-center gap-2 px-5 py-2 rounded-full border border-outline text-on-surface-variant font-label-lg text-label-lg whitespace-nowrap hover:bg-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+                Last 30 Days
+            </button>
+</section>
+<!-- Violation Entries List -->
+<div class="grid grid-cols-1 gap-4">
+<!-- Entry 1: Critical -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a high school student with a serious expression, shot in a bright, clean educational setting with soft teal accents. The lighting is crisp and modern, reflecting an institutional and reliable environment with high-contrast clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUgdF1gfE1JECBWQaWJSqwAJDwxa5pN4iboungjg0CBDDYR1mfPpOTDqI1K8trM55x8iOIHDefmEXcVC6f44pdamI6XAbTxez0JJWgcnlP8DMZR_6Xxb0NK3dsraS8gM4cHuFzIJRuVoSzZa5HUFXkvtRDMP5pwpP_mWM7B_O1ooP6H5s62Y6xAUPtHnuy6b2fWoBV14YGfx8bWipTL1SP2xU5h-OvB4oL4amfyz90W6WXRWmRBnkh"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface truncate">Ahmad Zakaria</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">Grade 10-A • #20230491</p>
+</div>
+<span class="px-3 py-1 rounded-full bg-error-container text-on-error-container font-label-md text-label-md">Critical</span>
+</div>
+<div class="mt-3 space-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="gavel">gavel</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Physical Altercation</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                                    Oct 24, 2023 • 08:15 AM
+                                </div>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="person">person</span>
+                                    Mr. Rahman
+                                </div>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-md text-label-md border border-outline-variant">Under Review</span>
+<button class="text-primary font-label-lg text-label-lg hover:underline">View Details</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Entry 2: Moderate -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A bright, high-resolution portrait of a teenage student in a formal navy blue uniform, set against a soft white gallery wall. The image conveys architectural clarity with clean lines and balanced lighting, utilizing a professional enterprise-grade aesthetic with subtle teal highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhaWvO8zFg3aBBE01l6hZT0TxDSmX_Kq7avw5KjoTEWdi1cVwjfMZ2BP-UfC-fml25mR-3Mne6bwJ-JTtT5rXTEIjClEc09oZAPiuGn7Yz2ngnNe87S26Wpj1bFOxt4JvrcheLjcM7FMRhom6VvGv4Ce5kFoky4D1PEldWjlQq_JyATLpkuerQcDBXxKGQywDnkSV7nRIs4tp_nngvbeLMxCXq4aJUNsLnaGTUlNad3e9n5TOf5lfM"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface truncate">Fatima Al-Sayed</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">Grade 11-B • #20230512</p>
+</div>
+<span class="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-md text-label-md">Moderate</span>
+</div>
+<div class="mt-3 space-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="history_edu">history_edu</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Academic Dishonesty</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                                    Oct 23, 2023 • 11:30 AM
+                                </div>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="person">person</span>
+                                    Ms. Zara
+                                </div>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-md text-label-md border border-outline-variant">Resolved</span>
+<button class="text-primary font-label-lg text-label-lg hover:underline">View Report</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Entry 3: Minor -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist headshot of a smiling young student in a modern educational environment. The background is a soft-focus classroom with clean white and light teal accents. The photography is professional and bright, emphasizing institutional reliability and organized intelligence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVAwKTPMTPOCr0Oodr6m2mLvvXHlWOZFt68PJs_X1HSFzlsLhoPJ_nOdVnuooOmo4JVncP9ZSF3Mno3OswXjoBvCLQgbUg5YZ-iDhVMc7WXxhuGBQTivL5p0QRonVSbNI81pPi43RtAwmgVp5vq2X9jGvs-cv7ev5MFVau3VCOT36YP17O1vo1bzMP0M8n2_mNIAD5pJW0JlZJDud-n4kdYcYTrlsFA0ClyeIBQee92AmyTDToe3fa"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface truncate">Omar Hassan</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">Grade 09-C • #20230688</p>
+</div>
+<span class="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">Minor</span>
+</div>
+<div class="mt-3 space-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="timer">timer</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Late Arrival</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                                    Oct 23, 2023 • 08:05 AM
+                                </div>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="person">person</span>
+                                    Mr. Rahman
+                                </div>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-md text-label-md border border-outline-variant">In Progress</span>
+<button class="text-primary font-label-lg text-label-lg hover:underline">Mark Active</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Entry 4: Minor -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional close-up of a student in a bright school library, featuring clean vertical lines and organized bookshelves in the background. The color palette is composed of pristine whites and deep navy blues with a modern light-mode feel. High-quality corporate educational style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4oPnVNPRfamWN_SUWCVgrnN4CiS1GQDN05vICbkJwIIgbC8bVvHfBP6586qMzeNuXSZVsWDB09EAvXro_0VJZiIEk3V0smR8vgfrTtiZa7QelLyA59mvUpoSfVz40GA5a-ozQxdPUNyZ9AfD6i3O4qsTUbrEV-h3mTzMJcATljQ4jYQqZvHE1VuMp1lM2-CHJccXcE1paaBz84TFs93oum8BAdJDtXU9vRJrxxWifI098gaUaTWuG"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface truncate">Samer Khalil</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">Grade 12-A • #20230211</p>
+</div>
+<span class="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">Minor</span>
+</div>
+<div class="mt-3 space-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="checkroom">checkroom</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Dress Code Violation</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                                    Oct 22, 2023 • 09:45 AM
+                                </div>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="person">person</span>
+                                    Ms. Zara
+                                </div>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-md text-label-md border border-outline-variant">Resolved</span>
+<button class="text-primary font-label-lg text-label-lg hover:underline">Archive</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Entry 5: Critical -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow active:scale-[0.98] cursor-pointer">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A portrait of a male high school student in a brightly lit corridor, emphasizing depth and architectural clarity. The lighting is soft and even, highlighting the professional educational atmosphere. The color scheme is predominantly white with refined teal accents, evoking a sense of institutional reliability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1W0Ia9-xcb8FkMUN_RWfT89tSPEamONDzP9CE8C04oH1xXEPq35IVeNXwMY6ttnd25aWv9nh7rQa5QKzmqGvvKvKmyhHxgt-HkEa8wSdUMAggPxEoEqTupzzHp4CZ8OihY2-fZtuBEQlPrjJSPUoCEbsRJtj9Wtnk5zqdDa7TT69UWi91JrDhInGUsz5H0rkdTfqZSuI-k61YnnY3S-yDKcBi3pMP9_RT6lwMbgbNQl5Wu-AzmJ4n"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface truncate">Zaid Mansour</h3>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">Grade 10-D • #20230844</p>
+</div>
+<span class="px-3 py-1 rounded-full bg-error-container text-on-error-container font-label-md text-label-md">Critical</span>
+</div>
+<div class="mt-3 space-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="psychiatry">psychiatry</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Severe Disruptive Behavior</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                                    Oct 21, 2023 • 02:20 PM
+                                </div>
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="person">person</span>
+                                    Principal Admin
+                                </div>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-md text-label-md border border-outline-variant">Under Review</span>
+<button class="text-primary font-label-lg text-label-lg hover:underline">Escalate</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface dark:bg-inverse-surface border-t border-outline-variant dark:border-outline flex justify-around items-center h-20 px-2">
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 cursor-pointer active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-label-md text-label-md font-bold">History</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md">Students</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-md text-label-md">Reports</span>
+</div>
+</nav>
+<script>
+        // Simple micro-interaction for chips
+        const chips = document.querySelectorAll('button.rounded-full');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                // In a real app, this would filter the list
+                chips.forEach(c => {
+                    if(!c.classList.contains('border')) { // Ignore the date picker
+                         c.classList.remove('bg-primary', 'text-on-primary');
+                         c.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+                    }
+                });
+                if(!chip.classList.contains('border')) {
+                    chip.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+                    chip.classList.add('bg-primary', 'text-on-primary');
+                }
+            });
+        });
+
+        // Navigation interactions
+        const navItems = document.querySelectorAll('nav > div');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(i => {
+                    i.classList.remove('bg-primary-container', 'text-on-primary-container', 'rounded-xl', 'px-4', 'py-1');
+                    i.classList.add('text-on-surface-variant');
+                    const icon = i.querySelector('.material-symbols-outlined');
+                    if(icon) icon.style.fontVariationSettings = "'FILL' 0";
+                });
+                item.classList.add('bg-primary-container', 'text-on-primary-container', 'rounded-xl', 'px-4', 'py-1');
+                item.classList.remove('text-on-surface-variant');
+                const icon = item.querySelector('.material-symbols-outlined');
+                if(icon) icon.style.fontVariationSettings = "'FILL' 1";
+            });
+        });
+    </script>
+</body></html>

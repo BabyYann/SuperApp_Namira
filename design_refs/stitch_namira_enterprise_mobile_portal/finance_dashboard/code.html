@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperApp Namira - Finance Dashboard</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdbcb",
+                    "primary": "#00685e",
+                    "tertiary": "#9b4100",
+                    "on-tertiary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "surface": "#fbf8ff",
+                    "surface-tint": "#006a60",
+                    "secondary-fixed": "#d5e3ff",
+                    "on-secondary-container": "#294f83",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#c25300",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-highest": "#dde1ff",
+                    "outline-variant": "#bcc9c6",
+                    "background": "#fbf8ff",
+                    "on-primary": "#ffffff",
+                    "on-surface-variant": "#3d4947",
+                    "secondary-fixed-dim": "#a7c8ff",
+                    "surface-variant": "#dde1ff",
+                    "on-primary-container": "#f4fffb",
+                    "on-secondary-fixed-variant": "#1f477b",
+                    "inverse-primary": "#67d9c9",
+                    "outline": "#6d7a77",
+                    "on-tertiary-fixed": "#341100",
+                    "secondary-container": "#9fc2fe",
+                    "on-primary-fixed": "#00201c",
+                    "on-background": "#151a31",
+                    "on-secondary-fixed": "#001b3c",
+                    "on-primary-fixed-variant": "#005048",
+                    "on-surface": "#151a31",
+                    "primary-fixed": "#85f6e5",
+                    "on-surface": "#151a31",
+                    "primary-fixed-dim": "#67d9c9",
+                    "surface-dim": "#d4d8f7",
+                    "surface-bright": "#fbf8ff",
+                    "surface-container-low": "#f3f2ff",
+                    "surface-container": "#ececff",
+                    "primary-container": "#008377",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e4e7ff",
+                    "secondary": "#3a5f94",
+                    "inverse-on-surface": "#f0efff",
+                    "inverse-surface": "#2a2f47",
+                    "on-tertiary-fixed-variant": "#793100"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "8px",
+                    "sm": "8px",
+                    "gutter": "16px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "container-margin": "16px"
+            },
+            "fontFamily": {
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "title-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "title-md": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F5F7FA; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .ripple { position: relative; overflow: hidden; }
+        .ripple::after {
+            content: ""; display: block; position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            pointer-events: none; background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+            background-repeat: no-repeat; background-position: 50%; transform: scale(10, 10);
+            opacity: 0; transition: transform .5s, opacity 1s;
+        }
+        .ripple:active::after { transform: scale(0, 0); opacity: .3; transition: 0s; }
+        .chart-entrance { animation: slideUpFade 0.8s ease-out forwards; opacity: 0; }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background pb-20">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-container-margin py-sm">
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A professional, high-resolution portrait of a friendly female educational administrator in a modern office. She has a warm smile and is dressed in professional business attire. The background is a clean, bright school reception area with soft daylight and teal corporate accents, embodying institutional reliability and professional trust." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyy6xTV-5WtYbiQrs-W0eBHlnkGW84fkGP28-bg3smjOQF5K4bXkk2u6G8oXeyi5n2d-HCnuiNMa5HuqUxFNg8-4mzxDVACgL5t5qPbx7ChdqP2v-htm0pD5IdcWTPz_aDLpvvskxiDRFId01ehNRmlFEuOSqZTA3jnLEaSVbery-nJVh6fGLvTqUWe0ZCLq-yy92gGQfStvSF8AN0T9beqYT1YoVxokIG5NwICIPBaZvGG43nF2U9"/>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md font-bold text-primary">Finance Dashboard</span>
+<div class="flex items-center gap-1 cursor-pointer hover:bg-surface-container-low transition-colors px-1 rounded">
+<span class="font-label-md text-label-md text-on-surface-variant">Namira Primary Unit</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-primary" data-icon="school">school</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors relative active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header>
+<main class="px-container-margin py-md space-y-lg max-w-7xl mx-auto">
+<!-- Section 1: Financial Summary Cards -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Card 1 -->
+<div class="bg-surface p-md rounded-xl shadow-[0_4px_4px_rgba(0,0,0,0.05)] border border-outline-variant flex flex-col gap-xs chart-entrance" style="animation-delay: 0.1s;">
+<span class="text-on-surface-variant font-label-md text-label-md">Outstanding Bills</span>
+<span class="text-primary font-headline-md text-headline-md">Rp 12.5M</span>
+<span class="text-error font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +2.4%
+                </span>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface p-md rounded-xl shadow-[0_4px_4px_rgba(0,0,0,0.05)] border border-outline-variant flex flex-col gap-xs chart-entrance" style="animation-delay: 0.2s;">
+<span class="text-on-surface-variant font-label-md text-label-md">Income Today</span>
+<span class="text-primary font-headline-md text-headline-md">Rp 4.2M</span>
+<span class="text-primary font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +15%
+                </span>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface p-md rounded-xl shadow-[0_4px_4px_rgba(0,0,0,0.05)] border border-outline-variant flex flex-col gap-xs chart-entrance" style="animation-delay: 0.3s;">
+<span class="text-on-surface-variant font-label-md text-label-md">Monthly Revenue</span>
+<span class="text-primary font-headline-md text-headline-md">Rp 148M</span>
+<span class="text-primary font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">check_circle</span> Target: 92%
+                </span>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface p-md rounded-xl shadow-[0_4px_4px_rgba(0,0,0,0.05)] border border-outline-variant flex flex-col gap-xs chart-entrance" style="animation-delay: 0.4s;">
+<span class="text-on-surface-variant font-label-md text-label-md">Collection Rate</span>
+<span class="text-primary font-headline-md text-headline-md">88.4%</span>
+<div class="w-full h-2 bg-outline-variant rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 88.4%"></div>
+</div>
+</div>
+</section>
+<!-- Section 2: Revenue Analytics (Bento Style) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="md:col-span-2 bg-surface p-lg rounded-xl shadow-[0_4px_4px_rgba(0,0,0,0.05)] border border-outline-variant chart-entrance" style="animation-delay: 0.5s;">
+<div class="flex justify-between items-center mb-lg">
+<h2 class="font-title-lg text-title-lg text-on-surface">Revenue Analytics</h2>
+<div class="flex gap-2">
+<span class="flex items-center gap-1 text-label-md font-label-md text-primary"><span class="w-2 h-2 rounded-full bg-primary"></span> Income</span>
+<span class="flex items-center gap-1 text-label-md font-label-md text-secondary"><span class="w-2 h-2 rounded-full bg-secondary"></span> Expense</span>
+</div>
+</div>
+<div class="relative h-64 w-full flex items-end gap-2 px-2">
+<!-- Faux Line/Area Chart using CSS bars for visual representation -->
+<div class="flex-1 bg-primary-container/20 relative group cursor-pointer h-full rounded-t-sm">
+<div class="absolute bottom-0 w-full bg-primary h-[60%] rounded-t-sm transition-all duration-500 group-hover:h-[65%]"></div>
+<div class="absolute bottom-0 w-full bg-secondary/40 h-[20%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 bg-primary-container/20 relative group cursor-pointer h-full rounded-t-sm">
+<div class="absolute bottom-0 w-full bg-primary h-[75%] rounded-t-sm transition-all duration-500 group-hover:h-[80%]"></div>
+<div class="absolute bottom-0 w-full bg-secondary/40 h-[25%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 bg-primary-container/20 relative group cursor-pointer h-full rounded-t-sm">
+<div class="absolute bottom-0 w-full bg-primary h-[45%] rounded-t-sm transition-all duration-500 group-hover:h-[50%]"></div>
+<div class="absolute bottom-0 w-full bg-secondary/40 h-[30%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 bg-primary-container/20 relative group cursor-pointer h-full rounded-t-sm">
+<div class="absolute bottom-0 w-full bg-primary h-[90%] rounded-t-sm transition-all duration-500 group-hover:h-[95%]"></div>
+<div class="absolute bottom-0 w-full bg-secondary/40 h-[15%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 bg-primary-container/20 relative group cursor-pointer h-full rounded-t-sm">
+<div class="absolute bottom-0 w-full bg-primary h-[70%] rounded-t-sm transition-all duration-500 group-hover:h-[75%]"></div>
+<div class="absolute bottom-0 w-full bg-secondary/40 h-[40%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 bg-primary-container/20 relative group cursor-pointer h-full rounded-t-sm">
+<div class="absolute bottom-0 w-full bg-primary h-[85%] rounded-t-sm transition-all duration-500 group-hover:h-[90%]"></div>
+<div class="absolute bottom-0 w-full bg-secondary/40 h-[10%] rounded-t-sm"></div>
+</div>
+</div>
+<div class="flex justify-between mt-4 text-label-md text-on-surface-variant px-2">
+<span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+</div>
+</div>
+<!-- Section 3: Payment Status -->
+<div class="bg-surface p-lg rounded-xl shadow-[0_4px_4px_rgba(0,0,0,0.05)] border border-outline-variant flex flex-col gap-md chart-entrance" style="animation-delay: 0.6s;">
+<h2 class="font-title-lg text-title-lg text-on-surface">Payment Status</h2>
+<div class="space-y-md">
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-1">
+<span class="text-on-surface">Paid (642)</span>
+<span class="text-primary">75%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full"><div class="h-full bg-primary rounded-full" style="width: 75%"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-1">
+<span class="text-on-surface">Pending (112)</span>
+<span class="text-secondary">15%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full"><div class="h-full bg-secondary rounded-full" style="width: 15%"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-1">
+<span class="text-on-surface">Overdue (45)</span>
+<span class="text-error">8%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full"><div class="h-full bg-error rounded-full" style="width: 8%"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-label-md font-label-md mb-1">
+<span class="text-on-surface">Cancelled (12)</span>
+<span class="text-on-surface-variant">2%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full"><div class="h-full bg-outline rounded-full" style="width: 2%"></div></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Recent Transactions -->
+<section class="bg-surface rounded-xl shadow-[0_4px_4px_rgba(0,0,0,0.05)] border border-outline-variant overflow-hidden chart-entrance" style="animation-delay: 0.7s;">
+<div class="px-lg py-md border-b border-outline-variant flex justify-between items-center">
+<h2 class="font-title-lg text-title-lg text-on-surface">Recent Transactions</h2>
+<button class="text-primary font-label-lg text-label-lg ripple px-sm py-1 rounded">View All</button>
+</div>
+<div class="overflow-x-auto no-scrollbar">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<tr>
+<th class="px-lg py-3">Student Name</th>
+<th class="px-lg py-3">Invoice</th>
+<th class="px-lg py-3">Method</th>
+<th class="px-lg py-3">Status</th>
+<th class="px-lg py-3">Amount</th>
+<th class="px-lg py-3">Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant text-body-md text-body-md">
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-4 font-title-md">Ahmad Zakaria</td>
+<td class="px-lg py-4 text-on-surface-variant">INV-2023-0891</td>
+<td class="px-lg py-4"><span class="material-symbols-outlined text-primary">payments</span></td>
+<td class="px-lg py-4"><span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-md text-label-md">Success</span></td>
+<td class="px-lg py-4 font-bold">Rp 1.500.000</td>
+<td class="px-lg py-4 text-on-surface-variant">24 Oct 2023</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-4 font-title-md">Siti Aminah</td>
+<td class="px-lg py-4 text-on-surface-variant">INV-2023-0892</td>
+<td class="px-lg py-4"><span class="material-symbols-outlined text-secondary">account_balance</span></td>
+<td class="px-lg py-4"><span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-md text-label-md">Pending</span></td>
+<td class="px-lg py-4 font-bold">Rp 2.450.000</td>
+<td class="px-lg py-4 text-on-surface-variant">24 Oct 2023</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-lg py-4 font-title-md">Budi Utomo</td>
+<td class="px-lg py-4 text-on-surface-variant">INV-2023-0893</td>
+<td class="px-lg py-4"><span class="material-symbols-outlined text-primary">credit_card</span></td>
+<td class="px-lg py-4"><span class="bg-error-container text-on-error-container px-3 py-1 rounded-full font-label-md text-label-md">Error</span></td>
+<td class="px-lg py-4 font-bold">Rp 900.000</td>
+<td class="px-lg py-4 text-on-surface-variant">23 Oct 2023</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Section 5: Quick Actions -->
+<section class="space-y-md chart-entrance" style="animation-delay: 0.8s;">
+<h2 class="font-title-lg text-title-lg text-on-surface">Quick Actions</h2>
+<div class="grid grid-cols-2 gap-md">
+<button class="flex flex-col items-center justify-center gap-2 p-lg bg-surface border border-outline-variant rounded-xl shadow-sm ripple active:scale-95 transition-all">
+<span class="material-symbols-outlined text-primary text-3xl">add_card</span>
+<span class="font-label-lg text-label-lg text-on-surface">Create Invoice</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-lg bg-surface border border-outline-variant rounded-xl shadow-sm ripple active:scale-95 transition-all">
+<span class="material-symbols-outlined text-primary text-3xl">verified</span>
+<span class="font-label-lg text-label-lg text-on-surface">Verify Payment</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-lg bg-surface border border-outline-variant rounded-xl shadow-sm ripple active:scale-95 transition-all">
+<span class="material-symbols-outlined text-primary text-3xl">analytics</span>
+<span class="font-label-lg text-label-lg text-on-surface">Generate Report</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-lg bg-surface border border-outline-variant rounded-xl shadow-sm ripple active:scale-95 transition-all">
+<span class="material-symbols-outlined text-primary text-3xl">download</span>
+<span class="font-label-lg text-label-lg text-on-surface">Export Data</span>
+</button>
+</div>
+</section>
+<!-- Section 6: Recent Notifications -->
+<section class="space-y-md chart-entrance" style="animation-delay: 0.9s;">
+<h2 class="font-title-lg text-title-lg text-on-surface">Recent Alerts</h2>
+<div class="bg-surface rounded-xl shadow-[0_4px_4px_rgba(0,0,0,0.05)] border border-outline-variant overflow-hidden">
+<div class="p-md flex items-start gap-md border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</div>
+<div class="flex-1">
+<p class="font-title-md text-title-md">Payment Confirmed</p>
+<p class="text-body-md text-on-surface-variant line-clamp-1">Invoice INV-2023-0891 has been fully settled by Ahmad Zakaria.</p>
+<span class="text-label-md text-outline font-label-md">2 mins ago</span>
+</div>
+</div>
+<div class="p-md flex items-start gap-md border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary">description</span>
+</div>
+<div class="flex-1">
+<p class="font-title-md text-title-md">Invoice Generated</p>
+<p class="text-body-md text-on-surface-variant line-clamp-1">Batch invoices for Nov 2023 have been successfully generated.</p>
+<span class="text-label-md text-outline font-label-md">1 hour ago</span>
+</div>
+</div>
+<div class="p-md flex items-start gap-md hover:bg-surface-container-low transition-colors">
+<div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error">priority_high</span>
+</div>
+<div class="flex-1">
+<p class="font-title-md text-title-md">Overdue Alert</p>
+<p class="text-body-md text-on-surface-variant line-clamp-1">12 students have reached the 7-day overdue grace period.</p>
+<span class="text-label-md text-outline font-label-md">3 hours ago</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-2 h-16 bg-surface border-t border-outline-variant shadow-sm">
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-md text-label-md">Academic</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">fingerprint</span>
+<span class="font-label-md text-label-md">Attendance</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Finance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<script>
+        // Simple Ripple Interaction Simulation
+        document.querySelectorAll('.ripple').forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Logic for active scaling is handled via tailwind "active:scale-*"
+            });
+        });
+
+        // Simulating some dynamic interactive data changes
+        const summaryCards = document.querySelectorAll('.chart-entrance');
+        window.addEventListener('load', () => {
+            summaryCards.forEach((card, idx) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                }, 100 * idx);
+            });
+        });
+    </script>
+</body></html>

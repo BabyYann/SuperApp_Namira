@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Asset Detail - SuperApp Namira</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-dim": "#d4d8f7",
+                "on-secondary-fixed-variant": "#1f477b",
+                "on-secondary-container": "#294f83",
+                "on-primary-fixed": "#00201c",
+                "on-surface": "#151a31",
+                "tertiary-fixed-dim": "#ffb691",
+                "surface-container-high": "#e4e7ff",
+                "primary-fixed": "#85f6e5",
+                "on-error": "#ffffff",
+                "surface-container": "#ececff",
+                "secondary": "#3a5f94",
+                "secondary-container": "#9fc2fe",
+                "secondary-fixed": "#d5e3ff",
+                "on-tertiary-container": "#fffbff",
+                "tertiary": "#9b4100",
+                "on-primary-fixed-variant": "#005048",
+                "tertiary-container": "#c25300",
+                "on-tertiary": "#ffffff",
+                "surface-bright": "#fbf8ff",
+                "on-secondary": "#ffffff",
+                "primary": "#00685e",
+                "on-tertiary-fixed-variant": "#793100",
+                "surface-container-low": "#f3f2ff",
+                "surface": "#fbf8ff",
+                "primary-fixed-dim": "#67d9c9",
+                "on-background": "#151a31",
+                "inverse-surface": "#2a2f47",
+                "surface-variant": "#dde1ff",
+                "tertiary-fixed": "#ffdbcb",
+                "surface-container-lowest": "#ffffff",
+                "on-secondary-fixed": "#001b3c",
+                "background": "#fbf8ff",
+                "outline": "#6d7a77",
+                "primary-container": "#008377",
+                "inverse-primary": "#67d9c9",
+                "secondary-fixed-dim": "#a7c8ff",
+                "surface-container-highest": "#dde1ff",
+                "error": "#ba1a1a",
+                "on-tertiary-fixed": "#341100",
+                "surface-tint": "#006a60",
+                "outline-variant": "#bcc9c6",
+                "on-surface-variant": "#3d4947",
+                "inverse-on-surface": "#f0efff",
+                "error-container": "#ffdad6",
+                "on-error-container": "#93000a",
+                "on-primary": "#ffffff",
+                "on-primary-container": "#f4fffb"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "16px",
+                "full": "9999px"
+            },
+            "spacing": {
+                "unit": "8px",
+                "md": "16px",
+                "gutter": "16px",
+                "sm": "8px",
+                "xl": "32px",
+                "lg": "24px",
+                "container-margin": "16px",
+                "xs": "4px"
+            },
+            "fontFamily": {
+                "title-md": ["Plus Jakarta Sans"],
+                "headline-lg": ["Plus Jakarta Sans"],
+                "title-lg": ["Plus Jakarta Sans"],
+                "label-lg": ["Plus Jakarta Sans"],
+                "label-md": ["Plus Jakarta Sans"],
+                "display-lg-mobile": ["Plus Jakarta Sans"],
+                "body-lg": ["Plus Jakarta Sans"],
+                "headline-md": ["Plus Jakarta Sans"],
+                "display-lg": ["Plus Jakarta Sans"],
+                "body-md": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "600"}],
+                "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #F5F7FA;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .timeline-dot::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 100%;
+            bottom: -32px;
+            width: 2px;
+            background-color: #E5E7EB;
+        }
+        .timeline-item:last-child .timeline-dot::after {
+            display: none;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="pb-32">
+<!-- Top App Bar (Shared Component) -->
+<nav class="w-full top-0 sticky bg-surface dark:bg-surface-container-low border-b border-outline-variant dark:border-outline z-40 flex items-center justify-between px-gutter h-16">
+<div class="flex items-center gap-3">
+<button class="material-symbols-outlined text-on-surface-variant active:scale-95 transition-transform">arrow_back</button>
+<h1 class="font-title-md text-title-md text-primary dark:text-primary-fixed-dim">Asset Details</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A clean professional headshot of a female educator with a friendly smile, set against a blurred institutional background, reflecting the professional yet accessible tone of the Namira education superapp." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXVR5T-jDaR1xi3LOjZjH3H5B-PkCOZY0-EeKce_tm597ocq6AKssjStok5EFRFPuSvsqci5Ze3H7Tp3Uh_2Q5NvaJhpLa8IGDCq49lZvfya_DzLIS25a_BixE3fMMabTl0WJji-aYkBj4bvzhU3_rbXhYT79-5BiEaj_vaEjQHgNWMAheEQaaPxCQwuQIW4E48rhc5ppj-4uxUiHvubNuPJT90W1nMi_kvsr4kRnt8ZAiz73DrS1l"/>
+</div>
+</div>
+</nav>
+<main class="max-w-screen-md mx-auto px-gutter py-6 space-y-6">
+<!-- Header Section: Asset Visual & Identity -->
+<section class="bg-white rounded-xl p-md custom-shadow">
+<div class="relative w-full h-64 rounded-xl overflow-hidden mb-4 bg-surface-container-low border border-outline-variant">
+<img class="w-full h-full object-contain p-4" data-alt="A high-end Epson X41 projector positioned on a sleek white table in a bright, modern corporate meeting room. The lighting is soft and professional, highlighting the high-tech textures of the device and the premium enterprise aesthetic of the Namira platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCljk8BydWhNs9Jp2m4t3483uj7a1Q2dQr2JB70RJUjyLPlJQDGd_dPupht7z5X8FW97LanspOZBq883N0L5z1A5cQ-z6dM5BkKzGsepD1Wv1U-Km-jH3e7epVzJcWAD5O0HSjV67S1hH0kuo08BX6rRzGCQ3vjTAaS0BBMG7ZWmIwpL6Vwl0vXqZQcFClC6eiSQBXNDCVjXva5dV9UGlpR3tZnJexa8Sweum2vJZyB3Es_PfOJL3kY"/>
+<button class="absolute top-4 right-4 bg-white/90 backdrop-blur p-3 rounded-xl border border-outline-variant shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="qr_code_2">qr_code_2</span>
+</button>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Projector Epson X41</h2>
+<p class="font-label-lg text-label-lg text-outline">NAM-ELC-001</p>
+</div>
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-md text-label-md">Excellent</span>
+</div>
+</div>
+</section>
+<!-- Condition Section: Interactive State -->
+<section class="space-y-3">
+<h3 class="font-title-md text-title-md text-on-surface ml-1">Asset Condition</h3>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-xl border-2 border-primary bg-primary-container text-on-primary-container font-label-lg transition-all active:scale-95">Excellent</button>
+<button class="px-4 py-2 rounded-xl border border-outline-variant bg-white text-on-surface-variant font-label-lg transition-all hover:bg-surface-container-low active:scale-95">Good</button>
+<button class="px-4 py-2 rounded-xl border border-outline-variant bg-white text-on-surface-variant font-label-lg transition-all hover:bg-surface-container-low active:scale-95">Needs Repair</button>
+<button class="px-4 py-2 rounded-xl border border-outline-variant bg-white text-on-surface-variant font-label-lg transition-all hover:bg-surface-container-low active:scale-95">Damaged</button>
+</div>
+</section>
+<!-- Bento Grid: Information & Location -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- General Info -->
+<section class="bg-white rounded-xl p-lg custom-shadow border border-outline-variant/30">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">info</span>
+<h3 class="font-title-md text-title-md text-on-surface">General Information</h3>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-lg">Category</span>
+<span class="text-on-surface font-title-md">Electronics</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-lg">Purchase Date</span>
+<span class="text-on-surface font-title-md">Oct 12, 2022</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-lg">Purchase Price</span>
+<span class="text-on-surface font-title-md">$850.00</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-lg">Warranty</span>
+<span class="text-on-tertiary-container font-title-md bg-tertiary-container/10 px-2 rounded">Until Oct 2024</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant font-label-lg">Supplier</span>
+<span class="text-primary font-title-md underline cursor-pointer">Global Tech</span>
+</div>
+</div>
+</section>
+<!-- Location Section -->
+<section class="bg-white rounded-xl p-lg custom-shadow border border-outline-variant/30">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<h3 class="font-title-md text-title-md text-on-surface">Location</h3>
+</div>
+<div class="space-y-5">
+<div class="flex gap-4 items-center">
+<div class="w-10 h-10 rounded-xl bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">apartment</span>
+</div>
+<div>
+<p class="text-label-md text-outline">Building</p>
+<p class="text-on-surface font-title-md">Main Building A</p>
+</div>
+</div>
+<div class="flex gap-4 items-center">
+<div class="w-10 h-10 rounded-xl bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">door_open</span>
+</div>
+<div>
+<p class="text-label-md text-outline">Room</p>
+<p class="text-on-surface font-title-md">Computer Lab B</p>
+</div>
+</div>
+<div class="flex gap-4 items-center">
+<div class="w-10 h-10 rounded-xl bg-primary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">person</span>
+</div>
+<div>
+<p class="text-label-md text-outline">Current Holder</p>
+<p class="text-on-surface font-title-md">Sarah Wijaya</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- History Sections: Maintenance & Loans -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Maintenance History -->
+<section class="space-y-4">
+<h3 class="font-title-lg text-title-lg text-on-surface px-1">Maintenance History</h3>
+<div class="space-y-8 pl-4 border-l-2 border-outline-variant/30 relative">
+<!-- Entry 1 -->
+<div class="relative timeline-item">
+<div class="absolute -left-[22px] top-1 w-4 h-4 rounded-full bg-primary ring-4 ring-white"></div>
+<div class="bg-white p-4 rounded-xl custom-shadow border border-outline-variant/20 ml-2">
+<div class="flex justify-between items-start mb-1">
+<span class="font-title-md text-on-surface">Routine Cleaning</span>
+<span class="text-label-md text-outline">Oct 10, 2023</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-outline">engineering</span>
+<p class="text-body-md text-on-surface-variant">Budi Santoso</p>
+</div>
+</div>
+</div>
+<!-- Entry 2 -->
+<div class="relative timeline-item">
+<div class="absolute -left-[22px] top-1 w-4 h-4 rounded-full bg-outline-variant ring-4 ring-white"></div>
+<div class="bg-white p-4 rounded-xl custom-shadow border border-outline-variant/20 ml-2">
+<div class="flex justify-between items-start mb-1">
+<span class="font-title-md text-on-surface">Lamp Replacement</span>
+<span class="text-label-md text-outline">May 15, 2023</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-outline">corporate_fare</span>
+<p class="text-body-md text-on-surface-variant">Global Tech</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Loan History -->
+<section class="space-y-4">
+<h3 class="font-title-lg text-title-lg text-on-surface px-1">Loan History</h3>
+<div class="space-y-8 pl-4 border-l-2 border-outline-variant/30 relative">
+<!-- Entry 1 -->
+<div class="relative timeline-item">
+<div class="absolute -left-[22px] top-1 w-4 h-4 rounded-full bg-secondary ring-4 ring-white"></div>
+<div class="bg-secondary-container/20 p-4 rounded-xl border border-secondary/20 ml-2">
+<div class="flex justify-between items-start mb-1">
+<span class="font-title-md text-secondary">Current Loan</span>
+<span class="text-label-md text-outline">Nov 01, 2023</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-secondary">badge</span>
+<p class="text-body-md text-on-secondary-container">Sarah Wijaya</p>
+</div>
+</div>
+</div>
+<!-- Entry 2 -->
+<div class="relative timeline-item">
+<div class="absolute -left-[22px] top-1 w-4 h-4 rounded-full bg-outline-variant ring-4 ring-white"></div>
+<div class="bg-white p-4 rounded-xl custom-shadow border border-outline-variant/20 ml-2">
+<div class="flex justify-between items-start mb-1">
+<span class="font-title-md text-on-surface">Returned</span>
+<span class="text-label-md text-outline">Sep 20, 2023</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-outline">person</span>
+<p class="text-body-md text-on-surface-variant">Ahmad Fauzi</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Action Bar (Contextual FAB Suppression as it's a detail screen, but specific buttons requested) -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant p-gutter flex gap-3 z-50 md:justify-center">
+<button class="flex-1 max-w-xs h-12 flex items-center justify-center gap-2 rounded-xl border border-primary text-primary font-title-md hover:bg-primary-container/10 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">qr_code</span>
+            QR
+        </button>
+<button class="flex-1 max-w-xs h-12 flex items-center justify-center gap-2 rounded-xl border border-secondary text-secondary font-title-md hover:bg-secondary-container/10 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+            Edit
+        </button>
+<button class="flex-[2] max-w-sm h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-white font-title-md shadow-lg shadow-primary/20 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">build</span>
+            Create Maintenance
+        </button>
+</div>
+<!-- Background Decoration (Optional subtle effect) -->
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden opacity-30">
+<div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-fixed blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-10%] left-[-10%] w-[30%] h-[30%] bg-secondary-fixed blur-[100px] rounded-full"></div>
+</div>
+<script>
+        // Micro-interactions for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                ripple.classList.add('absolute', 'inset-0', 'bg-white/20', 'rounded-xl', 'animate-ping');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 400);
+            });
+        });
+    </script>
+</body></html>
