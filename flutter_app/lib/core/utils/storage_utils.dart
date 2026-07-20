@@ -64,6 +64,20 @@ class StorageUtils {
     return int.tryParse(id);
   }
 
+  static Future<void> saveActiveRole(String role) async {
+    await _withTimeout(
+      () => _storage.write(key: AppConstants.activeRoleKey, value: role),
+      'saveActiveRole',
+    );
+  }
+
+  static Future<String?> getActiveRole() async {
+    return _withTimeout<String?>(
+      () => _storage.read(key: AppConstants.activeRoleKey),
+      'getActiveRole',
+    );
+  }
+
   static Future<void> clearAuth() async {
     await _withTimeout(() async {
       await _storage.delete(key: AppConstants.tokenKey);

@@ -92,6 +92,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined),
+          tooltip: 'Notifikasi',
+          onPressed: () => context.push('/notifications'),
+        ),
         PopupMenuButton<String>(
           icon: AvatarWidget(
             name: authState.userName,
@@ -415,6 +420,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         {'icon': Icons.psychology_outlined, 'label': 'Konseling', 'color': AppColors.success},
         {'icon': Icons.inventory_2_outlined, 'label': 'Sarpar', 'color': AppColors.warning},
         {'icon': Icons.menu_book_outlined, 'label': 'LMS', 'color': const Color(0xFF805AD5)},
+        {'icon': Icons.campaign_outlined, 'label': 'Humas', 'color': AppColors.secondary},
+        {'icon': Icons.notifications_outlined, 'label': 'Notifikasi', 'color': AppColors.accent},
       ]);
     } else {
       if (roles.any((r) => ['teacher', 'guru'].contains(r))) {
@@ -422,12 +429,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           {'icon': Icons.schedule_outlined, 'label': 'Jadwal', 'color': AppColors.primary},
           {'icon': Icons.edit_note, 'label': 'Jurnal', 'color': AppColors.accent},
           {'icon': Icons.fact_check_outlined, 'label': 'Absensi', 'color': AppColors.success},
+          {'icon': Icons.menu_book_outlined, 'label': 'LMS', 'color': const Color(0xFF805AD5)},
         ]);
       }
       if (roles.any((r) => ['siswa', 'student'].contains(r))) {
         modules.addAll([
           {'icon': Icons.receipt_long_outlined, 'label': 'Tagihan', 'color': AppColors.warning},
           {'icon': Icons.menu_book_outlined, 'label': 'LMS', 'color': const Color(0xFF805AD5)},
+          {'icon': Icons.school_outlined, 'label': 'Portal Siswa', 'color': AppColors.primary},
         ]);
       }
       if (roles.any((r) => ['finance', 'staff_admin_keuangan'].contains(r))) {
@@ -435,8 +444,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           {'icon': Icons.account_balance_wallet_outlined, 'label': 'Keuangan', 'color': AppColors.secondary},
         ]);
       }
+      if (roles.any((r) => ['humas'].contains(r))) {
+        modules.addAll([
+          {'icon': Icons.campaign_outlined, 'label': 'Humas', 'color': AppColors.secondary},
+        ]);
+      }
       modules.add(
         {'icon': Icons.fingerprint, 'label': 'Presensi', 'color': AppColors.primary},
+      );
+      modules.add(
+        {'icon': Icons.notifications_outlined, 'label': 'Notifikasi', 'color': AppColors.accent},
       );
     }
 
@@ -486,7 +503,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'Sarpar': '/sarpar',
       'Presensi': '/attendance',
       'Tagihan': '/finance',
-      'LMS': null,
+      'LMS': '/lms',
+      'Humas': '/public-relations',
+      'Portal Siswa': '/student',
+      'Notifikasi': '/notifications',
       'Jurnal': null,
       'Absensi': '/attendance',
       'Karyawan': null,

@@ -1,12 +1,18 @@
 <?php
 
 use App\Http\Controllers\Api\AcademicApiController;
+use App\Http\Controllers\Api\AdminManagementApiController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CounselingApiController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\EmployeeApiController;
 use App\Http\Controllers\Api\FinanceApiController;
+use App\Http\Controllers\Api\LmsApiController;
+use App\Http\Controllers\Api\NotificationApiController;
+use App\Http\Controllers\Api\PublicRelationsApiController;
 use App\Http\Controllers\Api\SarparApiController;
+use App\Http\Controllers\Api\StudentPortalApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -57,5 +63,60 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/rooms', [SarparApiController::class, 'rooms']);
         Route::get('/loans', [SarparApiController::class, 'loans']);
         Route::get('/maintenance', [SarparApiController::class, 'maintenance']);
+    });
+
+    Route::prefix('lms')->group(function () {
+        Route::get('/classrooms', [LmsApiController::class, 'classrooms']);
+        Route::get('/classrooms/{id}', [LmsApiController::class, 'classroomShow']);
+        Route::get('/materials/{id}', [LmsApiController::class, 'materialShow']);
+        Route::post('/materials', [LmsApiController::class, 'materialStore']);
+        Route::get('/assignments/{id}', [LmsApiController::class, 'assignmentShow']);
+        Route::post('/assignments', [LmsApiController::class, 'assignmentStore']);
+        Route::post('/assignments/{id}/submit', [LmsApiController::class, 'assignmentSubmit']);
+        Route::get('/submissions/{id}', [LmsApiController::class, 'submissionShow']);
+        Route::post('/submissions/{id}/grade', [LmsApiController::class, 'submissionGrade']);
+        Route::get('/gradebook/{classroom}', [LmsApiController::class, 'gradebook']);
+        Route::get('/announcements', [LmsApiController::class, 'announcements']);
+        Route::post('/announcements', [LmsApiController::class, 'announcementStore']);
+        Route::get('/my-tasks', [LmsApiController::class, 'myTasks']);
+    });
+
+    Route::prefix('pr')->group(function () {
+        Route::get('/news', [PublicRelationsApiController::class, 'news']);
+        Route::get('/news/{id}', [PublicRelationsApiController::class, 'newsShow']);
+        Route::get('/events', [PublicRelationsApiController::class, 'events']);
+        Route::get('/events/{id}', [PublicRelationsApiController::class, 'eventShow']);
+        Route::get('/destinations', [PublicRelationsApiController::class, 'destinations']);
+        Route::get('/destinations/{id}', [PublicRelationsApiController::class, 'destinationShow']);
+    });
+
+    Route::prefix('student')->group(function () {
+        Route::get('/dashboard', [StudentPortalApiController::class, 'dashboard']);
+        Route::get('/tasks', [StudentPortalApiController::class, 'tasks']);
+        Route::post('/tasks/{id}/complete', [StudentPortalApiController::class, 'completeTask']);
+        Route::get('/pickup', [StudentPortalApiController::class, 'pickupIndex']);
+        Route::post('/pickup', [StudentPortalApiController::class, 'pickupStore']);
+        Route::get('/grades', [StudentPortalApiController::class, 'grades']);
+        Route::get('/schedule', [StudentPortalApiController::class, 'schedule']);
+        Route::get('/profile', [StudentPortalApiController::class, 'profile']);
+    });
+
+    Route::prefix('admin')->group(function () {
+        Route::get('/users', [AdminManagementApiController::class, 'users']);
+        Route::post('/users', [AdminManagementApiController::class, 'storeUser']);
+        Route::put('/users/{id}', [AdminManagementApiController::class, 'updateUser']);
+        Route::get('/roles', [AdminManagementApiController::class, 'roles']);
+        Route::post('/units/{id}/switch', [AdminManagementApiController::class, 'switchUnit']);
+    });
+
+    Route::prefix('employee')->group(function () {
+        Route::get('/staff', [EmployeeApiController::class, 'staff']);
+        Route::get('/attendance', [EmployeeApiController::class, 'attendance']);
+    });
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationApiController::class, 'index']);
+        Route::post('/{id}/read', [NotificationApiController::class, 'markRead']);
+        Route::post('/read-all', [NotificationApiController::class, 'markAllRead']);
     });
 });

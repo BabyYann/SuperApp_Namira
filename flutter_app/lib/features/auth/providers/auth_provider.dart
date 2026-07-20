@@ -10,6 +10,7 @@ class AuthState {
   final Map<String, dynamic>? user;
   final List<dynamic>? units;
   final int? activeUnitId;
+  final String? activeRole;
   final String? errorMessage;
 
   const AuthState({
@@ -17,6 +18,7 @@ class AuthState {
     this.user,
     this.units,
     this.activeUnitId,
+    this.activeRole,
     this.errorMessage,
   });
 
@@ -25,6 +27,7 @@ class AuthState {
     Map<String, dynamic>? user,
     List<dynamic>? units,
     int? activeUnitId,
+    String? activeRole,
     String? errorMessage,
   }) {
     return AuthState(
@@ -32,6 +35,7 @@ class AuthState {
       user: user ?? this.user,
       units: units ?? this.units,
       activeUnitId: activeUnitId ?? this.activeUnitId,
+      activeRole: activeRole ?? this.activeRole,
       errorMessage: errorMessage,
     );
   }
@@ -42,6 +46,11 @@ class AuthState {
   String get userName => user?['name'] ?? '';
   String get userEmail => user?['email'] ?? '';
   String? get profilePhoto => user?['profile_photo_url'];
+
+  bool get needsWorkspaceSelection {
+    if (units == null || units!.isEmpty) return false;
+    return activeUnitId == null || activeRole == null;
+  }
   List<String> get roles {
     if (user == null) return [];
     final roles = user!['roles'];
@@ -85,11 +94,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
           }
         }
 
+        final activeRole = await StorageUtils.getActiveRole();
+
         state = state.copyWith(
           status: AuthStatus.authenticated,
           user: result.data,
           units: profile['units'] as List<dynamic>?,
           activeUnitId: resolvedUnit,
+          activeRole: activeRole,
         );
       } else {
         await StorageUtils.clearAuth();
@@ -120,11 +132,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await StorageUtils.saveActiveUnit(activeUnit);
       }
 
+      final activeRole = await StorageUtils.getActiveRole();
+
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: user,
         units: units,
         activeUnitId: activeUnit,
+        activeRole: activeRole,
       );
       return true;
     } else {
@@ -144,8 +159,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> switchUnit(int unitId) async {
     final result = await _repository.switchUnit(unitId);
     if (result.success) {
-      state = state.copyWith(activeUnitId: unitId);
+      await StorageUtils.saveActiveUnit(unitId);
+      state = state.copyWith(activeUnitId: unitId, activeRole: null);
     }
+  }
+
+  Future<void> setActiveRole(String role) async {
+    await StorageUtils.saveActiveRole(role);
+    state = state.copyWith(activeRole: role);
   }
 
   Future<void> refreshProfile() async {

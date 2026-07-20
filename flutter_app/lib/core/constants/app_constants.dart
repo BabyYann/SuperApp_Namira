@@ -9,6 +9,7 @@ class AppConstants {
   static const String tokenKey = 'auth_token';
   static const String userKey = 'user_data';
   static const String activeUnitKey = 'active_unit_id';
+  static const String activeRoleKey = 'active_role';
 
   static const List<String> allowedImageExtensions = [
     'jpg', 'jpeg', 'png', 'webp',
@@ -57,4 +58,32 @@ class ApiEndpoints {
   static const String publicRelations = '/public-relations';
   static const String announcements = '/announcements';
   static const String gallery = '/gallery';
+
+  // Phase 0 - New module endpoints
+  static const String lmsClassrooms = '/lms/classrooms';
+  static const String lmsMaterials = '/lms/materials';
+  static const String lmsAssignments = '/lms/assignments';
+  static const String lmsSubmissions = '/lms/submissions';
+  static const String lmsGradebook = '/lms/gradebook';
+  static const String lmsAnnouncements = '/lms/announcements';
+  static const String lmsMyTasks = '/lms/my-tasks';
+
+  static const String prNews = '/pr/news';
+  static const String prEvents = '/pr/events';
+  static const String prDestinations = '/pr/destinations';
+
+  static const String studentDashboard = '/student/dashboard';
+  static const String studentTasks = '/student/tasks';
+  static const String studentPickup = '/student/pickup';
+  static const String studentGrades = '/student/grades';
+  static const String studentSchedule = '/student/schedule';
+  static const String studentProfile = '/student/profile';
+
+  static const String adminUsers = '/admin/users';
+  static const String adminRoles = '/admin/roles';
+
+  static const String employeeStaff = '/employee/staff';
+  static const String employeeAttendance = '/employee/attendance';
+
+  static const String notifications = '/notifications';
 }
