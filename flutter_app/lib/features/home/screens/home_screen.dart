@@ -386,7 +386,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'Notifikasi': '/notifications',
       'Jurnal': null,
       'Absensi': '/attendance',
-      'Karyawan': null,
+      'Karyawan': '/employee',
     };
     final route = routes[label];
     if (route != null) {

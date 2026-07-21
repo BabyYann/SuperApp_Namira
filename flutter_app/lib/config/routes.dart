@@ -11,6 +11,11 @@ import 'package:superapp_namira_flutter/features/auth/screens/forgot_password_sc
 import 'package:superapp_namira_flutter/features/auth/screens/reset_password_screen.dart';
 import 'package:superapp_namira_flutter/features/auth/screens/role_selection_screen.dart';
 import 'package:superapp_namira_flutter/features/auth/screens/splash_screen.dart';
+import 'package:superapp_namira_flutter/features/employee/screens/employee_attendance_history_screen.dart';
+import 'package:superapp_namira_flutter/features/employee/screens/employee_checkin_screen.dart';
+import 'package:superapp_namira_flutter/features/employee/screens/employee_checkout_screen.dart';
+import 'package:superapp_namira_flutter/features/employee/screens/employee_dashboard_screen.dart';
+import 'package:superapp_namira_flutter/features/employee/screens/employee_staff_list_screen.dart';
 import 'package:superapp_namira_flutter/features/counseling/screens/counseling_screen.dart';
 import 'package:superapp_namira_flutter/features/finance/screens/finance_screen.dart';
 import 'package:superapp_namira_flutter/features/home/screens/home_screen.dart';
@@ -242,6 +247,31 @@ final routerProvider = Provider<GoRouter>((ref) {
           state,
           const StudentPickupScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/employee',
+        name: 'employee-dashboard',
+        builder: (context, state) => const EmployeeDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/employee/checkin',
+        name: 'employee-checkin',
+        builder: (context, state) => const EmployeeCheckinScreen(),
+      ),
+      GoRoute(
+        path: '/employee/checkout',
+        name: 'employee-checkout',
+        builder: (context, state) => const EmployeeCheckoutScreen(),
+      ),
+      GoRoute(
+        path: '/employee/history',
+        name: 'employee-history',
+        builder: (context, state) => const EmployeeAttendanceHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/employee/staff',
+        name: 'employee-staff',
+        builder: (context, state) => const EmployeeStaffListScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
