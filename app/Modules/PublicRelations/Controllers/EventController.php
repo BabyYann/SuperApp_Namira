@@ -41,10 +41,11 @@ class EventController extends Controller
         $units = [];
         $user = auth()->user();
         
-        if ($user->hasRole('super_admin_yayasan') || $user->hasRole('admin_yayasan')) {
+        $unitId = session('active_unit_id');
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
             $units = Unit::all();
         } else {
-            $units = Unit::where('id', $user->unit_id)->get();
+            $units = Unit::where('id', $unitId)->get();
         }
 
         return Inertia::render('PublicRelations/Events/Form', [
@@ -103,10 +104,10 @@ class EventController extends Controller
         }
 
         $units = [];
-        if ($user->hasRole('super_admin_yayasan') || $user->hasRole('admin_yayasan')) {
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
             $units = Unit::all();
         } else {
-            $units = Unit::where('id', $user->unit_id)->get();
+            $units = Unit::where('id', $unitId)->get();
         }
 
         return Inertia::render('PublicRelations/Events/Form', [

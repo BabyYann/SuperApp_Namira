@@ -18,9 +18,10 @@ class NewsController extends Controller
         
         $query = News::with(['author', 'unit'])->latest();
         
-        // Filter for humas_unit: only see their unit's news
-        if ($user->hasRole('humas_unit')) {
-            $query->where('unit_id', $user->unit_id);
+        // Filter for humas_unit / non-global admin: only see active unit's news
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
+            $unitId = session('active_unit_id');
+            $query->where('unit_id', $unitId);
         }
 
         // Apply search filter if exists
@@ -41,11 +42,12 @@ class NewsController extends Controller
         $units = [];
         $user = auth()->user();
         
-        if ($user->hasRole('super_admin_yayasan') || $user->hasRole('admin_yayasan')) {
+        $unitId = session('active_unit_id');
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
             $units = Unit::all();
         } else {
-            // For unit admins and humas, they only see their own unit
-            $units = Unit::where('id', $user->unit_id)->get();
+            // For unit admins and humas, they see their active unit
+            $units = Unit::where('id', $unitId)->get();
         }
 
         return Inertia::render('PublicRelations/News/Form', [
@@ -102,7 +104,7 @@ class NewsController extends Controller
         }
 
         $units = [];
-        if ($user->hasRole('super_admin_yayasan') || $user->hasRole('admin_yayasan')) {
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
             $units = Unit::all();
         } else {
             $units = Unit::where('id', $unitId)->get();
