@@ -30,9 +30,9 @@ class StudentAttendanceController extends Controller
         }
         
         // Role-Based Filtering
-        // If user is a Teacher AND NOT an Admin/SuperAdmin
+        // If user is a Teacher AND NOT an Admin/SuperAdmin/Pengawas
         if ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
-             if (!$user->hasRole('super_admin_yayasan') && !$user->hasRole('admin_yayasan') && !$user->hasRole('admin_unit')) {
+             if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
                 // Determine Teacher Profile
                 $teacherProfile = $user->teacher_profile;
 
@@ -45,8 +45,8 @@ class StudentAttendanceController extends Controller
              }
         }
         
-        // If regular user (not teacher/admin)
-        if (!$user->hasRole('teacher') && !$user->hasRole('wali_kelas') && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        // If regular user (not teacher/admin/pengawas)
+        if (!$user->hasRole('teacher') && !$user->hasRole('wali_kelas') && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
              $classrooms->whereRaw('1 = 0');
         }
 
@@ -63,12 +63,12 @@ class StudentAttendanceController extends Controller
         $user = Auth::user();
         
         // 1. Unit Isolation Validation
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $classroom->unit_id != session('active_unit_id')) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) && $classroom->unit_id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengakses kelas dari unit lain.');
         }
 
-        // 2. Role Authorization Validation (Only Admin or Homeroom Teacher of this class)
-        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        // 2. Role Authorization Validation (Admin, Pengawas, or Homeroom Teacher of this class)
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
             // Allowed
         } elseif ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
             $teacher = $user->teacher_profile;
@@ -152,8 +152,8 @@ class StudentAttendanceController extends Controller
         // Security: Only Homeroom Teacher or Admin
         $user = Auth::user();
         
-        // Bypass for Admin
-        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        // Bypass for Admin & Pengawas
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
             // Admin allowed
         } elseif ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
             $teacher = $user->teacher_profile;

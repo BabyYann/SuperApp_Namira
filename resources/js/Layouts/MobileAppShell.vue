@@ -236,14 +236,14 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Presensi</span>
                 </Link>
 
-                <!-- 3. CENTER FAB: Statistik untuk Pengawas / QR Scanner untuk semua -->
+                <!-- 3. CENTER FAB: Monitoring & Statistik untuk Pengawas / QR Scanner untuk semua -->
                 <div class="flex-1 flex justify-center -mt-6">
-                    <!-- Pengawas: Statistik -->
+                    <!-- Pengawas: Statistik & Monitoring -->
                     <Link 
                         v-if="isPengawas"
-                        :href="safeRoute('dashboard')"
+                        :href="safeRoute('yayasan.monitoring.index')"
                         class="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-700 to-blue-500 text-white flex items-center justify-center shadow-lg shadow-indigo-700/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
-                        title="Statistik & Overview"
+                        title="Statistik & Monitoring"
                     >
                         <component :is="PresentationChartBarIconSolid" class="w-7 h-7" />
                     </Link>
@@ -259,15 +259,15 @@ const isRouteActive = (pattern) => {
                 </div>
 
                 <!-- 4. Dynamic Secondary Action -->
-                <!-- Pengawas: Laporan -->
+                <!-- Pengawas: Monitoring -->
                 <Link 
                     v-if="isPengawas"
-                    :href="safeRoute('yayasan.employee.index', {}, '#')"
+                    :href="safeRoute('yayasan.monitoring.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
-                    :class="'text-slate-400 hover:text-slate-600'"
+                    :class="isRouteActive('yayasan.monitoring.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                 >
-                    <ClipboardDocumentListIcon class="w-6 h-6 transition-transform" />
-                    <span class="text-[10px] font-bold tracking-tight">Laporan</span>
+                    <ChartBarIcon class="w-6 h-6 transition-transform" />
+                    <span class="text-[10px] font-bold tracking-tight">Monitoring</span>
                 </Link>
 
                 <!-- Wali Kelas: Absensi Siswa -->

@@ -14,7 +14,7 @@ class FinanceDashboardController extends Controller
 {
     public function index()
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_admin_keuangan', 'finance'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_admin_keuangan', 'finance'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengakses dashboard keuangan.');
         }
 

@@ -25,7 +25,7 @@ class ClassPromotionController extends Controller
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengakses menu promosi kelas.');
         }
 
@@ -63,7 +63,7 @@ class ClassPromotionController extends Controller
      */
     public function preview(Request $request, PromotionPreviewService $previewService)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk melakukan pratinjau promosi kelas.');
         }
 
@@ -118,7 +118,7 @@ class ClassPromotionController extends Controller
      */
     public function exportPreview(Request $request, PromotionPreviewService $previewService)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengekspor pratinjau promosi kelas.');
         }
 
@@ -229,7 +229,7 @@ class ClassPromotionController extends Controller
      */
     public function history(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk melihat riwayat promosi kelas.');
         }
 
@@ -273,7 +273,7 @@ class ClassPromotionController extends Controller
      */
     public function export(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengekspor riwayat promosi kelas.');
         }
 
