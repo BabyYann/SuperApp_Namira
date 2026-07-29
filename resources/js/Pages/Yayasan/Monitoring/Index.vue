@@ -51,12 +51,10 @@ const calcPercentage = (val, total) => {
                 
                 <!-- 1. Executive Mobile Header Card -->
                 <div class="rounded-3xl bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#0f172a] p-5 text-white shadow-xl border border-blue-900/60 relative overflow-hidden">
-                    <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-500/10 rounded-full blur-xl pointer-events-none"></div>
-
                     <div class="flex items-center justify-between mb-3">
-                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                            Monitoring Center
+                        <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-1.5">
+                            <ShieldCheckIcon class="w-3.5 h-3.5 text-blue-300" />
+                            <span>Monitoring Center</span>
                         </span>
                         <span class="text-[10px] font-bold text-slate-300 flex items-center gap-1">
                             <CalendarDaysIcon class="w-3.5 h-3.5 text-blue-300" />
@@ -81,10 +79,10 @@ const calcPercentage = (val, total) => {
                             @change="applyFilter"
                             class="bg-transparent border-0 text-white font-bold text-xs focus:ring-0 focus:outline-none w-full py-1.5 pr-3 cursor-pointer"
                         >
-                            <option value="all" class="text-slate-900 font-bold">🌐 Semua Unit (Global)</option>
+                            <option value="all" class="text-slate-900 font-bold">Semua Unit (Global)</option>
                             <option disabled class="text-slate-400">----------------</option>
                             <option v-for="unit in units" :key="unit.id" :value="unit.id" class="text-slate-900 font-bold">
-                                🏫 {{ unit.name }}
+                                {{ unit.name }}
                             </option>
                         </select>
                     </div>
@@ -94,8 +92,8 @@ const calcPercentage = (val, total) => {
                 <div class="space-y-2">
                     <div class="flex items-center justify-between px-1">
                         <h3 class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-teal-500"></span>
-                            Presensi Guru & Pegawai
+                            <UsersIcon class="w-4 h-4 text-teal-600" />
+                            <span>Presensi Guru & Pegawai</span>
                         </h3>
                         <span class="text-[10px] font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
                             {{ calcPercentage(stats.employees.total_present, stats.employees.total_employees) }}% Hadir
@@ -173,8 +171,8 @@ const calcPercentage = (val, total) => {
                 <div class="space-y-2 pt-1">
                     <div class="flex items-center justify-between px-1">
                         <h3 class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                            Kehadiran Siswa
+                            <AcademicCapIcon class="w-4 h-4 text-indigo-600" />
+                            <span>Kehadiran Siswa</span>
                         </h3>
                         <span class="text-[10px] font-bold text-slate-400">Hari Ini</span>
                     </div>
@@ -272,14 +270,14 @@ const calcPercentage = (val, total) => {
                 <div class="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-sm space-y-3">
                     <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                         <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                            <ClockIcon class="w-4 h-4 text-rose-500" />
                             <span>Terlambat Hari Ini (Top 5)</span>
                         </h4>
                         <span class="text-[10px] font-bold text-slate-400">{{ lateEmployees.length }} Pegawai</span>
                     </div>
 
                     <div v-if="lateEmployees.length === 0" class="text-center py-4 text-xs font-bold text-slate-400 italic">
-                        🎉 Tidak ada keterlambatan hari ini
+                        Tidak ada keterlambatan hari ini
                     </div>
 
                     <div v-else class="space-y-2">
@@ -300,8 +298,9 @@ const calcPercentage = (val, total) => {
                                     <div class="text-[10px] font-bold text-slate-400">Guru / Staff</div>
                                 </div>
                             </div>
-                            <span class="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">
-                                ⏱️ {{ emp.time }}
+                            <span class="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1">
+                                <ClockIcon class="w-3.5 h-3.5 text-rose-500" />
+                                <span>{{ emp.time }}</span>
                             </span>
                         </div>
                     </div>

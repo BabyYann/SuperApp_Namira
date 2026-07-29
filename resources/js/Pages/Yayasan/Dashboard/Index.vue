@@ -143,8 +143,9 @@ const eventTypeLabels = {
 
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-1.5 mb-0.5">
-                            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                                🛡️ Pengawas Yayasan
+                            <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-1">
+                                <ShieldCheckIcon class="w-3.5 h-3.5 text-blue-300" />
+                                <span>Pengawas Yayasan</span>
                             </span>
                         </div>
                         <h3 class="font-extrabold text-base text-white tracking-tight leading-tight truncate">

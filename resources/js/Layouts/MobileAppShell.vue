@@ -134,12 +134,12 @@ const isRouteActive = (pattern) => {
                         type="button"
                         class="text-[10px] font-extrabold tracking-wider uppercase text-teal-700 hover:text-teal-900 flex items-center gap-1 bg-teal-50 hover:bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200/80 shadow-2xs transition-all active:scale-95 text-left"
                     >
-                        <span class="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse"></span>
+                        <BuildingOfficeIcon class="w-3 h-3 text-teal-600 stroke-[2.2]" />
                         <span class="truncate max-w-[130px]">{{ activeUnit }}</span>
                         <ChevronDownIcon class="w-3 h-3 text-teal-600 stroke-[2.5]" />
                     </button>
                     <span v-else class="text-[10px] font-extrabold tracking-wider uppercase text-teal-700 flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse"></span>
+                        <BuildingOfficeIcon class="w-3 h-3 text-teal-600 stroke-[2.2]" />
                         {{ activeUnit }}
                     </span>
                     <h1 class="font-black text-sm text-slate-900 leading-tight truncate max-w-[170px]">
