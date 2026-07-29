@@ -55,6 +55,8 @@ class AuthenticatedSessionController extends Controller
             ->whereIn('roles.name', [
                 'super_admin_yayasan', 
                 'admin_yayasan', 
+                'pengawas_yayasan',
+                'humas_yayasan',
                 'admin_unit', 
                 'staff_yayasan', 
                 'staff_unit', 

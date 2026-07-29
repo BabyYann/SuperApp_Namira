@@ -130,21 +130,23 @@ class UserController extends Controller
         ]);
 
         $roles = $request->roles ?? ($request->role ? [$request->role] : []);
+        $globalRoles = ['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'pengawas_yayasan', 'humas_yayasan'];
 
-        // Assist Assign Role based on Unit
+        // Assign Role based on whether it is a global role or unit role
+        foreach ($roles as $r) {
+            if (in_array($r, $globalRoles)) {
+                setPermissionsTeamId(null);
+            } else {
+                setPermissionsTeamId($request->unit_id);
+            }
+            $user->assignRole($r);
+        }
+
+        // Sync Profile Data if unit_id is provided
         if ($request->unit_id) {
-            // Assign Roles SCOPED to Unit (Team)
-            setPermissionsTeamId($request->unit_id);
-            $user->assignRole($roles);
-
-            // Auto-Create Academic/Staff Profile (Reverse Sync) for each role
             foreach ($roles as $role) {
                 $this->syncUserProfile($user, $role, $request->unit_id);
             }
-        } else {
-            // Assign Global Roles (No Team)
-            setPermissionsTeamId(null);
-            $user->assignRole($roles);
         }
         
         // Reset Team ID to avoid polluting current session
@@ -218,22 +220,24 @@ class UserController extends Controller
         ]);
 
         $roles = $request->roles ?? ($request->role ? [$request->role] : []);
+        $globalRoles = ['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'pengawas_yayasan', 'humas_yayasan'];
 
         // Revoke all previous roles to keep it clean (force delete from pivot)
         \DB::table('model_has_roles')->where('model_id', $user->id)->delete();
 
+        foreach ($roles as $r) {
+            if (in_array($r, $globalRoles)) {
+                setPermissionsTeamId(null);
+            } else {
+                setPermissionsTeamId($request->unit_id);
+            }
+            $user->assignRole($r);
+        }
+
         if ($request->unit_id) {
-            setPermissionsTeamId($request->unit_id);
-            $user->assignRole($roles);
-            
-            // Sync Profile Data (Create or Update)
             foreach ($roles as $role) {
                 $this->syncUserProfile($user, $role, $request->unit_id);
             }
-        } else {
-             // Important: If unit_id is null, we must explicitly set team_id to null
-            setPermissionsTeamId(null);
-            $user->assignRole($roles);
         }
         
         // Reset Team ID to prevent session pollution

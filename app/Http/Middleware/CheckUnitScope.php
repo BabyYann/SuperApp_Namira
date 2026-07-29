@@ -20,20 +20,25 @@ class CheckUnitScope
         if (Auth::check()) {
             $user = Auth::user();
             
+            // Check if user has any global role (by role name OR team_id is null)
+            $globalRoleNames = ['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'pengawas_yayasan', 'humas_yayasan'];
+
+            $hasGlobalRole = \DB::table('model_has_roles')
+                ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                ->where('model_has_roles.model_id', $user->id)
+                ->where('model_has_roles.model_type', get_class($user))
+                ->where(function ($q) use ($globalRoleNames) {
+                    $q->whereNull('model_has_roles.team_id')
+                      ->orWhereIn('roles.name', $globalRoleNames);
+                })
+                ->exists();
+
             if (!Session::has('active_unit_id') || Session::get('active_unit_id') === null) {
-                // 1. Check for global roles (team_id is null on the pivot table)
-                $hasGlobalRole = \DB::table('model_has_roles')
-                    ->where('model_id', $user->id)
-                    ->where('model_type', get_class($user))
-                    ->whereNull('team_id')
-                    ->exists();
-                
                 if ($hasGlobalRole) {
-                    // Start with first unit if available, instead of null, for convenience
+                    // Start with first unit if available for data viewing context
                     $firstUnit = \App\Modules\Yayasan\Models\Unit::first();
                     Session::put('active_unit_id', $firstUnit ? $firstUnit->id : null);
                 } else {
-                    // 2. Check for unit-specific roles
                     // Get the first role with a team_id
                     $firstTeamId = \DB::table('model_has_roles')
                         ->where('model_id', $user->id)
@@ -46,21 +51,12 @@ class CheckUnitScope
                     }
                 }
             }
-            
-            // Apply Spatie Team Scope
-            // ONLY if the user does NOT have a global role.
-            // If user is global (e.g. Super Admin or Global Teacher), let Spatie check for global permissions (team_id = null).
-            // But we still keep 'active_unit_id' in session for Data Filtering in Controllers.
-            
-            $hasGlobalRole = \DB::table('model_has_roles')
-                ->where('model_id', $user->id)
-                ->where('model_type', get_class($user))
-                ->whereNull('team_id')
-                ->exists();
 
-            if (Session::has('active_unit_id') && !$hasGlobalRole) {
+            // Apply Spatie Team Scope ONLY for non-global roles
+            if ($hasGlobalRole) {
+                setPermissionsTeamId(null);
+            } else if (Session::has('active_unit_id')) {
                 $unitId = Session::get('active_unit_id');
-                // Pass team id to Spatie Permission
                 setPermissionsTeamId($unitId);
             }
         }
