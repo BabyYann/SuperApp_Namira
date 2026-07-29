@@ -18,8 +18,7 @@ class EventController extends Controller
             'super_admin_yayasan',
             'admin_yayasan',
             'pengawas_yayasan',
-            'humas_yayasan',
-            'kepala_sekolah'
+            'humas_yayasan'
         ]);
     }
 
