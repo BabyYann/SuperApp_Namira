@@ -17,7 +17,6 @@ class EventController extends Controller
         return $user->hasAnyRole([
             'super_admin_yayasan',
             'admin_yayasan',
-            'pengawas_yayasan',
             'humas_yayasan'
         ]);
     }
