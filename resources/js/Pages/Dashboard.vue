@@ -61,7 +61,7 @@ const triggerButton = () => {
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <!-- Welcome Card -->
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-3xl border border-gray-100 dark:bg-slate-900 dark:border-slate-800 p-8">
-                    <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2">Selamat Datang di SuperApp Namira</h3>
+                    <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2">Selamat Datang di Namira App</h3>
                     <p class="text-gray-500 dark:text-gray-400 text-sm">Dashboard Utama Yayasan Pendidikan Namira</p>
                 </div>
             </div>

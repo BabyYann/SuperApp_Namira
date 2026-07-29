@@ -113,7 +113,7 @@ class InventoryController extends Controller
         }
         
         $html .= '</table>
-            <p class="footer">Total: ' . $data['count'] . ' item | Dicetak dari SuperApp Namira</p>
+            <p class="footer">Total: ' . $data['count'] . ' item | Dicetak dari Namira App</p>
         </body>
         </html>';
         

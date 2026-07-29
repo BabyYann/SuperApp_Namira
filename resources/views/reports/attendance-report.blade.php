@@ -452,7 +452,7 @@
                     <div style="margin-top: 3px;">Dibuat Oleh: Staf Administrasi</div>
                     <div class="sign-space"></div>
                     <div class="sign-name">{{ $printedBy }}</div>
-                    <div style="font-size: 7.5px; color: #64748b; margin-top: 2px;">Sistem SuperApp Namira</div>
+                    <div style="font-size: 7.5px; color: #64748b; margin-top: 2px;">Sistem Namira App</div>
                 </td>
             </tr>
         </table>
@@ -462,7 +462,7 @@
     <div class="footer-pages">
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
-                <td style="text-align: left;">Sistem ERP SuperApp Namira v1.2.0 • Laporan Resmi Kehadiran</td>
+                <td style="text-align: left;">Sistem ERP Namira App v1.2.0 • Laporan Resmi Kehadiran</td>
                 <td style="text-align: right; font-weight: bold; color: #0f172a;">
                     Waktu Cetak: {{ $printDate }} • <span class="page-number"></span>
                 </td>

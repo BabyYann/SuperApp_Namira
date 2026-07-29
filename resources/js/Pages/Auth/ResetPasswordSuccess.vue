@@ -22,7 +22,7 @@
                         </svg>
                     </div>
                     <p class="text-slate-300 text-xs leading-relaxed">
-                        Silakan kembali ke aplikasi <strong class="text-white">SuperApp Namira</strong> dan login menggunakan password baru Anda.
+                        Silakan kembali ke aplikasi <strong class="text-white">Namira App</strong> dan login menggunakan password baru Anda.
                     </p>
                 </div>
             </div>

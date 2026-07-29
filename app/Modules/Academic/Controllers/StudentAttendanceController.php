@@ -473,7 +473,7 @@ class StudentAttendanceController extends Controller
                 <span class="A">A = Alpha</span>
                 <span>- = Belum diisi</span>
             </div>
-            <p class="footer">Dicetak dari SuperApp Namira pada ' . date('d/m/Y H:i') . '</p>
+            <p class="footer">Dicetak dari Namira App pada ' . date('d/m/Y H:i') . '</p>
         </body>
         </html>';
 

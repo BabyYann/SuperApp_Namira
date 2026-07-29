@@ -565,7 +565,7 @@ class TeachingJournalController extends Controller
         }
         
         $html .= '</table>
-            <p class="footer">Dicetak dari SuperApp Namira pada ' . date('d/m/Y H:i') . '</p>
+            <p class="footer">Dicetak dari Namira App pada ' . date('d/m/Y H:i') . '</p>
         </body>
         </html>';
 

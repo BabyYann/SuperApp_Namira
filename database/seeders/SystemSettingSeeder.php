@@ -15,7 +15,7 @@ class SystemSettingSeeder extends Seeder
     {
         $settings = [
             // General
-            ['key' => 'app_name', 'value' => 'SuperApp Namira', 'type' => 'text', 'group' => 'general'],
+            ['key' => 'app_name', 'value' => 'Namira App', 'type' => 'text', 'group' => 'general'],
             ['key' => 'app_logo', 'value' => '', 'type' => 'image', 'group' => 'general'],
             ['key' => 'app_favicon', 'value' => '', 'type' => 'image', 'group' => 'general'],
             

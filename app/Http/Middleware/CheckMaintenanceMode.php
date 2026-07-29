@@ -44,7 +44,7 @@ class CheckMaintenanceMode
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sedang Maintenance - SuperApp Namira</title>
+    <title>Sedang Maintenance - Namira App</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #0f172a, #1e293b); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: white; }
@@ -67,7 +67,7 @@ class CheckMaintenanceMode
         </div>
         <h1>Sedang Maintenance</h1>
         <p>{$message}</p>
-        <span class="badge">SuperApp Namira — Yayasan Namira</span>
+        <span class="badge">Namira App — Yayasan Namira</span>
     </div>
 </body>
 </html>
