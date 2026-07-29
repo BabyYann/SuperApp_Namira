@@ -18,6 +18,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'super_admin_yayasan',
             'admin_yayasan',
             'pengawas_yayasan',
+            'humas_yayasan',
             'staff_yayasan',
         ];
 

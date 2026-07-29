@@ -3,23 +3,76 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
-    MagnifyingGlassIcon, PlusIcon, CalendarIcon, PencilSquareIcon, TrashIcon, ExclamationTriangleIcon 
+    MagnifyingGlassIcon, PlusIcon, CalendarIcon, PencilSquareIcon, TrashIcon, 
+    ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, ChatBubbleBottomCenterTextIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     events: Object,
+    counts: Object,
+    is_approver: Boolean,
     filters: Object,
 });
 
 const searchForm = useForm({
     search: props.filters.search || '',
+    approval_status: props.filters.approval_status || 'all',
 });
+
+const filterStatus = (statusKey) => {
+    searchForm.approval_status = statusKey;
+    searchForm.get(route('public-relations.events.index'), {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
 
 const search = () => {
     searchForm.get(route('public-relations.events.index'), {
         preserveState: true,
         preserveScroll: true,
     });
+};
+
+// Approval / Rejection Logic
+const showRejectModal = ref(false);
+const itemToReject = ref(null);
+const rejectionNote = ref('');
+const actionForm = useForm({
+    rejection_note: '',
+});
+
+const approveEvent = (item) => {
+    if (confirm(`Setujui dan terbitkan acara "${item.title}"?`)) {
+        actionForm.post(route('public-relations.events.approve', item.id), {
+            preserveScroll: true,
+        });
+    }
+};
+
+const openRejectModal = (item) => {
+    itemToReject.value = item;
+    rejectionNote.value = '';
+    showRejectModal.value = true;
+};
+
+const submitReject = () => {
+    if (!rejectionNote.value.trim()) return;
+    actionForm.rejection_note = rejectionNote.value;
+    actionForm.post(route('public-relations.events.reject', itemToReject.value.id), {
+        onSuccess: () => {
+            showRejectModal.value = false;
+            itemToReject.value = null;
+        }
+    });
+};
+
+// Rejection note view modal
+const showNoteModal = ref(false);
+const selectedNote = ref('');
+const viewNote = (note) => {
+    selectedNote.value = note;
+    showNoteModal.value = true;
 };
 
 // Delete Logic
@@ -55,6 +108,19 @@ const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
+
+const getStatusBadge = (status) => {
+    switch (status) {
+        case 'published':
+            return { label: 'Terbit', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+        case 'pending':
+            return { label: 'Menunggu Verifikasi', class: 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' };
+        case 'rejected':
+            return { label: 'Perlu Revisi', class: 'bg-rose-50 text-rose-700 border-rose-200' };
+        default:
+            return { label: 'Draft', class: 'bg-slate-100 text-slate-600 border-slate-200' };
+    }
+};
 </script>
 
 <template>
@@ -67,12 +133,61 @@ const formatDate = (dateString) => {
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
                         Manajemen Acara (Events)
                     </h2>
-                    <p class="text-sm text-gray-500 mt-1">Kelola agenda dan acara sekolah.</p>
+                    <p class="text-sm text-gray-500 mt-1">Kelola dan verifikasi agenda kegiatan unit sekolah.</p>
                 </div>
             </div>
         </template>
 
         <div class="py-6 max-w-7xl mx-auto space-y-6">
+
+            <!-- STATUS FILTER TABS -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                <button 
+                    @click="filterStatus('all')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="(searchForm.approval_status === 'all' || !searchForm.approval_status) ? 'bg-namira-teal text-white shadow-namira-teal/20' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'"
+                >
+                    <span>Semua Acara</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="(searchForm.approval_status === 'all' || !searchForm.approval_status) ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ counts?.all || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('pending')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'pending' ? 'bg-amber-500 text-white shadow-amber-500/20' : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200'"
+                >
+                    <span>⏳ Menunggu Verifikasi</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'pending' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'">{{ counts?.pending || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('published')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'published' ? 'bg-emerald-600 text-white shadow-emerald-600/20' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'"
+                >
+                    <span>✅ Terbit</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'published' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">{{ counts?.published || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('rejected')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'rejected' ? 'bg-rose-600 text-white shadow-rose-600/20' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'"
+                >
+                    <span>🔴 Perlu Revisi</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'">{{ counts?.rejected || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('draft')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'draft' ? 'bg-slate-700 text-white shadow-slate-700/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'"
+                >
+                    <span>📝 Draft</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'">{{ counts?.draft || 0 }}</span>
+                </button>
+            </div>
+
             <!-- Toolbar: Search & Actions -->
             <div class="flex flex-col md:flex-row items-center gap-4">
                 <form @submit.prevent="search" class="relative group flex-1 w-full">
@@ -102,7 +217,7 @@ const formatDate = (dateString) => {
                                 <th class="p-6">Judul Acara</th>
                                 <th class="p-6">Unit</th>
                                 <th class="p-6">Tanggal</th>
-                                <th class="p-6">Status</th>
+                                <th class="p-6">Status Verifikasi</th>
                                 <th class="p-6 text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -125,26 +240,55 @@ const formatDate = (dateString) => {
                                         <div v-else class="w-16 h-12 bg-gray-100 flex items-center justify-center rounded-lg border border-gray-200">
                                             <CalendarIcon class="w-6 h-6 text-gray-400"/>
                                         </div>
-                                        <div class="font-bold text-gray-800 text-sm md:text-base group-hover:text-namira-teal transition-colors line-clamp-2 max-w-xs">{{ item.title }}</div>
+                                        <div>
+                                            <div class="font-bold text-gray-800 text-sm md:text-base group-hover:text-namira-teal transition-colors line-clamp-2 max-w-xs">{{ item.title }}</div>
+                                            <div v-if="item.approval_status === 'rejected' && item.rejection_note" class="text-xs text-rose-600 font-semibold mt-0.5">
+                                                Catatan: "{{ item.rejection_note }}"
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
-                                <td class="p-6 text-sm text-gray-600">
+                                <td class="p-6 text-sm text-gray-600 font-semibold">
                                     {{ item.unit?.name || 'Yayasan' }}
                                 </td>
                                 <td class="p-6 text-sm text-gray-600">
                                     {{ formatDate(item.start_date) }}
                                 </td>
                                 <td class="p-6">
-                                    <span :class="{
-                                        'bg-blue-50 text-blue-700 border-blue-100': item.status === 'upcoming',
-                                        'bg-green-50 text-green-700 border-green-100': item.status === 'completed',
-                                        'bg-red-50 text-red-700 border-red-100': item.status === 'cancelled'
-                                    }" class="px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wide border shadow-sm">
-                                        {{ item.status }}
+                                    <span :class="getStatusBadge(item.approval_status).class" class="px-3 py-1 rounded-xl text-xs font-extrabold uppercase tracking-wide border shadow-sm">
+                                        {{ getStatusBadge(item.approval_status).label }}
                                     </span>
                                 </td>
                                 <td class="p-6 text-right">
-                                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                    <div class="flex justify-end items-center gap-2">
+                                        <template v-if="is_approver && item.approval_status === 'pending'">
+                                            <button 
+                                                @click="approveEvent(item)"
+                                                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                                                title="Setujui & Terbitkan"
+                                            >
+                                                <CheckCircleIcon class="w-4 h-4" />
+                                                <span>Setujui</span>
+                                            </button>
+                                            <button 
+                                                @click="openRejectModal(item)"
+                                                class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
+                                                title="Tolak / Minta Revisi"
+                                            >
+                                                <XCircleIcon class="w-4 h-4" />
+                                                <span>Tolak</span>
+                                            </button>
+                                        </template>
+
+                                        <button 
+                                            v-if="item.approval_status === 'rejected' && item.rejection_note"
+                                            @click="viewNote(item.rejection_note)"
+                                            class="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-rose-200 cursor-pointer"
+                                            title="Lihat Catatan Revisi"
+                                        >
+                                            <ChatBubbleBottomCenterTextIcon class="w-5 h-5" />
+                                        </button>
+
                                         <Link :href="route('public-relations.events.edit', item.id)" class="p-2.5 text-gray-400 hover:text-namira-teal hover:bg-teal-50 rounded-xl transition-all duration-200 border border-transparent hover:border-teal-100" title="Edit Acara">
                                             <PencilSquareIcon class="w-5 h-5" />
                                         </Link>
@@ -178,6 +322,51 @@ const formatDate = (dateString) => {
                 </div>
             </div>
         </div>
+
+        <!-- REJECT MODAL -->
+        <Teleport to="body">
+            <div v-if="showRejectModal" class="fixed inset-0 z-[9999] overflow-y-auto flex items-center justify-center p-4">
+                <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showRejectModal = false"></div>
+                <div class="relative bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full border border-gray-100 z-10 space-y-4">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <XCircleIcon class="w-6 h-6 text-rose-600" />
+                        <span>Tolak & Minta Revisi Acara</span>
+                    </h3>
+                    <p class="text-xs text-gray-500">Berikan catatan perbaikan acara untuk tim Humas.</p>
+                    <textarea 
+                        v-model="rejectionNote"
+                        rows="4" 
+                        placeholder="Contoh: Tanggal pelaksanaan bentrok dengan ujian..." 
+                        class="w-full rounded-2xl border-gray-200 text-sm focus:border-rose-500 focus:ring-rose-500 p-3"
+                    ></textarea>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button @click="showRejectModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold">Batal</button>
+                        <button @click="submitReject" :disabled="!rejectionNote.trim() || actionForm.processing" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold disabled:opacity-50">
+                            Kirim Catatan Revisi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- VIEW NOTE MODAL -->
+        <Teleport to="body">
+            <div v-if="showNoteModal" class="fixed inset-0 z-[9999] overflow-y-auto flex items-center justify-center p-4">
+                <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showNoteModal = false"></div>
+                <div class="relative bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full border border-gray-100 z-10 space-y-4">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <ChatBubbleBottomCenterTextIcon class="w-6 h-6 text-amber-600" />
+                        <span>Catatan Revisi Verifikator</span>
+                    </h3>
+                    <div class="p-4 bg-amber-50 rounded-2xl text-sm text-amber-900 border border-amber-200">
+                        {{ selectedNote }}
+                    </div>
+                    <div class="flex justify-end">
+                        <button @click="showNoteModal = false" class="px-4 py-2 bg-gray-900 text-white rounded-xl text-xs font-bold">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
 
         <!-- Delete Modal -->
         <Teleport to="body">

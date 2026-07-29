@@ -18,6 +18,10 @@ class Event extends Model
         'start_date',
         'end_date',
         'status',
+        'approval_status',
+        'rejection_note',
+        'approved_by',
+        'approved_at',
         'author_id',
         'views',
         'registration_link',
@@ -27,6 +31,7 @@ class Event extends Model
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -81,5 +86,10 @@ class Event extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

@@ -2,28 +2,29 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { PhotoIcon } from '@heroicons/vue/24/outline';
+import { PhotoIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/vue/24/outline';
 import { QuillEditor } from '@vueup/vue-quill';
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
-
-// Global CSS fix for Quill borders to match Tailwind
-import { onMounted } from 'vue';
 
 const props = defineProps({
     event: Object,
     units: Array,
+    is_approver: Boolean,
 });
 
 const isEdit = computed(() => !!props.event);
 const page = usePage();
-const currentUser = page.props.auth.user;
 
 const formatDateForInput = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    // Format YYYY-MM-DDTHH:mm
     return date.toISOString().slice(0, 16);
 };
+
+const defaultApprovalStatus = computed(() => {
+    if (props.event?.approval_status) return props.event.approval_status;
+    return props.is_approver ? 'published' : 'pending';
+});
 
 const form = useForm({
     unit_id: props.event?.unit_id || props.units?.[0]?.id || page.props.session?.active_unit_id || '',
@@ -33,6 +34,7 @@ const form = useForm({
     start_date: formatDateForInput(props.event?.start_date),
     end_date: formatDateForInput(props.event?.end_date),
     status: props.event?.status || 'upcoming',
+    approval_status: defaultApprovalStatus.value,
     image: null,
     _method: isEdit.value ? 'PUT' : 'POST'
 });
@@ -51,7 +53,8 @@ const handleImageChange = (e) => {
     }
 };
 
-const submit = () => {
+const submitWithApprovalStatus = (targetStatus) => {
+    form.approval_status = targetStatus;
     if (isEdit.value) {
         form.post(route('public-relations.events.update', props.event.id));
     } else {
@@ -74,9 +77,20 @@ const submit = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-4xl mx-auto">
+        <div class="py-6 max-w-4xl mx-auto space-y-6">
+
+            <!-- Rejection Note Alert -->
+            <div v-if="event && event.approval_status === 'rejected' && event.rejection_note" class="p-5 bg-rose-50 border border-rose-200 rounded-3xl shadow-sm space-y-2">
+                <div class="flex items-center gap-2 text-rose-800 font-extrabold text-sm">
+                    <ChatBubbleBottomCenterTextIcon class="w-5 h-5 text-rose-600" />
+                    <span>Catatan Revisi Verifikator:</span>
+                </div>
+                <p class="text-sm text-rose-700 font-medium pl-7">{{ event.rejection_note }}</p>
+                <p class="text-xs text-rose-500 pl-7">Sesuaikan informasi acara sesuai saran di atas, lalu klik <strong>"Ajukan Verifikasi Kembali"</strong>.</p>
+            </div>
+
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <form @submit.prevent="submit" class="p-8 space-y-6">
+                <form @submit.prevent="submitWithApprovalStatus(form.approval_status)" class="p-8 space-y-6">
                     
                     <!-- Unit Selection -->
                     <div v-if="units.length > 1">
@@ -140,15 +154,15 @@ const submit = () => {
                                         <input type="file" class="sr-only" @change="handleImageChange" accept="image/*">
                                     </label>
                                 </div>
-                                <p class="text-xs text-gray-500">PNG, JPG up to 2MB</p>
+                                <p class="text-xs text-gray-500">PNG, JPG up to 2MB (Format WebP Otomatis)</p>
                             </div>
                         </div>
                         <p v-if="form.errors.image" class="text-sm text-red-600 mt-1">{{ form.errors.image }}</p>
                     </div>
 
-                    <!-- Status -->
+                    <!-- Event Operational Status -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Acara</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori Pelaksanaan Acara</label>
                         <select v-model="form.status" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
                             <option value="upcoming">Akan Datang</option>
                             <option value="completed">Selesai</option>
@@ -157,12 +171,55 @@ const submit = () => {
                         <p v-if="form.errors.status" class="text-sm text-red-600 mt-1">{{ form.errors.status }}</p>
                     </div>
 
-                    <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                    <!-- Status Options for Approval -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Verifikasi Publikasi</label>
+                        
+                        <div v-if="is_approver" class="space-y-2">
+                            <select v-model="form.approval_status" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
+                                <option value="published">✅ Terbitkan Langsung (Published)</option>
+                                <option value="pending">⏳ Menunggu Verifikasi (Pending)</option>
+                                <option value="draft">📝 Simpan Sebagai Draft</option>
+                            </select>
+                        </div>
+                        <div v-else class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 space-y-1">
+                            <p class="font-bold">ℹ️ Alur Publikasi Acara Humas:</p>
+                            <p>Acara yang disubmit akan masuk status <strong>"Menunggu Verifikasi"</strong> untuk ditinjau oleh Verifikator (Pengawas/Kepala Sekolah/Yayasan) sebelum rilis di kalender publik.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-gray-100">
                         <Link :href="route('public-relations.events.index')" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">
                             Batal
                         </Link>
-                        <button type="submit" :disabled="form.processing" class="px-5 py-2.5 bg-namira-teal text-white rounded-xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all disabled:opacity-50">
-                            {{ form.processing ? 'Menyimpan...' : 'Simpan Acara' }}
+
+                        <button 
+                            type="button" 
+                            @click="submitWithApprovalStatus('draft')" 
+                            :disabled="form.processing" 
+                            class="px-5 py-2.5 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
+                        >
+                            Simpan Draft
+                        </button>
+
+                        <button 
+                            v-if="!is_approver" 
+                            type="button" 
+                            @click="submitWithApprovalStatus('pending')" 
+                            :disabled="form.processing" 
+                            class="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-all disabled:opacity-50"
+                        >
+                            {{ event?.approval_status === 'rejected' ? 'Ajukan Verifikasi Kembali' : 'Ajukan Verifikasi' }}
+                        </button>
+
+                        <button 
+                            v-if="is_approver" 
+                            type="button" 
+                            @click="submitWithApprovalStatus('published')" 
+                            :disabled="form.processing" 
+                            class="px-5 py-2.5 bg-namira-teal text-white rounded-xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 transition-all disabled:opacity-50"
+                        >
+                            Terbitkan Langsung
                         </button>
                     </div>
                 </form>
@@ -170,3 +227,20 @@ const submit = () => {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style>
+.ql-toolbar.ql-snow {
+    border: none !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    background-color: #f9fafb;
+    border-radius: 0.75rem 0.75rem 0 0;
+}
+.ql-container.ql-snow {
+    border: none !important;
+    font-size: 1rem !important;
+    font-family: inherit !important;
+}
+.ql-editor {
+    min-height: 200px;
+}
+</style>

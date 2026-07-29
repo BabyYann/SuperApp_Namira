@@ -8,23 +8,52 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use App\Modules\Yayasan\Models\Unit;
+use App\Helpers\ImageHelper;
 
 class EventController extends Controller
 {
+    private function isApprover($user): bool
+    {
+        return $user->hasAnyRole([
+            'super_admin_yayasan',
+            'admin_yayasan',
+            'pengawas_yayasan',
+            'humas_yayasan',
+            'kepala_sekolah'
+        ]);
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();
-        $unitId = session('active_unit_id');
-        
-        $query = Event::with(['author', 'unit'])->latest();
-        
-        // For global admin: see all. Others: only see their unit's events
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            $query->where('unit_id', $unitId);
+        $isApprover = $this->isApprover($user);
+
+        $baseQuery = Event::query();
+
+        // For global admin/verifier: see all. Others: only see their unit's events
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan'])) {
+            $unitId = session('active_unit_id');
+            $baseQuery->where('unit_id', $unitId);
+        }
+
+        // Calculate counts
+        $counts = [
+            'all' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->where('approval_status', 'pending')->count(),
+            'published' => (clone $baseQuery)->where('approval_status', 'published')->count(),
+            'draft' => (clone $baseQuery)->where('approval_status', 'draft')->count(),
+            'rejected' => (clone $baseQuery)->where('approval_status', 'rejected')->count(),
+        ];
+
+        $query = (clone $baseQuery)->with(['author', 'approver', 'unit'])->latest();
+
+        // Apply approval status filter
+        if ($request->filled('approval_status') && in_array($request->approval_status, ['pending', 'published', 'draft', 'rejected'])) {
+            $query->where('approval_status', $request->approval_status);
         }
 
         // Apply search filter if exists
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
         }
 
@@ -32,7 +61,9 @@ class EventController extends Controller
 
         return Inertia::render('PublicRelations/Events/Index', [
             'events' => $events,
-            'filters' => $request->only('search')
+            'counts' => $counts,
+            'is_approver' => $isApprover,
+            'filters' => $request->only('search', 'approval_status')
         ]);
     }
 
@@ -40,16 +71,18 @@ class EventController extends Controller
     {
         $units = [];
         $user = auth()->user();
-        
+        $isApprover = $this->isApprover($user);
+
         $unitId = session('active_unit_id');
-        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan'])) {
             $units = Unit::all();
         } else {
             $units = Unit::where('id', $unitId)->get();
         }
 
         return Inertia::render('PublicRelations/Events/Form', [
-            'units' => $units
+            'units' => $units,
+            'is_approver' => $isApprover
         ]);
     }
 
@@ -57,6 +90,7 @@ class EventController extends Controller
     {
         $user = auth()->user();
         $unitId = session('active_unit_id');
+        $isApprover = $this->isApprover($user);
 
         $validated = $request->validate([
             'unit_id' => 'required|exists:units,id',
@@ -66,12 +100,17 @@ class EventController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'status' => 'required|in:upcoming,completed,cancelled',
+            'approval_status' => 'required|in:draft,pending,published,rejected',
             'image' => 'nullable|image|max:2048'
         ]);
 
-        // Unit isolation: non-global admin cannot post to other units
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $validated['unit_id'] != $unitId) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $validated['unit_id'] != $unitId) {
             abort(403, 'Akses Ditolak: Anda tidak dapat membuat acara untuk unit lain.');
+        }
+
+        $approvalStatus = $validated['approval_status'];
+        if (!$isApprover && $approvalStatus === 'published') {
+            $approvalStatus = 'pending';
         }
 
         $event = new Event();
@@ -82,37 +121,49 @@ class EventController extends Controller
         $event->start_date = $validated['start_date'];
         $event->end_date = $validated['end_date'];
         $event->status = $validated['status'];
+        $event->approval_status = $approvalStatus;
         $event->author_id = auth()->id();
 
+        if ($approvalStatus === 'published') {
+            $event->approved_by = auth()->id();
+            $event->approved_at = now();
+        }
+
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('events', 'public');
-            $event->image_path = 'storage/' . $path;
+            $path = ImageHelper::uploadAndConvert($request->file('image'), 'events', 800, 80);
+            $event->image_path = $path;
         }
 
         $event->save();
 
-        return redirect()->route('public-relations.events.index')->with('success', 'Acara berhasil ditambahkan.');
+        $msg = $approvalStatus === 'pending'
+            ? 'Acara berhasil diajukan untuk verifikasi.'
+            : 'Acara berhasil ditambahkan.';
+
+        return redirect()->route('public-relations.events.index')->with('success', $msg);
     }
 
     public function edit(Event $event)
     {
         $user = auth()->user();
         $unitId = session('active_unit_id');
+        $isApprover = $this->isApprover($user);
 
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $event->unit_id != $unitId) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $event->unit_id != $unitId) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengedit acara unit lain.');
         }
 
         $units = [];
-        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan'])) {
             $units = Unit::all();
         } else {
             $units = Unit::where('id', $unitId)->get();
         }
 
         return Inertia::render('PublicRelations/Events/Form', [
-            'event' => $event,
-            'units' => $units
+            'event' => $event->load('approver'),
+            'units' => $units,
+            'is_approver' => $isApprover
         ]);
     }
 
@@ -120,8 +171,9 @@ class EventController extends Controller
     {
         $user = auth()->user();
         $unitId = session('active_unit_id');
+        $isApprover = $this->isApprover($user);
 
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $event->unit_id != $unitId) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $event->unit_id != $unitId) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengubah acara unit lain.');
         }
 
@@ -133,12 +185,17 @@ class EventController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'status' => 'required|in:upcoming,completed,cancelled',
+            'approval_status' => 'required|in:draft,pending,published,rejected',
             'image' => 'nullable|image|max:2048'
         ]);
 
-        // Prevent re-assigning to a different unit
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $validated['unit_id'] != $unitId) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $validated['unit_id'] != $unitId) {
             abort(403, 'Akses Ditolak: Anda tidak dapat memindahkan acara ke unit lain.');
+        }
+
+        $approvalStatus = $validated['approval_status'];
+        if (!$isApprover && $approvalStatus === 'published') {
+            $approvalStatus = 'pending';
         }
 
         $event->unit_id = $validated['unit_id'];
@@ -148,18 +205,69 @@ class EventController extends Controller
         $event->start_date = $validated['start_date'];
         $event->end_date = $validated['end_date'];
         $event->status = $validated['status'];
+        $event->approval_status = $approvalStatus;
+
+        if (in_array($approvalStatus, ['pending', 'published'])) {
+            $event->rejection_note = null;
+        }
+
+        if ($approvalStatus === 'published') {
+            $event->approved_by = auth()->id();
+            $event->approved_at = now();
+        }
 
         if ($request->hasFile('image')) {
             if ($event->image_path) {
                 Storage::disk('public')->delete(str_replace('storage/', '', $event->image_path));
             }
-            $path = $request->file('image')->store('events', 'public');
-            $event->image_path = 'storage/' . $path;
+            $path = ImageHelper::uploadAndConvert($request->file('image'), 'events', 800, 80);
+            $event->image_path = $path;
         }
 
         $event->save();
 
-        return redirect()->route('public-relations.events.index')->with('success', 'Acara berhasil diperbarui.');
+        $msg = $approvalStatus === 'pending'
+            ? 'Acara berhasil diperbarui dan diajukan untuk verifikasi.'
+            : 'Acara berhasil diperbarui.';
+
+        return redirect()->route('public-relations.events.index')->with('success', $msg);
+    }
+
+    public function approve(Event $event)
+    {
+        $user = auth()->user();
+
+        if (!$this->isApprover($user)) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk menyetujui acara.');
+        }
+
+        $event->approval_status = 'published';
+        $event->rejection_note = null;
+        $event->approved_by = auth()->id();
+        $event->approved_at = now();
+        $event->save();
+
+        return redirect()->back()->with('success', 'Acara berhasil diverifikasi & diterbitkan!');
+    }
+
+    public function reject(Request $request, Event $event)
+    {
+        $user = auth()->user();
+
+        if (!$this->isApprover($user)) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk menolak acara.');
+        }
+
+        $validated = $request->validate([
+            'rejection_note' => 'required|string|max:1000'
+        ]);
+
+        $event->approval_status = 'rejected';
+        $event->rejection_note = $validated['rejection_note'];
+        $event->approved_by = auth()->id();
+        $event->save();
+
+        return redirect()->back()->with('success', 'Acara dikembalikan untuk perbaikan.');
     }
 
     public function destroy(Event $event)
@@ -167,7 +275,7 @@ class EventController extends Controller
         $user = auth()->user();
         $unitId = session('active_unit_id');
 
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $event->unit_id != $unitId) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $event->unit_id != $unitId) {
             abort(403, 'Akses Ditolak: Anda tidak dapat menghapus acara unit lain.');
         }
 

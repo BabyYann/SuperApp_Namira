@@ -40,7 +40,7 @@ class UnitController extends Controller
             });
         
         $user = auth()->user();
-        $isGlobal = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobal = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'staff_yayasan']);
         $studentsCount = $isGlobal 
             ? \App\Modules\Academic\Models\Student::count()
             : \App\Modules\Academic\Models\Student::where('unit_id', $unitId)->count();
@@ -198,7 +198,7 @@ class UnitController extends Controller
         ]);
 
         $user = auth()->user();
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan'])) {
             $hasRoleInUnit = \DB::table('model_has_roles')
                 ->where('model_id', $user->id)
                 ->where('team_id', $request->unit_id)

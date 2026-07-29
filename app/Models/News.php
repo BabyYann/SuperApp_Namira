@@ -15,6 +15,9 @@ class News extends Model
         'content',
         'image_path',
         'status',
+        'rejection_note',
+        'approved_by',
+        'approved_at',
         'views',
         'published_at',
         'author_id',
@@ -30,6 +33,7 @@ class News extends Model
 
     protected $casts = [
         'published_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -50,5 +54,10 @@ class News extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

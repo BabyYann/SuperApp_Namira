@@ -406,7 +406,7 @@ const filteredMenuGroups = computed(() => {
     // If Admin/Yayasan, show everything + Personal Employee Menu + Counseling + Sarpar
     if (page.props.auth.user.email === 'admin@namira.school' || 
         hasRole('admin') || 
-        hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah'])) {
+        hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'admin_unit', 'kepala_sekolah'])) {
         
         let adminGroups = [...menuGroups];
 
@@ -554,7 +554,7 @@ const filteredMenuGroups = computed(() => {
     }
 
     // D. HUMAS (Public Relations Staff)
-    if (hasRole('humas_unit')) {
+    if (hasAnyRole(['humas_unit', 'humas_yayasan'])) {
         groups.push(humasMenu);
     }
 
