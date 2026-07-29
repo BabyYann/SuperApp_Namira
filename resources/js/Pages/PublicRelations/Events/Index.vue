@@ -4,7 +4,8 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
     MagnifyingGlassIcon, PlusIcon, CalendarIcon, PencilSquareIcon, TrashIcon, 
-    ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, ChatBubbleBottomCenterTextIcon
+    ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, ChatBubbleBottomCenterTextIcon,
+    ClockIcon, DocumentTextIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -67,7 +68,7 @@ const submitReject = () => {
     });
 };
 
-// Rejection note view modal
+// Rejection note view modal for Humas
 const showNoteModal = ref(false);
 const selectedNote = ref('');
 const viewNote = (note) => {
@@ -98,7 +99,7 @@ const deleteItem = () => {
         onSuccess: () => closeModal(),
         onError: () => {
             closeModal();
-            alert('Gagal menghapus acara.');
+            alert('Gagal menghapus agenda acaran.');
         }
     });
 };
@@ -109,7 +110,7 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const getStatusBadge = (status) => {
+const getApprovalBadge = (status) => {
     switch (status) {
         case 'published':
             return { label: 'Terbit', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
@@ -124,21 +125,21 @@ const getStatusBadge = (status) => {
 </script>
 
 <template>
-    <Head title="Manajemen Acara" />
+    <Head title="Agenda Acara & Kegiatan" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-col gap-4">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
-                        Manajemen Acara (Events)
+                        Agenda Acara & Kegiatan
                     </h2>
-                    <p class="text-sm text-gray-500 mt-1">Kelola dan verifikasi agenda kegiatan unit sekolah.</p>
+                    <p class="text-sm text-gray-500 mt-1">Kelola dan verifikasi jadwal kegiatan unit sekolah Anda.</p>
                 </div>
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto space-y-6">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
             <!-- STATUS FILTER TABS -->
             <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -156,7 +157,8 @@ const getStatusBadge = (status) => {
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
                     :class="searchForm.approval_status === 'pending' ? 'bg-amber-500 text-white shadow-amber-500/20' : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200'"
                 >
-                    <span>⏳ Menunggu Verifikasi</span>
+                    <ClockIcon class="w-4 h-4" />
+                    <span>Menunggu Verifikasi</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'pending' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'">{{ counts?.pending || 0 }}</span>
                 </button>
 
@@ -165,7 +167,8 @@ const getStatusBadge = (status) => {
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
                     :class="searchForm.approval_status === 'published' ? 'bg-emerald-600 text-white shadow-emerald-600/20' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'"
                 >
-                    <span>✅ Terbit</span>
+                    <CheckCircleIcon class="w-4 h-4" />
+                    <span>Terbit</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'published' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">{{ counts?.published || 0 }}</span>
                 </button>
 
@@ -174,7 +177,8 @@ const getStatusBadge = (status) => {
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
                     :class="searchForm.approval_status === 'rejected' ? 'bg-rose-600 text-white shadow-rose-600/20' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'"
                 >
-                    <span>🔴 Perlu Revisi</span>
+                    <XCircleIcon class="w-4 h-4" />
+                    <span>Perlu Revisi</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'">{{ counts?.rejected || 0 }}</span>
                 </button>
 
@@ -183,7 +187,8 @@ const getStatusBadge = (status) => {
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
                     :class="searchForm.approval_status === 'draft' ? 'bg-slate-700 text-white shadow-slate-700/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'"
                 >
-                    <span>📝 Draft</span>
+                    <DocumentTextIcon class="w-4 h-4" />
+                    <span>Draft</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'">{{ counts?.draft || 0 }}</span>
                 </button>
             </div>

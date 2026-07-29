@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { PhotoIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/vue/24/outline';
+import { PhotoIcon, ChatBubbleBottomCenterTextIcon, InformationCircleIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
 import { QuillEditor } from '@vueup/vue-quill';
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
 
@@ -29,32 +29,32 @@ const defaultApprovalStatus = computed(() => {
 const form = useForm({
     unit_id: props.event?.unit_id || props.units?.[0]?.id || page.props.session?.active_unit_id || '',
     title: props.event?.title || '',
-    description: props.event?.description || '',
-    location: props.event?.location || '',
+    content: props.event?.content || '',
     start_date: formatDateForInput(props.event?.start_date),
     end_date: formatDateForInput(props.event?.end_date),
+    location: props.event?.location || '',
     status: props.event?.status || 'upcoming',
     approval_status: defaultApprovalStatus.value,
-    image: null,
+    banner: null,
     _method: isEdit.value ? 'PUT' : 'POST'
 });
 
-const imagePreview = ref(props.event?.image_path ? '/' + props.event.image_path : null);
+const bannerPreview = ref(props.event?.banner_path ? `/${props.event.banner_path}` : null);
 
-const handleImageChange = (e) => {
+const handleBannerChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-        form.image = file;
+        form.banner = file;
         const reader = new FileReader();
         reader.onload = (e) => {
-            imagePreview.value = e.target.result;
+            bannerPreview.value = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 };
 
-const submitWithApprovalStatus = (targetStatus) => {
-    form.approval_status = targetStatus;
+const submitWithApprovalStatus = (targetApprovalStatus) => {
+    form.approval_status = targetApprovalStatus;
     if (isEdit.value) {
         form.post(route('public-relations.events.update', props.event.id));
     } else {
@@ -64,35 +64,36 @@ const submitWithApprovalStatus = (targetStatus) => {
 </script>
 
 <template>
-    <Head :title="isEdit ? 'Edit Acara' : 'Tambah Acara'" />
+    <Head :title="isEdit ? 'Edit Agenda Acara' : 'Tambah Agenda Acara Baru'" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-col gap-4">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
-                        {{ isEdit ? 'Edit Acara' : 'Tambah Acara' }}
+                        {{ isEdit ? 'Edit Agenda Acara' : 'Tambah Agenda Acara Baru' }}
                     </h2>
+                    <p class="text-sm text-gray-500 mt-1">Lengkapi rincian agenda dan lokasi acara unit sekolah Anda.</p>
                 </div>
             </div>
         </template>
 
         <div class="py-6 max-w-4xl mx-auto space-y-6">
 
-            <!-- Rejection Note Alert -->
+            <!-- Rejection Note Alert Banner -->
             <div v-if="event && event.approval_status === 'rejected' && event.rejection_note" class="p-5 bg-rose-50 border border-rose-200 rounded-3xl shadow-sm space-y-2">
                 <div class="flex items-center gap-2 text-rose-800 font-extrabold text-sm">
                     <ChatBubbleBottomCenterTextIcon class="w-5 h-5 text-rose-600" />
-                    <span>Catatan Revisi Verifikator:</span>
+                    <span>Catatan Revisi dari Verifikator:</span>
                 </div>
                 <p class="text-sm text-rose-700 font-medium pl-7">{{ event.rejection_note }}</p>
-                <p class="text-xs text-rose-500 pl-7">Sesuaikan informasi acara sesuai saran di atas, lalu klik <strong>"Ajukan Verifikasi Kembali"</strong>.</p>
+                <p class="text-xs text-rose-500 pl-7">Silakan sesuaikan agenda sesuai saran di atas, lalu klik <strong>"Ajukan Verifikasi Kembali"</strong>.</p>
             </div>
 
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <form @submit.prevent="submitWithApprovalStatus(form.approval_status)" class="p-8 space-y-6">
                     
-                    <!-- Unit Selection -->
+                    <!-- Unit Selection (if multiple) -->
                     <div v-if="units.length > 1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Unit Sekolah</label>
                         <select v-model="form.unit_id" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
@@ -104,69 +105,68 @@ const submitWithApprovalStatus = (targetStatus) => {
 
                     <!-- Title -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Judul Acara</label>
-                        <input v-model="form.title" type="text" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required placeholder="Contoh: Pentas Seni Akhir Tahun">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama / Judul Acara</label>
+                        <input v-model="form.title" type="text" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required placeholder="Contoh: Open House & Pentas Seni 2026">
                         <p v-if="form.errors.title" class="text-sm text-red-600 mt-1">{{ form.errors.title }}</p>
                     </div>
 
-                    <!-- Description (Rich Text Editor) -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Acara</label>
-                        <div class="border border-gray-300 rounded-xl overflow-hidden focus-within:border-namira-teal focus-within:ring focus-within:ring-namira-teal/20 transition-all bg-white">
-                            <QuillEditor v-model:content="form.description" contentType="html" theme="snow" toolbar="full" class="min-h-[200px] text-base" placeholder="Jelaskan detail acara secara lengkap..." />
-                        </div>
-                        <p v-if="form.errors.description" class="text-sm text-red-600 mt-1">{{ form.errors.description }}</p>
-                    </div>
-
-                    <!-- Location -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
-                        <input v-model="form.location" type="text" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" placeholder="Contoh: Aula Utama SD Namira">
-                        <p v-if="form.errors.location" class="text-sm text-red-600 mt-1">{{ form.errors.location }}</p>
-                    </div>
-
-                    <!-- Dates -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Dates & Location -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Mulai</label>
                             <input v-model="form.start_date" type="datetime-local" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
                             <p v-if="form.errors.start_date" class="text-sm text-red-600 mt-1">{{ form.errors.start_date }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Selesai (Opsional)</label>
-                            <input v-model="form.end_date" type="datetime-local" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Selesai</label>
+                            <input v-model="form.end_date" type="datetime-local" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
                             <p v-if="form.errors.end_date" class="text-sm text-red-600 mt-1">{{ form.errors.end_date }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
+                            <input v-model="form.location" type="text" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required placeholder="Contoh: Aula Utama Namira">
+                            <p v-if="form.errors.location" class="text-sm text-red-600 mt-1">{{ form.errors.location }}</p>
                         </div>
                     </div>
 
-                    <!-- Image Upload -->
+                    <!-- Content (Rich Text Editor) -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Foto / Poster Acara</label>
-                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl relative group" :class="{'border-namira-teal bg-teal-50/10': imagePreview}">
-                            <div v-if="imagePreview" class="absolute inset-0 overflow-hidden rounded-xl">
-                                <img :src="imagePreview" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi / Detail Acara</label>
+                        <div class="border border-gray-300 rounded-xl overflow-hidden focus-within:border-namira-teal focus-within:ring focus-within:ring-namira-teal/20 transition-all bg-white">
+                            <QuillEditor v-model:content="form.content" contentType="html" theme="snow" toolbar="full" class="min-h-[250px] text-base" placeholder="Tuliskan rincian susunan acara, persyaratan, dll..." />
+                        </div>
+                        <p v-if="form.errors.content" class="text-sm text-red-600 mt-1">{{ form.errors.content }}</p>
+                    </div>
+
+                    <!-- Banner Upload -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Banner / Pamphlet Acara</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl relative group" :class="{'border-namira-teal bg-teal-50/10': bannerPreview}">
+                            <div v-if="bannerPreview" class="absolute inset-0 overflow-hidden rounded-xl">
+                                <img :src="bannerPreview" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                             </div>
                             <div class="space-y-1 text-center relative z-10 p-4 bg-white/80 rounded-lg backdrop-blur-sm">
                                 <PhotoIcon class="mx-auto h-12 w-12 text-gray-400" />
                                 <div class="flex text-sm text-gray-600 justify-center">
                                     <label class="relative cursor-pointer bg-white rounded-md font-medium text-namira-teal hover:text-teal-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-namira-teal">
-                                        <span>Upload poster</span>
-                                        <input type="file" class="sr-only" @change="handleImageChange" accept="image/*">
+                                        <span>Upload banner</span>
+                                        <input type="file" class="sr-only" @change="handleBannerChange" accept="image/*">
                                     </label>
                                 </div>
                                 <p class="text-xs text-gray-500">PNG, JPG up to 2MB (Format WebP Otomatis)</p>
                             </div>
                         </div>
-                        <p v-if="form.errors.image" class="text-sm text-red-600 mt-1">{{ form.errors.image }}</p>
+                        <p v-if="form.errors.banner" class="text-sm text-red-600 mt-1">{{ form.errors.banner }}</p>
                     </div>
 
-                    <!-- Event Operational Status -->
+                    <!-- Event Status (Upcoming / Ongoing / Completed / Cancelled) -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori Pelaksanaan Acara</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Pelaksanaan Acara</label>
                         <select v-model="form.status" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
-                            <option value="upcoming">Akan Datang</option>
-                            <option value="completed">Selesai</option>
-                            <option value="cancelled">Dibatalkan</option>
+                            <option value="upcoming">Akan Datang (Upcoming)</option>
+                            <option value="ongoing">Sedang Berlangsung (Ongoing)</option>
+                            <option value="completed">Selesai (Completed)</option>
+                            <option value="cancelled">Dibatalkan (Cancelled)</option>
                         </select>
                         <p v-if="form.errors.status" class="text-sm text-red-600 mt-1">{{ form.errors.status }}</p>
                     </div>
@@ -177,14 +177,14 @@ const submitWithApprovalStatus = (targetStatus) => {
                         
                         <div v-if="is_approver" class="space-y-2">
                             <select v-model="form.approval_status" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
-                                <option value="published">✅ Terbitkan Langsung (Published)</option>
-                                <option value="pending">⏳ Menunggu Verifikasi (Pending)</option>
-                                <option value="draft">📝 Simpan Sebagai Draft</option>
+                                <option value="published">Terbitkan Langsung (Published)</option>
+                                <option value="pending">Menunggu Verifikasi (Pending)</option>
+                                <option value="draft">Simpan Sebagai Draft</option>
                             </select>
                         </div>
                         <div v-else class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 space-y-1">
-                            <p class="font-bold">ℹ️ Alur Publikasi Acara Humas:</p>
-                            <p>Acara yang disubmit akan masuk status <strong>"Menunggu Verifikasi"</strong> untuk ditinjau oleh Verifikator (Pengawas/Kepala Sekolah/Yayasan) sebelum rilis di kalender publik.</p>
+                            <p class="font-bold flex items-center gap-1.5"><InformationCircleIcon class="w-4 h-4 text-amber-600" /> Alur Publikasi Acara Humas:</p>
+                            <p>Acara yang disubmit akan masuk status <strong>"Menunggu Verifikasi"</strong> untuk ditinjau oleh Verifikator (Pengawas / Humas Yayasan) sebelum rilis di kalender publik.</p>
                         </div>
                     </div>
 

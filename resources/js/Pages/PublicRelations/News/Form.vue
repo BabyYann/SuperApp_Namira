@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { PhotoIcon, ExclamationCircleIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/vue/24/outline';
+import { PhotoIcon, ExclamationCircleIcon, ChatBubbleBottomCenterTextIcon, InformationCircleIcon } from '@heroicons/vue/24/outline';
 import { QuillEditor } from '@vueup/vue-quill';
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
 
@@ -35,20 +35,24 @@ const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
         form.image = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            imagePreview.value = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        imagePreview.value = URL.createObjectURL(file);
     }
 };
 
 const submitWithStatus = (targetStatus) => {
     form.status = targetStatus;
+    submitForm();
+};
+
+const submitForm = () => {
     if (isEdit.value) {
-        form.post(route('public-relations.news.update', props.news.id));
+        form.post(route('public-relations.news.update', props.news.id), {
+            forceFormData: true,
+        });
     } else {
-        form.post(route('public-relations.news.store'));
+        form.post(route('public-relations.news.store'), {
+            forceFormData: true,
+        });
     }
 };
 </script>
@@ -58,75 +62,85 @@ const submitWithStatus = (targetStatus) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
-                        {{ isEdit ? 'Edit Berita' : 'Tambah Berita' }}
+                        {{ isEdit ? 'Edit Berita' : 'Tambah Berita Baru' }}
                     </h2>
+                    <p class="text-sm text-gray-500 mt-1">Lengkapi informasi berita unit sekolah Anda.</p>
                 </div>
             </div>
         </template>
 
-        <div class="py-6 max-w-4xl mx-auto space-y-6">
+        <div class="py-6 max-w-4xl mx-auto">
 
-            <!-- Rejection Note Alert Banner -->
-            <div v-if="news && news.status === 'rejected' && news.rejection_note" class="p-5 bg-rose-50 border border-rose-200 rounded-3xl shadow-sm space-y-2">
-                <div class="flex items-center gap-2 text-rose-800 font-extrabold text-sm">
-                    <ChatBubbleBottomCenterTextIcon class="w-5 h-5 text-rose-600" />
-                    <span>Catatan Revisi dari Verifikator:</span>
+            <!-- Rejection Note Alert Banner if status is rejected -->
+            <div v-if="isEdit && news.status === 'rejected' && news.rejection_note" class="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                <ExclamationCircleIcon class="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                    <h4 class="font-bold text-rose-800 text-sm">Catatan Revisi dari Verifikator</h4>
+                    <p class="text-xs text-rose-700 mt-1">{{ news.rejection_note }}</p>
+                    <p class="text-[11px] text-rose-500 mt-2 font-medium">Silakan perbaiki berita sesuai catatan di atas, lalu klik "Ajukan Verifikasi" untuk meninjau ulang.</p>
                 </div>
-                <p class="text-sm text-rose-700 font-medium pl-7">{{ news.rejection_note }}</p>
-                <p class="text-xs text-rose-500 pl-7">Silakan sesuaikan isi berita sesuai saran di atas, lalu klik <strong>"Ajukan Verifikasi Kembali"</strong>.</p>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <form @submit.prevent="submitWithStatus(form.status)" class="p-8 space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+                <form @submit.prevent="submitForm" class="space-y-6">
                     
-                    <!-- Unit Selection (if multiple) -->
+                    <!-- Unit Selection -->
                     <div v-if="units.length > 1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Unit Sekolah</label>
                         <select v-model="form.unit_id" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
-                            <option value="" disabled>Pilih Unit...</option>
-                            <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
+                            <option v-for="unit in units" :key="unit.id" :value="unit.id">
+                                {{ unit.name }}
+                            </option>
                         </select>
-                        <p v-if="form.errors.unit_id" class="text-sm text-red-600 mt-1">{{ form.errors.unit_id }}</p>
+                        <div v-if="form.errors.unit_id" class="text-red-500 text-xs mt-1">{{ form.errors.unit_id }}</div>
                     </div>
 
                     <!-- Title -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Judul Berita</label>
-                        <input v-model="form.title" type="text" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required placeholder="Contoh: Kegiatan Porseni 2026">
-                        <p v-if="form.errors.title" class="text-sm text-red-600 mt-1">{{ form.errors.title }}</p>
-                    </div>
-
-                    <!-- Content (Rich Text Editor) -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Isi Berita</label>
-                        <div class="border border-gray-300 rounded-xl overflow-hidden focus-within:border-namira-teal focus-within:ring focus-within:ring-namira-teal/20 transition-all bg-white">
-                            <QuillEditor v-model:content="form.content" contentType="html" theme="snow" toolbar="full" class="min-h-[300px] text-base" placeholder="Tuliskan isi liputan berita secara lengkap di sini..." />
-                        </div>
-                        <p v-if="form.errors.content" class="text-sm text-red-600 mt-1">{{ form.errors.content }}</p>
+                        <input 
+                            v-model="form.title" 
+                            type="text" 
+                            class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" 
+                            placeholder="Masukkan judul berita..."
+                            required
+                        >
+                        <div v-if="form.errors.title" class="text-red-500 text-xs mt-1">{{ form.errors.title }}</div>
                     </div>
 
                     <!-- Image Upload -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Foto / Gambar Sampul</label>
-                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl relative group" :class="{'border-namira-teal bg-teal-50/10': imagePreview}">
-                            <div v-if="imagePreview" class="absolute inset-0 overflow-hidden rounded-xl">
-                                <img :src="imagePreview" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Gambar Berita / Cover</label>
+                        <div class="mt-1 flex items-center gap-4">
+                            <div v-if="imagePreview" class="relative w-32 h-20 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                                <img :src="imagePreview" class="w-full h-full object-cover" />
                             </div>
-                            <div class="space-y-1 text-center relative z-10 p-4 bg-white/80 rounded-lg backdrop-blur-sm">
-                                <PhotoIcon class="mx-auto h-12 w-12 text-gray-400" />
-                                <div class="flex text-sm text-gray-600 justify-center">
-                                    <label class="relative cursor-pointer bg-white rounded-md font-medium text-namira-teal hover:text-teal-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-namira-teal">
-                                        <span>Upload foto</span>
-                                        <input type="file" class="sr-only" @change="handleImageChange" accept="image/*">
-                                    </label>
-                                </div>
-                                <p class="text-xs text-gray-500">PNG, JPG up to 2MB (Format WebP Otomatis)</p>
-                            </div>
+                            <label class="cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+                                <PhotoIcon class="w-5 h-5 text-gray-500" />
+                                <span>Pilih Gambar</span>
+                                <input type="file" @change="handleImageChange" accept="image/*" class="hidden" />
+                            </label>
                         </div>
-                        <p v-if="form.errors.image" class="text-sm text-red-600 mt-1">{{ form.errors.image }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Format: JPG, PNG, WEBP. Maks 2MB. Otomatis dikompresi.</p>
+                        <div v-if="form.errors.image" class="text-red-500 text-xs mt-1">{{ form.errors.image }}</div>
+                    </div>
+
+                    <!-- Content Editor -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Isi Berita</label>
+                        <div class="bg-white rounded-xl border border-gray-300 overflow-hidden">
+                            <QuillEditor 
+                                v-model:content="form.content" 
+                                contentType="html"
+                                toolbar="essential" 
+                                theme="snow"
+                                class="min-h-[250px]"
+                            />
+                        </div>
+                        <div v-if="form.errors.content" class="text-red-500 text-xs mt-1">{{ form.errors.content }}</div>
                     </div>
 
                     <!-- Status Options based on Role -->
@@ -135,14 +149,14 @@ const submitWithStatus = (targetStatus) => {
                         
                         <div v-if="is_approver" class="space-y-2">
                             <select v-model="form.status" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
-                                <option value="published">✅ Terbitkan Langsung (Published)</option>
-                                <option value="pending">⏳ Menunggu Verifikasi (Pending)</option>
-                                <option value="draft">📝 Simpan Sebagai Draft</option>
+                                <option value="published">Terbitkan Langsung (Published)</option>
+                                <option value="pending">Menunggu Verifikasi (Pending)</option>
+                                <option value="draft">Simpan Sebagai Draft</option>
                             </select>
                         </div>
                         <div v-else class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 space-y-1">
-                            <p class="font-bold">ℹ️ Alur Publikasi Berita Humas:</p>
-                            <p>Berita yang Anda simpan akan masuk ke status <strong>"Menunggu Verifikasi"</strong> terlebih dahulu untuk ditinjau oleh Verifikator (Pengawas/Kepala Sekolah/Yayasan) sebelum tayang di website publik.</p>
+                            <p class="font-bold flex items-center gap-1.5"><InformationCircleIcon class="w-4 h-4 text-amber-600" /> Alur Publikasi Berita Humas:</p>
+                            <p>Berita yang Anda simpan akan masuk ke status <strong>"Menunggu Verifikasi"</strong> terlebih dahulu untuk ditinjau oleh Verifikator (Pengawas / Humas Yayasan) sebelum tayang di website publik.</p>
                         </div>
                     </div>
 

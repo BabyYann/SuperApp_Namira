@@ -5,7 +5,7 @@ import { ref } from 'vue';
 import { 
     MagnifyingGlassIcon, PlusIcon, NewspaperIcon, PencilSquareIcon, TrashIcon, 
     ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, ChatBubbleBottomCenterTextIcon,
-    FunnelIcon
+    FunnelIcon, ClockIcon, DocumentTextIcon, InformationCircleIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -151,7 +151,8 @@ const getStatusBadge = (status) => {
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
                     :class="searchForm.status === 'pending' ? 'bg-amber-500 text-white shadow-amber-500/20' : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200'"
                 >
-                    <span>⏳ Menunggu Verifikasi</span>
+                    <ClockIcon class="w-4 h-4" />
+                    <span>Menunggu Verifikasi</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.status === 'pending' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'">{{ counts?.pending || 0 }}</span>
                 </button>
 
@@ -160,7 +161,8 @@ const getStatusBadge = (status) => {
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
                     :class="searchForm.status === 'published' ? 'bg-emerald-600 text-white shadow-emerald-600/20' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'"
                 >
-                    <span>✅ Terbit</span>
+                    <CheckCircleIcon class="w-4 h-4" />
+                    <span>Terbit</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.status === 'published' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">{{ counts?.published || 0 }}</span>
                 </button>
 
@@ -169,7 +171,8 @@ const getStatusBadge = (status) => {
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
                     :class="searchForm.status === 'rejected' ? 'bg-rose-600 text-white shadow-rose-600/20' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'"
                 >
-                    <span>🔴 Perlu Revisi</span>
+                    <XCircleIcon class="w-4 h-4" />
+                    <span>Perlu Revisi</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.status === 'rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'">{{ counts?.rejected || 0 }}</span>
                 </button>
 
@@ -178,7 +181,8 @@ const getStatusBadge = (status) => {
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
                     :class="searchForm.status === 'draft' ? 'bg-slate-700 text-white shadow-slate-700/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'"
                 >
-                    <span>📝 Draft</span>
+                    <DocumentTextIcon class="w-4 h-4" />
+                    <span>Draft</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.status === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'">{{ counts?.draft || 0 }}</span>
                 </button>
             </div>
