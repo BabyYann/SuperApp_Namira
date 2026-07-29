@@ -270,6 +270,23 @@ class TeachingJournalController extends Controller
                 'status' => 'submitted',
             ]);
 
+            // Broadcast Reverb Event
+            try {
+                $teacherUser = Auth::user();
+                $classroomModel = \App\Modules\Academic\Models\Classroom::find($request->classroom_id);
+                $subjectModel   = \App\Modules\Academic\Models\Subject::find($request->subject_id);
+
+                event(new \App\Events\TeachingJournalSubmitted(
+                    $teacherUser->name ?? 'Guru',
+                    $classroomModel->name ?? '-',
+                    $subjectModel->name ?? '-',
+                    (int) $unitId,
+                    Carbon::now()->format('H:i:s')
+                ));
+            } catch (\Throwable $e) {
+                // Fail-safe if Reverb offline
+            }
+
             // 3. Attach TPs (Existing + New)
             $allTpIds = array_merge($request->input('selected_tps', []), $newTpIds);
             if (!empty($allTpIds)) {

@@ -64,6 +64,19 @@ class MaintenanceController extends Controller
                 $inventory->update(['condition' => 'rusak_ringan']);
             }
 
+            // Broadcast Reverb Event
+            try {
+                event(new \App\Events\SarprasMaintenanceReported(
+                    $inventory->name ?? 'Barang Sarpras',
+                    auth()->user()->name ?? 'Pengguna',
+                    $validated['issue'],
+                    (int) $unitId,
+                    now()->format('H:i:s')
+                ));
+            } catch (\Throwable $e) {
+                // Fail-safe if Reverb offline
+            }
+
             return redirect()->back()->with('success', 'Laporan kerusakan berhasil dikirim.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengirim laporan.');

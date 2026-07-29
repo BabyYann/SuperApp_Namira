@@ -252,8 +252,18 @@ class StudentPortalController extends Controller
             'requested_at' => Carbon::now(),
         ]);
 
-        // TODO: Broadcast event ke komputer sekolah via Reverb
-        // event(new \App\Events\StudentPickupRequested($student, $pickup));
+        // Broadcast event ke Reverb WebSockets
+        try {
+            event(new \App\Events\StudentPickupRequested(
+                $student->full_name,
+                $student->classroom->name ?? '-',
+                'pending',
+                Carbon::now()->format('H:i:s'),
+                (int) $student->unit_id
+            ));
+        } catch (\Throwable $e) {
+            // Fail-safe if Reverb offline
+        }
 
         return redirect()->back();
     }

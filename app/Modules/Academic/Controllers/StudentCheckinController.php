@@ -119,6 +119,20 @@ class StudentCheckinController extends Controller
             );
         }
 
+        // 4c. Broadcast Reverb Event ke WebSockets Server
+        try {
+            event(new \App\Events\StudentScannedAtGate(
+                $student->full_name,
+                $student->nis ?? '-',
+                $student->classroom->name ?? '-',
+                $checkin->checkin_time,
+                $status,
+                (int) $student->unit_id
+            ));
+        } catch (\Throwable $e) {
+            // Fail-safe if Reverb server offline
+        }
+
         // 5. Kirim WA notifikasi ke orang tua (non-blocking via queue)
         $this->dispatchWhatsAppNotification($student, $checkin, $status, $now);
 

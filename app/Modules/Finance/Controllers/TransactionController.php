@@ -188,6 +188,19 @@ class TransactionController extends Controller
 
                 $this->applyWaterfallPayment($student, $amount, $financeAccountId, $description);
                 $processed++;
+
+                // Broadcast Reverb Event
+                try {
+                    event(new \App\Events\PaymentTransactionRecorded(
+                        $student->full_name ?? 'Siswa',
+                        (float) $amount,
+                        'Pembayaran SPP / Tanggungan',
+                        (int) ($student->unit_id ?? 1),
+                        now()->format('H:i:s')
+                    ));
+                } catch (\Throwable $e) {
+                    // Fail-safe
+                }
             }
             DB::commit();
             fclose($handle);

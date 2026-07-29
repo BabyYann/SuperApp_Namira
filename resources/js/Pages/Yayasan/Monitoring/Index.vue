@@ -22,6 +22,30 @@ const props = defineProps({
 const unitFilter = ref(props.filters.unit_id ?? 'all');
 const currentDate = ref(dayjs().format('dddd, D MMMM YYYY'));
 
+import { onMounted, onUnmounted } from 'vue';
+
+onMounted(() => {
+    if (window.Echo) {
+        window.Echo.channel('attendance').listen('EmployeeCheckedIn', () => {
+            router.reload({ preserveScroll: true });
+        });
+        window.Echo.channel('student-gate-scan').listen('StudentScannedAtGate', () => {
+            router.reload({ preserveScroll: true });
+        });
+        window.Echo.channel('teaching-journals').listen('TeachingJournalSubmitted', () => {
+            router.reload({ preserveScroll: true });
+        });
+    }
+});
+
+onUnmounted(() => {
+    if (window.Echo) {
+        window.Echo.leaveChannel('attendance');
+        window.Echo.leaveChannel('student-gate-scan');
+        window.Echo.leaveChannel('teaching-journals');
+    }
+});
+
 const applyFilter = () => {
     router.get(route('yayasan.monitoring.index'), { 
         unit_id: unitFilter.value 

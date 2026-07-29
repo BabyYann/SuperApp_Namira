@@ -156,6 +156,94 @@ const setupEcho = () => {
                     }
                 }
             });
+
+        // Listen for StudentScannedAtGate
+        window.Echo.channel('student-gate-scan')
+            .listen('StudentScannedAtGate', (e) => {
+                const currentUser = page.props.auth.user;
+                if (!currentUser) return;
+                const isAdmin = currentUser.roles.some(role => 
+                    ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'pengawas_yayasan', 'guru'].includes(role)
+                );
+                if (isAdmin) {
+                    playChime();
+                    Swal.fire({
+                        title: `Scan Gerbang: ${e.student_name}`,
+                        text: `Kelas ${e.classroom} tercatat ${e.status.toUpperCase()} pukul ${e.checkin_time}.`,
+                        icon: e.status === 'terlambat' ? 'warning' : 'success',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 4000,
+                        timerProgressBar: true,
+                    });
+                }
+            });
+
+        // Listen for TeachingJournalSubmitted
+        window.Echo.channel('teaching-journals')
+            .listen('TeachingJournalSubmitted', (e) => {
+                const currentUser = page.props.auth.user;
+                if (!currentUser) return;
+                const isAdmin = currentUser.roles.some(role => 
+                    ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'pengawas_yayasan'].includes(role)
+                );
+                if (isAdmin) {
+                    Swal.fire({
+                        title: 'Jurnal Mengajar Terisi',
+                        text: `${e.teacher_name} mengisi jurnal ${e.subject_name} di kelas ${e.classroom_name}.`,
+                        icon: 'info',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 4000,
+                    });
+                }
+            });
+
+        // Listen for SarprasMaintenanceReported
+        window.Echo.channel('sarpras-maintenance')
+            .listen('SarprasMaintenanceReported', (e) => {
+                const currentUser = page.props.auth.user;
+                if (!currentUser) return;
+                const isAdmin = currentUser.roles.some(role => 
+                    ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'].includes(role)
+                );
+                if (isAdmin) {
+                    playChime();
+                    Swal.fire({
+                        title: 'Laporan Sarpras Baru',
+                        text: `${e.reporter_name} melaporkan ${e.item_name}: ${e.issue_description}`,
+                        icon: 'warning',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 5000,
+                    });
+                }
+            });
+
+        // Listen for PaymentTransactionRecorded
+        window.Echo.channel('finance-transactions')
+            .listen('PaymentTransactionRecorded', (e) => {
+                const currentUser = page.props.auth.user;
+                if (!currentUser) return;
+                const isAdmin = currentUser.roles.some(role => 
+                    ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'finance', 'staff_admin_keuangan'].includes(role)
+                );
+                if (isAdmin) {
+                    playChime();
+                    Swal.fire({
+                        title: 'Pembayaran Diterima',
+                        text: `${e.student_name}: Rp ${Number(e.amount).toLocaleString('id-ID')} (${e.payment_type}).`,
+                        icon: 'success',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 4000,
+                    });
+                }
+            });
     } catch (err) {
         console.error('Failed to set up Laravel Echo:', err);
     }
