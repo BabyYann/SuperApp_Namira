@@ -17,7 +17,7 @@ class MonitoringController extends Controller
 {
     public function index(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengakses halaman monitoring.');
         }
 
@@ -29,8 +29,8 @@ class MonitoringController extends Controller
         // 2. If valid ID provided -> Use it
         // 3. If missing (null) -> Default to Session Unit
         
-        if (auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            // Global admin: respect the input
+        if (auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
+            // Global admin & pengawas: respect the input
             if ($inputUnitId === 'all') {
                 $unitId = null;
             } elseif ($inputUnitId) {
