@@ -23,7 +23,10 @@ import {
     TrophyIcon,
     CubeIcon,
     BuildingOfficeIcon,
-    ArrowPathRoundedSquareIcon
+    ArrowPathRoundedSquareIcon,
+    ClipboardDocumentListIcon,
+    PresentationChartBarIcon,
+    EyeIcon
 } from '@heroicons/vue/24/outline';
 import { 
     HomeIcon as HomeIconSolid, 
@@ -31,7 +34,8 @@ import {
     ClipboardDocumentCheckIcon as ClipboardDocumentCheckIconSolid,
     Squares2X2Icon as Squares2X2IconSolid,
     NewspaperIcon as NewspaperIconSolid,
-    FingerPrintIcon as FingerPrintIconSolid
+    FingerPrintIcon as FingerPrintIconSolid,
+    PresentationChartBarIcon as PresentationChartBarIconSolid
 } from '@heroicons/vue/24/solid';
 
 const page = usePage();
@@ -39,6 +43,7 @@ const user = computed(() => page.props.auth.user);
 const activeUnit = computed(() => page.props.session.active_unit_name || 'Yayasan Namira');
 const userRoles = computed(() => user.value?.roles || []);
 const isTeacher = computed(() => user.value?.is_teacher || userRoles.value.includes('teacher'));
+const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
 
 const showDrawer = ref(false);
 
@@ -147,9 +152,21 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Beranda</span>
                 </Link>
 
-                <!-- 2. Dynamic Primary Action (Jurnal untuk Guru / Berita untuk Humas / Presensi untuk Staff) -->
+                <!-- 2. Dynamic Primary Action -->
+                <!-- Pengawas: Monitoring -->
                 <Link 
-                    v-if="isTeacher || hasRole('teacher')"
+                    v-if="isPengawas"
+                    :href="safeRoute('yayasan.monitoring.index', {}, '#')"
+                    class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
+                    :class="isRouteActive('yayasan.monitoring.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
+                >
+                    <EyeIcon class="w-6 h-6 transition-transform" />
+                    <span class="text-[10px] font-bold tracking-tight">Monitoring</span>
+                </Link>
+
+                <!-- Guru: Jurnal -->
+                <Link 
+                    v-else-if="isTeacher || hasRole('teacher')"
                     :href="safeRoute('yayasan.teaching-journal.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('yayasan.teaching-journal.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
@@ -161,6 +178,7 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Jurnal</span>
                 </Link>
 
+                <!-- Humas: Berita -->
                 <Link 
                     v-else-if="hasRole('humas_unit')"
                     :href="safeRoute('public-relations.news.index')"
@@ -174,6 +192,7 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Berita</span>
                 </Link>
 
+                <!-- Staff biasa: Presensi -->
                 <Link 
                     v-else
                     :href="safeRoute('attendance.index')"
@@ -187,9 +206,20 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Presensi</span>
                 </Link>
 
-                <!-- 3. CENTER FAB: SCANNER QR GERBANG / KELAS -->
+                <!-- 3. CENTER FAB: Statistik untuk Pengawas / QR Scanner untuk semua -->
                 <div class="flex-1 flex justify-center -mt-6">
+                    <!-- Pengawas: Statistik -->
                     <Link 
+                        v-if="isPengawas"
+                        :href="safeRoute('dashboard')"
+                        class="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-700 to-blue-500 text-white flex items-center justify-center shadow-lg shadow-indigo-700/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
+                        title="Statistik & Overview"
+                    >
+                        <component :is="PresentationChartBarIconSolid" class="w-7 h-7" />
+                    </Link>
+                    <!-- Semua user lain: QR Scanner -->
+                    <Link 
+                        v-else
                         :href="safeRoute('yayasan.student-checkin.index')"
                         class="w-14 h-14 rounded-full bg-gradient-to-tr from-teal-700 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-teal-700/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
                         title="Scan QR Presensi"
@@ -198,9 +228,21 @@ const isRouteActive = (pattern) => {
                     </Link>
                 </div>
 
-                <!-- 4. Dynamic Secondary Action (Absensi Siswa untuk Wali Kelas / Kampus untuk Humas / Konseling untuk BK) -->
+                <!-- 4. Dynamic Secondary Action -->
+                <!-- Pengawas: Laporan -->
                 <Link 
-                    v-if="hasRole('wali_kelas')"
+                    v-if="isPengawas"
+                    :href="safeRoute('yayasan.employee.index', {}, '#')"
+                    class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
+                    :class="'text-slate-400 hover:text-slate-600'"
+                >
+                    <ClipboardDocumentListIcon class="w-6 h-6 transition-transform" />
+                    <span class="text-[10px] font-bold tracking-tight">Laporan</span>
+                </Link>
+
+                <!-- Wali Kelas: Absensi Siswa -->
+                <Link 
+                    v-else-if="hasRole('wali_kelas')"
                     :href="safeRoute('yayasan.student-attendance.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('yayasan.student-attendance.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
@@ -212,6 +254,7 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Absensi</span>
                 </Link>
 
+                <!-- Humas: Kampus -->
                 <Link 
                     v-else-if="hasRole('humas_unit')"
                     :href="safeRoute('public-relations.university-destinations.index')"
@@ -222,6 +265,7 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Kampus</span>
                 </Link>
 
+                <!-- BK: Konseling -->
                 <Link 
                     v-else-if="hasRole(['bk', 'counseling'])"
                     :href="safeRoute('counseling.sessions.index')"
@@ -232,14 +276,15 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Konseling</span>
                 </Link>
 
+                <!-- Staff biasa: Presensi (Pulang) -->
                 <Link 
                     v-else
                     :href="safeRoute('attendance.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('attendance.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                 >
-                    <FingerPrintIcon class="w-6 h-6 transition-transform" />
-                    <span class="text-[10px] font-bold tracking-tight">Presensi</span>
+                    <ClipboardDocumentListIcon class="w-6 h-6 transition-transform" />
+                    <span class="text-[10px] font-bold tracking-tight">Riwayat</span>
                 </Link>
 
                 <!-- 5. Drawer Menu "Lainnya" -->

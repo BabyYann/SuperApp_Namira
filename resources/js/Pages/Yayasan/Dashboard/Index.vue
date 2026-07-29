@@ -63,6 +63,15 @@ const hasRole = (roles) => {
     return roles.some(role => userRoles.value.includes(role));
 };
 
+const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
+
+const userInitials = computed(() => {
+    const name = user.value?.name || 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+});
+
 const safeRoute = (name, params = {}, fallback = '#') => {
     try {
         if (typeof route === 'function') {
@@ -148,19 +157,28 @@ const eventTypeLabels = {
                         </Link>
                     </div>
 
-                    <!-- 🌟 FULL CUTOUT PERSON PHOTO -->
-                    <div class="absolute left-1 bottom-0 h-[125%] w-[42%] flex items-end justify-center pointer-events-none z-10">
-                        <img 
-                            :src="user?.profile_photo_url || user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Pegawai')}&background=0d9488&color=fff&size=256`" 
-                            :alt="user?.name" 
-                            class="h-full max-h-[225px] w-auto object-contain object-bottom drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)] filter"
-                        />
+                    <!-- 🌟 AVATAR HERO (Lingkaran dengan Inisial atau Foto Profil) -->
+                    <div class="absolute left-2 bottom-0 h-[115%] w-[40%] flex items-end justify-center pointer-events-none z-10">
+                        <!-- Jika ada foto profil -->
+                        <div v-if="user?.profile_photo_url" class="w-28 h-28 mb-2 rounded-full overflow-hidden ring-4 ring-white/30 shadow-2xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                            <img 
+                                :src="user.profile_photo_url" 
+                                :alt="user?.name" 
+                                class="w-full h-full object-cover"
+                            />
+                        </div>
+                        <!-- Jika tidak ada foto → Avatar lingkaran gradient dengan inisial -->
+                        <div v-else class="w-28 h-28 mb-2 rounded-full bg-gradient-to-br from-teal-400 via-teal-600 to-slate-800 flex items-center justify-center ring-4 ring-white/20 shadow-2xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                            <span class="text-4xl font-black text-white tracking-tight select-none" style="text-shadow: 0 2px 8px rgba(0,0,0,0.4)">
+                                {{ userInitials }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Employee Attendance Status Banner (Works for ALL roles: Satpam, Staff, Teacher, Admin) -->
-            <div class="bg-white border border-slate-200 rounded-3xl p-4 flex items-center justify-between shadow-sm">
+            <!-- 2. Employee Attendance Status Banner (hanya untuk non-pengawas) -->
+            <div v-if="!isPengawas" class="bg-white border border-slate-200 rounded-3xl p-4 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 border border-teal-100 flex items-center justify-center">
                         <FingerPrintIcon class="w-5 h-5 stroke-[2.2]" />
@@ -192,9 +210,44 @@ const eventTypeLabels = {
             </div>
 
             <!-- 3. LIVE HERO CARD (ROLE-AWARE) -->
+            <!-- Case D: Pengawas Yayasan (Read-Only Supervisor) -->
+            <div 
+                v-if="isPengawas"
+                class="rounded-3xl bg-gradient-to-br from-[#1e3a5f] to-[#0f172a] p-6 text-white shadow-md border border-blue-900/60"
+            >
+                <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-blue-300 mb-3">
+                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                    <span>Mode Pengawasan • {{ userData?.today_date }}</span>
+                </div>
+
+                <h3 class="font-black text-xl tracking-tight leading-snug mb-2">
+                    Dashboard Pengawas Yayasan
+                </h3>
+                <p class="text-xs text-slate-300 font-medium leading-relaxed mb-5">
+                    Selamat bertugas, {{ user?.name }}. Anda dapat memantau seluruh data operasional semua unit sekolah dalam mode <strong class="text-blue-300">baca saja</strong>.
+                </p>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <Link 
+                        :href="safeRoute('yayasan.monitoring.index', {}, '#')"
+                        class="flex items-center gap-2.5 py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-2xl transition-all active:scale-95 border border-white/10"
+                    >
+                        <ChartBarIcon class="w-4 h-4 text-blue-300" />
+                        <span>Monitoring Unit</span>
+                    </Link>
+                    <Link 
+                        :href="safeRoute('yayasan.users.index', {}, '#')"
+                        class="flex items-center gap-2.5 py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-2xl transition-all active:scale-95 border border-white/10"
+                    >
+                        <UsersIcon class="w-4 h-4 text-blue-300" />
+                        <span>Data Pengguna</span>
+                    </Link>
+                </div>
+            </div>
+
             <!-- Case A: Teacher with active teaching schedule -->
             <div 
-                v-if="teacherData?.current_schedule" 
+                v-else-if="teacherData?.current_schedule" 
                 class="rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 text-white shadow-md border border-teal-800/60"
             >
                 <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-teal-300 mb-3">
@@ -243,7 +296,7 @@ const eventTypeLabels = {
 
             <!-- Case C: Non-Teacher (Satpam, Staf Administrasi, Admin, Sarpras, Finance) -->
             <div 
-                v-else 
+                v-else-if="!isPengawas"
                 class="rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 text-white shadow-md border border-teal-800/60"
             >
                 <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-teal-300 mb-3">
