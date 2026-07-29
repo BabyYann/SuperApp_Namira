@@ -1,30 +1,84 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import {
     MagnifyingGlassIcon, PlusIcon, GlobeAltIcon, PencilSquareIcon, TrashIcon,
-    ExclamationTriangleIcon, MapPinIcon
+    ExclamationTriangleIcon, MapPinIcon, CheckCircleIcon, XCircleIcon, ClockIcon,
+    DocumentTextIcon, ChatBubbleBottomCenterTextIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     destinations: Object,
     units: Array,
+    counts: Object,
+    is_approver: Boolean,
     filters: Object,
 });
 
-const searchQuery = ref(props.filters?.search || '');
-const typeFilter = ref(props.filters?.type || '');
-const unitFilter = ref(props.filters?.unit_id || '');
+const searchForm = useForm({
+    search: props.filters?.search || '',
+    type: props.filters?.type || '',
+    unit_id: props.filters?.unit_id || '',
+    approval_status: props.filters?.approval_status || 'all',
+});
 
 const isAdminView = computed(() => props.units && props.units.length > 1);
 
+const filterStatus = (statusKey) => {
+    searchForm.approval_status = statusKey;
+    searchForm.get(route('public-relations.university-destinations.index'), {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
 const applyFilters = () => {
-    router.get(route('public-relations.university-destinations.index'), {
-        search: searchQuery.value || undefined,
-        type: typeFilter.value || undefined,
-        unit_id: unitFilter.value || undefined,
-    }, { preserveState: true, preserveScroll: true });
+    searchForm.get(route('public-relations.university-destinations.index'), {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
+// Approval / Rejection Logic
+const showRejectModal = ref(false);
+const itemToReject = ref(null);
+const rejectionNote = ref('');
+const actionForm = useForm({
+    rejection_note: '',
+});
+
+const approveItem = (item) => {
+    if (confirm(`Setujui destinasi "${item.name}"?`)) {
+        actionForm.post(route('public-relations.university-destinations.approve', item.id), {
+            preserveScroll: true,
+        });
+    }
+};
+
+const openRejectModal = (item) => {
+    itemToReject.value = item;
+    rejectionNote.value = '';
+    showRejectModal.value = true;
+};
+
+const submitReject = () => {
+    if (!rejectionNote.value.trim()) return;
+    actionForm.rejection_note = rejectionNote.value;
+    actionForm.post(route('public-relations.university-destinations.reject', itemToReject.value.id), {
+        onSuccess: () => {
+            showRejectModal.value = false;
+            itemToReject.value = null;
+        }
+    });
+};
+
+// Rejection Note Modal
+const showNoteModal = ref(false);
+const selectedNote = ref('');
+const viewNote = (note) => {
+    selectedNote.value = note;
+    showNoteModal.value = true;
 };
 
 // Delete Logic
@@ -50,10 +104,6 @@ const deleteItem = () => {
     });
 };
 
-// Flash message
-const flash = computed(() => usePage?.props?.flash || {});
-
-import { usePage } from '@inertiajs/vue3';
 const page = usePage();
 const successMessage = computed(() => page.props.flash?.success);
 
@@ -61,6 +111,7 @@ const typeLabel = (type) => {
     const map = { indonesia: 'Indonesia', overseas: 'Overseas', lokal: 'Lokal' };
     return map[type] || type;
 };
+
 const typeBadge = (type) => {
     const map = {
         indonesia: 'bg-blue-50 text-blue-700 border-blue-100',
@@ -69,10 +120,25 @@ const typeBadge = (type) => {
     };
     return map[type] || 'bg-gray-50 text-gray-700';
 };
+
 const visitTypeLabel = (vt) => vt === 'alumni' ? 'Alumni' : 'Kunjungan';
+
 const formatDate = (d) => {
     if (!d) return '-';
     return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+const getApprovalBadge = (status) => {
+    switch (status) {
+        case 'published':
+            return { label: 'Terbit', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+        case 'pending':
+            return { label: 'Menunggu Verifikasi', class: 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' };
+        case 'rejected':
+            return { label: 'Perlu Revisi', class: 'bg-rose-50 text-rose-700 border-rose-200' };
+        default:
+            return { label: 'Draft', class: 'bg-slate-100 text-slate-600 border-slate-200' };
+    }
 };
 </script>
 
@@ -85,7 +151,7 @@ const formatDate = (d) => {
                     <GlobeAltIcon class="w-6 h-6 text-namira-teal" />
                     Destinasi Universitas
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Kelola data kunjungan dan destinasi universitas unit sekolah.</p>
+                <p class="text-sm text-gray-500 mt-1">Kelola dan verifikasi data kunjungan serta destinasi universitas unit sekolah Anda.</p>
             </div>
         </template>
 
@@ -99,7 +165,59 @@ const formatDate = (d) => {
                 </div>
             </transition>
 
-            <!-- 1A. DESKTOP TOOLBAR (Unchanged Desktop Layout) -->
+            <!-- STATUS FILTER TABS -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                <button 
+                    @click="filterStatus('all')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="(searchForm.approval_status === 'all' || !searchForm.approval_status) ? 'bg-namira-teal text-white shadow-namira-teal/20' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'"
+                >
+                    <span>Semua Destinasi</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="(searchForm.approval_status === 'all' || !searchForm.approval_status) ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ counts?.all || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('pending')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'pending' ? 'bg-amber-500 text-white shadow-amber-500/20' : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200'"
+                >
+                    <ClockIcon class="w-4 h-4" />
+                    <span>Menunggu Verifikasi</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'pending' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'">{{ counts?.pending || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('published')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'published' ? 'bg-emerald-600 text-white shadow-emerald-600/20' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'"
+                >
+                    <CheckCircleIcon class="w-4 h-4" />
+                    <span>Terbit</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'published' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">{{ counts?.published || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('rejected')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'rejected' ? 'bg-rose-600 text-white shadow-rose-600/20' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'"
+                >
+                    <XCircleIcon class="w-4 h-4" />
+                    <span>Perlu Revisi</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'">{{ counts?.rejected || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('draft')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'draft' ? 'bg-slate-700 text-white shadow-slate-700/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'"
+                >
+                    <DocumentTextIcon class="w-4 h-4" />
+                    <span>Draft</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'">{{ counts?.draft || 0 }}</span>
+                </button>
+            </div>
+
+            <!-- DESKTOP TOOLBAR -->
             <div class="hidden md:flex flex-row items-stretch gap-3">
                 <!-- Search -->
                 <div class="relative flex-1">
@@ -107,7 +225,7 @@ const formatDate = (d) => {
                         <MagnifyingGlassIcon class="w-5 h-5" />
                     </div>
                     <input
-                        v-model="searchQuery"
+                        v-model="searchForm.search"
                         @keyup.enter="applyFilters"
                         type="text"
                         placeholder="Cari nama institusi atau kota..."
@@ -116,7 +234,7 @@ const formatDate = (d) => {
                 </div>
 
                 <!-- Filter Type -->
-                <select v-model="typeFilter" @change="applyFilters" class="h-[46px] rounded-2xl border-white/50 bg-white/50 text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm px-3 pr-8">
+                <select v-model="searchForm.type" @change="applyFilters" class="h-[46px] rounded-2xl border-white/50 bg-white/50 text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm px-3 pr-8">
                     <option value="">Semua Tipe</option>
                     <option value="indonesia">Indonesia</option>
                     <option value="overseas">Overseas</option>
@@ -124,7 +242,7 @@ const formatDate = (d) => {
                 </select>
 
                 <!-- Filter Unit (admin only) -->
-                <select v-if="isAdminView" v-model="unitFilter" @change="applyFilters" class="h-[46px] rounded-2xl border-white/50 bg-white/50 text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm px-3 pr-8">
+                <select v-if="isAdminView" v-model="searchForm.unit_id" @change="applyFilters" class="h-[46px] rounded-2xl border-white/50 bg-white/50 text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm px-3 pr-8">
                     <option value="">Semua Unit</option>
                     <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
                 </select>
@@ -136,30 +254,7 @@ const formatDate = (d) => {
                 </Link>
             </div>
 
-            <!-- 1B. MOBILE TOOLBAR (Executive Deep Namira Emerald Search & Add) -->
-            <div class="block md:hidden bg-[#064e3b] text-white p-4 rounded-3xl border border-emerald-800/80 shadow-xl space-y-3">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] font-black tracking-widest text-teal-400 uppercase">Humas & Publikasi</span>
-                        <h3 class="text-base font-extrabold text-white mt-0.5">Destinasi Kampus</h3>
-                    </div>
-                    <Link :href="route('public-relations.university-destinations.create')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-extrabold flex items-center gap-1.5 shadow-md">
-                        <PlusIcon class="w-4 h-4" />
-                        <span>Tambah</span>
-                    </Link>
-                </div>
-                <div class="relative w-full">
-                    <input 
-                        v-model="searchQuery"
-                        @keyup.enter="applyFilters"
-                        type="text" 
-                        placeholder="Cari institusi / kota..." 
-                        class="w-full bg-slate-800 border border-slate-700 text-white rounded-2xl text-xs font-bold p-3 focus:ring-teal-500 focus:border-teal-500"
-                    >
-                </div>
-            </div>
-
-            <!-- 2A. DESKTOP DATA TABLE (Unchanged Desktop Layout) -->
+            <!-- DESKTOP DATA TABLE -->
             <div class="hidden md:block bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -172,7 +267,7 @@ const formatDate = (d) => {
                                 <th class="p-5">Tipe</th>
                                 <th class="p-5">Jenis</th>
                                 <th class="p-5">Tgl. Kunjungan</th>
-                                <th class="p-5">Status</th>
+                                <th class="p-5">Status Verifikasi</th>
                                 <th class="p-5 text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -190,7 +285,7 @@ const formatDate = (d) => {
                             </tr>
                             <tr v-for="(item, index) in destinations.data" :key="'desk-'+item.id" class="hover:bg-teal-50/30 transition-colors group">
                                 <td class="p-5 text-sm text-gray-400 font-mono">
-                                    {{ (destinations.meta?.current_page - 1) * destinations.meta?.per_page + index + 1 }}
+                                    {{ index + 1 }}
                                 </td>
                                 <td class="p-5 text-sm text-gray-600 font-medium">
                                     {{ item.unit?.name || '-' }}
@@ -218,12 +313,29 @@ const formatDate = (d) => {
                                     {{ formatDate(item.visit_date) }}
                                 </td>
                                 <td class="p-5">
-                                    <span :class="item.is_active ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-50 text-gray-500 border-gray-100'" class="px-2.5 py-1 rounded-xl text-xs font-bold border">
-                                        {{ item.is_active ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
+                                    <div class="flex flex-col gap-1">
+                                        <span :class="getApprovalBadge(item.approval_status).class" class="px-3 py-1 rounded-xl text-xs font-bold border shadow-sm w-fit">
+                                            {{ getApprovalBadge(item.approval_status).label }}
+                                        </span>
+                                        <button v-if="item.approval_status === 'rejected' && item.rejection_note" @click="viewNote(item.rejection_note)" class="text-[11px] text-rose-600 underline font-medium hover:text-rose-800 text-left">
+                                            Lihat Catatan Revisi
+                                        </button>
+                                    </div>
                                 </td>
                                 <td class="p-5 text-right">
-                                    <div class="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
+                                    <div class="flex justify-end items-center gap-2">
+                                        <!-- Verifier Quick Actions -->
+                                        <template v-if="is_approver && item.approval_status === 'pending'">
+                                            <button @click="approveItem(item)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                                                <CheckCircleIcon class="w-4 h-4" />
+                                                <span>Setujui</span>
+                                            </button>
+                                            <button @click="openRejectModal(item)" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                                                <XCircleIcon class="w-4 h-4" />
+                                                <span>Tolak</span>
+                                            </button>
+                                        </template>
+
                                         <Link :href="route('public-relations.university-destinations.edit', item.id)" class="p-2 text-gray-400 hover:text-namira-teal hover:bg-teal-50 rounded-xl border border-transparent hover:border-teal-100" title="Edit">
                                             <PencilSquareIcon class="w-4 h-4" />
                                         </Link>
@@ -235,52 +347,6 @@ const formatDate = (d) => {
                             </tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <!-- 2B. MOBILE NATIVE DESTINATION CARDS -->
-            <div class="grid md:hidden grid-cols-1 gap-3.5">
-                <div v-if="destinations.data.length === 0" class="text-center py-12 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-                    <GlobeAltIcon class="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                    <h3 class="text-base font-bold text-slate-900 mb-1">Belum ada destinasi</h3>
-                    <p class="text-xs text-slate-500">Mulai tambahkan destinasi universitas sekolah Anda.</p>
-                </div>
-
-                <div 
-                    v-for="item in destinations.data" 
-                    :key="'mob-'+item.id"
-                    class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm flex flex-col space-y-3"
-                >
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <span class="text-[10px] font-black text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100">
-                                {{ item.unit?.name || 'Yayasan' }}
-                            </span>
-                            <h4 class="font-extrabold text-base text-slate-900 leading-snug mt-1 flex items-center gap-1.5">
-                                <MapPinIcon class="w-4 h-4 text-teal-600 shrink-0" />
-                                {{ item.name }}
-                            </h4>
-                            <p class="text-xs text-slate-500 font-medium mt-0.5 pl-5.5">{{ item.city }}, {{ item.country }}</p>
-                        </div>
-
-                        <span :class="typeBadge(item.type)" class="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border shrink-0">
-                            {{ typeLabel(item.type) }}
-                        </span>
-                    </div>
-
-                    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-                        <span class="text-[11px] text-amber-700 font-bold bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-100">
-                            {{ visitTypeLabel(item.visit_type) }}
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <Link :href="route('public-relations.university-destinations.edit', item.id)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl border border-slate-200 transition-all active:scale-95">
-                                Edit
-                            </Link>
-                            <button @click="confirmDelete(item)" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl border border-rose-200 transition-all active:scale-95">
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -299,6 +365,42 @@ const formatDate = (d) => {
                 </div>
             </div>
         </div>
+
+        <!-- Reject Note Input Modal -->
+        <Teleport to="body">
+            <div v-if="showRejectModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
+                    <h3 class="font-bold text-lg text-gray-900 flex items-center gap-2">
+                        <XCircleIcon class="w-6 h-6 text-rose-600" />
+                        <span>Tolak & Minta Revisi Destinasi</span>
+                    </h3>
+                    <p class="text-xs text-gray-500">Berikan catatan perbaikan agar Humas dapat menyesuaikan data destinasi ini.</p>
+                    <textarea v-model="rejectionNote" rows="4" class="w-full rounded-2xl border-gray-200 text-sm focus:border-rose-500 focus:ring-rose-500/20" placeholder="Tuliskan alasan penolakan / instruksi revisi..."></textarea>
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button @click="showRejectModal = false" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
+                        <button @click="submitReject" :disabled="!rejectionNote.trim()" class="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-lg shadow-rose-500/30 transition-all disabled:opacity-50">Kirim Revisi</button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- View Rejection Note Modal -->
+        <Teleport to="body">
+            <div v-if="showNoteModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
+                    <h3 class="font-bold text-lg text-rose-800 flex items-center gap-2">
+                        <ChatBubbleBottomCenterTextIcon class="w-6 h-6 text-rose-600" />
+                        <span>Catatan Revisi Verifikator</span>
+                    </h3>
+                    <div class="p-4 bg-rose-50 rounded-2xl border border-rose-100 text-sm text-rose-900">
+                        {{ selectedNote }}
+                    </div>
+                    <div class="flex justify-end pt-2">
+                        <button @click="showNoteModal = false" class="px-5 py-2 text-xs font-bold text-white bg-slate-700 hover:bg-slate-800 rounded-xl shadow-sm transition-colors">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
 
         <!-- Delete Modal -->
         <Teleport to="body">

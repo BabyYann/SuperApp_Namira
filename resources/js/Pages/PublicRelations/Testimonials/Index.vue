@@ -4,25 +4,80 @@ import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import {
     MagnifyingGlassIcon, PlusIcon, ChatBubbleLeftRightIcon, PencilSquareIcon, TrashIcon,
-    ExclamationTriangleIcon, UserIcon
+    ExclamationTriangleIcon, UserIcon, CheckCircleIcon, XCircleIcon, ClockIcon,
+    DocumentTextIcon, ChatBubbleBottomCenterTextIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     testimonials: Object,
     units: Array,
+    counts: Object,
+    is_approver: Boolean,
     filters: Object,
 });
 
-const searchQuery = ref(props.filters?.search || '');
-const unitFilter = ref(props.filters?.unit_id || '');
+const searchForm = useForm({
+    search: props.filters?.search || '',
+    unit_id: props.filters?.unit_id || '',
+    approval_status: props.filters?.approval_status || 'all',
+});
 
 const isAdminView = computed(() => props.units && props.units.length > 1);
 
+const filterStatus = (statusKey) => {
+    searchForm.approval_status = statusKey;
+    searchForm.get(route('public-relations.testimonials.index'), {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
 const applyFilters = () => {
-    router.get(route('public-relations.testimonials.index'), {
-        search: searchQuery.value || undefined,
-        unit_id: unitFilter.value || undefined,
-    }, { preserveState: true, preserveScroll: true });
+    searchForm.get(route('public-relations.testimonials.index'), {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
+// Approval / Rejection Logic
+const showRejectModal = ref(false);
+const itemToReject = ref(null);
+const rejectionNote = ref('');
+const actionForm = useForm({
+    rejection_note: '',
+});
+
+const approveItem = (item) => {
+    if (confirm(`Setujui testimoni dari "${item.name}"?`)) {
+        actionForm.post(route('public-relations.testimonials.approve', item.id), {
+            preserveScroll: true,
+        });
+    }
+};
+
+const openRejectModal = (item) => {
+    itemToReject.value = item;
+    rejectionNote.value = '';
+    showRejectModal.value = true;
+};
+
+const submitReject = () => {
+    if (!rejectionNote.value.trim()) return;
+    actionForm.rejection_note = rejectionNote.value;
+    actionForm.post(route('public-relations.testimonials.reject', itemToReject.value.id), {
+        onSuccess: () => {
+            showRejectModal.value = false;
+            itemToReject.value = null;
+        }
+    });
+};
+
+// Rejection Note Modal
+const showNoteModal = ref(false);
+const selectedNote = ref('');
+const viewNote = (note) => {
+    selectedNote.value = note;
+    showNoteModal.value = true;
 };
 
 // Delete Logic
@@ -53,6 +108,19 @@ const successMessage = computed(() => page.props.flash?.success);
 
 const currentPage = computed(() => props.testimonials.current_page || props.testimonials.meta?.current_page || 1);
 const perPage = computed(() => props.testimonials.per_page || props.testimonials.meta?.per_page || 10);
+
+const getApprovalBadge = (status) => {
+    switch (status) {
+        case 'published':
+            return { label: 'Terbit', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+        case 'pending':
+            return { label: 'Menunggu Verifikasi', class: 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' };
+        case 'rejected':
+            return { label: 'Perlu Revisi', class: 'bg-rose-50 text-rose-700 border-rose-200' };
+        default:
+            return { label: 'Draft', class: 'bg-slate-100 text-slate-600 border-slate-200' };
+    }
+};
 </script>
 
 <template>
@@ -64,7 +132,7 @@ const perPage = computed(() => props.testimonials.per_page || props.testimonials
                     <ChatBubbleLeftRightIcon class="w-6 h-6 text-namira-teal" />
                     Testimoni
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Kelola testimoni wali murid, alumni, tokoh masyarakat, dan pihak lainnya.</p>
+                <p class="text-sm text-gray-500 mt-1">Kelola dan verifikasi testimoni wali murid, alumni, dan tokoh masyarakat.</p>
             </div>
         </template>
 
@@ -78,6 +146,58 @@ const perPage = computed(() => props.testimonials.per_page || props.testimonials
                 </div>
             </transition>
 
+            <!-- STATUS FILTER TABS -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                <button 
+                    @click="filterStatus('all')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="(searchForm.approval_status === 'all' || !searchForm.approval_status) ? 'bg-namira-teal text-white shadow-namira-teal/20' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'"
+                >
+                    <span>Semua Testimoni</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="(searchForm.approval_status === 'all' || !searchForm.approval_status) ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'">{{ counts?.all || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('pending')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'pending' ? 'bg-amber-500 text-white shadow-amber-500/20' : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200'"
+                >
+                    <ClockIcon class="w-4 h-4" />
+                    <span>Menunggu Verifikasi</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'pending' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'">{{ counts?.pending || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('published')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'published' ? 'bg-emerald-600 text-white shadow-emerald-600/20' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'"
+                >
+                    <CheckCircleIcon class="w-4 h-4" />
+                    <span>Terbit</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'published' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">{{ counts?.published || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('rejected')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'rejected' ? 'bg-rose-600 text-white shadow-rose-600/20' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'"
+                >
+                    <XCircleIcon class="w-4 h-4" />
+                    <span>Perlu Revisi</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'">{{ counts?.rejected || 0 }}</span>
+                </button>
+
+                <button 
+                    @click="filterStatus('draft')"
+                    class="px-4 py-2.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shadow-sm"
+                    :class="searchForm.approval_status === 'draft' ? 'bg-slate-700 text-white shadow-slate-700/20' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'"
+                >
+                    <DocumentTextIcon class="w-4 h-4" />
+                    <span>Draft</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]" :class="searchForm.approval_status === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'">{{ counts?.draft || 0 }}</span>
+                </button>
+            </div>
+
             <!-- Toolbar -->
             <div class="flex flex-col md:flex-row items-stretch gap-3">
                 <!-- Search -->
@@ -86,7 +206,7 @@ const perPage = computed(() => props.testimonials.per_page || props.testimonials
                         <MagnifyingGlassIcon class="w-5 h-5" />
                     </div>
                     <input
-                        v-model="searchQuery"
+                        v-model="searchForm.search"
                         @keyup.enter="applyFilters"
                         type="text"
                         placeholder="Cari nama atau isi kutipan..."
@@ -95,7 +215,7 @@ const perPage = computed(() => props.testimonials.per_page || props.testimonials
                 </div>
 
                 <!-- Filter Unit (admin only) -->
-                <select v-if="isAdminView" v-model="unitFilter" @change="applyFilters" class="h-[46px] rounded-2xl border-white/50 bg-white/50 text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm px-3 pr-8">
+                <select v-if="isAdminView" v-model="searchForm.unit_id" @change="applyFilters" class="h-[46px] rounded-2xl border-white/50 bg-white/50 text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm px-3 pr-8">
                     <option value="">Semua Unit</option>
                     <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
                 </select>
@@ -118,7 +238,7 @@ const perPage = computed(() => props.testimonials.per_page || props.testimonials
                                 <th class="p-5">Nama</th>
                                 <th class="p-5">Peran / Jabatan</th>
                                 <th class="p-5">Kutipan Testimoni</th>
-                                <th class="p-5">Status Aktif</th>
+                                <th class="p-5">Status Verifikasi</th>
                                 <th class="p-5 text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -162,13 +282,29 @@ const perPage = computed(() => props.testimonials.per_page || props.testimonials
                                     <p class="line-clamp-2 italic">"{{ item.quote }}"</p>
                                 </td>
                                 <td class="p-5">
-                                    <span :class="item.is_active ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-50 text-gray-500 border-gray-100'"
-                                        class="px-3 py-1 rounded-xl text-xs font-bold border shadow-sm">
-                                        {{ item.is_active ? 'Aktif' : 'Non-Aktif' }}
-                                    </span>
+                                    <div class="flex flex-col gap-1">
+                                        <span :class="getStatusBadge(item.approval_status).class" class="px-3 py-1 rounded-xl text-xs font-bold border shadow-sm w-fit">
+                                            {{ getStatusBadge(item.approval_status).label }}
+                                        </span>
+                                        <button v-if="item.approval_status === 'rejected' && item.rejection_note" @click="viewNote(item.rejection_note)" class="text-[11px] text-rose-600 underline font-medium hover:text-rose-800 text-left">
+                                            Lihat Catatan Revisi
+                                        </button>
+                                    </div>
                                 </td>
                                 <td class="p-5 text-right">
-                                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                    <div class="flex justify-end items-center gap-2">
+                                        <!-- Verifier Quick Actions -->
+                                        <template v-if="is_approver && item.approval_status === 'pending'">
+                                            <button @click="approveItem(item)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                                                <CheckCircleIcon class="w-4 h-4" />
+                                                <span>Setujui</span>
+                                            </button>
+                                            <button @click="openRejectModal(item)" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                                                <XCircleIcon class="w-4 h-4" />
+                                                <span>Tolak</span>
+                                            </button>
+                                        </template>
+
                                         <Link :href="route('public-relations.testimonials.edit', item.id)"
                                             class="p-2.5 text-gray-400 hover:text-namira-teal hover:bg-teal-50 rounded-xl transition-all duration-200 border border-transparent hover:border-teal-100"
                                             title="Edit">
@@ -202,6 +338,42 @@ const perPage = computed(() => props.testimonials.per_page || props.testimonials
                 </div>
             </div>
         </div>
+
+        <!-- Reject Note Input Modal -->
+        <Teleport to="body">
+            <div v-if="showRejectModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
+                    <h3 class="font-bold text-lg text-gray-900 flex items-center gap-2">
+                        <XCircleIcon class="w-6 h-6 text-rose-600" />
+                        <span>Tolak & Minta Revisi Testimoni</span>
+                    </h3>
+                    <p class="text-xs text-gray-500">Berikan catatan perbaikan agar Humas dapat menyesuaikan testimoni ini.</p>
+                    <textarea v-model="rejectionNote" rows="4" class="w-full rounded-2xl border-gray-200 text-sm focus:border-rose-500 focus:ring-rose-500/20" placeholder="Tuliskan alasan penolakan / instruksi revisi..."></textarea>
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button @click="showRejectModal = false" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
+                        <button @click="submitReject" :disabled="!rejectionNote.trim()" class="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-lg shadow-rose-500/30 transition-all disabled:opacity-50">Kirim Revisi</button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- View Rejection Note Modal -->
+        <Teleport to="body">
+            <div v-if="showNoteModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
+                    <h3 class="font-bold text-lg text-rose-800 flex items-center gap-2">
+                        <ChatBubbleBottomCenterTextIcon class="w-6 h-6 text-rose-600" />
+                        <span>Catatan Revisi Verifikator</span>
+                    </h3>
+                    <div class="p-4 bg-rose-50 rounded-2xl border border-rose-100 text-sm text-rose-900">
+                        {{ selectedNote }}
+                    </div>
+                    <div class="flex justify-end pt-2">
+                        <button @click="showNoteModal = false" class="px-5 py-2 text-xs font-bold text-white bg-slate-700 hover:bg-slate-800 rounded-xl shadow-sm transition-colors">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
 
         <!-- Delete Modal -->
         <Teleport to="body">

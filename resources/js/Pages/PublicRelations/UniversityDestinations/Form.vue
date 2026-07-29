@@ -2,17 +2,24 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { InformationCircleIcon, ExclamationCircleIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/vue/24/outline';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const props = defineProps({
     destination: Object,
     units: Array,
+    is_approver: Boolean,
 });
 
 const isEdit = computed(() => !!props.destination);
 const page = usePage();
 const currentUser = page.props.auth.user;
+
+const defaultApprovalStatus = computed(() => {
+    if (props.destination?.approval_status) return props.destination.approval_status;
+    return props.is_approver ? 'published' : 'pending';
+});
 
 const form = useForm({
     unit_id: props.destination?.unit_id || currentUser.unit_id || '',
@@ -25,6 +32,7 @@ const form = useForm({
     lng: props.destination?.lng !== null && props.destination?.lng !== undefined ? String(props.destination.lng) : '',
     visit_date: props.destination?.visit_date ? String(props.destination.visit_date).substring(0, 10) : '',
     description: props.destination?.description || '',
+    approval_status: defaultApprovalStatus.value,
     is_active: props.destination?.is_active !== undefined ? props.destination.is_active : true,
     _method: isEdit.value ? 'PUT' : 'POST',
 });
@@ -189,7 +197,12 @@ watch(() => form.country, (val) => {
 
 const charCount = computed(() => form.description.length);
 
-const submit = () => {
+const submitWithStatus = (targetStatus) => {
+    form.approval_status = targetStatus;
+    submitForm();
+};
+
+const submitForm = () => {
     if (isEdit.value) {
         form.post(route('public-relations.university-destinations.update', props.destination.id));
     } else {
@@ -204,14 +217,25 @@ const submit = () => {
         <template #header>
             <div class="flex flex-col gap-1">
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
-                    {{ isEdit ? 'Edit Destinasi Universitas' : 'Tambah Destinasi Universitas' }}
+                    {{ isEdit ? 'Edit Destinasi Universitas' : 'Tambah Destinasi Universitas Baru' }}
                 </h2>
-                <p class="text-sm text-gray-500">Kelola data kunjungan dan destinasi universitas.</p>
+                <p class="text-sm text-gray-500">Kelola data kunjungan dan destinasi universitas unit sekolah Anda.</p>
             </div>
         </template>
 
-        <div class="py-6 max-w-5xl mx-auto">
-            <form @submit.prevent="submit" class="space-y-6">
+        <div class="py-6 max-w-5xl mx-auto space-y-6">
+
+            <!-- Rejection Note Alert Banner if status is rejected -->
+            <div v-if="isEdit && destination.approval_status === 'rejected' && destination.rejection_note" class="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                <ExclamationCircleIcon class="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                    <h4 class="font-bold text-rose-800 text-sm">Catatan Revisi dari Verifikator</h4>
+                    <p class="text-xs text-rose-700 mt-1">{{ destination.rejection_note }}</p>
+                    <p class="text-[11px] text-rose-500 mt-2 font-medium">Silakan perbaiki data destinasi sesuai catatan di atas, lalu klik "Ajukan Verifikasi" untuk meninjau ulang.</p>
+                </div>
+            </div>
+
+            <form @submit.prevent="submitForm" class="space-y-6">
 
                 <!-- Card: Info Dasar -->
                 <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -271,7 +295,7 @@ const submit = () => {
                                 <p v-if="form.errors.visit_date" class="text-xs text-red-600 mt-1">{{ form.errors.visit_date }}</p>
                             </div>
                             <div class="flex flex-col justify-between">
-                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status Tampilan</label>
                                 <label class="flex items-center gap-3 cursor-pointer group">
                                     <div class="relative">
                                         <input type="checkbox" v-model="form.is_active" class="sr-only" />
@@ -292,6 +316,24 @@ const submit = () => {
                             <p class="text-xs text-gray-400 mt-1 text-right">{{ charCount }}/1000</p>
                             <p v-if="form.errors.description" class="text-xs text-red-600 mt-1">{{ form.errors.description }}</p>
                         </div>
+
+                        <!-- Status Options based on Role -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status Publikasi Verifikasi</label>
+                            
+                            <div v-if="is_approver" class="space-y-2">
+                                <select v-model="form.approval_status" class="w-full rounded-xl border-gray-200 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 text-sm" required>
+                                    <option value="published">Terbitkan Langsung (Published)</option>
+                                    <option value="pending">Menunggu Verifikasi (Pending)</option>
+                                    <option value="draft">Simpan Sebagai Draft</option>
+                                </select>
+                            </div>
+                            <div v-else class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 space-y-1">
+                                <p class="font-bold flex items-center gap-1.5"><InformationCircleIcon class="w-4 h-4 text-amber-600" /> Alur Publikasi Destinasi Humas:</p>
+                                <p>Data destinasi yang Anda simpan akan masuk ke status <strong>"Menunggu Verifikasi"</strong> terlebih dahulu untuk ditinjau oleh Verifikator (Pengawas / Humas Yayasan) sebelum tayang di website publik.</p>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -399,18 +441,29 @@ const submit = () => {
                 </div>
 
                 <!-- Actions -->
-                <div class="flex justify-end gap-3 pt-2">
+                <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
                     <Link :href="route('public-relations.university-destinations.index')"
                         class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">
                         Batal
                     </Link>
+
+                    <button 
+                        v-if="!is_approver"
+                        type="button" 
+                        @click="submitWithStatus('draft')" 
+                        :disabled="form.processing" 
+                        class="px-5 py-2.5 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
+                    >
+                        Simpan Draft
+                    </button>
+
                     <button type="submit" :disabled="form.processing"
                         class="px-6 py-2.5 bg-namira-teal text-white rounded-xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center gap-2">
                         <svg v-if="form.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                         </svg>
-                        {{ form.processing ? 'Menyimpan...' : (isEdit ? 'Perbarui Destinasi' : 'Simpan Destinasi') }}
+                        {{ form.processing ? 'Menyimpan...' : (is_approver ? (isEdit ? 'Perbarui Destinasi' : 'Simpan Destinasi') : 'Ajukan Verifikasi') }}
                     </button>
                 </div>
 

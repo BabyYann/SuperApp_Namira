@@ -2,24 +2,30 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { ChatBubbleLeftRightIcon, UserIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { ChatBubbleLeftRightIcon, UserIcon, ArrowLeftIcon, InformationCircleIcon, ExclamationCircleIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     testimonial: Object,
     units: Array,
+    is_approver: Boolean,
 });
 
 const isEdit = computed(() => !!props.testimonial);
 const page = usePage();
 const currentUser = page.props.auth.user;
 
+const defaultApprovalStatus = computed(() => {
+    if (props.testimonial?.approval_status) return props.testimonial.approval_status;
+    return props.is_approver ? 'published' : 'pending';
+});
+
 const form = useForm({
     unit_id: props.testimonial?.unit_id || currentUser.unit_id || '',
     name: props.testimonial?.name || '',
     role_or_title: props.testimonial?.role_or_title || '',
     quote: props.testimonial?.quote || '',
+    approval_status: defaultApprovalStatus.value,
     photo: null,
-    is_active: props.testimonial?.is_active !== undefined ? !!props.testimonial.is_active : true,
     _method: isEdit.value ? 'PUT' : 'POST',
 });
 
@@ -35,7 +41,12 @@ const onFileChange = (e) => {
 
 const charCount = computed(() => form.quote.length);
 
-const submit = () => {
+const submitWithStatus = (targetStatus) => {
+    form.approval_status = targetStatus;
+    submitForm();
+};
+
+const submitForm = () => {
     if (isEdit.value) {
         form.post(route('public-relations.testimonials.update', props.testimonial.id));
     } else {
@@ -51,14 +62,25 @@ const submit = () => {
             <div class="flex flex-col gap-1">
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight flex items-center gap-2">
                     <ChatBubbleLeftRightIcon class="w-6 h-6 text-namira-teal" />
-                    {{ isEdit ? 'Edit Testimoni' : 'Tambah Testimoni' }}
+                    {{ isEdit ? 'Edit Testimoni' : 'Tambah Testimoni Baru' }}
                 </h2>
-                <p class="text-sm text-gray-500">Kelola testimoni wali murid, alumni, tokoh masyarakat, dan pihak lainnya.</p>
+                <p class="text-sm text-gray-500">Kelola testimoni wali murid, alumni, dan tokoh masyarakat.</p>
             </div>
         </template>
 
-        <div class="py-6 max-w-3xl mx-auto">
-            <form @submit.prevent="submit" class="space-y-6">
+        <div class="py-6 max-w-3xl mx-auto space-y-6">
+
+            <!-- Rejection Note Alert Banner if status is rejected -->
+            <div v-if="isEdit && testimonial.approval_status === 'rejected' && testimonial.rejection_note" class="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                <ExclamationCircleIcon class="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                    <h4 class="font-bold text-rose-800 text-sm">Catatan Revisi dari Verifikator</h4>
+                    <p class="text-xs text-rose-700 mt-1">{{ testimonial.rejection_note }}</p>
+                    <p class="text-[11px] text-rose-500 mt-2 font-medium">Silakan perbaiki testimoni sesuai catatan di atas, lalu klik "Ajukan Verifikasi" untuk meninjau ulang.</p>
+                </div>
+            </div>
+
+            <form @submit.prevent="submitForm" class="space-y-6">
 
                 <!-- Card Form -->
                 <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -129,36 +151,51 @@ const submit = () => {
                             </div>
                         </div>
 
-                        <!-- Status Aktif -->
-                        <div class="flex flex-col gap-2 pt-2">
-                            <label class="block text-sm font-semibold text-gray-700">Status Aktif</label>
-                            <label class="flex items-center gap-3 cursor-pointer group">
-                                <div class="relative">
-                                    <input type="checkbox" v-model="form.is_active" class="sr-only" />
-                                    <div :class="form.is_active ? 'bg-namira-teal' : 'bg-gray-200'" class="w-11 h-6 rounded-full transition-colors duration-200"></div>
-                                    <div :class="form.is_active ? 'translate-x-5' : 'translate-x-0'" class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"></div>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700">{{ form.is_active ? 'Aktif (ditampilkan di halaman depan)' : 'Non-Aktif (disembunyikan)' }}</span>
-                            </label>
+                        <!-- Status Options based on Role -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Status Publikasi Verifikasi</label>
+                            
+                            <div v-if="is_approver" class="space-y-2">
+                                <select v-model="form.approval_status" class="w-full rounded-xl border-gray-200 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 text-sm" required>
+                                    <option value="published">Terbitkan Langsung (Published)</option>
+                                    <option value="pending">Menunggu Verifikasi (Pending)</option>
+                                    <option value="draft">Simpan Sebagai Draft</option>
+                                </select>
+                            </div>
+                            <div v-else class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 space-y-1">
+                                <p class="font-bold flex items-center gap-1.5"><InformationCircleIcon class="w-4 h-4 text-amber-600" /> Alur Publikasi Testimoni Humas:</p>
+                                <p>Testimoni yang Anda simpan akan masuk ke status <strong>"Menunggu Verifikasi"</strong> terlebih dahulu untuk ditinjau oleh Verifikator (Pengawas / Humas Yayasan) sebelum tayang di website publik.</p>
+                            </div>
                         </div>
 
                     </div>
                 </div>
 
                 <!-- Actions -->
-                <div class="flex justify-end gap-3">
+                <div class="flex flex-wrap items-center justify-end gap-3">
                     <Link :href="route('public-relations.testimonials.index')"
                         class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors text-sm flex items-center gap-1.5">
                         <ArrowLeftIcon class="w-4 h-4" />
                         Batal
                     </Link>
+
+                    <button 
+                        v-if="!is_approver"
+                        type="button" 
+                        @click="submitWithStatus('draft')" 
+                        :disabled="form.processing" 
+                        class="px-5 py-2.5 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-800 transition-all text-sm disabled:opacity-50"
+                    >
+                        Simpan Draft
+                    </button>
+
                     <button type="submit" :disabled="form.processing"
                         class="px-6 py-2.5 bg-namira-teal text-white rounded-xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center gap-2 text-sm">
                         <svg v-if="form.processing" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                         </svg>
-                        {{ form.processing ? 'Menyimpan...' : (isEdit ? 'Perbarui Testimoni' : 'Simpan Testimoni') }}
+                        {{ form.processing ? 'Menyimpan...' : (is_approver ? (isEdit ? 'Perbarui Testimoni' : 'Simpan Testimoni') : 'Ajukan Verifikasi') }}
                     </button>
                 </div>
 

@@ -8,7 +8,9 @@ class UniversityDestination extends Model
 {
     protected $fillable = [
         'unit_id', 'name', 'city', 'country', 'type', 'visit_type',
-        'lat', 'lng', 'visit_date', 'description', 'is_active', 'created_by',
+        'lat', 'lng', 'visit_date', 'description', 
+        'approval_status', 'rejection_note', 'approved_by', 'approved_at',
+        'is_active', 'created_by',
     ];
 
     protected $casts = [
@@ -16,6 +18,7 @@ class UniversityDestination extends Model
         'lng' => 'float',
         'is_active' => 'boolean',
         'visit_date' => 'date',
+        'approved_at' => 'datetime',
     ];
 
     public function unit(): BelongsTo {
@@ -24,5 +27,9 @@ class UniversityDestination extends Model
 
     public function creator(): BelongsTo {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function approver(): BelongsTo {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }
