@@ -198,19 +198,13 @@ onMounted(() => {
     <StudentLayout title="Beranda">
         <div class="max-w-7xl mx-auto pb-24 relative">
             
-            <!-- Global Background Ambience -->
-            <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-                <div class="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-namira-teal/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-                <div class="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] animate-pulse-slower"></div>
-            </div>
-
             <!-- 1. Header & Personal Assistant Widget -->
             <header class="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                            {{ todayDate }}
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                            <CalendarDaysIcon class="w-4 h-4 text-teal-600" />
+                            <span>{{ todayDate }}</span>
                         </p>
                         <h1 class="text-4xl font-black text-slate-800 tracking-tight leading-tight">
                             {{ greeting }}, <span class="bg-gradient-to-r from-namira-teal to-teal-600 bg-clip-text text-transparent">{{ $page.props.auth.user.name.split(' ')[0] }}</span>!
@@ -220,11 +214,10 @@ onMounted(() => {
 
                     <!-- "What's Next" / Smart Notification -->
                     <div class="relative group cursor-pointer">
-                        <div class="absolute inset-0 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
-                        <div class="relative bg-white/60 backdrop-blur-md border border-white/50 p-4 rounded-2xl shadow-sm flex items-center gap-4 min-w-[300px] hover:scale-[1.02] transition-transform">
+                        <div class="relative bg-white/80 backdrop-blur-md border border-slate-200/80 p-4 rounded-2xl shadow-sm flex items-center gap-4 min-w-[300px] hover:scale-[1.01] transition-transform">
                             <div class="p-3 bg-pink-50 text-pink-600 rounded-xl">
-                                <BoltIcon v-if="activeBill" class="w-6 h-6 animate-bounce-slow" />
-                                <SparklesIcon v-else class="w-6 h-6" />
+                                <BoltIcon v-if="activeBill" class="w-6 h-6 text-pink-600" />
+                                <SparklesIcon v-else class="w-6 h-6 text-teal-600" />
                             </div>
                             <div>
                                 <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PENGINGAT PINTAR</h4>
