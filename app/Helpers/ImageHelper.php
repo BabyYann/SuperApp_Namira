@@ -83,8 +83,14 @@ class ImageHelper
         // 6. Save as webp to temp directory
         imagewebp($target, $tempPath, $quality);
 
-        // 7. Store it to Laravel public disk
+        // 7. Store directly to public/storage/ (bypasses symlink requirement on shared hosting)
         $finalPath = $directory . '/' . $filename;
+        $targetDir = public_path('storage/' . $directory);
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+        copy($tempPath, $targetDir . '/' . $filename);
+        // Also store via Laravel disk for backward compat
         Storage::disk('public')->putFileAs($directory, new \Illuminate\Http\File($tempPath), $filename);
 
         // 8. Clean up resources
