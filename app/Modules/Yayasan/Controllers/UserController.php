@@ -19,7 +19,7 @@ class UserController extends Controller
 
         // Unit Isolation Check
         $currentUser = auth()->user();
-        if (!$currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+        if (!$currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
             $unitId = session('active_unit_id');
             $query->whereExists(function ($q) use ($unitId) {
                 $q->select(\DB::raw(1))
@@ -83,7 +83,7 @@ class UserController extends Controller
 
         return Inertia::render('Yayasan/Users/Index', [
             'users' => $users,
-            'units' => auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) ? Unit::all() : Unit::where('id', session('active_unit_id'))->get(),
+            'units' => auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) ? Unit::all() : Unit::where('id', session('active_unit_id'))->get(),
             'roles' => Role::where('name', '!=', 'super_admin_yayasan')->pluck('name'),
             'filters' => $request->only(['search', 'role', 'unit_id']),
         ]);
@@ -91,7 +91,7 @@ class UserController extends Controller
 
     public function create()
     {
-        $units = auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) 
+        $units = auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) 
             ? Unit::all() 
             : Unit::where('id', session('active_unit_id'))->get();
 
@@ -104,14 +104,16 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
 
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|string|exists:roles,name',
-            'unit_id' => 'nullable|exists:units,id', // Optional if global role
+            'roles' => 'required_without:role|array|min:1',
+            'roles.*' => 'string|exists:roles,name',
+            'role' => 'nullable|string|exists:roles,name',
+            'unit_id' => 'nullable|exists:units,id',
         ]);
 
         if (!$isGlobalAdmin) {
@@ -127,19 +129,22 @@ class UserController extends Controller
             'email_verified_at' => now(), // Auto-verify since Admin created it
         ]);
 
+        $roles = $request->roles ?? ($request->role ? [$request->role] : []);
+
         // Assist Assign Role based on Unit
         if ($request->unit_id) {
-            // Assign Role SCOPED to Unit (Team)
+            // Assign Roles SCOPED to Unit (Team)
             setPermissionsTeamId($request->unit_id);
-            $user->assignRole($request->role);
+            $user->assignRole($roles);
 
-            // Auto-Create Academic/Staff Profile (Reverse Sync)
-            $this->syncUserProfile($user, $request->role, $request->unit_id);
-
+            // Auto-Create Academic/Staff Profile (Reverse Sync) for each role
+            foreach ($roles as $role) {
+                $this->syncUserProfile($user, $role, $request->unit_id);
+            }
         } else {
-            // Assign Global Role (No Team)
+            // Assign Global Roles (No Team)
             setPermissionsTeamId(null);
-            $user->assignRole($request->role);
+            $user->assignRole($roles);
         }
         
         // Reset Team ID to avoid polluting current session
@@ -151,17 +156,17 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
 
-        // Logic to Determine their main unit (simplified for now)
-        // Check roles with team_id
-        $roleInfo = \DB::table('model_has_roles')
+        // Fetch all current roles & team_id
+        $roleInfos = \DB::table('model_has_roles')
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->where('model_id', $user->id)
             ->select('model_has_roles.team_id', 'roles.name as role_name')
-            ->first();
+            ->get();
         
-        $targetUnitId = $roleInfo ? $roleInfo->team_id : null;
+        $currentRoles = $roleInfos->pluck('role_name')->toArray();
+        $targetUnitId = $roleInfos->first() ? $roleInfos->first()->team_id : null;
 
         if (!$isGlobalAdmin) {
             if ($targetUnitId != session('active_unit_id')) {
@@ -174,7 +179,7 @@ class UserController extends Controller
         return Inertia::render('Yayasan/Users/Edit', [
               'user' => $user,
               'currentUnitId' => $targetUnitId,
-              'currentRole' => $roleInfo ? $roleInfo->role_name : null,
+              'currentRoles' => $currentRoles,
               'units' => $units,
               'roles' => Role::where('name', '!=', 'super_admin_yayasan')->pluck('name'),
         ]);
@@ -183,7 +188,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
 
         $oldUnitId = \DB::table('model_has_roles')
             ->where('model_id', $user->id)
@@ -201,7 +206,9 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'role' => 'required|string|exists:roles,name',
+            'roles' => 'required_without:role|array|min:1',
+            'roles.*' => 'string|exists:roles,name',
+            'role' => 'nullable|string|exists:roles,name',
             'unit_id' => 'nullable|exists:units,id',
         ]);
         
@@ -210,20 +217,23 @@ class UserController extends Controller
             'email' => $request->email,
         ]);
 
+        $roles = $request->roles ?? ($request->role ? [$request->role] : []);
+
         // Revoke all previous roles to keep it clean (force delete from pivot)
         \DB::table('model_has_roles')->where('model_id', $user->id)->delete();
 
         if ($request->unit_id) {
             setPermissionsTeamId($request->unit_id);
-            $user->assignRole($request->role);
+            $user->assignRole($roles);
             
             // Sync Profile Data (Create or Update)
-            $this->syncUserProfile($user, $request->role, $request->unit_id);
-
+            foreach ($roles as $role) {
+                $this->syncUserProfile($user, $role, $request->unit_id);
+            }
         } else {
              // Important: If unit_id is null, we must explicitly set team_id to null
             setPermissionsTeamId(null);
-            $user->assignRole($request->role);
+            $user->assignRole($roles);
         }
         
         // Reset Team ID to prevent session pollution
@@ -239,7 +249,7 @@ class UserController extends Controller
         }
 
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
 
         if (!$isGlobalAdmin) {
             $userUnitId = \DB::table('model_has_roles')

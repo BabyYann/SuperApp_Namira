@@ -11,6 +11,7 @@ const props = defineProps({
     user: Object,
     currentUnitId: Number,
     currentRole: String,
+    currentRoles: Array,
     units: Array,
     roles: Array,
 });
@@ -19,7 +20,7 @@ const form = useForm({
     _method: 'PUT',
     name: props.user.name,
     email: props.user.email,
-    role: props.currentRole,
+    roles: props.currentRoles || (props.currentRole ? [props.currentRole] : []),
     unit_id: props.currentUnitId,
 });
 
@@ -101,14 +102,14 @@ const submitResetPassword = () => {
                             </div>
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900">Hak Akses & Unit</h3>
-                                <p class="text-sm text-gray-500">Tentukan wewenang dan wilayah kerja pengguna ini.</p>
+                                <p class="text-sm text-gray-500">Tentukan wewenang dan wilayah kerja pengguna ini (Bisa memilih lebih dari 1 role).</p>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-6">
                             <div>
                                 <InputLabel for="unit_id" value="Unit Penugasan" class="mb-2" />
-                                <div class="relative">
+                                <div class="relative max-w-md">
                                     <select id="unit_id" v-model="form.unit_id" class="appearance-none block w-full pl-4 pr-10 py-3 text-base border-gray-200 focus:outline-none focus:ring-namira-teal focus:border-namira-teal sm:text-sm rounded-xl bg-white/50 backdrop-blur-sm transition-all shadow-sm">
                                         <option value="">Global / Yayasan (Super Admin)</option>
                                         <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
@@ -119,18 +120,30 @@ const submitResetPassword = () => {
                                 </div>
                                 <InputError :message="form.errors.unit_id" class="mt-2" />
                             </div>
+
                             <div>
-                                <InputLabel for="role" value="Role" class="mb-2" />
-                                <div class="relative">
-                                    <select id="role" v-model="form.role" class="appearance-none block w-full pl-4 pr-10 py-3 text-base border-gray-200 focus:outline-none focus:ring-namira-teal focus:border-namira-teal sm:text-sm rounded-xl bg-white/50 backdrop-blur-sm transition-all shadow-sm" required>
-                                        <option value="">Pilih Role...</option>
-                                        <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                                        <ChevronUpDownIcon class="h-4 w-4" />
-                                    </div>
+                                <InputLabel value="Role / Peran Pengguna (Dapat memilih lebih dari 1)" class="mb-3" />
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    <label 
+                                        v-for="role in roles" 
+                                        :key="role"
+                                        class="flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer select-none"
+                                        :class="form.roles.includes(role) 
+                                            ? 'bg-teal-50/80 border-namira-teal/50 ring-2 ring-namira-teal/20 text-teal-900 font-bold shadow-sm' 
+                                            : 'bg-white/60 border-gray-200/80 text-gray-700 hover:bg-gray-50 hover:border-gray-300'"
+                                    >
+                                        <input 
+                                            type="checkbox" 
+                                            :value="role" 
+                                            v-model="form.roles" 
+                                            class="w-4 h-4 text-namira-teal rounded border-gray-300 focus:ring-namira-teal transition-all" 
+                                        />
+                                        <span class="text-sm font-medium capitalize">
+                                            {{ role.replace(/_/g, ' ') }}
+                                        </span>
+                                    </label>
                                 </div>
-                                <InputError :message="form.errors.role" class="mt-2" />
+                                <InputError :message="form.errors.roles" class="mt-2" />
                             </div>
                         </div>
                     </div>

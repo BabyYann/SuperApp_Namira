@@ -15,6 +15,9 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 
+use App\Models\StudentAttendance;
+use App\Modules\Academic\Models\StudentCheckin;
+
 class TeachingJournalController extends Controller
 {
     public function index(Request $request)
@@ -103,23 +106,73 @@ class TeachingJournalController extends Controller
 
             $classroom = $schedule->classroom;
             $subject = $schedule->subject;
-        } else {
-            // Ad-hoc mode (Manual select) - To be implemented if needed
-            // For now, we assume entry via Schedule
         }
 
         if ($classroom && $subject) {
-            // Fetch Students
+            // Fetch Daily Attendance & Gate Checkins for auto-population
+            $dailyAttendances = StudentAttendance::where('classroom_id', $classroom->id)
+                ->whereDate('date', $date)
+                ->get()
+                ->keyBy('student_id');
+
+            $gateCheckins = StudentCheckin::whereDate('checkin_date', $date)
+                ->get()
+                ->keyBy('student_id');
+
+            // Fetch Students with Auto-Populated Statuses
             $students = Student::where('classroom_id', $classroom->id)
                 ->orderBy('full_name')
-                ->get(['id', 'full_name as name', 'nis']);
+                ->get(['id', 'full_name as name', 'nis'])
+                ->map(function ($s) use ($dailyAttendances, $gateCheckins) {
+                    $daily = $dailyAttendances->get($s->id);
+                    $gate  = $gateCheckins->get($s->id);
+
+                    $defaultStatus = 'present';
+                    $defaultNote   = '';
+                    $sourceBadge   = null;
+
+                    if ($daily) {
+                        if ($daily->status === 'S') {
+                            $defaultStatus = 'sick';
+                            $defaultNote   = $daily->note ?: 'Sakit (Wali Kelas)';
+                            $sourceBadge   = 'Sakit (Wali Kelas)';
+                        } elseif ($daily->status === 'I') {
+                            $defaultStatus = 'permission';
+                            $defaultNote   = $daily->note ?: 'Izin (Wali Kelas)';
+                            $sourceBadge   = 'Izin (Wali Kelas)';
+                        } elseif ($daily->status === 'A') {
+                            $defaultStatus = 'alpha';
+                            $defaultNote   = 'Alpha (Wali Kelas)';
+                            $sourceBadge   = 'Alpha (Wali Kelas)';
+                        } elseif ($daily->status === 'H') {
+                            $defaultStatus = 'present';
+                            $defaultNote   = $daily->note ?: 'Hadir (Wali Kelas)';
+                            $sourceBadge   = 'Hadir (Wali Kelas)';
+                        }
+                    }
+
+                    if ($gate && !$sourceBadge) {
+                        $defaultStatus = $gate->status === 'terlambat' ? 'late' : 'present';
+                        $defaultNote   = "Scan Gerbang {$gate->checkin_time} WIB";
+                        $sourceBadge   = "Scan Gerbang {$gate->checkin_time}";
+                    }
+
+                    return [
+                        'id'             => $s->id,
+                        'name'           => $s->name,
+                        'nis'            => $s->nis,
+                        'default_status' => $defaultStatus,
+                        'default_note'   => $defaultNote,
+                        'source_badge'   => $sourceBadge,
+                    ];
+                });
 
             // Fetch Existing TPs grouped by Chapter
             $chapters = Chapter::with(['learningObjectives' => function($q) {
                 $q->select('id', 'chapter_id', 'code', 'description');
             }])
             ->where('subject_id', $subject->id)
-            ->where('semester', session('active_semester', '1')) // Assuming active semester
+            ->where('semester', session('active_semester', '1'))
             ->get();
         }
 

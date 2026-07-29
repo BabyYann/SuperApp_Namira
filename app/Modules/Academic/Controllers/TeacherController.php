@@ -33,6 +33,12 @@ class TeacherController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        // Fetch registered users who don't have a teacher profile in this unit yet
+        $existingTeacherUserIds = Teacher::where('unit_id', $unitId)->pluck('user_id')->filter()->toArray();
+        $availableUsers = User::whereNotIn('id', $existingTeacherUserIds)
+            ->latest()
+            ->get(['id', 'name', 'email']);
+
         // Statistics
         $totalTeachers = Teacher::where('unit_id', $unitId)->count();
         $countL = Teacher::where('unit_id', $unitId)->where('gender', 'L')->count();
@@ -40,6 +46,7 @@ class TeacherController extends Controller
 
         return Inertia::render('Academic/Teachers/Index', [
             'teachers' => $teachers,
+            'availableUsers' => $availableUsers,
             'filters' => request()->only(['search', 'gender']),
             'stats' => [
                 'total' => $totalTeachers,
@@ -58,8 +65,9 @@ class TeacherController extends Controller
         $unitId = session('active_unit_id') ?? \App\Modules\Yayasan\Models\Unit::first()->id;
         
         $validated = $request->validate([
+            'user_id' => 'nullable|exists:users,id',
             'full_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required_without:user_id|nullable|email',
             'nip' => 'nullable|string|max:20',
             'gender' => 'required|in:L,P',
             'phone' => 'nullable|string|max:20',
@@ -69,16 +77,20 @@ class TeacherController extends Controller
         try {
             \DB::transaction(function () use ($validated, $unitId, $request) {
                 // 1. Find or Create User
-                $user = User::where('email', $validated['email'])->first();
+                if (!empty($validated['user_id'])) {
+                    $user = User::findOrFail($validated['user_id']);
+                } else {
+                    $user = User::where('email', $validated['email'])->first();
 
-                if (!$user) {
-                    // Generate password from NIP or default
-                    $password = $validated['nip'] ? $validated['nip'] : 'guru123';
-                    $user = User::create([
-                        'name' => $validated['full_name'],
-                        'email' => $validated['email'],
-                        'password' => Hash::make($password), 
-                    ]);
+                    if (!$user) {
+                        // Generate password from NIP or default
+                        $password = !empty($validated['nip']) ? $validated['nip'] : 'guru123';
+                        $user = User::create([
+                            'name' => $validated['full_name'],
+                            'email' => $validated['email'],
+                            'password' => Hash::make($password), 
+                        ]);
+                    }
                 }
                 
                 // Assign role if not exists
@@ -107,7 +119,7 @@ class TeacherController extends Controller
 
             return redirect()->back()->with('success', 'Guru berhasil ditambahkan.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menambahkan guru. Silakan coba lagi.');
+            return redirect()->back()->with('error', 'Gagal menambahkan guru: ' . $e->getMessage());
         }
     }
 

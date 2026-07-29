@@ -29,14 +29,17 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "@ericblade/quagga2": "^1.12.1",
         "@heroicons/vue": "^2.2.0",
         "@vueup/vue-quill": "^1.2.0",
         "@vueuse/core": "^14.1.0",
+        "@zxing/library": "^0.23.0",
         "aos": "^2.3.4",
         "canvas-confetti": "^1.9.4",
         "chart.js": "^4.5.1",
         "dayjs": "^1.11.19",
         "html5-qrcode": "^2.3.8",
+        "jsqr": "^1.4.0",
         "leaflet": "^1.9.4",
         "sweetalert2": "^11.26.17",
         "vue-chartjs": "^5.3.3",

@@ -108,12 +108,32 @@ class StudentAttendanceController extends Controller
                 return $items->pluck('count', 'status');
             });
 
+        // Fetch Teaching Journals & Subject Attendances for this class and date
+        $subjectJournals = \App\Modules\Academic\Models\TeachingJournal::where('classroom_id', $classroom->id)
+            ->whereDate('date', $date)
+            ->with(['subject', 'attendance'])
+            ->get()
+            ->map(function ($j) {
+                return [
+                    'id'           => $j->id,
+                    'subject_name' => $j->subject->name ?? 'Mata Pelajaran',
+                    'start_time'   => substr($j->start_time, 0, 5),
+                    'end_time'     => substr($j->end_time, 0, 5),
+                    'custom_theme' => $j->custom_theme,
+                    'attendances'  => $j->attendance->mapWithKeys(fn($a) => [$a->student_id => [
+                        'status' => $a->status,
+                        'note'   => $a->note
+                    ]]),
+                ];
+            });
+
         return Inertia::render('Academic/StudentAttendance/Show', [
             'classroom' => $classroom,
             'students' => $students,
             'attendances' => $attendances,
             'date' => $date,
-            'history' => $history, // Pass history data
+            'history' => $history,
+            'subject_journals' => $subjectJournals,
         ]);
     }
 

@@ -89,7 +89,7 @@ const formatDate = (d) => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto space-y-6">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
             <!-- Flash Success -->
             <transition enter-active-class="transition ease-out duration-300" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0">
@@ -99,8 +99,8 @@ const formatDate = (d) => {
                 </div>
             </transition>
 
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-stretch gap-3">
+            <!-- 1A. DESKTOP TOOLBAR (Unchanged Desktop Layout) -->
+            <div class="hidden md:flex flex-row items-stretch gap-3">
                 <!-- Search -->
                 <div class="relative flex-1">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -136,8 +136,31 @@ const formatDate = (d) => {
                 </Link>
             </div>
 
-            <!-- Data Table -->
-            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
+            <!-- 1B. MOBILE TOOLBAR (Executive Deep Namira Emerald Search & Add) -->
+            <div class="block md:hidden bg-[#064e3b] text-white p-4 rounded-3xl border border-emerald-800/80 shadow-xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-teal-400 uppercase">Humas & Publikasi</span>
+                        <h3 class="text-base font-extrabold text-white mt-0.5">Destinasi Kampus</h3>
+                    </div>
+                    <Link :href="route('public-relations.university-destinations.create')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-extrabold flex items-center gap-1.5 shadow-md">
+                        <PlusIcon class="w-4 h-4" />
+                        <span>Tambah</span>
+                    </Link>
+                </div>
+                <div class="relative w-full">
+                    <input 
+                        v-model="searchQuery"
+                        @keyup.enter="applyFilters"
+                        type="text" 
+                        placeholder="Cari institusi / kota..." 
+                        class="w-full bg-slate-800 border border-slate-700 text-white rounded-2xl text-xs font-bold p-3 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                </div>
+            </div>
+
+            <!-- 2A. DESKTOP DATA TABLE (Unchanged Desktop Layout) -->
+            <div class="hidden md:block bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -154,7 +177,6 @@ const formatDate = (d) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
-                            <!-- Empty State -->
                             <tr v-if="destinations.data.length === 0">
                                 <td colspan="9" class="p-14 text-center">
                                     <div class="flex flex-col items-center justify-center text-gray-400">
@@ -166,9 +188,7 @@ const formatDate = (d) => {
                                     </div>
                                 </td>
                             </tr>
-
-                            <!-- Rows -->
-                            <tr v-for="(item, index) in destinations.data" :key="item.id" class="hover:bg-teal-50/30 transition-colors group">
+                            <tr v-for="(item, index) in destinations.data" :key="'desk-'+item.id" class="hover:bg-teal-50/30 transition-colors group">
                                 <td class="p-5 text-sm text-gray-400 font-mono">
                                     {{ (destinations.meta?.current_page - 1) * destinations.meta?.per_page + index + 1 }}
                                 </td>
@@ -178,46 +198,89 @@ const formatDate = (d) => {
                                 <td class="p-5">
                                     <div class="flex items-center gap-2">
                                         <MapPinIcon class="w-4 h-4 text-namira-teal shrink-0" />
-                                        <span class="font-bold text-gray-800 text-sm group-hover:text-namira-teal transition-colors line-clamp-1 max-w-[220px]">{{ item.name }}</span>
+                                        <span class="font-bold text-gray-800 text-sm group-hover:text-namira-teal transition-colors">{{ item.name }}</span>
                                     </div>
                                 </td>
                                 <td class="p-5 text-sm text-gray-600">
-                                    {{ item.city }}<span v-if="item.country && item.country !== 'Indonesia'">, {{ item.country }}</span>
+                                    {{ item.city }}, {{ item.country }}
                                 </td>
                                 <td class="p-5">
-                                    <span :class="typeBadge(item.type)" class="px-3 py-1 rounded-xl text-xs font-bold border shadow-sm whitespace-nowrap">
+                                    <span :class="typeBadge(item.type)" class="px-2.5 py-1 rounded-xl text-xs font-bold border shadow-sm">
                                         {{ typeLabel(item.type) }}
                                     </span>
                                 </td>
-                                <td class="p-5 text-sm text-gray-600 whitespace-nowrap">
-                                    {{ visitTypeLabel(item.visit_type) }}
+                                <td class="p-5">
+                                    <span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100 shadow-sm">
+                                        {{ visitTypeLabel(item.visit_type) }}
+                                    </span>
                                 </td>
-                                <td class="p-5 text-sm text-gray-500 whitespace-nowrap">
+                                <td class="p-5 text-sm text-gray-600 font-mono">
                                     {{ formatDate(item.visit_date) }}
                                 </td>
                                 <td class="p-5">
-                                    <span :class="item.is_active ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-50 text-gray-500 border-gray-100'"
-                                        class="px-3 py-1 rounded-xl text-xs font-bold border shadow-sm">
-                                        {{ item.is_active ? 'Aktif' : 'Non-Aktif' }}
+                                    <span :class="item.is_active ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-50 text-gray-500 border-gray-100'" class="px-2.5 py-1 rounded-xl text-xs font-bold border">
+                                        {{ item.is_active ? 'Aktif' : 'Nonaktif' }}
                                     </span>
                                 </td>
                                 <td class="p-5 text-right">
-                                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                        <Link :href="route('public-relations.university-destinations.edit', item.id)"
-                                            class="p-2.5 text-gray-400 hover:text-namira-teal hover:bg-teal-50 rounded-xl transition-all duration-200 border border-transparent hover:border-teal-100"
-                                            title="Edit">
-                                            <PencilSquareIcon class="w-5 h-5" />
+                                    <div class="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
+                                        <Link :href="route('public-relations.university-destinations.edit', item.id)" class="p-2 text-gray-400 hover:text-namira-teal hover:bg-teal-50 rounded-xl border border-transparent hover:border-teal-100" title="Edit">
+                                            <PencilSquareIcon class="w-4 h-4" />
                                         </Link>
-                                        <button @click="confirmDelete(item)"
-                                            class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 border border-transparent hover:border-red-100 cursor-pointer"
-                                            title="Hapus">
-                                            <TrashIcon class="w-5 h-5 pointer-events-none" />
+                                        <button @click="confirmDelete(item)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl border border-transparent hover:border-red-100 cursor-pointer" title="Hapus">
+                                            <TrashIcon class="w-4 h-4 pointer-events-none" />
                                         </button>
                                     </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- 2B. MOBILE NATIVE DESTINATION CARDS -->
+            <div class="grid md:hidden grid-cols-1 gap-3.5">
+                <div v-if="destinations.data.length === 0" class="text-center py-12 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                    <GlobeAltIcon class="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                    <h3 class="text-base font-bold text-slate-900 mb-1">Belum ada destinasi</h3>
+                    <p class="text-xs text-slate-500">Mulai tambahkan destinasi universitas sekolah Anda.</p>
+                </div>
+
+                <div 
+                    v-for="item in destinations.data" 
+                    :key="'mob-'+item.id"
+                    class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm flex flex-col space-y-3"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <span class="text-[10px] font-black text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100">
+                                {{ item.unit?.name || 'Yayasan' }}
+                            </span>
+                            <h4 class="font-extrabold text-base text-slate-900 leading-snug mt-1 flex items-center gap-1.5">
+                                <MapPinIcon class="w-4 h-4 text-teal-600 shrink-0" />
+                                {{ item.name }}
+                            </h4>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5 pl-5.5">{{ item.city }}, {{ item.country }}</p>
+                        </div>
+
+                        <span :class="typeBadge(item.type)" class="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border shrink-0">
+                            {{ typeLabel(item.type) }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <span class="text-[11px] text-amber-700 font-bold bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-100">
+                            {{ visitTypeLabel(item.visit_type) }}
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <Link :href="route('public-relations.university-destinations.edit', item.id)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl border border-slate-200 transition-all active:scale-95">
+                                Edit
+                            </Link>
+                            <button @click="confirmDelete(item)" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl border border-rose-200 transition-all active:scale-95">
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

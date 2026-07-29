@@ -87,7 +87,7 @@ const getSourceBadge = (source) => source === 'BOS' ? 'bg-purple-100 text-purple
                         <span :class="['px-3 py-1 text-xs font-bold rounded-full', getSourceBadge(inventory.funding_source)]">{{ inventory.funding_source === 'BOS' ? 'Dana BOS' : 'Dana Yayasan' }}</span>
                         <span :class="['px-3 py-1 text-xs font-bold rounded-full capitalize', getStatusBadge(inventory.status)]">{{ inventory.status }}</span>
                         <span :class="['px-3 py-1 text-xs font-bold rounded-full', inventory.item_type === 'consumable' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700']">
-                            {{ inventory.item_type === 'consumable' ? '📦 Habis Pakai' : '🏢 Aset' }}
+                            {{ inventory.item_type === 'consumable' ? 'Habis Pakai' : 'Aset Tetap' }}
                         </span>
                     </div>
 

@@ -261,9 +261,197 @@ const submitExcelImport = () => {
                 </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-center gap-4">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
+
+            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <!-- Header Card Gradient -->
+                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Data Master</p>
+                            <h1 class="text-xl font-black leading-tight">Database Siswa</h1>
+                        </div>
+                        <button 
+                            @click="openCreateModal"
+                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah Siswa</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
+                            <p class="text-xl font-black text-white leading-none">{{ students.total || 0 }}</p>
+                            <p class="text-[9px] text-teal-200 font-bold mt-1 uppercase">Total Siswa</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
+                            <p class="text-xl font-black text-blue-300 leading-none">
+                                {{ students.data.filter(s => s.gender === 'L').length }}
+                            </p>
+                            <p class="text-[9px] text-blue-200 font-bold mt-1 uppercase">Laki-Laki</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
+                            <p class="text-xl font-black text-pink-300 leading-none">
+                                {{ students.data.filter(s => s.gender === 'P').length }}
+                            </p>
+                            <p class="text-[9px] text-pink-200 font-bold mt-1 uppercase">Perempuan</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search & Action Toolbar -->
+                <div class="px-4 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                            <ArrowPathIcon v-else class="w-4 h-4 absolute left-3 top-3.5 animate-spin text-teal-600" />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Cari nama atau NIS..."
+                                class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-teal-500 focus:border-teal-500 shadow-sm"
+                            />
+                        </div>
+                        <button
+                            @click="toggleFilter"
+                            class="p-2.5 rounded-xl border text-slate-700 bg-white shadow-sm active:scale-95 transition"
+                            :class="showFilter ? 'border-teal-500 text-teal-700 bg-teal-50/50' : 'border-slate-200'"
+                        >
+                            <FunnelIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- Quick Import Buttons Row -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+                        <button @click="openVaImportModal" class="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-xl font-extrabold shrink-0 flex items-center gap-1.5">
+                            <ArrowPathRoundedSquareIcon class="w-4 h-4" />
+                            <span>Update VA</span>
+                        </button>
+                        <button @click="openImportModal" class="px-3 py-1.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-extrabold shrink-0 flex items-center gap-1.5">
+                            <ArrowUpTrayIcon class="w-4 h-4" />
+                            <span>Import CSV</span>
+                        </button>
+                        <button @click="openExcelImportModal" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl font-extrabold shrink-0 flex items-center gap-1.5">
+                            <ArrowUpTrayIcon class="w-4 h-4" />
+                            <span>Import Excel</span>
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Filter -->
+                    <div v-if="showFilter" class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-3 animate-fade-in-down text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-500 text-[10px] uppercase mb-1">Tahun Akademik</label>
+                            <select v-model="yearFilter" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                                <option value="">Semua Tahun</option>
+                                <option v-for="year in academicYears" :key="year.id" :value="year.id">
+                                    {{ year.name }} {{ year.is_active ? '(Aktif)' : '' }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold text-slate-500 text-[10px] uppercase mb-1">Gender</label>
+                                <select v-model="genderFilter" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                                    <option value="">Semua</option>
+                                    <option value="L">Laki-laki</option>
+                                    <option value="P">Perempuan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-500 text-[10px] uppercase mb-1">Kelas</label>
+                                <select v-model="classFilter" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                                    <option value="">Semua Kelas</option>
+                                    <option v-for="cls in classrooms" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button @click="resetFilter" class="text-[11px] font-bold text-red-600 hover:underline block ml-auto">
+                            Reset Filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Student Mobile Touch Cards -->
+                <div class="px-4 space-y-3">
+                    <div v-if="students.data.length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <UserIcon class="w-10 h-10 mx-auto text-teal-300 mb-2" />
+                        <p class="font-extrabold text-sm text-slate-800">Belum ada data siswa</p>
+                        <p class="text-xs text-slate-400 mt-1">Data siswa masih kosong atau tidak ditemukan.</p>
+                    </div>
+
+                    <div
+                        v-for="student in students.data"
+                        :key="student.id"
+                        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3 relative overflow-hidden"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-slate-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm">
+                                    <img v-if="student.photo" :src="`/storage/${student.photo}`" class="w-full h-full object-cover">
+                                    <div v-else class="w-full h-full flex items-center justify-center text-xs font-black text-slate-400 bg-slate-100">
+                                        {{ student.full_name?.substring(0,2).toUpperCase() }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm leading-tight">{{ student.full_name }}</h3>
+                                    <p class="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                                        <EnvelopeIcon class="w-3 h-3 text-slate-400" />
+                                        {{ student.user?.email || 'Belum ada email' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 text-[9px] font-black uppercase rounded-full border shrink-0"
+                                  :class="student.gender === 'L' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-pink-50 text-pink-700 border-pink-100'">
+                                {{ student.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                            </span>
+                        </div>
+
+                        <!-- Details Row: NIS/NISN & Classroom -->
+                        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
+                            <div>
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">NIS / NISN</span>
+                                <span class="font-bold text-slate-800 text-[11px]">{{ student.nis || '-' }} / {{ student.nisn || '-' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">Kelas</span>
+                                <span class="font-bold text-slate-800 text-[11px]">{{ student.classroom?.name || 'Belum Ada' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Footer Actions -->
+                        <div class="pt-1 flex items-center justify-between border-t border-slate-100">
+                            <span v-if="student.va_number" class="text-[10px] font-mono font-bold text-slate-500">
+                                VA: {{ student.va_number }}
+                            </span>
+                            <span v-else class="text-[10px] text-slate-400 italic">No VA</span>
+
+                            <div class="flex items-center gap-1.5">
+                                <Link :href="route('yayasan.students.show', student.id)" class="p-2 rounded-xl text-teal-600 bg-teal-50 hover:bg-teal-100 transition" title="Detail">
+                                    <EyeIcon class="w-4 h-4" />
+                                </Link>
+                                <button @click="openEditModal(student)" class="p-2 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-100 transition" title="Edit">
+                                    <PencilSquareIcon class="w-4 h-4" />
+                                </button>
+                                <button @click="confirmDelete(student)" class="p-2 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 transition" title="Hapus">
+                                    <TrashIcon class="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pagination Mobile -->
+                    <Pagination :links="students.links" class="pt-2" />
+                </div>
+            </div>
+            <!-- END MOBILE VIEW -->
+
+            <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row items-center gap-4">
                     <!-- Search Bar -->
                     <div class="relative group flex-1 w-full">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
@@ -310,136 +498,121 @@ const submitExcelImport = () => {
                         <PlusIcon class="w-5 h-5" />
                         <span>Tambah Siswa</span>
                     </button>
-            </div>
-            
-            <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex flex-wrap items-center gap-4 animate-fade-in-down">
-                <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-gray-600">Tahun:</span>
-                    <select v-model="yearFilter" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
-                        <option value="">Semua Tahun</option>
-                        <option v-for="year in academicYears" :key="year.id" :value="year.id">
-                            {{ year.name }} {{ year.is_active ? '(Aktif)' : '' }}
-                        </option>
-                    </select>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-gray-600">Gender:</span>
-                    <select v-model="genderFilter" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
-                        <option value="">Semua</option>
-                        <option value="L">Laki-laki</option>
-                        <option value="P">Perempuan</option>
-                    </select>
+                
+                <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex flex-wrap items-center gap-4 animate-fade-in-down">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-gray-600">Tahun:</span>
+                        <select v-model="yearFilter" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
+                            <option value="">Semua Tahun</option>
+                            <option v-for="year in academicYears" :key="year.id" :value="year.id">
+                                {{ year.name }} {{ year.is_active ? '(Aktif)' : '' }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-gray-600">Gender:</span>
+                        <select v-model="genderFilter" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
+                            <option value="">Semua</option>
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-gray-600">Kelas:</span>
+                        <select v-model="classFilter" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
+                            <option value="">Semua Kelas</option>
+                            <option v-for="cls in classrooms" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+                        </select>
+                    </div>
+                    <button @click="resetFilter" class="ml-auto text-xs text-red-500 hover:text-red-700 font-bold hover:underline">
+                        Reset Filter
+                    </button>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-gray-600">Kelas:</span>
-                    <select v-model="classFilter" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
-                        <option value="">Semua Kelas</option>
-                        <option v-for="cls in classrooms" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
-                    </select>
-                </div>
-                <button @click="resetFilter" class="ml-auto text-xs text-red-500 hover:text-red-700 font-bold hover:underline">
-                    Reset Filter
-                </button>
-            </div>
 
-            <!-- Main Content Container -->
-            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
-                <!-- Student Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
-                            <tr>
-                                <th class="px-6 py-5 font-extrabold tracking-wider">Siswa</th>
-                                <th class="px-6 py-5 font-extrabold tracking-wider">Identitas</th>
-                                <th class="px-6 py-5 font-extrabold tracking-wider">L/P</th>
-                                <th class="px-6 py-5 font-extrabold tracking-wider">Kelas</th>
-                                <th class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            <!-- Empty State -->
-                            <tr v-if="students.data.length === 0">
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                                    <div class="flex flex-col items-center justify-center p-8">
-                                         <div class="bg-indigo-50 p-6 rounded-full mb-4">
-                                         <div class="bg-indigo-50 p-6 rounded-full mb-4">
-                                            <UserIcon class="w-12 h-12 text-indigo-400" />
-                                         </div>
-                                         </div>
-                                        <p class="font-bold text-lg text-gray-800 mb-1">Belum ada data siswa</p>
-                                        <p class="text-sm text-gray-500 max-w-xs">Data siswa masih kosong. Silakan tambahkan siswa baru atau import dari file CSV.</p>
-                                    </div>
-                                </td>
-                            </tr>
+                <!-- Main Content Container -->
+                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
+                    <!-- Student Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
+                                <tr>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">Siswa</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">Identitas</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">L/P</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">Kelas</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <!-- Empty State -->
+                                <tr v-if="students.data.length === 0">
+                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                        <div class="flex flex-col items-center justify-center p-8">
+                                             <div class="bg-indigo-50 p-6 rounded-full mb-4">
+                                                <UserIcon class="w-12 h-12 text-indigo-400" />
+                                             </div>
+                                            <p class="font-bold text-lg text-gray-800 mb-1">Belum ada data siswa</p>
+                                            <p class="text-sm text-gray-500 max-w-xs">Data siswa masih kosong. Silakan tambahkan siswa baru atau import dari file CSV.</p>
+                                        </div>
+                                    </td>
+                                </tr>
 
-                            <tr v-for="student in students.data" :key="student.id" class="group hover:bg-teal-50/30 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm group-hover:border-namira-teal/50 transition-colors">
-                                            <img v-if="student.photo" :src="`/storage/${student.photo}`" class="w-full h-full object-cover">
-                                            <div v-else class="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
-                                                {{ student.full_name?.substring(0,2).toUpperCase() }}
+                                <tr v-for="student in students.data" :key="student.id" class="group hover:bg-teal-50/30 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm group-hover:border-namira-teal/50 transition-colors">
+                                                <img v-if="student.photo" :src="`/storage/${student.photo}`" class="w-full h-full object-cover">
+                                                <div v-else class="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
+                                                    {{ student.full_name?.substring(0,2).toUpperCase() }}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-gray-800 text-base group-hover:text-namira-teal transition-colors">{{ student.full_name }}</div>
+                                                <div class="text-xs text-gray-500 flex items-center gap-1">
+                                                    <EnvelopeIcon class="w-3 h-3 opacity-70" />
+                                                    {{ student.user?.email || 'Belum ada email' }}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div>
-                                            <div class="font-bold text-gray-800 text-base group-hover:text-namira-teal transition-colors">{{ student.full_name }}</div>
-                                            <div class="text-xs text-gray-500 flex items-center gap-1">
-                                                <EnvelopeIcon class="w-3 h-3 opacity-70" />
-                                                {{ student.user?.email || 'Belum ada email' }}
-                                            </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-col gap-1">
+                                            <div class="text-[10px] font-mono font-bold text-gray-500 uppercase">NIS: <span class="text-gray-700">{{ student.nis || '-' }}</span></div>
+                                            <div class="text-[10px] font-mono font-bold text-gray-500 uppercase">NISN: <span class="text-gray-700">{{ student.nisn || '-' }}</span></div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-col gap-1">
-                                        <div class="text-[10px] font-mono font-bold text-gray-500 uppercase">NIS: <span class="text-gray-700">{{ student.nis || '-' }}</span></div>
-                                        <div class="text-[10px] font-mono font-bold text-gray-500 uppercase">NISN: <span class="text-gray-700">{{ student.nisn || '-' }}</span></div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-3 py-1 text-[10px] font-extrabold uppercase rounded-full border shadow-sm" 
-                                          :class="student.gender === 'L' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-pink-50 text-pink-600 border-pink-100'">
-                                        {{ student.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div v-if="student.classroom" class="flex flex-col">
-                                         <span class="font-bold text-gray-700 text-xs bg-gray-100 px-2 py-1 rounded-lg w-fit border border-gray-200">{{ student.classroom.name }}</span>
-                                    </div>
-                                    <span v-else class="text-xs text-gray-400 italic">Belum Masuk Kelas</span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                        <Link :href="route('yayasan.students.show', student.id)" class="p-2 rounded-xl text-gray-400 hover:text-namira-teal hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-100" title="Lihat Detail">
-                                            <EyeIcon class="w-4 h-4" />
-                                        </Link>
-                                        <button @click="openEditModal(student)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-100" title="Edit Data">
-                                            <PencilSquareIcon class="w-4 h-4" />
-                                        </button>
-                                        <button @click="confirmDelete(student)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100" title="Hapus Siswa">
-                                            <TrashIcon class="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div v-if="students.links.length > 3" class="p-6 flex justify-center border-t border-gray-100 bg-white/50">
-                     <div class="flex gap-1">
-                        <template v-for="(link, k) in students.links" :key="k">
-                            <Link 
-                                v-if="link.url" 
-                                :href="link.url" 
-                                v-html="link.label"
-                                class="px-4 py-2 border rounded-xl text-sm font-bold transition-all"
-                                :class="link.active ? 'bg-namira-teal text-white border-namira-teal shadow-lg shadow-namira-teal/30' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'"
-                            />
-                             <span v-else v-html="link.label" class="px-4 py-2 text-gray-400 text-sm font-medium"></span>
-                        </template>
-                     </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 text-[10px] font-extrabold uppercase rounded-full border shadow-sm" 
+                                              :class="student.gender === 'L' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-pink-50 text-pink-600 border-pink-100'">
+                                            {{ student.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div v-if="student.classroom" class="flex flex-col">
+                                             <span class="font-bold text-gray-700 text-xs bg-gray-100 px-2 py-1 rounded-lg w-fit border border-gray-200">{{ student.classroom.name }}</span>
+                                        </div>
+                                        <span v-else class="text-xs text-gray-400 italic">Belum Masuk Kelas</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                            <Link :href="route('yayasan.students.show', student.id)" class="p-2 rounded-xl text-gray-400 hover:text-namira-teal hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-100" title="Lihat Detail">
+                                                <EyeIcon class="w-4 h-4" />
+                                            </Link>
+                                            <button @click="openEditModal(student)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-100" title="Edit Data">
+                                                <PencilSquareIcon class="w-4 h-4" />
+                                            </button>
+                                            <button @click="confirmDelete(student)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100" title="Hapus Siswa">
+                                                <TrashIcon class="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination -->
+                    <Pagination :links="students.links" class="p-6 border-t border-gray-100 bg-white/50" />
                 </div>
             </div>
         </div>

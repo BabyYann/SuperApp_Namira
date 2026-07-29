@@ -20,6 +20,7 @@ const props = defineProps({
     schedule: Object, // Grouped by day
     personalSchedule: Object, // Grouped by day (for teachers)
     isTeacher: Boolean,
+    canManage: Boolean,
     subjects: Array,
     teachers: Array,
 });
@@ -46,9 +47,15 @@ const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const isEditing = ref(false);
 const editingId = ref(null);
 
+// Auto-select current day of week for mobile PWA
+const currentDayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon ...
+const dayMapNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const todayName = dayMapNames[currentDayIndex];
+const selectedMobileDay = ref(days.includes(todayName) ? todayName : 'Senin');
+
 // View Mode: 'personal' (Jadwal Saya) or 'class' (Cari Kelas)
-// Default to 'personal' if teacher, otherwise 'class'
-const viewMode = ref(props.isTeacher ? 'personal' : 'class');
+// Default to 'personal' if pure teacher, otherwise 'class'
+const viewMode = ref(props.isTeacher && !props.canManage ? 'personal' : 'class');
 
 watch(selectedClassroom, (newVal) => {
     if (newVal) {
@@ -68,7 +75,7 @@ const openAddModal = (item = null) => {
     
     form.clearErrors();
 
-    if (item) {
+    if (item && item.id) {
         // Edit Mode
         isEditing.value = true;
         editingId.value = item.id;
@@ -76,20 +83,23 @@ const openAddModal = (item = null) => {
         form.subject_id = item.subject_id;
         form.teacher_id = item.teacher_id;
         form.day = item.day;
-        form.start_time = item.start_time;
-        form.end_time = item.end_time;
+        form.start_time = item.start_time ? item.start_time.substring(0, 5) : '';
+        form.end_time = item.end_time ? item.end_time.substring(0, 5) : '';
     } else {
         // Create Mode
         isEditing.value = false;
         editingId.value = null;
         form.reset('subject_id', 'teacher_id', 'day', 'start_time', 'end_time');
-        
-        // Defensive Sync
-        if (!form.classroom_id) {
-             form.classroom_id = props.selectedClassroomId;
-        }
+        form.classroom_id = props.selectedClassroomId;
     }
     showAddModal.value = true;
+};
+
+const closeModal = () => {
+    showAddModal.value = false;
+    isEditing.value = false;
+    editingId.value = null;
+    form.clearErrors();
 };
 
 const openCloneModal = () => {
@@ -103,28 +113,27 @@ const openCloneModal = () => {
 };
 
 const submitSchedule = () => {
-    if (isEditing.value) {
+    if (isEditing.value && editingId.value) {
         form.put(route('yayasan.schedules.update', editingId.value), {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                 showAddModal.value = false;
-                 form.reset('subject_id', 'teacher_id', 'day', 'start_time', 'end_time');
-                 isEditing.value = false;
+                 closeModal();
             },
-            onError: (errors) => {
+            onError: () => {
                  showAddModal.value = true;
             }
         });
     } else {
+        // Force defensive classroom_id
+        if (!form.classroom_id) form.classroom_id = props.selectedClassroomId;
         form.post(route('yayasan.schedules.store'), {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                 showAddModal.value = false;
-                 form.reset('subject_id', 'teacher_id', 'day', 'start_time', 'end_time');
+                 closeModal();
             },
-            onError: (errors) => {
+            onError: () => {
                 showAddModal.value = true;
             }
         });
@@ -138,9 +147,6 @@ const submitClone = () => {
         onSuccess: () => {
              showCloneModal.value = false;
              cloneForm.reset('from_day', 'to_day');
-        },
-        onError: () => {
-            showCloneModal.value = true;
         }
     });
 };
@@ -192,6 +198,18 @@ const sortedSchedules = (day) => {
         return timeA.localeCompare(timeB);
     });
 };
+
+const totalScheduleCount = computed(() => {
+    let count = 0;
+    days.forEach(day => {
+        count += (sortedSchedules(day) || []).length;
+    });
+    return count;
+});
+
+const activeDayScheduleCount = computed(() => {
+    return (sortedSchedules(selectedMobileDay.value) || []).length;
+});
 </script>
 
 <template>
@@ -206,187 +224,350 @@ const sortedSchedules = (day) => {
                         Jadwal Pelajaran
                     </h2>
                     <p class="text-sm text-gray-500 mt-1">
-                        {{ isTeacher ? 'Lihat jadwal mengajar Anda atau cari jadwal kelas lain.' : 'Atur jadwal pelajaran per kelas.' }}
+                        {{ canManage ? 'Atur jadwal pelajaran per kelas.' : 'Lihat jadwal mengajar Anda.' }}
                     </p>
                 </div>
             </div>
         </template>
         
-        <div class="py-6 max-w-7xl mx-auto space-y-6">
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-center gap-4 print:hidden">
-                <!-- View Toggle for Teachers -->
-                <div v-if="isTeacher" class="bg-gray-100 p-1 rounded-2xl flex items-center h-[46px]">
-                    <button 
-                        @click="viewMode = 'personal'"
-                        class="px-4 py-2 text-xs font-bold rounded-xl transition-all h-full flex items-center"
-                        :class="viewMode === 'personal' ? 'bg-white text-namira-teal shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                    >
-                        Jadwal Saya
-                    </button>
-                    <button 
-                        @click="viewMode = 'class'"
-                        class="px-4 py-2 text-xs font-bold rounded-xl transition-all h-full flex items-center"
-                        :class="viewMode === 'class' ? 'bg-white text-namira-teal shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                    >
-                        Cari Kelas
-                    </button>
-                </div>
+        <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 md:pb-6 space-y-5 md:space-y-6">
 
-                <!-- Class Selector -->
-                <div v-if="!isTeacher || viewMode === 'class'" class="relative flex-1 w-full md:w-auto">
-                    <select 
-                        v-model="selectedClassroom" 
-                        class="appearance-none bg-white/50 backdrop-blur-sm border border-white/50 text-gray-700 text-sm rounded-2xl focus:ring-namira-teal focus:border-namira-teal block w-full pl-4 pr-10 py-2.5 shadow-sm hover:bg-white transition-all cursor-pointer h-[46px]"
-                    >
-                        <option :value="undefined" disabled>-- Pilih Kelas --</option>
-                        <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id">
-                            {{ classroom.name }}
-                        </option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                        <ChevronDownIcon class="h-4 w-4" />
-                    </div>
-                </div>
-
-                <!-- Actions (Only for Admin/Yayasan) -->
-                <template v-if="!isTeacher">
-                    <!-- Smart Tools Dropdown -->
-                    <Dropdown align="right" width="48" v-if="selectedClassroomId">
-                        <template #trigger>
-                            <button class="px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 text-gray-600 rounded-2xl font-bold hover:bg-white flex items-center gap-2 transition-all shadow-sm h-[46px]">
-                                <span>Aksi</span>
-                                <BoltIcon class="h-4 w-4" />
-                            </button>
-                        </template>
-                        <template #content>
-                            <button @click="openCloneModal" class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 gap-2">
-                                <DocumentDuplicateIcon class="w-4 h-4" />
-                                Clone Jadwal
-                            </button>
-                                <button @click="printSchedule" class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 gap-2">
-                                <PrinterIcon class="w-4 h-4" />
-                                Cetak PDF
-                            </button>
-                            <div class="border-t border-gray-100"></div>
-                            <button @click="resetSchedule" class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 gap-2">
-                                <TrashIcon class="w-4 h-4" />
-                                Reset Jadwal
-                            </button>
-                        </template>
-                    </Dropdown>
-
-                    <button 
-                        @click="openAddModal"
-                        class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 transition-all flex items-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed h-[46px]"
-                        :class="{'opacity-50 cursor-not-allowed': !selectedClassroomId}"
-                        :disabled="!selectedClassroomId"
-                    >
-                        <PlusIcon class="w-5 h-5" />
-                        <span>Tambah</span>
-                    </button>
-                </template>
-                
-                <!-- Print Button for Teacher -->
-                <button 
-                    v-if="isTeacher && selectedClassroomId && viewMode === 'class'"
-                    @click="printSchedule"
-                    class="px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 text-gray-600 rounded-2xl font-bold hover:bg-white flex items-center gap-2 transition-all shadow-sm h-[46px]"
-                >
-                    <PrinterIcon class="w-5 h-5" />
-                    Cetak
-                </button>
-            </div>
-
-            <!-- Print Header -->
-            <div class="hidden print:block text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Jadwal Pelajaran</h1>
-                <p class="text-xl text-gray-600 mt-2">
-                    {{ viewMode === 'personal' && isTeacher ? 'Jadwal Mengajar Saya' : (classrooms.find(c => c.id === selectedClassroomId)?.name || 'Kelas') }}
-                </p>
-            </div>
-
-            <div v-if="!selectedClassroomId && viewMode === 'class'" class="flex flex-col items-center justify-center min-h-[400px] text-center p-8">
-                <div class="bg-white/50 backdrop-blur-xl p-6 rounded-full shadow-sm mb-6 animate-bounce-slow">
-                    <div class="bg-indigo-50 p-6 rounded-full">
-                            <CalendarIcon class="w-16 h-16 text-indigo-400" />
-                    </div>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">Pilih Kelas Terlebih Dahulu</h3>
-                <p class="text-gray-500 max-w-md mx-auto">Silakan pilih kelas pada menu dropdown di atas untuk menampilkan jadwal pelajaran minggu ini.</p>
-            </div>
-
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 print:grid-cols-3 print:gap-6">
-                <!-- Day Column -->
-                <div v-for="day in days" :key="day" class="flex flex-col gap-3 break-inside-avoid">
-                    <!-- Day Header -->
-                    <div class="bg-white/80 backdrop-blur-xl p-3 rounded-xl shadow-sm border border-white/50 text-center sticky top-0 z-10 print:border-black print:shadow-none">
-                        <h3 class="font-bold text-gray-800 text-lg">{{ day }}</h3>
-                        <div class="h-1 w-8 bg-namira-teal rounded-full mx-auto mt-1 print:bg-black"></div>
-                    </div>
-
-                    <!-- Empty State for Day -->
-                    <div v-if="sortedSchedules(day).length === 0" class="flex-1 bg-white/40 backdrop-blur-sm rounded-xl border-2 border-dashed border-white/50 flex flex-col items-center justify-center min-h-[120px] p-4 text-center group hover:bg-white/60 transition-colors print:hidden">
-                        <div class="bg-gray-100 rounded-full p-2 mb-2 group-hover:scale-110 transition-transform">
-                            <ClockIcon class="w-5 h-5 text-gray-400" />
+            <!-- 📱 MOBILE PWA EXECUTIVE VIEW (block md:hidden) -->
+            <div class="block md:hidden space-y-4 -mx-4 -mt-4">
+                <!-- Mobile Header Card Gradient -->
+                <div class="bg-gradient-to-r from-[#009688] via-[#00796b] to-[#0f172a] p-5 rounded-b-3xl text-white shadow-xl space-y-4 relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="px-2.5 py-1 bg-white/10 backdrop-blur-md rounded-lg text-[10px] font-black uppercase tracking-wider text-teal-200 border border-white/10 inline-block mb-1">
+                                {{ viewMode === 'personal' && isTeacher ? 'Jadwal Mengajar Saya' : (classrooms.find(c => c.id === selectedClassroomId)?.name || 'Pilih Kelas') }}
+                            </span>
+                            <h1 class="text-xl font-black tracking-tight">Jadwal Pelajaran</h1>
                         </div>
-                        <p class="text-xs font-bold text-gray-400">Tidak ada jadwal</p>
-                        <p class="text-[10px] text-gray-400/80">Santai sejenak ☕</p>
+                        <div v-if="canManage && selectedClassroomId" class="flex gap-2">
+                            <button @click="openAddModal(null)" class="p-2 rounded-xl bg-teal-500/80 text-white hover:bg-teal-500 active:scale-95 shadow-md flex items-center gap-1 text-xs font-bold">
+                                <PlusIcon class="w-4 h-4" />
+                                <span>Tambah</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Schedule Cards -->
-                    <div 
-                        v-for="item in sortedSchedules(day)" 
-                        :key="item.id" 
-                        class="bg-white/80 backdrop-blur-xl p-3 rounded-xl shadow-sm border border-white/50 hover:shadow-md transition-all relative group print:border-black print:shadow-none"
-                        :class="{'ring-2 ring-namira-teal/20': isTeacher && viewMode === 'personal'}"
-                    >
-                        <!-- Time -->
-                        <div class="flex items-center gap-2 mb-2">
-                            <div class="px-2 py-0.5 bg-namira-teal/10 text-namira-teal text-[10px] font-bold rounded-lg border border-namira-teal/20 print:border-black print:text-black print:bg-transparent">
-                                {{ item.start_time.substring(0, 5) }} - {{ item.end_time.substring(0, 5) }}
-                            </div>
-                            <!-- Show Class Name if in Personal Mode -->
-                            <div v-if="viewMode === 'personal'" class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-lg border border-amber-200">
-                                {{ item.classroom?.name }}
-                            </div>
+                    <!-- Quick Stats Cards Row -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+                            <span class="text-[10px] font-extrabold text-teal-200 uppercase tracking-wider block">Total Jam Minggu Ini</span>
+                            <span class="text-lg font-black leading-none mt-1 block">{{ totalScheduleCount }} Sesi</span>
                         </div>
-
-                        <!-- Subject -->
-                        <h4 class="font-bold text-gray-800 text-sm leading-tight mb-1">{{ item.subject?.name }}</h4>
-                        
-                        <!-- Teacher (Only show if NOT in personal mode, or if we want to be explicit) -->
-                        <div v-if="viewMode !== 'personal'" class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100 print:border-gray-200">
-                            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500 print:hidden">
-                                {{ item.teacher?.full_name?.charAt(0) || '?' }}
-                            </div>
-                            <p class="text-xs text-gray-500 truncate">{{ item.teacher?.full_name }}</p>
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+                            <span class="text-[10px] font-extrabold text-teal-200 uppercase tracking-wider block">Jadwal Hari Ini</span>
+                            <span class="text-lg font-black leading-none mt-1 block">{{ activeDayScheduleCount }} Sesi ({{ selectedMobileDay }})</span>
                         </div>
+                    </div>
 
-                        <!-- Actions (Only for Admin/Yayasan) -->
-                        <div v-if="!isTeacher" class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                    <!-- Controls: View Mode Toggle & Class Selector -->
+                    <div class="space-y-2 pt-2">
+                        <!-- View Toggle for Teachers -->
+                        <div v-if="isTeacher" class="grid grid-cols-2 gap-1.5 p-1 bg-slate-900/40 rounded-xl border border-white/10">
                             <button 
-                                @click="openAddModal(item)"
-                                class="p-1 text-gray-400 hover:text-namira-teal bg-white rounded shadow-sm"
-                                title="Edit Jadwal"
+                                @click="viewMode = 'personal'"
+                                class="py-2 text-xs font-bold rounded-lg transition-all text-center"
+                                :class="viewMode === 'personal' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-300 hover:text-white'"
                             >
-                                <PencilSquareIcon class="w-3.5 h-3.5" />
+                                Jadwal Saya
                             </button>
                             <button 
-                                @click="deleteSchedule(item.id)"
-                                class="p-1 text-gray-400 hover:text-red-500 bg-white rounded shadow-sm"
-                                title="Hapus Jadwal"
+                                @click="viewMode = 'class'"
+                                class="py-2 text-xs font-bold rounded-lg transition-all text-center"
+                                :class="viewMode === 'class' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-300 hover:text-white'"
                             >
-                                <TrashIcon class="w-3.5 h-3.5" />
+                                Cari Kelas
                             </button>
+                        </div>
+
+                        <!-- Class Select Filter -->
+                        <div v-if="canManage || viewMode === 'class'" class="relative">
+                            <select 
+                                v-model="selectedClassroom" 
+                                class="w-full bg-white/15 backdrop-blur-md border border-white/20 text-white rounded-xl text-xs font-bold px-3 py-2.5 pr-8 focus:ring-teal-400 appearance-none cursor-pointer"
+                            >
+                                <option :value="undefined" class="text-slate-900">-- Pilih Kelas --</option>
+                                <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id" class="text-slate-900">
+                                    Kelas {{ classroom.name }}
+                                </option>
+                            </select>
+                            <ChevronDownIcon class="w-4 h-4 text-teal-200 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Horizontal Android Day Tabs Strip -->
+                <div class="px-4">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+                        <button 
+                            v-for="day in days" 
+                            :key="day"
+                            @click="selectedMobileDay = day"
+                            :class="[
+                                'px-4 py-2 rounded-xl text-xs font-extrabold shrink-0 transition-all active:scale-95 flex items-center gap-1.5',
+                                selectedMobileDay === day 
+                                    ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30 ring-2 ring-teal-600/20' 
+                                    : 'bg-white text-slate-600 border border-slate-200/80 shadow-sm'
+                            ]"
+                        >
+                            <span>{{ day }}</span>
+                            <span :class="['px-1.5 py-0.5 rounded-full text-[9px] font-black', selectedMobileDay === day ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500']">
+                                {{ sortedSchedules(day).length }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Schedule Mobile List Cards -->
+                <div class="px-4 space-y-3">
+                    <div v-if="!selectedClassroomId && viewMode === 'class'" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <CalendarIcon class="w-12 h-12 mx-auto text-teal-300 mb-2 animate-bounce-slow" />
+                        <h3 class="font-extrabold text-sm text-slate-800">Pilih Kelas Terlebih Dahulu</h3>
+                        <p class="text-xs text-slate-400 mt-1">Silakan pilih kelas pada dropdown di atas untuk melihat jadwal minggu ini.</p>
+                    </div>
+
+                    <div v-else-if="sortedSchedules(selectedMobileDay).length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <ClockIcon class="w-10 h-10 mx-auto text-teal-300 mb-2" />
+                        <p class="font-extrabold text-sm text-slate-800">Tidak Ada Jadwal di Hari {{ selectedMobileDay }}</p>
+                        <p class="text-xs text-slate-400 mt-1">Belum ada mata pelajaran yang dijadwalkan pada hari ini.</p>
+                    </div>
+
+                    <div v-else class="space-y-3">
+                        <div 
+                            v-for="item in sortedSchedules(selectedMobileDay)" 
+                            :key="item.id"
+                            class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm relative overflow-hidden flex items-start gap-3 transition-all active:scale-[0.99]"
+                        >
+                            <!-- Android Vertical Time Pillar -->
+                            <div class="flex flex-col items-center justify-center p-2.5 bg-teal-50 border border-teal-100/80 rounded-xl shrink-0 min-w-[76px]">
+                                <span class="text-[11px] font-black text-teal-800">{{ item.start_time.substring(0, 5) }}</span>
+                                <div class="w-3 h-0.5 bg-teal-300 rounded-full my-0.5"></div>
+                                <span class="text-[10px] font-bold text-teal-600">{{ item.end_time.substring(0, 5) }}</span>
+                            </div>
+
+                            <!-- Schedule Card Details -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-2">
+                                    <h4 class="font-extrabold text-slate-900 text-sm leading-snug truncate">
+                                        {{ item.subject?.name || 'Mata Pelajaran' }}
+                                    </h4>
+                                    <!-- Show Class Badge in Personal Mode -->
+                                    <span v-if="viewMode === 'personal'" class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black rounded-lg shrink-0">
+                                        {{ item.classroom?.name }}
+                                    </span>
+                                </div>
+
+                                <!-- Teacher Info -->
+                                <div v-if="viewMode !== 'personal'" class="flex items-center gap-1.5 mt-2">
+                                    <div class="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-extrabold shrink-0 border border-slate-200">
+                                        {{ item.teacher?.full_name?.charAt(0) || 'G' }}
+                                    </div>
+                                    <span class="text-xs text-slate-600 font-bold truncate">
+                                        {{ item.teacher?.full_name || 'Guru Pengampu' }}
+                                    </span>
+                                </div>
+
+                                <!-- Touch Action Buttons (For Admin / Kurikulum) -->
+                                <div v-if="canManage" class="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-slate-100">
+                                    <button @click="openAddModal(item)" class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-amber-100 transition">
+                                        <PencilSquareIcon class="w-3.5 h-3.5" />
+                                        <span>Edit</span>
+                                    </button>
+                                    <button @click="deleteSchedule(item.id)" class="px-2.5 py-1 bg-red-50 text-red-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-red-100 transition">
+                                        <TrashIcon class="w-3.5 h-3.5" />
+                                        <span>Hapus</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <!-- END MOBILE VIEW -->
+
+            <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row items-center gap-4 print:hidden">
+                    <!-- View Toggle for Teachers -->
+                    <div v-if="isTeacher" class="bg-gray-100 p-1 rounded-2xl flex items-center h-[46px]">
+                        <button 
+                            @click="viewMode = 'personal'"
+                            class="px-4 py-2 text-xs font-bold rounded-xl transition-all h-full flex items-center"
+                            :class="viewMode === 'personal' ? 'bg-white text-namira-teal shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                        >
+                            Jadwal Saya
+                        </button>
+                        <button 
+                            @click="viewMode = 'class'"
+                            class="px-4 py-2 text-xs font-bold rounded-xl transition-all h-full flex items-center"
+                            :class="viewMode === 'class' ? 'bg-white text-namira-teal shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                        >
+                            Cari Kelas
+                        </button>
+                    </div>
+
+                    <!-- Class Selector -->
+                    <div v-if="canManage || viewMode === 'class'" class="relative flex-1 w-full md:w-auto">
+                        <select 
+                            v-model="selectedClassroom" 
+                            class="appearance-none bg-white/50 backdrop-blur-sm border border-white/50 text-gray-700 text-sm rounded-2xl focus:ring-namira-teal focus:border-namira-teal block w-full pl-4 pr-10 py-2.5 shadow-sm hover:bg-white transition-all cursor-pointer h-[46px]"
+                        >
+                            <option :value="undefined" disabled>-- Pilih Kelas --</option>
+                            <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id">
+                                {{ classroom.name }}
+                            </option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <ChevronDownIcon class="h-4 w-4" />
+                        </div>
+                    </div>
+
+                    <!-- Actions (For Admin / Yayasan / Koordinator Kurikulum) -->
+                    <template v-if="canManage">
+                        <!-- Smart Tools Dropdown -->
+                        <Dropdown align="right" width="48" v-if="selectedClassroomId">
+                            <template #trigger>
+                                <button class="px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 text-gray-600 rounded-2xl font-bold hover:bg-white flex items-center gap-2 transition-all shadow-sm h-[46px]">
+                                    <span>Aksi</span>
+                                    <BoltIcon class="h-4 w-4" />
+                                </button>
+                            </template>
+                            <template #content>
+                                <button @click="openCloneModal" class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 gap-2">
+                                    <DocumentDuplicateIcon class="w-4 h-4" />
+                                    Clone Jadwal
+                                </button>
+                                    <button @click="printSchedule" class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 gap-2">
+                                    <PrinterIcon class="w-4 h-4" />
+                                    Cetak PDF
+                                </button>
+                                <div class="border-t border-gray-100"></div>
+                                <button @click="resetSchedule" class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 gap-2">
+                                    <TrashIcon class="w-4 h-4" />
+                                    Reset Jadwal
+                                </button>
+                            </template>
+                        </Dropdown>
+
+                        <button 
+                            @click="openAddModal(null)"
+                            class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 transition-all flex items-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed h-[46px]"
+                            :class="{'opacity-50 cursor-not-allowed': !selectedClassroomId}"
+                            :disabled="!selectedClassroomId"
+                        >
+                            <PlusIcon class="w-5 h-5" />
+                            <span>Tambah</span>
+                        </button>
+                    </template>
+                    
+                    <!-- Print Button for Teacher -->
+                    <button 
+                        v-if="isTeacher && selectedClassroomId && viewMode === 'class'"
+                        @click="printSchedule"
+                        class="px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 text-gray-600 rounded-2xl font-bold hover:bg-white flex items-center gap-2 transition-all shadow-sm h-[46px]"
+                    >
+                        <PrinterIcon class="w-5 h-5" />
+                        Cetak
+                    </button>
+                </div>
+
+                <!-- Print Header -->
+                <div class="hidden print:block text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900">Jadwal Pelajaran</h1>
+                    <p class="text-xl text-gray-600 mt-2">
+                        {{ viewMode === 'personal' && isTeacher ? 'Jadwal Mengajar Saya' : (classrooms.find(c => c.id === selectedClassroomId)?.name || 'Kelas') }}
+                    </p>
+                </div>
+
+                <div v-if="!selectedClassroomId && viewMode === 'class'" class="flex flex-col items-center justify-center min-h-[400px] text-center p-8">
+                    <div class="bg-white/50 backdrop-blur-xl p-6 rounded-full shadow-sm mb-6 animate-bounce-slow">
+                        <div class="bg-indigo-50 p-6 rounded-full">
+                                <CalendarIcon class="w-16 h-16 text-indigo-400" />
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Pilih Kelas Terlebih Dahulu</h3>
+                    <p class="text-gray-500 max-w-md mx-auto">Silakan pilih kelas pada menu dropdown di atas untuk menampilkan jadwal pelajaran minggu ini.</p>
+                </div>
+
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 print:grid-cols-3 print:gap-6">
+                    <!-- Day Column -->
+                    <div v-for="day in days" :key="day" class="flex flex-col gap-3 break-inside-avoid">
+                        <!-- Day Header -->
+                        <div class="bg-white/80 backdrop-blur-xl p-3 rounded-xl shadow-sm border border-white/50 text-center sticky top-0 z-10 print:border-black print:shadow-none">
+                            <h3 class="font-bold text-gray-800 text-lg">{{ day }}</h3>
+                            <div class="h-1 w-8 bg-namira-teal rounded-full mx-auto mt-1 print:bg-black"></div>
+                        </div>
+
+                        <!-- Empty State for Day -->
+                        <div v-if="sortedSchedules(day).length === 0" class="flex-1 bg-white/40 backdrop-blur-sm rounded-xl border-2 border-dashed border-white/50 flex flex-col items-center justify-center min-h-[120px] p-4 text-center group hover:bg-white/60 transition-colors print:hidden">
+                            <div class="bg-gray-100 rounded-full p-2 mb-2 group-hover:scale-110 transition-transform">
+                                <ClockIcon class="w-5 h-5 text-gray-400" />
+                            </div>
+                            <p class="text-xs font-bold text-gray-400">Tidak ada jadwal</p>
+                            <p class="text-[10px] text-gray-400/80">Santai sejenak ☕</p>
+                        </div>
+
+                        <!-- Schedule Cards -->
+                        <div 
+                            v-for="item in sortedSchedules(day)" 
+                            :key="item.id" 
+                            class="bg-white/80 backdrop-blur-xl p-3 rounded-xl shadow-sm border border-white/50 hover:shadow-md transition-all relative group print:border-black print:shadow-none"
+                            :class="{'ring-2 ring-namira-teal/20': isTeacher && viewMode === 'personal'}"
+                        >
+                            <!-- Time -->
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="px-2 py-0.5 bg-namira-teal/10 text-namira-teal text-[10px] font-bold rounded-lg border border-namira-teal/20 print:border-black print:text-black print:bg-transparent">
+                                    {{ item.start_time.substring(0, 5) }} - {{ item.end_time.substring(0, 5) }}
+                                </div>
+                                <!-- Show Class Name if in Personal Mode -->
+                                <div v-if="viewMode === 'personal'" class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-lg border border-amber-200">
+                                    {{ item.classroom?.name }}
+                                </div>
+                            </div>
+
+                            <!-- Subject -->
+                            <h4 class="font-bold text-gray-800 text-sm leading-tight mb-1">{{ item.subject?.name }}</h4>
+                            
+                            <!-- Teacher (Only show if NOT in personal mode, or if we want to be explicit) -->
+                            <div v-if="viewMode !== 'personal'" class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100 print:border-gray-200">
+                                <div class="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500 print:hidden">
+                                    {{ item.teacher?.full_name?.charAt(0) || '?' }}
+                                </div>
+                                <p class="text-xs text-gray-500 truncate">{{ item.teacher?.full_name }}</p>
+                            </div>
+
+                            <!-- Actions (For Admin / Yayasan / Koordinator Kurikulum) -->
+                            <div v-if="canManage" class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                                <button 
+                                    @click="openAddModal(item)"
+                                    class="p-1 text-gray-400 hover:text-namira-teal bg-white rounded shadow-sm"
+                                    title="Edit Jadwal"
+                                >
+                                    <PencilSquareIcon class="w-3.5 h-3.5" />
+                                </button>
+                                <button 
+                                    @click="deleteSchedule(item.id)"
+                                    class="p-1 text-gray-400 hover:text-red-500 bg-white rounded shadow-sm"
+                                    title="Hapus Jadwal"
+                                >
+                                    <TrashIcon class="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END DESKTOP VIEW -->
         </div>
 
-        <!-- Add/Edit Modal (Only for Admin) -->
-        <Modal :show="showAddModal" @close="showAddModal = false" max-width="md">
+        <!-- Add/Edit Modal -->
+        <Modal :show="showAddModal" @close="closeModal" max-width="md">
             <div class="p-6">
                 <h2 class="text-lg font-bold text-gray-900 mb-4">{{ isEditing ? 'Edit Jadwal Pelajaran' : 'Tambah Jadwal Pelajaran' }}</h2>
                 

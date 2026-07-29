@@ -17,6 +17,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $yayasanRoles = [
             'super_admin_yayasan',
             'admin_yayasan',
+            'pengawas_yayasan',
             'staff_yayasan',
         ];
 

@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('sarpar')->name('sarpar.')->middleware(['role:super_admin_yayasan|admin_yayasan|admin_unit|koordinator_sarpar|teacher', 'feature:feature_sarpar'])->group(function () {
+Route::prefix('sarpar')->name('sarpar.')->middleware(['role:super_admin_yayasan|admin_yayasan|pengawas_yayasan|admin_unit|koordinator_sarpar|teacher', 'feature:feature_sarpar'])->group(function () {
     Route::get('/', [\App\Modules\Sarpar\Controllers\DashboardController::class, 'index'])->name('dashboard');
     
-    Route::middleware(['role:super_admin_yayasan|admin_yayasan|admin_unit|koordinator_sarpar'])->group(function () {
+    Route::middleware(['role:super_admin_yayasan|admin_yayasan|pengawas_yayasan|admin_unit|koordinator_sarpar'])->group(function () {
         Route::resource('categories', \App\Modules\Sarpar\Controllers\CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
     });
     

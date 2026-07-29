@@ -12,10 +12,10 @@ class UserSeeder extends Seeder
     {
         // Super Admin Yayasan
         $superAdmin = User::firstOrCreate(
-            ['email' => 'admin@namira.school'],
+            ['email' => 'rianbru18@gmail.com'],
             [
                 'name' => 'Super Admin Yayasan',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('NamiraApp@2025!'),
             ]
         );
         

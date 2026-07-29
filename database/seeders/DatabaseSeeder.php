@@ -18,8 +18,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             UnitSeeder::class,
-            \Database\Seeders\Academic\SubjectSeeder::class,
-            \Database\Seeders\AttendanceLocationSeeder::class,
+            UserSeeder::class,
+            SystemSettingSeeder::class,
+            AcademicYearSeeder::class,
+            SubjectSeeder::class,
+            AttendanceLocationSeeder::class,
         ]);
     }
 }

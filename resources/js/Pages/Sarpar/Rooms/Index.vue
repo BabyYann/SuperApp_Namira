@@ -101,88 +101,203 @@ const deleteItem = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                <!-- Tabs -->
-                <div class="flex bg-white/80 rounded-2xl p-1 border border-white/50 shadow-sm">
-                    <button @click="activeTab = 'all'" :class="['px-4 py-2 rounded-xl font-bold transition-all', activeTab === 'all' ? 'bg-namira-teal text-white' : 'text-gray-600 hover:bg-gray-100']">
-                        Semua ({{ rooms.length + classrooms.length }})
-                    </button>
-                    <button @click="activeTab = 'classrooms'" :class="['px-4 py-2 rounded-xl font-bold transition-all', activeTab === 'classrooms' ? 'bg-namira-teal text-white' : 'text-gray-600 hover:bg-gray-100']">
-                        📚 Kelas ({{ classrooms.length }})
-                    </button>
-                    <button @click="activeTab = 'rooms'" :class="['px-4 py-2 rounded-xl font-bold transition-all', activeTab === 'rooms' ? 'bg-namira-teal text-white' : 'text-gray-600 hover:bg-gray-100']">
-                        🏢 Ruangan ({{ rooms.length }})
-                    </button>
+        <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 space-y-5 md:space-y-6">
+
+            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <!-- Header Card Gradient -->
+                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
+                            <h1 class="text-xl font-black leading-tight">Data Ruangan & Lokasi</h1>
+                        </div>
+                        <button
+                            @click="openCreateModal"
+                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Stats Grid (3 Columns) -->
+                    <div class="grid grid-cols-3 gap-2 text-center mt-3">
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                            <p class="text-lg font-black text-white leading-none">{{ rooms.length + classrooms.length }}</p>
+                            <p class="text-[8px] text-teal-200 font-bold mt-1 uppercase">Total Lokasi</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                            <p class="text-lg font-black text-blue-300 leading-none">{{ classrooms.length }}</p>
+                            <p class="text-[8px] text-blue-200 font-bold mt-1 uppercase">Kelas</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                            <p class="text-lg font-black text-emerald-300 leading-none">{{ rooms.length }}</p>
+                            <p class="text-[8px] text-emerald-200 font-bold mt-1 uppercase">Ruangan</p>
+                        </div>
+                    </div>
                 </div>
 
-                <button @click="openCreateModal" class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all flex items-center gap-2">
-                    <PlusIcon class="w-5 h-5" /><span>Tambah Ruangan</span>
-                </button>
-            </div>
-
-            <!-- Info Banner -->
-            <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center gap-3">
-                <AcademicCapIcon class="w-8 h-8 text-blue-500" />
-                <div>
-                    <p class="font-bold text-blue-800">Kelas dari Modul Akademik</p>
-                    <p class="text-sm text-blue-600">Data kelas otomatis tersinkronisasi. Untuk menambah kelas baru, gunakan menu Akademik.</p>
-                </div>
-            </div>
-
-            <!-- Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div v-if="allLocations.length === 0" class="col-span-full p-12 text-center text-gray-400 bg-white/80 rounded-3xl">
-                    <BuildingOffice2Icon class="w-16 h-16 mx-auto mb-2 opacity-50" />
-                    <p class="font-bold text-lg">Belum ada data</p>
+                <!-- Mobile Tab Pills Selector -->
+                <div class="px-4">
+                    <div class="flex bg-slate-200/70 p-1 rounded-2xl gap-1 text-xs">
+                        <button @click="activeTab = 'all'" :class="['flex-1 py-2 font-black rounded-xl transition', activeTab === 'all' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600']">
+                            Semua
+                        </button>
+                        <button @click="activeTab = 'classrooms'" :class="['flex-1 py-2 font-black rounded-xl transition', activeTab === 'classrooms' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600']">
+                            Kelas ({{ classrooms.length }})
+                        </button>
+                        <button @click="activeTab = 'rooms'" :class="['flex-1 py-2 font-black rounded-xl transition', activeTab === 'rooms' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600']">
+                            Ruangan ({{ rooms.length }})
+                        </button>
+                    </div>
                 </div>
 
-                <div v-for="loc in allLocations" :key="`${loc.type}-${loc.id}`" :class="['bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 p-5 hover:shadow-md transition-shadow', loc.type === 'classroom' ? 'border-l-4 border-l-blue-400' : 'border-l-4 border-l-teal-400']">
-                    <div class="flex items-start justify-between">
-                        <div class="flex items-center gap-3">
-                            <div :class="['p-3 rounded-2xl', loc.type === 'classroom' ? 'bg-blue-100' : 'bg-teal-100']">
-                                <AcademicCapIcon v-if="loc.type === 'classroom'" class="w-6 h-6 text-blue-600" />
-                                <BuildingOffice2Icon v-else class="w-6 h-6 text-teal-600" />
+                <!-- Rooms Mobile Touch Cards Grid -->
+                <div class="px-4 space-y-3">
+                    <div v-if="allLocations.length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <BuildingOffice2Icon class="w-10 h-10 mx-auto text-teal-300 mb-2" />
+                        <p class="font-extrabold text-sm text-slate-800">Belum ada ruangan</p>
+                    </div>
+
+                    <div
+                        v-for="loc in allLocations"
+                        :key="`mob-${loc.type}-${loc.id}`"
+                        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3 relative overflow-hidden"
+                        :class="loc.type === 'classroom' ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-teal-500'"
+                    >
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3">
+                                <div :class="['p-2.5 rounded-xl', loc.type === 'classroom' ? 'bg-blue-50 text-blue-600' : 'bg-teal-50 text-teal-600']">
+                                    <AcademicCapIcon v-if="loc.type === 'classroom'" class="w-5 h-5" />
+                                    <BuildingOffice2Icon v-else class="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm leading-tight">{{ loc.name }}</h3>
+                                    <span :class="['text-[10px] px-2 py-0.5 rounded-md font-extrabold inline-block mt-0.5', loc.type === 'classroom' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800']">
+                                        {{ loc.type === 'classroom' ? 'Kelas' : 'Ruangan Sarpar' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div v-if="loc.editable" class="flex gap-1">
+                                <button @click="openEditModal(loc)" class="p-1.5 rounded-xl text-amber-600 bg-amber-50 active:scale-95">
+                                    <PencilSquareIcon class="w-4 h-4" />
+                                </button>
+                                <button @click="confirmDelete(loc)" class="p-1.5 rounded-xl text-red-600 bg-red-50 active:scale-95">
+                                    <TrashIcon class="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-[11px] text-slate-600 border border-slate-100 text-center">
+                            <div>
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">Gedung</span>
+                                <span class="font-bold text-slate-800">{{ loc.building || '-' }}</span>
                             </div>
                             <div>
-                                <h3 class="font-bold text-gray-800">{{ loc.name }}</h3>
-                                <span :class="['text-xs px-2 py-0.5 rounded-full font-bold', loc.type === 'classroom' ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700']">
-                                    {{ loc.type === 'classroom' ? '📚 Kelas' : '🏢 Ruangan' }}
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">Lantai</span>
+                                <span class="font-bold text-slate-800">{{ loc.floor || '-' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">Item Inventaris</span>
+                                <span class="font-bold text-teal-700 flex items-center justify-center gap-1">
+                                    <CubeIcon class="w-3 h-3" /> {{ loc.inventories_count || 0 }}
                                 </span>
                             </div>
                         </div>
-                        
-                        <div v-if="loc.editable" class="flex gap-1">
-                            <button @click="openEditModal(loc)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50">
-                                <PencilSquareIcon class="w-4 h-4" />
-                            </button>
-                            <button @click="confirmDelete(loc)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50">
-                                <TrashIcon class="w-4 h-4" />
-                            </button>
-                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END MOBILE VIEW -->
+
+            <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <!-- Tabs -->
+                    <div class="flex bg-white/80 rounded-2xl p-1 border border-white/50 shadow-sm">
+                        <button @click="activeTab = 'all'" :class="['px-4 py-2 rounded-xl font-bold transition-all', activeTab === 'all' ? 'bg-namira-teal text-white' : 'text-gray-600 hover:bg-gray-100']">
+                            Semua ({{ rooms.length + classrooms.length }})
+                        </button>
+                        <button @click="activeTab = 'classrooms'" :class="['px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5', activeTab === 'classrooms' ? 'bg-namira-teal text-white' : 'text-gray-600 hover:bg-gray-100']">
+                            <AcademicCapIcon class="w-4 h-4" /> Kelas ({{ classrooms.length }})
+                        </button>
+                        <button @click="activeTab = 'rooms'" :class="['px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5', activeTab === 'rooms' ? 'bg-namira-teal text-white' : 'text-gray-600 hover:bg-gray-100']">
+                            <BuildingOffice2Icon class="w-4 h-4" /> Ruangan ({{ rooms.length }})
+                        </button>
                     </div>
 
-                    <div class="mt-4 space-y-2 text-sm text-gray-600">
-                        <div v-if="loc.building" class="flex items-center gap-2">
-                            <span class="text-gray-400">Gedung:</span> {{ loc.building }}
-                        </div>
-                        <div v-if="loc.floor" class="flex items-center gap-2">
-                            <span class="text-gray-400">Lantai:</span> {{ loc.floor }}
-                        </div>
-                        <div v-if="loc.capacity" class="flex items-center gap-2">
-                            <span class="text-gray-400">Kapasitas:</span> {{ loc.capacity }} orang
-                        </div>
+                    <button @click="openCreateModal" class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                        <PlusIcon class="w-5 h-5" /><span>Tambah Ruangan</span>
+                    </button>
+                </div>
+
+                <!-- Info Banner -->
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center gap-3">
+                    <AcademicCapIcon class="w-8 h-8 text-blue-500" />
+                    <div>
+                        <p class="font-bold text-blue-800">Kelas dari Modul Akademik</p>
+                        <p class="text-sm text-blue-600">Data kelas otomatis tersinkronisasi. Untuk menambah kelas baru, gunakan menu Akademik.</p>
+                    </div>
+                </div>
+
+                <!-- Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div v-if="allLocations.length === 0" class="col-span-full p-12 text-center text-gray-400 bg-white/80 rounded-3xl">
+                        <BuildingOffice2Icon class="w-16 h-16 mx-auto mb-2 opacity-50" />
+                        <p class="font-bold text-lg">Belum ada data</p>
                     </div>
 
-                    <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <CubeIcon class="w-4 h-4 text-gray-400" />
-                            <span class="text-sm text-gray-600">{{ loc.inventories_count || 0 }} item inventaris</span>
+                    <div v-for="loc in allLocations" :key="`${loc.type}-${loc.id}`" :class="['bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 p-5 hover:shadow-md transition-shadow', loc.type === 'classroom' ? 'border-l-4 border-l-blue-400' : 'border-l-4 border-l-teal-400']">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3">
+                                <div :class="['p-3 rounded-2xl', loc.type === 'classroom' ? 'bg-blue-100' : 'bg-teal-100']">
+                                    <AcademicCapIcon v-if="loc.type === 'classroom'" class="w-6 h-6 text-blue-600" />
+                                    <BuildingOffice2Icon v-else class="w-6 h-6 text-teal-600" />
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-800">{{ loc.name }}</h3>
+                                    <span :class="['text-xs px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1', loc.type === 'classroom' ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700']">
+                                        <AcademicCapIcon v-if="loc.type === 'classroom'" class="w-3 h-3" />
+                                        <BuildingOffice2Icon v-else class="w-3 h-3" />
+                                        {{ loc.type === 'classroom' ? 'Kelas' : 'Ruangan' }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div v-if="loc.editable" class="flex gap-1">
+                                <button @click="openEditModal(loc)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50">
+                                    <PencilSquareIcon class="w-4 h-4" />
+                                </button>
+                                <button @click="confirmDelete(loc)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50">
+                                    <TrashIcon class="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 space-y-2 text-sm text-gray-600">
+                            <div v-if="loc.building" class="flex items-center gap-2">
+                                <span class="text-gray-400">Gedung:</span> {{ loc.building }}
+                            </div>
+                            <div v-if="loc.floor" class="flex items-center gap-2">
+                                <span class="text-gray-400">Lantai:</span> {{ loc.floor }}
+                            </div>
+                            <div v-if="loc.capacity" class="flex items-center gap-2">
+                                <span class="text-gray-400">Kapasitas:</span> {{ loc.capacity }} orang
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <CubeIcon class="w-4 h-4 text-gray-400" />
+                                <span class="text-sm text-gray-600">{{ loc.inventories_count || 0 }} item inventaris</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <!-- END DESKTOP VIEW -->
         </div>
 
         <!-- Create/Edit Modal -->

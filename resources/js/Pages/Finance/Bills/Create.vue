@@ -63,13 +63,13 @@ const submit = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-2xl mx-auto">
-             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        <div class="py-4 md:py-6 max-w-2xl mx-auto">
+             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 md:p-8">
                 <form @submit.prevent="submit" class="space-y-6">
                     
                     <!-- 1. Pilih Jenis Tagihan -->
                     <div class="space-y-4 pt-2 pb-6 border-b border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <h3 class="text-base md:text-lg font-bold text-gray-800 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-xs">1</span>
                             Jenis & Periode
                         </h3>
@@ -77,7 +77,7 @@ const submit = () => {
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
                                 <InputLabel for="finance_type_id" value="Jenis Tagihan (Pos Bayar) *" />
-                                <select id="finance_type_id" v-model="form.finance_type_id" @change="updateDueDate" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50" required>
+                                <select id="finance_type_id" v-model="form.finance_type_id" @change="updateDueDate" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-xs md:text-sm font-medium" required>
                                     <option value="" disabled>Pilih Jenis Tagihan...</option>
                                     <option v-for="type in types" :key="type.id" :value="type.id">
                                         {{ type.name }} (Rp {{ new Intl.NumberFormat('id-ID').format(type.amount) }})
@@ -88,19 +88,19 @@ const submit = () => {
 
                             <div>
                                 <InputLabel for="billing_period" value="Tanggal Tagihan *" />
-                                <input type="date" id="billing_period" v-model="form.billing_period" @change="updateDueDate" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal" required>
+                                <input type="date" id="billing_period" v-model="form.billing_period" @change="updateDueDate" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal text-xs md:text-sm font-medium" required>
                                 <InputError :message="form.errors.billing_period" class="mt-1" />
                             </div>
 
                             <div>
                                 <InputLabel for="due_date" value="Jatuh Tempo *" />
-                                <input type="date" id="due_date" v-model="form.due_date" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal" required>
+                                <input type="date" id="due_date" v-model="form.due_date" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal text-xs md:text-sm font-medium" required>
                                 <InputError :message="form.errors.due_date" class="mt-1" />
                             </div>
                             
                             <div class="md:col-span-2">
                                 <InputLabel for="description" value="Keterangan Tagihan *" />
-                                <TextInput id="description" v-model="form.description" class="w-full mt-1 font-medium" placeholder="Contoh: SPP Januari 2025" required />
+                                <TextInput id="description" v-model="form.description" class="w-full mt-1 text-xs md:text-sm font-medium" placeholder="Contoh: SPP Januari 2025" required />
                                 <InputError :message="form.errors.description" class="mt-1" />
                             </div>
                         </div>
@@ -108,31 +108,24 @@ const submit = () => {
 
                     <!-- 2. Target Siswa -->
                     <div class="space-y-4 pt-2">
-                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <h3 class="text-base md:text-lg font-bold text-gray-800 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-xs">2</span>
                             Target Penerima
                         </h3>
                         
                         <div>
                             <InputLabel value="Kirim Tagihan Kepada:" class="mb-2" />
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <label class="cursor-pointer border-2 rounded-xl p-4 flex items-center gap-3 hover:bg-gray-50 transition-all" :class="form.target_type === 'class' ? 'border-namira-teal bg-teal-50/30' : 'border-gray-200'">
                                     <input type="radio" v-model="form.target_type" value="class" class="text-namira-teal focus:ring-namira-teal">
-                                    <span class="font-bold text-gray-700">Per Kelas</span>
+                                    <span class="font-bold text-xs md:text-sm text-gray-700">Per Kelas</span>
                                 </label>
-                                <!-- All Students option disabled for safety/complexity for now unless needed -->
-                                <!-- 
-                                <label class="cursor-pointer border-2 rounded-xl p-4 flex items-center gap-3 hover:bg-gray-50 transition-all" :class="form.target_type === 'all' ? 'border-namira-teal bg-teal-50/30' : 'border-gray-200'">
-                                    <input type="radio" v-model="form.target_type" value="all" class="text-namira-teal focus:ring-namira-teal">
-                                    <span class="font-bold text-gray-700">Satu Sekolah (Semua)</span>
-                                </label>
-                                -->
                             </div>
                         </div>
 
                         <div v-if="form.target_type === 'class'" class="animate-in fade-in slide-in-from-top-2">
                             <InputLabel for="classroom_id" value="Pilih Kelas *" />
-                            <select id="classroom_id" v-model="form.classroom_id" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-white font-bold text-gray-700" required>
+                            <select id="classroom_id" v-model="form.classroom_id" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-white text-xs md:text-sm font-bold text-gray-700" required>
                                 <option value="" disabled>Pilih Kelas...</option>
                                 <option v-for="cls in classrooms" :key="cls.id" :value="cls.id">
                                     {{ cls.name }}
@@ -143,7 +136,7 @@ const submit = () => {
                     </div>
 
                     <div class="pt-6 border-t border-gray-100 flex justify-end">
-                        <PrimaryButton :disabled="form.processing" class="px-8 py-3 text-base rounded-xl shadow-xl shadow-namira-teal/20">
+                        <PrimaryButton :disabled="form.processing" class="w-full md:w-auto justify-center px-8 py-3 text-sm md:text-base rounded-xl shadow-xl shadow-namira-teal/20">
                             <span v-if="!form.processing">Generate Tagihan</span>
                             <span v-else>Memproses...</span>
                         </PrimaryButton>

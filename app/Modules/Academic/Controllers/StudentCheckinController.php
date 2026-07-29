@@ -91,7 +91,7 @@ class StudentCheckinController extends Controller
         );
         $status = $now->greaterThan($deadlineTime) ? 'terlambat' : 'hadir';
 
-        // 4. Simpan check-in
+        // 4. Simpan check-in gerbang
         $checkin = StudentCheckin::create([
             'student_id'       => $student->id,
             'unit_id'          => $student->unit_id,
@@ -101,12 +101,30 @@ class StudentCheckinController extends Controller
             'status'           => $status,
         ]);
 
+        // 4b. Otomatis sinkronisasi ke Rekap Absensi Harian Kelas (StudentAttendance)
+        if ($student->classroom_id) {
+            \App\Models\StudentAttendance::updateOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'date'       => $today->toDateString(),
+                ],
+                [
+                    'classroom_id' => $student->classroom_id,
+                    'status'       => 'H',
+                    'note'         => $status === 'terlambat' 
+                        ? 'Hadir Terlambat via Scan Gerbang (' . $now->format('H:i') . ' WIB)' 
+                        : 'Hadir via Scan Gerbang (' . $now->format('H:i') . ' WIB)',
+                    'recorded_by'  => Auth::id(),
+                ]
+            );
+        }
+
         // 5. Kirim WA notifikasi ke orang tua (non-blocking via queue)
         $this->dispatchWhatsAppNotification($student, $checkin, $status, $now);
 
         return response()->json([
             'success' => true,
-            'message' => "✅ {$student->full_name} berhasil tercatat hadir.",
+            'message' => "✅ {$student->full_name} berhasil tercatat hadir (" . strtoupper($status) . ").",
             'status'  => $status,
             'student' => $this->formatStudentResponse($student, $checkin),
         ]);

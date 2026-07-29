@@ -66,9 +66,10 @@ const deleteItem = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto space-y-6">
-            <!-- Toolbar: Search & Actions -->
-            <div class="flex flex-col md:flex-row items-center gap-4">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
+            
+            <!-- 1A. DESKTOP TOOLBAR (Unchanged Desktop Layout) -->
+            <div class="hidden md:flex flex-row items-center gap-4">
                 <form @submit.prevent="search" class="relative group flex-1 w-full">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
                         <MagnifyingGlassIcon class="w-5 h-5" />
@@ -87,8 +88,30 @@ const deleteItem = () => {
                 </Link>
             </div>
 
-            <!-- Data Card -->
-            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
+            <!-- 1B. MOBILE TOOLBAR (Executive Deep Namira Emerald Search & Add) -->
+            <div class="block md:hidden bg-[#064e3b] text-white p-4 rounded-3xl border border-emerald-800/80 shadow-xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-teal-400 uppercase">Humas & Publikasi</span>
+                        <h3 class="text-base font-extrabold text-white mt-0.5">Manajemen Berita</h3>
+                    </div>
+                    <Link :href="route('public-relations.news.create')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-extrabold flex items-center gap-1.5 shadow-md">
+                        <PlusIcon class="w-4 h-4" />
+                        <span>Tambah</span>
+                    </Link>
+                </div>
+                <form @submit.prevent="search" class="relative w-full">
+                    <input 
+                        v-model="searchForm.search"
+                        type="text" 
+                        placeholder="Cari berita..." 
+                        class="w-full bg-slate-800 border border-slate-700 text-white rounded-2xl text-xs font-bold p-3 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                </form>
+            </div>
+
+            <!-- 2A. DESKTOP DATA CARD (Unchanged Desktop Layout) -->
+            <div class="hidden md:block bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -112,7 +135,7 @@ const deleteItem = () => {
                                     </div>
                                 </td>
                             </tr>
-                            <tr v-for="item in news.data" :key="item.id" class="hover:bg-teal-50/30 transition-colors group">
+                            <tr v-for="item in news.data" :key="'desk-'+item.id" class="hover:bg-teal-50/30 transition-colors group">
                                 <td class="p-6">
                                     <div class="flex items-center gap-4">
                                         <img v-if="item.image_path" :src="'/' + item.image_path" class="w-16 h-12 object-cover rounded-lg border border-gray-200">
@@ -152,14 +175,59 @@ const deleteItem = () => {
                     </table>
                 </div>
             </div>
+
+            <!-- 2B. MOBILE NATIVE NEWS CARDS -->
+            <div class="grid md:hidden grid-cols-1 gap-3.5">
+                <div v-if="news.data.length === 0" class="text-center py-12 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                    <NewspaperIcon class="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                    <h3 class="text-base font-bold text-slate-900 mb-1">Belum ada berita</h3>
+                    <p class="text-xs text-slate-500">Silakan buat berita baru menggunakan tombol di atas.</p>
+                </div>
+
+                <div 
+                    v-for="item in news.data" 
+                    :key="'mob-'+item.id"
+                    class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm flex flex-col space-y-3"
+                >
+                    <div class="flex items-start gap-3">
+                        <img v-if="item.image_path" :src="'/' + item.image_path" class="w-20 h-16 object-cover rounded-2xl border border-slate-200 flex-shrink-0">
+                        <div v-else class="w-20 h-16 bg-slate-100 flex items-center justify-center rounded-2xl border border-slate-200 flex-shrink-0">
+                            <NewspaperIcon class="w-7 h-7 text-slate-400"/>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-1 mb-1">
+                                <span class="text-[10px] font-black text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100">
+                                    {{ item.unit?.name || 'Yayasan' }}
+                                </span>
+                                <span :class="item.status === 'published' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'" class="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border">
+                                    {{ item.status }}
+                                </span>
+                            </div>
+                            <h4 class="font-extrabold text-sm text-slate-900 leading-snug line-clamp-2">{{ item.title }}</h4>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <span class="text-[11px] text-slate-400 font-bold">Oleh: {{ item.author?.name || 'Admin' }}</span>
+                        <div class="flex items-center gap-2">
+                            <Link :href="route('public-relations.news.edit', item.id)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl border border-slate-200 transition-all active:scale-95">
+                                Edit
+                            </Link>
+                            <button @click="confirmDelete(item)" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs rounded-xl border border-rose-200 transition-all active:scale-95">
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Pagination -->
             <div v-if="news.links && news.links.length > 3" class="mt-4 flex justify-center">
-                <div class="flex gap-1">
+                <div class="flex gap-1 flex-wrap justify-center">
                     <Link v-for="(link, k) in news.links" :key="k" 
                         :href="link.url || '#'" 
                         v-html="link.label"
-                        class="px-4 py-2 rounded-lg border text-sm"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold"
                         :class="[
                             link.active ? 'bg-namira-teal text-white border-namira-teal' : 'bg-white text-gray-500 hover:bg-gray-50',
                             !link.url ? 'opacity-50 cursor-not-allowed' : ''

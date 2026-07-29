@@ -59,12 +59,15 @@ class ScheduleController extends Controller
         $subjects = Subject::where('unit_id', $unitId)->orderBy('name')->get();
         $teachers = Teacher::where('unit_id', $unitId)->orderBy('full_name')->get();
 
+        $canManage = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_kurikulum']);
+
         return Inertia::render('Academic/Schedules/Index', [
             'classrooms' => $classrooms,
             'selectedClassroomId' => $selectedClassroomId,
             'schedule' => $schedule,
             'personalSchedule' => $personalSchedule,
             'isTeacher' => (bool) $isTeacher,
+            'canManage' => (bool) $canManage,
             'subjects' => $subjects,
             'teachers' => $teachers,
             'debug' => [
@@ -86,9 +89,12 @@ class ScheduleController extends Controller
             'subject_id' => 'required|exists:subjects,id',
             'teacher_id' => 'required|exists:teachers,id',
             'day' => ['required', \Illuminate\Validation\Rule::in(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'])],
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'start_time' => 'required|date_format:H:i,H:i:s',
+            'end_time' => 'required|date_format:H:i,H:i:s|after:start_time',
         ]);
+
+        $startTime = substr($request->start_time, 0, 5);
+        $endTime = substr($request->end_time, 0, 5);
 
         $classroom = Classroom::findOrFail($request->classroom_id);
         $subject = Subject::findOrFail($request->subject_id);
@@ -106,15 +112,16 @@ class ScheduleController extends Controller
             $unitId = $classroom->unit_id;
         }
 
-        // Check for Teacher Conflict
-        if ($this->hasConflict($request->teacher_id, $request->day, $request->start_time, $request->end_time, null, $unitId)) {
-             $conflictedClass = $this->getConflictedClass($request->teacher_id, $request->day, $request->start_time, $request->end_time, null, $unitId);
-             return redirect()->back()->withErrors(['teacher_id' => "Guru ini sedang mengajar di kelas {$conflictedClass->name} pada jam tersebut."]);
+        // Check for Teacher Conflict (Cross-unit aware)
+        if ($this->hasConflict($request->teacher_id, $request->day, $startTime, $endTime, null)) {
+             $conflictedClass = $this->getConflictedClass($request->teacher_id, $request->day, $startTime, $endTime, null);
+             $className = $conflictedClass ? $conflictedClass->name : 'kelas lain';
+             return redirect()->back()->withErrors(['teacher_id' => "Guru ini sedang mengajar di {$className} pada jam tersebut."]);
         }
 
         // Check for Classroom Conflict
-        if ($this->hasClassroomConflict($request->classroom_id, $request->day, $request->start_time, $request->end_time, null, $unitId)) {
-             $conflictedSchedule = $this->getConflictedClassroomSchedule($request->classroom_id, $request->day, $request->start_time, $request->end_time, null, $unitId);
+        if ($this->hasClassroomConflict($request->classroom_id, $request->day, $startTime, $endTime, null, $unitId)) {
+             $conflictedSchedule = $this->getConflictedClassroomSchedule($request->classroom_id, $request->day, $startTime, $endTime, null, $unitId);
              return redirect()->back()->withErrors(['classroom_id' => "Kelas ini sudah memiliki jadwal pelajaran {$conflictedSchedule->subject->name} oleh guru {$conflictedSchedule->teacher->full_name} pada jam tersebut."]);
         }
 
@@ -124,8 +131,8 @@ class ScheduleController extends Controller
             'subject_id' => $request->subject_id,
             'teacher_id' => $request->teacher_id,
             'day' => $request->day,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
         ]);
 
         return redirect()->back()->with('success', 'Jadwal berhasil ditambahkan.');
@@ -165,8 +172,11 @@ class ScheduleController extends Controller
         $failCount = 0;
 
         foreach ($sourceSchedules as $schedule) {
+            $sTime = substr($schedule->start_time, 0, 5);
+            $eTime = substr($schedule->end_time, 0, 5);
+
             // Check conflict for target day
-            if ($this->hasConflict($schedule->teacher_id, $request->to_day, $schedule->start_time, $schedule->end_time, null, $unitId)) {
+            if ($this->hasConflict($schedule->teacher_id, $request->to_day, $sTime, $eTime, null)) {
                 $failCount++;
                 continue;
             }
@@ -177,8 +187,8 @@ class ScheduleController extends Controller
                 'subject_id' => $schedule->subject_id,
                 'teacher_id' => $schedule->teacher_id,
                 'day' => $request->to_day,
-                'start_time' => $schedule->start_time,
-                'end_time' => $schedule->end_time,
+                'start_time' => $sTime,
+                'end_time' => $eTime,
             ]);
             $successCount++;
         }
@@ -238,9 +248,12 @@ class ScheduleController extends Controller
             'subject_id' => 'required|exists:subjects,id',
             'teacher_id' => 'required|exists:teachers,id',
             'day' => ['required', \Illuminate\Validation\Rule::in(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'])],
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'start_time' => 'required|date_format:H:i,H:i:s',
+            'end_time' => 'required|date_format:H:i,H:i:s|after:start_time',
         ]);
+
+        $startTime = substr($request->start_time, 0, 5);
+        $endTime = substr($request->end_time, 0, 5);
 
         $classroom = Classroom::findOrFail($request->classroom_id);
         $subject = Subject::findOrFail($request->subject_id);
@@ -257,14 +270,15 @@ class ScheduleController extends Controller
         }
 
         // Check for Teacher Conflict (Excluding current schedule)
-        if ($this->hasConflict($request->teacher_id, $request->day, $request->start_time, $request->end_time, $schedule->id, $unitId)) {
-             $conflictedClass = $this->getConflictedClass($request->teacher_id, $request->day, $request->start_time, $request->end_time, $schedule->id, $unitId);
-             return redirect()->back()->withErrors(['teacher_id' => "Guru ini sedang mengajar di kelas {$conflictedClass->name} pada jam tersebut."]);
+        if ($this->hasConflict($request->teacher_id, $request->day, $startTime, $endTime, $schedule->id)) {
+             $conflictedClass = $this->getConflictedClass($request->teacher_id, $request->day, $startTime, $endTime, $schedule->id);
+             $className = $conflictedClass ? $conflictedClass->name : 'kelas lain';
+             return redirect()->back()->withErrors(['teacher_id' => "Guru ini sedang mengajar di {$className} pada jam tersebut."]);
         }
 
         // Check for Classroom Conflict (Excluding current schedule)
-        if ($this->hasClassroomConflict($request->classroom_id, $request->day, $request->start_time, $request->end_time, $schedule->id, $unitId)) {
-             $conflictedSchedule = $this->getConflictedClassroomSchedule($request->classroom_id, $request->day, $request->start_time, $request->end_time, $schedule->id, $unitId);
+        if ($this->hasClassroomConflict($request->classroom_id, $request->day, $startTime, $endTime, $schedule->id, $unitId)) {
+             $conflictedSchedule = $this->getConflictedClassroomSchedule($request->classroom_id, $request->day, $startTime, $endTime, $schedule->id, $unitId);
              return redirect()->back()->withErrors(['classroom_id' => "Kelas ini sudah memiliki jadwal pelajaran {$conflictedSchedule->subject->name} oleh guru {$conflictedSchedule->teacher->full_name} pada jam tersebut."]);
         }
 
@@ -273,18 +287,22 @@ class ScheduleController extends Controller
             'subject_id' => $request->subject_id,
             'teacher_id' => $request->teacher_id,
             'day' => $request->day,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
         ]);
 
         return redirect()->back()->with('success', 'Jadwal berhasil diperbarui.');
     }
 
-    private function hasConflict($teacherId, $day, $startTime, $endTime, $ignoreId = null, $unitId = null)
+    private function hasConflict($teacherId, $day, $startTime, $endTime, $ignoreId = null)
     {
-        $query = ClassSchedule::where('teacher_id', $teacherId)
-            ->where('day', $day)
-            ->where('unit_id', $unitId ?? session('active_unit_id'));
+        $teacher = Teacher::find($teacherId);
+        $teacherIds = ($teacher && $teacher->user_id)
+            ? Teacher::where('user_id', $teacher->user_id)->pluck('id')->toArray()
+            : [$teacherId];
+
+        $query = ClassSchedule::whereIn('teacher_id', $teacherIds)
+            ->where('day', $day);
 
         if ($ignoreId) {
             $query->where('id', '!=', $ignoreId);
@@ -307,17 +325,21 @@ class ScheduleController extends Controller
             ->exists();
     }
 
-    private function getConflictedClass($teacherId, $day, $startTime, $endTime, $ignoreId = null, $unitId = null)
+    private function getConflictedClass($teacherId, $day, $startTime, $endTime, $ignoreId = null)
     {
-         $query = ClassSchedule::where('teacher_id', $teacherId)
-            ->where('day', $day)
-            ->where('unit_id', $unitId ?? session('active_unit_id'));
+        $teacher = Teacher::find($teacherId);
+        $teacherIds = ($teacher && $teacher->user_id)
+            ? Teacher::where('user_id', $teacher->user_id)->pluck('id')->toArray()
+            : [$teacherId];
+
+        $query = ClassSchedule::whereIn('teacher_id', $teacherIds)
+            ->where('day', $day);
 
         if ($ignoreId) {
             $query->where('id', '!=', $ignoreId);
         }
 
-         $schedule = $query->where(function ($query) use ($startTime, $endTime) {
+        $schedule = $query->where(function ($query) use ($startTime, $endTime) {
                 $query->where(function ($q) use ($startTime) {
                     $q->where('start_time', '<=', $startTime)
                       ->where('end_time', '>', $startTime);

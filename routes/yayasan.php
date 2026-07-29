@@ -2,12 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasan|admin_yayasan|admin_unit|staff_yayasan|staff_unit|teacher|kepala_sekolah'])->group(function () {
+Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasan|admin_yayasan|pengawas_yayasan|admin_unit|staff_yayasan|staff_unit|teacher|kepala_sekolah'])->group(function () {
     // Master Data
     Route::get('/dashboard', [\App\Modules\Yayasan\Controllers\UnitController::class, 'dashboard'])->name('dashboard');
     
     // Admin Only Routes
-    Route::middleware(['role:super_admin_yayasan|admin_yayasan|admin_unit|staff_yayasan|staff_unit|kepala_sekolah'])->group(function () {
+    Route::middleware(['role:super_admin_yayasan|admin_yayasan|pengawas_yayasan|admin_unit|staff_yayasan|staff_unit|kepala_sekolah'])->group(function () {
         Route::get('/monitoring', [\App\Modules\Yayasan\Controllers\MonitoringController::class, 'index'])->name('monitoring.index');
         Route::resource('units', \App\Modules\Yayasan\Controllers\UnitController::class);
         Route::resource('academic-years', \App\Modules\Yayasan\Controllers\AcademicYearController::class);

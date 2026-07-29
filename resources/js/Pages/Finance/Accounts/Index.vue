@@ -127,109 +127,197 @@ const deleteItem = () => {
                 </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto space-y-6">
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-center gap-4">
-                <!-- Search Bar -->
-                <div class="relative group flex-1 w-full">
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
-                            <MagnifyingGlassIcon v-if="!isLoading" class="w-5 h-5" />
-                            <ArrowPathIcon v-else class="animate-spin h-5 w-5 text-namira-teal" />
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
+            
+            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <!-- Header Gradient Card -->
+                <div class="bg-gradient-to-br from-[#00695c] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Keuangan</p>
+                            <h1 class="text-xl font-black leading-tight">Rekening Pembayaran</h1>
+                        </div>
+                        <button 
+                            @click="openCreateModal" 
+                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah</span>
+                        </button>
                     </div>
-                    <input 
-                        v-model="searchQuery"
-                        type="text" 
-                        placeholder="Cari Bank / No. Rek / Atas Nama..." 
-                        class="pl-10 pr-4 py-2.5 w-full bg-white border border-gray-200 rounded-2xl text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
-                    >
+
+                    <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3 text-center">
+                        <p class="text-2xl font-black text-white leading-none">{{ accounts.total || 0 }}</p>
+                        <p class="text-[9px] text-teal-200 font-bold mt-1 uppercase">Rekening Bank Terdaftar</p>
+                    </div>
                 </div>
 
-                <!-- Add Button -->
-                <button 
-                    @click="openCreateModal"
-                    class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
-                >
-                    <PlusIcon class="w-5 h-5" />
-                    <span>Tambah Rekening</span>
-                </button>
+                <!-- Search Input -->
+                <div class="px-4">
+                    <div class="relative">
+                        <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                        <ArrowPathIcon v-else class="w-4 h-4 absolute left-3 top-3.5 animate-spin text-teal-600" />
+                        <input 
+                            v-model="searchQuery" 
+                            type="text" 
+                            placeholder="Cari Bank / No Rek / Atas Nama..." 
+                            class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-teal-500 focus:border-teal-500 shadow-sm"
+                        />
+                    </div>
+                </div>
+
+                <!-- Mobile Account Cards -->
+                <div class="px-4 space-y-3">
+                    <div v-if="accounts.data.length === 0" class="bg-white rounded-3xl p-8 text-center border border-slate-100 shadow-sm text-xs font-bold text-slate-400">
+                        Belum ada data rekening bank.
+                    </div>
+
+                    <div 
+                        v-for="account in accounts.data" 
+                        :key="'mob-acc-'+account.id" 
+                        class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3 relative"
+                    >
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-700 font-extrabold text-[11px] flex items-center justify-center border border-blue-100 flex-shrink-0">
+                                    BANK
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-extrabold text-sm text-slate-900 leading-tight truncate">{{ account.bank_name }}</h4>
+                                    <p class="text-[11px] text-slate-500 font-mono mt-0.5">{{ account.account_number }}</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 text-[9px] font-black uppercase rounded-xl border flex-shrink-0"
+                                  :class="account.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'">
+                                {{ account.is_active ? 'Aktif' : 'Non-Aktif' }}
+                            </span>
+                        </div>
+
+                        <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-xs">
+                            <span class="text-[9px] text-slate-400 font-bold block uppercase">Atas Nama</span>
+                            <span class="font-bold text-slate-800 text-xs">{{ account.account_name }}</span>
+                        </div>
+
+                        <div class="pt-1 flex items-center justify-end gap-2 border-t border-slate-100">
+                            <button @click="openEditModal(account)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition flex items-center gap-1">
+                                <PencilSquareIcon class="w-3.5 h-3.5" />
+                                <span>Edit</span>
+                            </button>
+                            <button @click="confirmDelete(account)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition flex items-center gap-1">
+                                <TrashIcon class="w-3.5 h-3.5" />
+                                <span>Hapus</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Main Content Container -->
-            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
-                <!-- Account Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-white/50">
-                            <tr>
-                                <th class="px-6 py-4 font-bold tracking-wider">Bank & No. Rek</th>
-                                <th class="px-6 py-4 font-bold tracking-wider">Atas Nama</th>
-                                <th class="px-6 py-4 font-bold tracking-wider">Status</th>
-                                <th class="px-6 py-4 font-bold tracking-wider text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            <tr v-if="accounts.data.length === 0">
-                                <td colspan="4" class="px-6 py-12 text-center text-gray-400">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <InboxIcon class="w-12 h-12 mb-3 opacity-50" />
-                                        <p>Belum ada data rekening bank.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr v-for="account in accounts.data" :key="account.id" class="group hover:bg-teal-50/30 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs border border-white shadow-sm">
-                                            BANK
-                                        </div>
-                                        <div>
-                                            <div class="font-bold text-gray-900 group-hover:text-namira-teal transition-colors">
-                                                {{ account.bank_name }}
-                                            </div>
-                                            <div class="text-xs text-gray-500 font-mono mt-0.5">
-                                                {{ account.account_number }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-medium text-gray-700">{{ account.account_name }}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg border shadow-sm"
-                                          :class="account.is_active ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'">
-                                        {{ account.is_active ? 'Aktif' : 'Non-Aktif' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button @click="openEditModal(account)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Edit">
-                                            <PencilSquareIcon class="w-4 h-4" />
-                                        </button>
-                                        <button @click="confirmDelete(account)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Hapus">
-                                            <TrashIcon class="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <!-- 💻 DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    <!-- Search Bar -->
+                    <div class="relative group flex-1 w-full">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
+                                <MagnifyingGlassIcon v-if="!isLoading" class="w-5 h-5" />
+                                <ArrowPathIcon v-else class="animate-spin h-5 w-5 text-namira-teal" />
+                        </div>
+                        <input 
+                            v-model="searchQuery"
+                            type="text" 
+                            placeholder="Cari Bank / No. Rek / Atas Nama..." 
+                            class="pl-10 pr-4 py-2.5 w-full bg-white border border-gray-200 rounded-2xl text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
+                        >
+                    </div>
+
+                    <!-- Add Button -->
+                    <button 
+                        @click="openCreateModal"
+                        class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
+                    >
+                        <PlusIcon class="w-5 h-5" />
+                        <span>Tambah Rekening</span>
+                    </button>
                 </div>
 
-                <!-- Pagination -->
-                <div v-if="accounts.links.length > 3" class="p-4 border-t border-white/50 flex justify-center bg-white/30">
-                     <div class="flex gap-1 bg-white/50 backdrop-blur-md p-1 rounded-xl border border-white/50 shadow-sm">
-                        <template v-for="(link, k) in accounts.links" :key="k">
-                            <Link 
-                                v-if="link.url" 
-                                :href="link.url" 
-                                v-html="link.label"
-                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                                :class="link.active ? 'bg-namira-teal text-white shadow-md' : 'text-gray-500 hover:bg-white hover:text-namira-teal'"
-                            />
-                             <span v-else v-html="link.label" class="px-3 py-1.5 text-gray-300 text-xs font-bold"></span>
-                        </template>
-                     </div>
+                <!-- Main Content Container -->
+                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
+                    <!-- Account Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-white/50">
+                                <tr>
+                                    <th class="px-6 py-4 font-bold tracking-wider">Bank & No. Rek</th>
+                                    <th class="px-6 py-4 font-bold tracking-wider">Atas Nama</th>
+                                    <th class="px-6 py-4 font-bold tracking-wider">Status</th>
+                                    <th class="px-6 py-4 font-bold tracking-wider text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <tr v-if="accounts.data.length === 0">
+                                    <td colspan="4" class="px-6 py-12 text-center text-gray-400">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <InboxIcon class="w-12 h-12 mb-3 opacity-50" />
+                                            <p>Belum ada data rekening bank.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-for="account in accounts.data" :key="account.id" class="group hover:bg-teal-50/30 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs border border-white shadow-sm">
+                                                BANK
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-gray-900 group-hover:text-namira-teal transition-colors">
+                                                    {{ account.bank_name }}
+                                                </div>
+                                                <div class="text-xs text-gray-500 font-mono mt-0.5">
+                                                    {{ account.account_number }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-medium text-gray-700">{{ account.account_name }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-lg border shadow-sm"
+                                              :class="account.is_active ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'">
+                                            {{ account.is_active ? 'Aktif' : 'Non-Aktif' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button @click="openEditModal(account)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Edit">
+                                                <PencilSquareIcon class="w-4 h-4" />
+                                            </button>
+                                            <button @click="confirmDelete(account)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Hapus">
+                                                <TrashIcon class="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div v-if="accounts.links.length > 3" class="p-4 border-t border-white/50 flex justify-center bg-white/30">
+                         <div class="flex gap-1 bg-white/50 backdrop-blur-md p-1 rounded-xl border border-white/50 shadow-sm">
+                            <template v-for="(link, k) in accounts.links" :key="k">
+                                <Link 
+                                    v-if="link.url" 
+                                    :href="link.url" 
+                                    v-html="link.label"
+                                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                                    :class="link.active ? 'bg-namira-teal text-white shadow-md' : 'text-gray-500 hover:bg-white hover:text-namira-teal'"
+                                />
+                                 <span v-else v-html="link.label" class="px-3 py-1.5 text-gray-300 text-xs font-bold"></span>
+                            </template>
+                         </div>
+                    </div>
                 </div>
             </div>
         </div>

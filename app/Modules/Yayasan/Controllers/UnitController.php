@@ -39,17 +39,155 @@ class UnitController extends Controller
                 return $h;
             });
         
-        $isGlobal = auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan']);
+        $user = auth()->user();
+        $isGlobal = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
         $studentsCount = $isGlobal 
             ? \App\Modules\Academic\Models\Student::count()
             : \App\Modules\Academic\Models\Student::where('unit_id', $unitId)->count();
         $unitsCount = $isGlobal ? Unit::count() : 1;
+
+        // Teacher Specific Payload
+        $teacher = \App\Modules\Academic\Models\Teacher::where('user_id', $user->id)->first();
+        $teacherData = null;
+
+        if ($teacher) {
+            $dayMap = [
+                'Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa',
+                'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'
+            ];
+            $todayIndo = $dayMap[date('l')] ?? 'Senin';
+
+            $schedules = \App\Modules\Academic\Models\ClassSchedule::with(['classroom', 'subject'])
+                ->where('teacher_id', $teacher->id)
+                ->where('day', $todayIndo)
+                ->orderBy('start_time', 'asc')
+                ->get();
+
+            $nowTime = date('H:i:s');
+            $currentSchedule = $schedules->first(function ($s) use ($nowTime) {
+                return $nowTime >= $s->start_time && $nowTime <= $s->end_time;
+            }) ?? $schedules->first();
+
+            $homeroomClass = \App\Modules\Academic\Models\Classroom::where('homeroom_teacher_id', $teacher->id)->first();
+            $homeroomStats = null;
+
+            if ($homeroomClass) {
+                $totalClassStudents = \App\Modules\Academic\Models\Student::where('classroom_id', $homeroomClass->id)->count();
+                $todayAtt = \App\Models\StudentAttendance::where('classroom_id', $homeroomClass->id)
+                    ->whereDate('date', today())
+                    ->get();
+
+                $stats = [
+                    'H' => $todayAtt->where('status', 'H')->count(),
+                    'S' => $todayAtt->where('status', 'S')->count(),
+                    'I' => $todayAtt->where('status', 'I')->count(),
+                    'A' => $todayAtt->where('status', 'A')->count(),
+                ];
+
+                $hasAttendance = $todayAtt->count() > 0;
+                $rate = ($hasAttendance && $totalClassStudents > 0) 
+                    ? round(($stats['H'] / $totalClassStudents) * 100) 
+                    : 0;
+
+                $homeroomStats = [
+                    'classroom_id' => $homeroomClass->id,
+                    'class_name' => $homeroomClass->name,
+                    'total_students' => $totalClassStudents,
+                    'has_attendance' => $hasAttendance,
+                    'present' => $stats['H'],
+                    'sick' => $stats['S'],
+                    'permission' => $stats['I'],
+                    'alpha' => $stats['A'],
+                    'rate' => $rate,
+                ];
+            }
+
+            // Employee Checkin Status today
+            $employeeAttendance = \App\Models\EmployeeAttendance::where('user_id', $user->id)
+                ->whereDate('date', today())
+                ->first();
+
+            $teacherData = [
+                'teacher_id' => $teacher->id,
+                'title' => $teacher->title ?? 'Guru Pengajar',
+                'homeroom_class' => $homeroomClass ? $homeroomClass->name : null,
+                'today_day' => $todayIndo,
+                'today_date' => now()->locale('id')->translatedFormat('l, j F Y'),
+                'current_schedule' => $currentSchedule ? [
+                    'id' => $currentSchedule->id,
+                    'subject_name' => $currentSchedule->subject->name ?? 'Mata Pelajaran',
+                    'classroom_name' => $currentSchedule->classroom->name ?? 'Kelas',
+                    'start_time' => substr($currentSchedule->start_time, 0, 5),
+                    'end_time' => substr($currentSchedule->end_time, 0, 5),
+                ] : null,
+                'schedules' => $schedules->map(fn($s) => [
+                    'id' => $s->id,
+                    'subject_name' => $s->subject->name ?? 'Mata Pelajaran',
+                    'classroom_name' => $s->classroom->name ?? 'Kelas',
+                    'start_time' => substr($s->start_time, 0, 5),
+                    'end_time' => substr($s->end_time, 0, 5),
+                ]),
+                'homeroom_stats' => $homeroomStats,
+            ];
+        }
+
+        // Employee Checkin Status today for ALL users (teachers, satpam, staff, admin, etc.)
+        $employeeAttendance = \App\Models\EmployeeAttendance::where('user_id', $user->id)
+            ->whereDate('date', today())
+            ->first();
+
+        $attendanceStatus = $employeeAttendance ? [
+            'checked_in' => true,
+            'time' => substr($employeeAttendance->check_in_time ?? $employeeAttendance->clock_in ?? '07:05:00', 0, 5),
+            'status' => $employeeAttendance->status ?? 'Tepat Waktu',
+        ] : [
+            'checked_in' => false,
+            'time' => null,
+            'status' => 'Belum Absen',
+        ];
+
+        // Determine human-readable Role Title
+        $roleTitle = 'Pegawai Yayasan';
+        if ($user->hasRole('super_admin_yayasan')) {
+            $roleTitle = 'Super Admin Yayasan';
+        } elseif ($user->hasRole('admin_yayasan')) {
+            $roleTitle = 'Admin Yayasan';
+        } elseif ($user->hasRole('admin_unit')) {
+            $roleTitle = 'Admin Unit';
+        } elseif ($user->hasRole('kepala_sekolah')) {
+            $roleTitle = 'Kepala Sekolah';
+        } elseif ($user->hasRole('satpam')) {
+            $roleTitle = 'Petugas Keamanan / Satpam';
+        } elseif ($user->hasRole('staff_yayasan')) {
+            $roleTitle = 'Staf Yayasan';
+        } elseif ($user->hasRole('staff_unit')) {
+            $roleTitle = 'Staf Administrasi';
+        } elseif ($user->hasRole('koordinator_sarpar')) {
+            $roleTitle = 'Koordinator Sarpras';
+        } elseif ($user->hasRole('finance')) {
+            $roleTitle = 'Staf Keuangan';
+        } elseif ($user->hasRole('humas_unit')) {
+            $roleTitle = 'Humas Unit';
+        } elseif ($user->hasRole('bk')) {
+            $roleTitle = 'Guru Bimbingan Konseling';
+        } elseif ($teacher) {
+            $roleTitle = $teacher->homeroom_class ? 'Wali Kelas' : ($teacher->title ?? 'Guru Pengajar');
+        }
+
+        $userData = [
+            'role_title' => $roleTitle,
+            'is_teacher' => (bool) $teacher,
+            'today_date' => now()->locale('id')->translatedFormat('l, j F Y'),
+            'attendance_status' => $attendanceStatus,
+        ];
         
         return Inertia::render('Yayasan/Dashboard/Index', [
              'unitsCount' => $unitsCount,
              'studentsCount' => $studentsCount,
              'activeYear' => \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first(),
              'upcomingEvents' => $upcomingEvents,
+             'teacherData' => $teacherData,
+             'userData' => $userData,
         ]);
     }
 
@@ -60,7 +198,7 @@ class UnitController extends Controller
         ]);
 
         $user = auth()->user();
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
             $hasRoleInUnit = \DB::table('model_has_roles')
                 ->where('model_id', $user->id)
                 ->where('team_id', $request->unit_id)
@@ -80,11 +218,11 @@ class UnitController extends Controller
      */
     public function show(Unit $unit)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak: Peran Anda tidak memiliki izin untuk melihat unit ini.');
         }
 
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $unit->id != session('active_unit_id')) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) && $unit->id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengakses data unit lain.');
         }
 
@@ -178,11 +316,11 @@ class UnitController extends Controller
 
     public function edit(Unit $unit)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak: Peran Anda tidak memiliki izin untuk mengedit unit ini.');
         }
 
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $unit->id != session('active_unit_id')) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) && $unit->id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengedit unit lain.');
         }
 
@@ -203,11 +341,11 @@ class UnitController extends Controller
 
     public function update(Request $request, Unit $unit)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak: Peran Anda tidak memiliki izin untuk mengubah data unit ini.');
         }
 
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $unit->id != session('active_unit_id')) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) && $unit->id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengubah data unit lain.');
         }
 

@@ -39,17 +39,18 @@ const formatDate = (dateString) => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto space-y-6">
-            <!-- Toolbar: Date Picker -->
-            <div class="flex items-center gap-4 flex-wrap">
-                <div class="relative group w-full md:w-auto">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
+            
+            <!-- 1A. DESKTOP TOOLBAR (Unchanged Desktop Layout) -->
+            <div class="hidden md:flex items-center gap-4 flex-wrap">
+                <div class="relative group w-auto">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                         <CalendarIcon class="w-5 h-5" />
                     </div>
                     <input 
                         type="date" 
                         v-model="selectedDate" 
-                        class="pl-10 pr-4 py-2.5 w-full md:w-64 bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl text-sm font-bold focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
+                        class="pl-10 pr-4 py-2.5 w-64 bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl text-sm font-bold focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
                     >
                 </div>
                 <!-- Date Display -->
@@ -63,18 +64,39 @@ const formatDate = (dateString) => {
                 </a>
             </div>
 
-            <!-- Schedule List -->
-            <div v-if="schedules.length === 0" class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
-                <div class="bg-gray-50 p-6 rounded-full mb-6">
-                    <CalendarIcon class="w-16 h-16 text-gray-400" />
+            <!-- 1B. MOBILE TOOLBAR (Executive Deep Emerald Date Picker & Quick Actions) -->
+            <div class="block md:hidden bg-[#064e3b] text-white p-4 rounded-3xl border border-emerald-800/80 shadow-xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-teal-400 uppercase">Jurnal Mengajar</span>
+                        <h3 class="text-sm font-extrabold text-white mt-0.5">{{ formatDate(date) }}</h3>
+                    </div>
+                    <a :href="route('yayasan.teaching-journal.export', { month: new Date(date).getMonth() + 1, year: new Date(date).getFullYear() })" class="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-extrabold flex items-center gap-1.5 shadow-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>Rekap</span>
+                    </a>
                 </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Libur Mengajar? 🎉</h3>
-                <p class="text-gray-500 font-medium">Tidak ada jadwal mengajar pada tanggal ini. Silakan pilih tanggal lain.</p>
+                <div class="relative w-full">
+                    <input 
+                        type="date" 
+                        v-model="selectedDate" 
+                        class="w-full bg-slate-800 border border-slate-700 text-white rounded-2xl text-xs font-bold p-3 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                </div>
             </div>
 
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div v-for="item in schedules" :key="item.id" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden">
-                    <!-- Status Indicator Strip -->
+            <!-- Empty State -->
+            <div v-if="schedules.length === 0" class="text-center py-12 md:py-16 bg-white rounded-3xl border border-slate-200 md:border-gray-100 shadow-sm flex flex-col items-center justify-center p-6">
+                <div class="bg-slate-50 md:bg-gray-50 p-5 md:p-6 rounded-full mb-4 md:mb-6">
+                    <CalendarIcon class="w-12 h-12 md:w-16 md:h-16 text-slate-400" />
+                </div>
+                <h3 class="text-lg md:text-xl font-bold text-slate-900 mb-1">Libur Mengajar? 🎉</h3>
+                <p class="text-xs md:text-sm text-slate-500 font-medium max-w-sm">Tidak ada jadwal mengajar pada tanggal ini. Silakan pilih tanggal lain di atas.</p>
+            </div>
+
+            <!-- 2A. DESKTOP SCHEDULE LIST (Unchanged Desktop Layout) -->
+            <div v-else class="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-for="item in schedules" :key="'desk-'+item.id" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1.5" :class="item.is_filled ? 'bg-green-500' : 'bg-red-500'"></div>
                     
                     <div class="pl-3">
@@ -108,6 +130,47 @@ const formatDate = (dateString) => {
                             </Link>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- 2B. MOBILE SCHEDULE LIST (Executive Mobile Native Cards) -->
+            <div v-if="schedules.length > 0" class="grid md:hidden grid-cols-1 gap-3.5">
+                <div 
+                    v-for="item in schedules" 
+                    :key="'mob-'+item.id" 
+                    class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between"
+                >
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="px-3 py-1 bg-slate-100 rounded-xl text-xs font-black text-slate-700">
+                            {{ item.start_time.substring(0, 5) }} - {{ item.end_time.substring(0, 5) }} WIB
+                        </span>
+                        <span 
+                            class="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border"
+                            :class="item.is_filled ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'"
+                        >
+                            {{ item.is_filled ? '🟢 SUDAH DIISI' : '🔴 BELUM DIISI' }}
+                        </span>
+                    </div>
+
+                    <div class="mb-4">
+                        <h4 class="font-extrabold text-base text-slate-900 leading-snug">{{ item.subject }}</h4>
+                        <p class="text-xs font-bold text-teal-700 mt-0.5">{{ item.classroom }}</p>
+                    </div>
+
+                    <Link 
+                        v-if="!item.is_filled"
+                        :href="route('yayasan.teaching-journal.create', { schedule_id: item.id, date: date })" 
+                        class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-2xl shadow-md text-center block transition-all active:scale-95"
+                    >
+                        Isi Jurnal Mengajar
+                    </Link>
+                    <Link 
+                        v-else 
+                        :href="route('yayasan.teaching-journal.show', item.journal_id)"
+                        class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-2xl border border-slate-200 text-center block transition-all active:scale-95"
+                    >
+                        Lihat Laporan Jurnal
+                    </Link>
                 </div>
             </div>
 

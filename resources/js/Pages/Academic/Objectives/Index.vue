@@ -203,8 +203,169 @@ const deleteItem = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto">
-            <div class="space-y-6">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 md:pb-6 space-y-5 md:space-y-6">
+
+            <!-- ==================== MOBILE PWA VIEW (block md:hidden) ==================== -->
+            <div class="block md:hidden space-y-4 -mx-4 -mt-4 px-4 pt-4 pb-16">
+                <!-- Header Executive Card Gradient -->
+                <div class="bg-gradient-to-br from-[#009688] via-[#00796b] to-[#0f172a] rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-sm">
+                                <BookOpenIcon class="w-5 h-5 text-teal-200" />
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-black tracking-wider uppercase text-teal-200/90 block">Kurikulum Merdeka</span>
+                                <h1 class="text-xl font-black text-white leading-tight">Tujuan Pembelajaran</h1>
+                            </div>
+                        </div>
+                        <button 
+                            @click="openCreateModal"
+                            class="px-3.5 py-2 bg-amber-400 text-slate-900 rounded-xl text-xs font-black shadow-lg hover:bg-amber-300 transition-all flex items-center gap-1.5 active:scale-95"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Stats Pill -->
+                    <div class="flex items-center gap-2 pt-2 border-t border-white/15">
+                        <span class="text-xs text-teal-100/90">Total Data:</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-white/20 text-white font-extrabold text-xs border border-white/20">
+                            {{ chapters.total }} Bab
+                        </span>
+                    </div>
+
+                    <!-- Mobile Search & Filter -->
+                    <div class="mt-4 space-y-2">
+                        <div class="relative">
+                            <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                            <ArrowPathIcon v-else class="w-4 h-4 absolute left-3.5 top-3 text-teal-300 animate-spin" />
+                            <input 
+                                v-model="searchQuery"
+                                type="text" 
+                                placeholder="Cari Bab atau TP..." 
+                                class="w-full bg-white/95 text-slate-800 text-xs font-medium placeholder-slate-400 pl-10 pr-4 py-2.5 rounded-2xl border-0 focus:ring-2 focus:ring-amber-400 shadow-sm"
+                            />
+                        </div>
+
+                        <select 
+                            v-model="subjectFilter" 
+                            class="w-full bg-white/95 text-slate-800 text-xs font-bold px-3.5 py-2.5 rounded-2xl border-0 focus:ring-2 focus:ring-amber-400 shadow-sm"
+                        >
+                            <option value="">Semua Mata Pelajaran</option>
+                            <option v-for="sub in subjects" :key="sub.id" :value="sub.id">{{ sub.name }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Empty State Mobile -->
+                <div v-if="chapters.data.length === 0" class="bg-white rounded-3xl p-8 text-center border border-slate-100 shadow-sm">
+                    <div class="w-16 h-16 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3">
+                        <BookOpenIcon class="w-8 h-8 opacity-60" />
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-base mb-1">Belum Ada Bab & TP</h3>
+                    <p class="text-xs text-slate-500 mb-4">Mulai buat Tujuan Pembelajaran untuk tiap mata pelajaran.</p>
+                    <button 
+                        @click="openCreateModal"
+                        class="px-5 py-2.5 bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-md active:scale-95"
+                    >
+                        + Tambah Data TP
+                    </button>
+                </div>
+
+                <!-- Mobile Chapters Cards Loop -->
+                <div v-else class="space-y-3">
+                    <div 
+                        v-for="chapter in chapters.data" 
+                        :key="'mob-'+chapter.id"
+                        class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden"
+                    >
+                        <!-- Chapter Header Mobile -->
+                        <div class="p-4 bg-slate-50/70 border-b border-slate-100">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-extrabold text-xs shadow-sm flex-shrink-0">
+                                        {{ chapter.subject?.code?.substring(0,3) || 'MP' }}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-extrabold text-slate-900 text-sm leading-snug">{{ chapter.title }}</h3>
+                                        <p class="text-xs font-semibold text-teal-700 mt-0.5">{{ chapter.subject?.name }}</p>
+                                        <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                                            <span v-if="chapter.grade_level" class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-bold text-[10px] border border-blue-100">
+                                                Kelas {{ chapter.grade_level }}
+                                            </span>
+                                            <span class="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-bold text-[10px] border border-purple-100">
+                                                Semester {{ chapter.semester }}
+                                            </span>
+                                            <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md font-bold text-[10px] border border-emerald-100">
+                                                {{ chapter.learning_objectives?.length || 0 }} TP
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Touch Actions -->
+                                <div class="flex items-center gap-1">
+                                    <button 
+                                        @click="openEditModal(chapter)"
+                                        class="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg active:scale-95"
+                                    >
+                                        <PencilSquareIcon class="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                        @click="confirmDelete(chapter)"
+                                        class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg active:scale-95"
+                                    >
+                                        <TrashIcon class="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TPs Items Mobile -->
+                        <div class="p-3 divide-y divide-slate-100">
+                            <div 
+                                v-for="tp in chapter.learning_objectives" 
+                                :key="'mob-tp-'+tp.id"
+                                class="py-2.5 first:pt-0 last:pb-0 flex items-start gap-3"
+                            >
+                                <span class="px-2 py-1 bg-teal-50 text-teal-800 font-mono text-[11px] font-extrabold rounded-lg border border-teal-200/80 flex-shrink-0">
+                                    {{ tp.code }}
+                                </span>
+                                <p class="text-xs text-slate-700 leading-relaxed font-normal pt-0.5">
+                                    {{ tp.description }}
+                                </p>
+                            </div>
+
+                            <div v-if="!chapter.learning_objectives?.length" class="text-center py-4 text-xs text-slate-400 italic">
+                                Belum ada detail TP untuk bab ini.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Pagination -->
+                <div v-if="chapters.links && chapters.links.length > 3" class="flex justify-center pt-2">
+                    <div class="flex gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm overflow-x-auto max-w-full">
+                        <template v-for="(link, k) in chapters.links" :key="'mob-pg-'+k">
+                            <Link 
+                                v-if="link.url" 
+                                :href="link.url" 
+                                v-html="link.label"
+                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                                :class="link.active ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'"
+                            />
+                            <span v-else v-html="link.label" class="px-3 py-1.5 text-slate-300 text-xs font-bold"></span>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== DESKTOP VIEW (hidden md:block) ==================== -->
+            <div class="hidden md:block space-y-6">
                 <!-- Toolbar -->
                 <div class="flex flex-col md:flex-row items-center gap-4">
                     <!-- Search Bar -->
@@ -324,31 +485,31 @@ const deleteItem = () => {
         <Teleport to="body">
             <div v-if="showModal" class="fixed inset-0 z-[100] overflow-y-auto">
                 <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
-                <div class="flex min-h-full items-center justify-center p-4">
-                    <div class="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-8 border border-gray-100 max-h-[90vh] flex flex-col transform transition-all scale-100">
-                        <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                             <h3 class="text-2xl font-bold text-gray-900">
+                <div class="flex min-h-full items-center justify-center p-3 md:p-4">
+                    <div class="relative bg-white rounded-2xl md:rounded-3xl shadow-2xl max-w-3xl w-full p-5 md:p-8 border border-gray-100 max-h-[90vh] flex flex-col transform transition-all scale-100">
+                        <div class="flex justify-between items-center mb-4 md:mb-6 pb-3 md:pb-4 border-b border-gray-100">
+                             <h3 class="text-xl md:text-2xl font-bold text-gray-900">
                                 {{ isEditing ? 'Edit Bab & TP' : 'Tambah Bab & TP' }}
                             </h3>
-                            <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
                                 <XMarkIcon class="w-6 h-6" />
                             </button>
                         </div>
 
-                        <form @submit.prevent="submit" class="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar">
+                        <form @submit.prevent="submit" class="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-5 md:space-y-6 custom-scrollbar">
                             <!-- Helper Info -->
                             <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-700 flex gap-3 items-start">
                                 <LightBulbIcon class="w-5 h-5 flex-shrink-0 mt-0.5" />
                                 <div>
                                     <p class="font-bold">Tips Efisiensi:</p>
-                                    <p>Anda bisa menambahkan banyak Tujuan Pembelajaran (TP) sekaligus dalam satu Bab. Pastikan kode TP unik (misal: TP 1.1, TP 1.2).</p>
+                                    <p class="text-xs md:text-sm">Anda bisa menambahkan banyak Tujuan Pembelajaran (TP) sekaligus dalam satu Bab. Pastikan kode TP unik (misal: TP 1.1, TP 1.2).</p>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                                 <div>
                                     <InputLabel for="subject" value="Mata Pelajaran *" />
-                                    <select id="subject" v-model="form.subject_id" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50">
+                                    <select id="subject" v-model="form.subject_id" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-sm">
                                         <option value="">-- Pilih Mapel --</option>
                                         <option v-for="sub in subjects" :key="sub.id" :value="sub.id">{{ sub.name }}</option>
                                     </select>
@@ -356,7 +517,7 @@ const deleteItem = () => {
                                 </div>
                                 <div>
                                     <InputLabel for="grade_level" value="Tingkat Kelas *" />
-                                    <select id="grade_level" v-model="form.grade_level" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50" required>
+                                    <select id="grade_level" v-model="form.grade_level" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-sm" required>
                                         <option value="">-- Pilih Tingkat --</option>
                                         <option v-for="g in availableGrades" :key="g" :value="g">
                                             {{ typeof g === 'number' ? 'Kelas ' + g : g }}
@@ -366,7 +527,7 @@ const deleteItem = () => {
                                 </div>
                                 <div>
                                     <InputLabel for="semester" value="Semester *" />
-                                    <select id="semester" v-model="form.semester" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50">
+                                    <select id="semester" v-model="form.semester" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-sm">
                                         <option value="1">Semester 1</option>
                                         <option value="2">Semester 2</option>
                                     </select>
@@ -375,34 +536,34 @@ const deleteItem = () => {
 
                             <div>
                                 <InputLabel for="title" value="Judul Bab / Materi *" />
-                                <TextInput id="title" v-model="form.title" class="w-full mt-1 font-bold text-lg" placeholder="Contoh: Bab 1 - Eksponen dan Logaritma" required />
+                                <TextInput id="title" v-model="form.title" class="w-full mt-1 font-bold text-base md:text-lg" placeholder="Contoh: Bab 1 - Eksponen dan Logaritma" required />
                                 <InputError :message="form.errors.title" class="mt-1" />
                             </div>
 
                             <!-- Dynamic TPs -->
                             <div class="space-y-4 pt-4 border-t border-gray-100">
                                 <div class="flex justify-between items-center">
-                                    <InputLabel value="Daftar Tujuan Pembelajaran" class="text-lg font-bold text-gray-800" />
-                                    <button type="button" @click="addObjectiveRow" class="px-4 py-2 bg-namira-teal/10 text-namira-teal rounded-xl text-sm font-bold hover:bg-namira-teal/20 transition-colors flex items-center gap-2">
-                                        <PlusIcon class="w-5 h-5" />
+                                    <InputLabel value="Daftar Tujuan Pembelajaran" class="text-base md:text-lg font-bold text-gray-800" />
+                                    <button type="button" @click="addObjectiveRow" class="px-3.5 py-1.5 md:px-4 md:py-2 bg-namira-teal/10 text-namira-teal rounded-xl text-xs md:text-sm font-bold hover:bg-namira-teal/20 transition-colors flex items-center gap-1.5 md:gap-2">
+                                        <PlusIcon class="w-4 h-4 md:w-5 md:h-5" />
                                         Tambah TP Lain
                                     </button>
                                 </div>
 
-                                <div class="space-y-4">
-                                    <div v-for="(obj, index) in form.objectives" :key="index" class="p-5 bg-gray-50 rounded-2xl border border-gray-200 relative group transition-all hover:border-namira-teal/50 hover:shadow-sm hover:bg-white">
+                                <div class="space-y-3 md:space-y-4">
+                                    <div v-for="(obj, index) in form.objectives" :key="index" class="p-4 md:p-5 bg-gray-50 rounded-2xl border border-gray-200 relative group transition-all hover:border-namira-teal/50 hover:shadow-sm hover:bg-white">
                                         <!-- Remove Button (Top Right) -->
                                         <button 
                                             v-if="form.objectives.length > 1"
                                             type="button" 
                                             @click="removeObjectiveRow(index)" 
-                                            class="absolute top-2 right-2 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                            class="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-100 md:opacity-0 group-hover:opacity-100"
                                             title="Hapus Baris Ini"
                                         >
                                             <XMarkIcon class="w-5 h-5" />
                                         </button>
 
-                                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
                                             <!-- Kode TP -->
                                             <div class="md:col-span-3">
                                                 <label :for="'code-'+index" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Kode TP</label>
@@ -410,7 +571,7 @@ const deleteItem = () => {
                                                     :id="'code-'+index"
                                                     v-model="obj.code" 
                                                     type="text" 
-                                                    class="w-full border-gray-300 rounded-xl text-base font-bold text-gray-800 focus:border-namira-teal focus:ring-namira-teal py-3 px-4 bg-white"
+                                                    class="w-full border-gray-300 rounded-xl text-sm md:text-base font-bold text-gray-800 focus:border-namira-teal focus:ring-namira-teal py-2.5 md:py-3 px-3 md:px-4 bg-white"
                                                     placeholder="TP 1.1"
                                                     required
                                                 >
@@ -424,7 +585,7 @@ const deleteItem = () => {
                                                     v-model="obj.description" 
                                                     rows="2" 
                                                     placeholder="Contoh: Peserta didik mampu memahami konsep..." 
-                                                    class="w-full border-gray-300 rounded-xl text-base text-gray-800 focus:border-namira-teal focus:ring-namira-teal py-3 px-4 bg-white resize-none"
+                                                    class="w-full border-gray-300 rounded-xl text-sm text-gray-800 focus:border-namira-teal focus:ring-namira-teal py-2.5 md:py-3 px-3 md:px-4 bg-white resize-none"
                                                     required
                                                 ></textarea>
                                             </div>
@@ -434,11 +595,11 @@ const deleteItem = () => {
                                 <InputError :message="form.errors.objectives" class="mt-1" />
                             </div>
 
-                            <div class="flex justify-between items-center pt-6 border-t border-gray-50 flex-shrink-0">
-                                <span class="text-xs text-gray-400">Pastikan Kode TP unik.</span>
-                                <div class="flex gap-3">
-                                    <button type="button" @click="closeModal" class="px-5 py-2.5 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition-colors">Batal</button>
-                                    <PrimaryButton :disabled="form.processing" class="rounded-xl px-6 py-2.5 shadow-lg shadow-namira-teal/30">{{ isEditing ? 'Simpan Perubahan' : 'Simpan Data' }}</PrimaryButton>
+                            <div class="flex justify-between items-center pt-4 md:pt-6 border-t border-gray-50 flex-shrink-0">
+                                <span class="text-[11px] md:text-xs text-gray-400">Pastikan Kode TP unik.</span>
+                                <div class="flex gap-2 md:gap-3">
+                                    <button type="button" @click="closeModal" class="px-4 py-2 text-xs md:text-sm text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition-colors">Batal</button>
+                                    <PrimaryButton :disabled="form.processing" class="rounded-xl px-5 py-2 md:px-6 md:py-2.5 text-xs md:text-sm shadow-lg shadow-namira-teal/30">{{ isEditing ? 'Simpan Perubahan' : 'Simpan Data' }}</PrimaryButton>
                                 </div>
                             </div>
                         </form>

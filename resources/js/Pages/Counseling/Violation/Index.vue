@@ -114,148 +114,299 @@ const closeLightbox = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
-            
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-center gap-4">
-                 <!-- Search Bar -->
-                <div class="relative group flex-1 w-full">
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
-                            <MagnifyingGlassIcon v-if="!isLoading" class="w-5 h-5" />
-                            <ArrowPathIcon v-else class="animate-spin h-5 w-5 text-namira-teal" />
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
+
+            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <!-- Header Card Gradient -->
+                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Bimbingan Konseling</p>
+                            <h1 class="text-xl font-black leading-tight">Rekap Pelanggaran</h1>
+                        </div>
+                        <Link :href="route('counseling.violations.create')">
+                            <button class="px-3.5 py-2 bg-red-500 hover:bg-red-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition">
+                                <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                                <span>Catat</span>
+                            </button>
+                        </Link>
                     </div>
-                    <input 
-                        v-model="search"
-                        type="text" 
-                        placeholder="Cari Siswa / NIS / Kategori..." 
-                        class="pl-10 pr-4 py-2.5 w-full bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
-                    >
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-2 gap-2 mt-4">
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-3.5 py-2.5">
+                            <p class="text-2xl font-black text-white leading-none">{{ violations.total || 0 }}</p>
+                            <p class="text-[10px] text-teal-200 font-bold mt-1 uppercase tracking-wider">Total Laporan</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-3.5 py-2.5">
+                            <p class="text-2xl font-black text-red-300 leading-none">
+                                +{{ violations.data.reduce((acc, curr) => acc + (parseInt(curr.points) || 0), 0) }}
+                            </p>
+                            <p class="text-[10px] text-red-200 font-bold mt-1 uppercase tracking-wider">Total Poin Halaman</p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Filter Toggle -->
-                <button @click="toggleFilter" class="px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 text-gray-600 rounded-2xl text-sm font-bold hover:bg-white hover:shadow-md transition-all flex items-center justify-center gap-2 active:scale-95 h-[46px]" :class="{'border-namira-teal text-namira-teal bg-teal-50/50': showFilter}">
-                    <FunnelIcon class="w-5 h-5" />
-                    <span class="hidden md:inline">Filter Tanggal</span>
-                </button>
+                <!-- Search & Filter Controls -->
+                <div class="px-4 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                            <ArrowPathIcon v-else class="w-4 h-4 absolute left-3 top-3.5 text-teal-600 animate-spin" />
+                            <input
+                                v-model="search"
+                                type="text"
+                                placeholder="Cari NIS / Nama / Pelanggaran..."
+                                class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-teal-500 focus:border-teal-500 shadow-sm"
+                            />
+                        </div>
+                        <button
+                            @click="toggleFilter"
+                            class="p-2.5 rounded-xl border text-slate-700 bg-white shadow-sm active:scale-95 transition"
+                            :class="showFilter ? 'border-teal-500 text-teal-700 bg-teal-50/50' : 'border-slate-200'"
+                        >
+                            <FunnelIcon class="w-5 h-5" />
+                        </button>
+                    </div>
 
-                <Link :href="route('counseling.violations.create')">
-                    <button 
-                        class="px-6 py-2.5 bg-red-600 text-white rounded-2xl font-bold shadow-lg shadow-red-600/30 hover:bg-red-700 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
+                    <!-- Collapsible Date Filter -->
+                    <div v-if="showFilter" class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-3 animate-fade-in-down">
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <label class="block font-bold text-slate-500 text-[10px] uppercase mb-1">Dari Tanggal</label>
+                                <input type="date" v-model="startDate" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-500 text-[10px] uppercase mb-1">Sampai Tanggal</label>
+                                <input type="date" v-model="endDate" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+                            </div>
+                        </div>
+                        <button @click="resetFilter" class="text-[11px] font-bold text-red-600 hover:underline block ml-auto">
+                            Reset Filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Violation Touch Cards -->
+                <div class="px-4 space-y-3">
+                    <div v-if="violations.data.length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <ExclamationTriangleIcon class="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                        <p class="font-extrabold text-sm text-slate-800">Belum ada pelanggaran</p>
+                        <p class="text-xs text-slate-400 mt-1">Data rekap pelanggaran siswa kosong.</p>
+                    </div>
+
+                    <div
+                        v-for="v in violations.data"
+                        :key="v.id"
+                        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3 relative overflow-hidden"
                     >
-                        <PlusIcon class="w-5 h-5" />
-                        <span>Catat Pelanggaran</span>
+                        <!-- Top Row: Student & Date -->
+                        <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-black text-sm shrink-0 border border-slate-200">
+                                    {{ v.student?.name?.charAt(0) || '?' }}
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="font-extrabold text-slate-900 text-sm truncate leading-tight">{{ v.student?.name }}</h3>
+                                    <p class="text-xs text-slate-500 font-semibold mt-0.5">{{ v.student?.classroom || 'Tanpa Kelas' }}</p>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 font-black text-xs text-red-600 bg-red-50 border border-red-100 px-2.5 py-1 rounded-full shrink-0">
+                                <ExclamationTriangleIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                                +{{ v.points }} Poin
+                            </span>
+                        </div>
+
+                        <!-- Details -->
+                        <div class="space-y-1.5 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                                    {{ v.category?.name }}
+                                    <button
+                                        v-if="v.photo_proof"
+                                        @click="openLightbox(v.photo_proof)"
+                                        class="p-1 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100"
+                                    >
+                                        <PhotoIcon class="w-4 h-4" />
+                                    </button>
+                                </span>
+                                <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                                    <CalendarIcon class="w-3.5 h-3.5" />
+                                    {{ new Date(v.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                                </span>
+                            </div>
+                            <p class="text-slate-500 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] leading-relaxed">
+                                "{{ v.description || 'Tidak ada keterangan tambahan.' }}"
+                            </p>
+                        </div>
+
+                        <!-- Footer: Reporter & Actions -->
+                        <div class="pt-2 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
+                            <span class="flex items-center gap-1 font-semibold text-[11px]">
+                                <UserCircleIcon class="w-3.5 h-3.5 text-slate-400" />
+                                {{ v.reporter_name }}
+                            </span>
+                            <button
+                                v-if="canDelete"
+                                @click="confirmDelete(v.id)"
+                                class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                            >
+                                <TrashIcon class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Pagination -->
+                    <Pagination :links="violations.links" class="pt-2" />
+                </div>
+            </div>
+            <!-- END MOBILE VIEW -->
+
+            <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    <!-- Search Bar -->
+                    <div class="relative group flex-1 w-full">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
+                                <MagnifyingGlassIcon v-if="!isLoading" class="w-5 h-5" />
+                                <ArrowPathIcon v-else class="animate-spin h-5 w-5 text-namira-teal" />
+                        </div>
+                        <input 
+                            v-model="search"
+                            type="text" 
+                            placeholder="Cari Siswa / NIS / Kategori..." 
+                            class="pl-10 pr-4 py-2.5 w-full bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
+                        >
+                    </div>
+
+                    <!-- Filter Toggle -->
+                    <button @click="toggleFilter" class="px-4 py-2.5 bg-white/50 backdrop-blur-sm border border-white/50 text-gray-600 rounded-2xl text-sm font-bold hover:bg-white hover:shadow-md transition-all flex items-center justify-center gap-2 active:scale-95 h-[46px]" :class="{'border-namira-teal text-namira-teal bg-teal-50/50': showFilter}">
+                        <FunnelIcon class="w-5 h-5" />
+                        <span class="hidden md:inline">Filter Tanggal</span>
                     </button>
-                </Link>
-            </div>
 
-            <!-- Filters (Conditionally Visible) -->
-            <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex flex-wrap items-center gap-4 animate-fade-in-down">
-                <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-gray-600">Dari:</span>
-                    <input type="date" v-model="startDate" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
+                    <Link :href="route('counseling.violations.create')">
+                        <button 
+                            class="px-6 py-2.5 bg-red-600 text-white rounded-2xl font-bold shadow-lg shadow-red-600/30 hover:bg-red-700 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
+                        >
+                            <PlusIcon class="w-5 h-5" />
+                            <span>Catat Pelanggaran</span>
+                        </button>
+                    </Link>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-gray-600">Sampai:</span>
-                    <input type="date" v-model="endDate" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
-                </div>
-                <button @click="resetFilter" class="ml-auto text-xs text-red-500 hover:text-red-700 font-bold hover:underline">
-                    Reset Filter
-                </button>
-            </div>
 
-            <!-- Table -->
-            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
-                            <tr>
-                                <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Tanggal</th>
-                                <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Siswa</th>
-                                <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Pelanggaran</th>
-                                <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Poin</th>
-                                <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Pelapor</th>
-                                <th scope="col" class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            <tr v-for="v in violations.data" :key="v.id" class="group hover:bg-teal-50/30 transition-colors">
-                                <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-600">
-                                    <div class="flex items-center gap-2">
-                                        <CalendarIcon class="w-4 h-4 text-gray-400" />
-                                        {{ new Date(v.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric'}) }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-700 font-bold text-xs ring-2 ring-white shadow-sm border border-teal-100">
-                                            {{ v.student?.name?.charAt(0) || '?' }}
+                <!-- Filters (Conditionally Visible) -->
+                <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex flex-wrap items-center gap-4 animate-fade-in-down">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-gray-600">Dari:</span>
+                        <input type="date" v-model="startDate" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-gray-600">Sampai:</span>
+                        <input type="date" v-model="endDate" class="px-3 py-1.5 rounded-xl text-sm border-gray-200 focus:border-namira-teal focus:ring-namira-teal bg-white/50">
+                    </div>
+                    <button @click="resetFilter" class="ml-auto text-xs text-red-500 hover:text-red-700 font-bold hover:underline">
+                        Reset Filter
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Tanggal</th>
+                                    <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Siswa</th>
+                                    <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Pelanggaran</th>
+                                    <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Poin</th>
+                                    <th scope="col" class="px-6 py-5 font-extrabold tracking-wider">Pelapor</th>
+                                    <th scope="col" class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <tr v-for="v in violations.data" :key="v.id" class="group hover:bg-teal-50/30 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-600">
+                                        <div class="flex items-center gap-2">
+                                            <CalendarIcon class="w-4 h-4 text-gray-400" />
+                                            {{ new Date(v.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric'}) }}
                                         </div>
-                                        <div>
-                                            <div class="font-bold text-gray-900 group-hover:text-namira-teal transition-colors">{{ v.student?.name }}</div>
-                                            <div class="text-xs text-slate-500 bg-gray-100 px-1.5 py-0.5 rounded-md inline-block mt-0.5 border border-gray-200">
-                                                {{ v.student?.classroom || 'No Class' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-700 font-bold text-xs ring-2 ring-white shadow-sm border border-teal-100">
+                                                {{ v.student?.name?.charAt(0) || '?' }}
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-gray-900 group-hover:text-namira-teal transition-colors">{{ v.student?.name }}</div>
+                                                <div class="text-xs text-slate-500 bg-gray-100 px-1.5 py-0.5 rounded-md inline-block mt-0.5 border border-gray-200">
+                                                    {{ v.student?.classroom || 'No Class' }}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-col gap-1">
-                                        <span class="font-bold text-gray-700 flex items-center gap-2">
-                                            {{ v.category?.name }}
-                                            <button 
-                                                v-if="v.photo_proof" 
-                                                @click="openLightbox(v.photo_proof)"
-                                                class="text-blue-500 hover:text-blue-700 transition-colors bg-blue-50 hover:bg-blue-100 p-1 rounded-full" 
-                                                title="Lihat Bukti Foto"
-                                            >
-                                                <PhotoIcon class="w-4 h-4" />
-                                            </button>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-col gap-1">
+                                            <span class="font-bold text-gray-700 flex items-center gap-2">
+                                                {{ v.category?.name }}
+                                                <button 
+                                                    v-if="v.photo_proof" 
+                                                    @click="openLightbox(v.photo_proof)"
+                                                    class="text-blue-500 hover:text-blue-700 transition-colors bg-blue-50 hover:bg-blue-100 p-1 rounded-full" 
+                                                    title="Lihat Bukti Foto"
+                                                >
+                                                    <PhotoIcon class="w-4 h-4" />
+                                                </button>
+                                            </span>
+                                            <div class="text-xs text-gray-500 italic truncate max-w-xs pl-2 border-l-2 border-gray-200">
+                                                {{ v.description || 'Tidak ada keterangan.' }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center gap-1 font-extrabold text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm">
+                                            <ExclamationTriangleIcon class="w-3 h-3" />
+                                            +{{ v.points }}
                                         </span>
-                                        <div class="text-xs text-gray-500 italic truncate max-w-xs pl-2 border-l-2 border-gray-200">
-                                            {{ v.description || 'Tidak ada keterangan.' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-2 text-xs text-slate-500">
+                                            <UserCircleIcon class="w-4 h-4 text-slate-400" />
+                                            <span class="font-medium">{{ v.reporter_name }}</span>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-1 font-extrabold text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm">
-                                        <ExclamationTriangleIcon class="w-3 h-3" />
-                                        +{{ v.points }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-2 text-xs text-slate-500">
-                                        <UserCircleIcon class="w-4 h-4 text-slate-400" />
-                                        <span class="font-medium">{{ v.reporter_name }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <button 
-                                        v-if="canDelete"
-                                        @click="confirmDelete(v.id)" 
-                                        class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"
-                                        title="Hapus Laporan"
-                                    >
-                                        <TrashIcon class="w-5 h-5" />
-                                    </button>
-                                     <span v-else class="text-xs text-gray-300 italic">No Access</span>
-                                </td>
-                            </tr>
-                            <tr v-if="violations.data.length === 0">
-                                <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                                    <div class="flex flex-col items-center justify-center p-8">
-                                        <div class="bg-red-50 p-6 rounded-full mb-4">
-                                            <ExclamationTriangleIcon class="w-12 h-12 text-red-300" />
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button 
+                                            v-if="canDelete"
+                                            @click="confirmDelete(v.id)" 
+                                            class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"
+                                            title="Hapus Laporan"
+                                        >
+                                            <TrashIcon class="w-5 h-5" />
+                                        </button>
+                                         <span v-else class="text-xs text-gray-300 italic">No Access</span>
+                                    </td>
+                                </tr>
+                                <tr v-if="violations.data.length === 0">
+                                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                        <div class="flex flex-col items-center justify-center p-8">
+                                            <div class="bg-red-50 p-6 rounded-full mb-4">
+                                                <ExclamationTriangleIcon class="w-12 h-12 text-red-300" />
+                                            </div>
+                                            <p class="font-bold text-lg text-gray-800 mb-1">Belum ada pelanggaran</p>
+                                            <p class="text-sm text-gray-500">Data pelanggaran siswa masih kosong.</p>
                                         </div>
-                                        <p class="font-bold text-lg text-gray-800 mb-1">Belum ada pelanggaran</p>
-                                        <p class="text-sm text-gray-500">Data pelanggaran siswa masih kosong.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                     <Pagination :links="violations.links" class="p-6 border-t border-gray-100 bg-white/50" />
                 </div>
-                 <Pagination :links="violations.links" class="p-6 border-t border-gray-100 bg-white/50" />
             </div>
+            <!-- END DESKTOP VIEW -->
 
         </div>
 

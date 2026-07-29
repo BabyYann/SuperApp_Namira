@@ -82,67 +82,67 @@ const updateBill = () => {
             </div>
         </template>
 
-        <div class="py-12 max-w-5xl mx-auto space-y-6">
+        <div class="py-4 md:py-12 max-w-5xl mx-auto space-y-4 md:space-y-6">
             <!-- Bill Info -->
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-800">{{ bill.finance_type?.name || 'Tagihan Lainnya' }}</h3>
-                        <p class="text-sm text-gray-500">{{ bill.description }}</p>
+                <div class="px-4 py-4 md:px-8 md:py-6 border-b border-gray-100 flex flex-wrap justify-between items-start gap-3 bg-gray-50/50">
+                    <div class="min-w-0">
+                        <h3 class="text-base md:text-lg font-bold text-gray-800 leading-tight">{{ bill.finance_type?.name || 'Tagihan Lainnya' }}</h3>
+                        <p class="text-xs md:text-sm text-gray-500 mt-0.5">{{ bill.description }}</p>
                     </div>
                     
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
                          <!-- Edit Button (Contextual) -->
                         <button 
                             v-if="bill.status !== 'paid'"
                             @click="openEditModal"
-                            class="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 font-bold text-xs rounded-lg shadow-sm hover:bg-gray-50 hover:text-namira-teal transition-all flex items-center gap-1.5"
+                            class="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 font-bold text-xs rounded-xl shadow-sm hover:bg-gray-50 hover:text-namira-teal transition-all flex items-center gap-1.5"
                             title="Edit Tagihan"
                         >
                             <PencilSquareIcon class="w-3.5 h-3.5" />
                             <span>Edit</span>
                         </button>
 
-                        <span class="px-3 py-1.5 text-xs font-bold uppercase rounded-lg border shadow-sm" :class="statusClass(bill.status)">
+                        <span class="px-2.5 py-1 text-[10px] md:text-xs font-bold uppercase rounded-lg border shadow-sm" :class="statusClass(bill.status)">
                             {{ statusLabel(bill.status) }}
                         </span>
                     </div>
                 </div>
-                <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <dl class="space-y-4">
+                <div class="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                    <dl class="space-y-4 text-xs md:text-sm">
                         <div>
-                            <dt class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Nama Siswa</dt>
-                            <dd class="text-base font-bold text-gray-900">{{ bill.student?.full_name || '-' }}</dd>
-                            <dd class="text-sm text-gray-500">NIS: {{ bill.student?.nis || '-' }}</dd>
+                            <dt class="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Nama Siswa</dt>
+                            <dd class="text-sm md:text-base font-bold text-gray-900">{{ bill.student?.full_name || '-' }}</dd>
+                            <dd class="text-xs text-gray-500">NIS: {{ bill.student?.nis || '-' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Periode Tagihan</dt>
-                            <dd class="text-base font-medium text-gray-700">{{ formatDate(bill.billing_date) }}</dd>
+                            <dt class="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Periode Tagihan</dt>
+                            <dd class="text-xs md:text-base font-medium text-gray-700">{{ formatDate(bill.billing_date) }}</dd>
                         </div>
                         <div>
-                             <dt class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Jatuh Tempo</dt>
-                             <dd class="text-base font-medium text-red-600">{{ formatDate(bill.due_date) }}</dd>
+                             <dt class="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Jatuh Tempo</dt>
+                             <dd class="text-xs md:text-base font-medium text-red-600">{{ formatDate(bill.due_date) }}</dd>
                         </div>
                     </dl>
                     
-                    <div class="bg-gray-50 rounded-2xl p-6 space-y-3">
-                        <div class="flex justify-between text-sm text-gray-600">
+                    <div class="bg-gray-50 rounded-2xl p-4 md:p-6 space-y-2.5 md:space-y-3">
+                        <div class="flex justify-between text-xs md:text-sm text-gray-600">
                             <span>Jumlah Asli</span>
                             <span class="font-mono">{{ formatCurrency(bill.original_amount) }}</span>
                         </div>
-                        <div v-if="bill.discount_amount > 0" class="flex justify-between text-sm text-green-600">
+                        <div v-if="bill.discount_amount > 0" class="flex justify-between text-xs md:text-sm text-green-600">
                             <span>Diskon</span>
                             <span class="font-mono">- {{ formatCurrency(bill.discount_amount) }}</span>
                         </div>
-                        <div class="pt-3 border-t border-gray-200 flex justify-between text-base font-bold text-gray-900">
+                        <div class="pt-2 md:pt-3 border-t border-gray-200 flex justify-between text-sm md:text-base font-bold text-gray-900">
                             <span>Total Tagihan</span>
                             <span class="font-mono">{{ formatCurrency(bill.final_amount) }}</span>
                         </div>
-                         <div class="flex justify-between text-sm text-green-600">
+                         <div class="flex justify-between text-xs md:text-sm text-green-600">
                             <span>Sudah Dibayar</span>
                             <span class="font-mono">{{ formatCurrency(bill.paid_amount) }}</span>
                         </div>
-                        <div class="pt-3 border-t border-gray-200 flex justify-between text-lg font-extrabold text-namira-teal">
+                        <div class="pt-2 md:pt-3 border-t border-gray-200 flex justify-between text-base md:text-lg font-extrabold text-namira-teal">
                             <span>Sisa Pembayaran</span>
                             <span class="font-mono">{{ formatCurrency(bill.final_amount - bill.paid_amount) }}</span>
                         </div>
@@ -152,30 +152,30 @@ const updateBill = () => {
 
             <!-- Payment History -->
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
-                    <h3 class="font-bold text-gray-800">Riwayat Pembayaran</h3>
+                <div class="px-4 py-4 md:px-8 md:py-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="font-bold text-sm md:text-base text-gray-800">Riwayat Pembayaran</h3>
                 </div>
                 
                 <div v-if="transactions && transactions.length > 0" class="divide-y divide-gray-50">
-                    <div v-for="trx in transactions" :key="trx.id" class="p-6 flex justify-between items-center hover:bg-gray-50 transition-colors">
-                        <div class="flex items-center gap-4">
-                             <div class="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-600">
-                                    <PlusIcon class="w-5 h-5" />
+                    <div v-for="trx in transactions" :key="trx.id" class="p-4 md:p-6 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center gap-3 md:gap-4">
+                             <div class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 flex-shrink-0">
+                                    <PlusIcon class="w-4 h-4 md:w-5 md:h-5" />
                             </div>
-                            <div>
-                                <p class="font-bold text-gray-900">{{ trx.transaction_code }}</p>
-                                <p class="text-xs text-gray-500">{{ formatDate(trx.transaction_date) }} • {{ trx.payment_method }}</p>
+                            <div class="min-w-0">
+                                <p class="font-bold text-xs md:text-sm text-gray-900 truncate">{{ trx.transaction_code }}</p>
+                                <p class="text-[10px] md:text-xs text-gray-500">{{ formatDate(trx.transaction_date) }} • {{ trx.payment_method }}</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                             <p class="font-bold text-teal-600 font-mono">+ {{ formatCurrency(trx.amount) }}</p>
-                             <span class="text-[10px] uppercase font-bold text-gray-400">Sukses</span>
+                        <div class="text-right flex-shrink-0">
+                             <p class="font-bold text-xs md:text-sm text-teal-600 font-mono">+ {{ formatCurrency(trx.amount) }}</p>
+                             <span class="text-[9px] md:text-[10px] uppercase font-bold text-gray-400">Sukses</span>
                         </div>
                     </div>
                 </div>
-                <div v-else class="p-12 text-center text-gray-400">
-                    <div class="flex justify-center mb-4">
-                        <BanknotesIcon class="w-12 h-12 opacity-30" />
+                <div v-else class="p-8 md:p-12 text-center text-gray-400 text-xs md:text-sm">
+                    <div class="flex justify-center mb-3">
+                        <BanknotesIcon class="w-10 h-10 md:w-12 md:h-12 opacity-30" />
                     </div>
                     <p>Belum ada pembayaran untuk tagihan ini.</p>
                 </div>

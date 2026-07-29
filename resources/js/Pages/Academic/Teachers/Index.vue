@@ -17,6 +17,10 @@ import {
 
 const props = defineProps({
     teachers: Object,
+    availableUsers: {
+        type: Array,
+        default: () => []
+    },
     stats: Object,
     filters: Object,
 });
@@ -34,6 +38,7 @@ const isMobile = useMediaQuery('(max-width: 768px)');
 
 const form = useForm({
     id: null,
+    user_id: '',
     full_name: '',
     email: '',
     nip: '',
@@ -41,6 +46,16 @@ const form = useForm({
     phone: '',
     photo: null,
 });
+
+const onSelectUser = () => {
+    if (form.user_id) {
+        const found = props.availableUsers?.find(u => u.id === form.user_id);
+        if (found) {
+            form.full_name = found.name;
+            form.email = found.email;
+        }
+    }
+};
 
 const deleteForm = useForm({});
 
@@ -165,9 +180,163 @@ const deleteItem = () => {
                 </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-center gap-4">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
+
+            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <!-- Header Card Gradient -->
+                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Data Master</p>
+                            <h1 class="text-xl font-black leading-tight">Database Guru</h1>
+                        </div>
+                        <button 
+                            @click="openCreateModal"
+                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah Guru</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
+                            <p class="text-xl font-black text-white leading-none">{{ stats.total || 0 }}</p>
+                            <p class="text-[9px] text-teal-200 font-bold mt-1 uppercase">Total Guru</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
+                            <p class="text-xl font-black text-blue-300 leading-none">{{ stats.male || 0 }}</p>
+                            <p class="text-[9px] text-blue-200 font-bold mt-1 uppercase">Laki-Laki</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
+                            <p class="text-xl font-black text-pink-300 leading-none">{{ stats.female || 0 }}</p>
+                            <p class="text-[9px] text-pink-200 font-bold mt-1 uppercase">Perempuan</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div class="px-4 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                            <ArrowPathIcon v-else class="w-4 h-4 absolute left-3 top-3.5 animate-spin text-teal-600" />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Cari nama atau NIP guru..."
+                                class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-teal-500 focus:border-teal-500 shadow-sm"
+                            />
+                        </div>
+                        <button
+                            @click="toggleFilter"
+                            class="p-2.5 rounded-xl border text-slate-700 bg-white shadow-sm active:scale-95 transition"
+                            :class="showFilter ? 'border-teal-500 text-teal-700 bg-teal-50/50' : 'border-slate-200'"
+                        >
+                            <FunnelIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Filter -->
+                    <div v-if="showFilter" class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-3 animate-fade-in-down text-xs">
+                        <label class="block font-bold text-slate-500 text-[10px] uppercase">Filter Gender</label>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                @click="setFilter('L')"
+                                class="flex-1 py-1.5 rounded-xl text-xs font-bold transition border text-center"
+                                :class="genderFilter === 'L' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-600 border-slate-200'"
+                            >
+                                Laki-laki
+                            </button>
+                            <button 
+                                @click="setFilter('P')"
+                                class="flex-1 py-1.5 rounded-xl text-xs font-bold transition border text-center"
+                                :class="genderFilter === 'P' ? 'bg-pink-50 text-pink-700 border-pink-200' : 'bg-slate-50 text-slate-600 border-slate-200'"
+                            >
+                                Perempuan
+                            </button>
+                        </div>
+                        <button v-if="genderFilter" @click="setFilter(null)" class="text-[11px] font-bold text-red-600 hover:underline block ml-auto">
+                            Reset Filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teacher Mobile Touch Cards -->
+                <div class="px-4 space-y-3">
+                    <div v-if="teachers.data.length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <UserIcon class="w-10 h-10 mx-auto text-teal-300 mb-2" />
+                        <p class="font-extrabold text-sm text-slate-800">Belum ada data guru</p>
+                        <p class="text-xs text-slate-400 mt-1">Data pengajar masih kosong.</p>
+                    </div>
+
+                    <div
+                        v-for="teacher in teachers.data"
+                        :key="teacher.id"
+                        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3 relative overflow-hidden"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-slate-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm">
+                                    <img v-if="teacher.photo" :src="`/storage/${teacher.photo}`" class="w-full h-full object-cover">
+                                    <div v-else class="w-full h-full flex items-center justify-center text-xs font-black text-slate-400 bg-slate-100">
+                                        {{ teacher.full_name?.substring(0,2).toUpperCase() }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm leading-tight">{{ teacher.full_name }}</h3>
+                                    <p class="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                                        <EnvelopeIcon class="w-3 h-3 text-slate-400" />
+                                        {{ teacher.user?.email || 'Belum ada email' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 text-[9px] font-black uppercase rounded-full border shrink-0"
+                                  :class="teacher.gender === 'L' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-pink-50 text-pink-700 border-pink-100'">
+                                {{ teacher.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                            </span>
+                        </div>
+
+                        <!-- Details Row: NIP & Phone -->
+                        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
+                            <div>
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">NIP</span>
+                                <span class="font-bold text-slate-800 text-[11px]">{{ teacher.nip || '-' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">No. HP / WA</span>
+                                <span class="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                                    <PhoneIcon class="w-3 h-3 text-slate-400" />
+                                    {{ teacher.phone || '-' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Footer Actions -->
+                        <div class="pt-1 flex items-center justify-end gap-2 border-t border-slate-100">
+                            <button @click="openEditModal(teacher)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition flex items-center gap-1">
+                                <PencilSquareIcon class="w-3.5 h-3.5" />
+                                <span>Edit</span>
+                            </button>
+                            <button @click="confirmDelete(teacher)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 transition flex items-center gap-1">
+                                <TrashIcon class="w-3.5 h-3.5" />
+                                <span>Hapus</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pagination Mobile -->
+                    <Pagination :links="teachers.links" class="pt-2" />
+                </div>
+            </div>
+            <!-- END MOBILE VIEW -->
+
+            <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row items-center gap-4">
                     <!-- Search Bar -->
                     <div class="relative group flex-1 w-full">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
@@ -196,209 +365,148 @@ const deleteItem = () => {
                         <PlusIcon class="w-5 h-5" />
                         <span>Tambah Guru</span>
                     </button>
-            </div>
-            
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
-                     <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:scale-110 transition-transform">
-                        <UserGroupIcon class="w-8 h-8" />
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Guru</div>
-                        <div class="text-3xl font-extrabold text-gray-800">{{ stats.total }}</div>
-                    </div>
                 </div>
-                <div class="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
-                     <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:scale-110 transition-transform">
-                        <UserIcon class="w-8 h-8" />
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Laki-laki</div>
-                        <div class="text-3xl font-extrabold text-gray-800">{{ stats.male }}</div>
-                    </div>
-                </div>
-                <div class="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
-                     <div class="p-3 bg-pink-50 text-pink-600 rounded-2xl group-hover:scale-110 transition-transform">
-                        <UserIcon class="w-8 h-8" />
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Perempuan</div>
-                        <div class="text-3xl font-extrabold text-gray-800">{{ stats.female }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Filter Row (Conditionally Visible) -->
-            <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex items-center gap-4 animate-fade-in-down">
-                <span class="text-sm font-bold text-gray-600">Filter Gender:</span>
-                <button 
-                    @click="setFilter('L')"
-                    class="px-4 py-1.5 rounded-xl text-sm font-bold transition-all border"
-                    :class="genderFilter === 'L' ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm' : 'bg-white/50 text-gray-500 border-transparent hover:bg-white hover:shadow-sm'"
-                >
-                    Laki-laki
-                </button>
-                <button 
-                     @click="setFilter('P')"
-                     class="px-4 py-1.5 rounded-xl text-sm font-bold transition-all border"
-                     :class="genderFilter === 'P' ? 'bg-pink-50 text-pink-600 border-pink-200 shadow-sm' : 'bg-white/50 text-gray-500 border-transparent hover:bg-white hover:shadow-sm'"
-                >
-                    Perempuan
-                </button>
-                 <button 
-                     v-if="genderFilter"
-                     @click="setFilter(null)"
-                     class="ml-auto text-xs text-red-500 hover:text-red-700 font-bold hover:underline"
-                >
-                    Reset Filter
-                </button>
-            </div>
-
-            <!-- Mobile View (Cards) -->
-            <div v-if="isMobile" class="space-y-4">
-                <MobileCard 
-                    v-for="teacher in teachers.data" 
-                    :key="teacher.id"
-                    :title="teacher.full_name"
-                    :subtitle="teacher.nip || 'No NIP'"
-                    :image="teacher.photo ? `/storage/${teacher.photo}` : null"
-                    :status="teacher.gender === 'L' ? 'Laki-laki' : 'Perempuan'"
-                    :statusColor="teacher.gender === 'L' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'"
-                >
-                    <template #details>
-                        <div class="flex flex-col gap-1 mt-1">
-                            <span class="flex items-center gap-1">
-                                <EnvelopeIcon class="w-3 h-3" />
-                                {{ teacher.user?.email || '-' }}
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <PhoneIcon class="w-3 h-3" />
-                                {{ teacher.phone || '-' }}
-                            </span>
-                        </div>
-                    </template>
-                    <template #actions>
-                        <button @click="openEditModal(teacher)" class="text-namira-teal font-bold text-sm">Edit</button>
-                        <button @click="confirmDelete(teacher)" class="text-red-500 font-bold text-sm">Hapus</button>
-                    </template>
-                </MobileCard>
                 
-                <!-- Empty State Mobile -->
-                <div v-if="teachers.data.length === 0" class="text-center py-10 text-gray-400">
-                    <p>Tidak ada data guru.</p>
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
+                         <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:scale-110 transition-transform">
+                            <UserGroupIcon class="w-8 h-8" />
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Guru</div>
+                            <div class="text-3xl font-extrabold text-gray-800">{{ stats.total }}</div>
+                        </div>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
+                         <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:scale-110 transition-transform">
+                            <UserIcon class="w-8 h-8" />
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Laki-laki</div>
+                            <div class="text-3xl font-extrabold text-gray-800">{{ stats.male }}</div>
+                        </div>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
+                         <div class="p-3 bg-pink-50 text-pink-600 rounded-2xl group-hover:scale-110 transition-transform">
+                            <UserIcon class="w-8 h-8" />
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Perempuan</div>
+                            <div class="text-3xl font-extrabold text-gray-800">{{ stats.female }}</div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Mobile Pagination -->
-                 <div v-if="teachers.links.length > 3" class="flex justify-center mt-4">
-                     <div class="flex gap-1">
-                        <template v-for="(link, k) in teachers.links" :key="k">
-                            <Link 
-                                v-if="link.url" 
-                                :href="link.url" 
-                                v-html="link.label"
-                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                                :class="link.active ? 'bg-namira-teal text-white shadow-md' : 'bg-white text-gray-500'"
-                            />
-                        </template>
-                     </div>
+                <!-- Filter Row (Conditionally Visible) -->
+                <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex items-center gap-4 animate-fade-in-down">
+                    <span class="text-sm font-bold text-gray-600">Filter Gender:</span>
+                    <button 
+                        @click="setFilter('L')"
+                        class="px-4 py-1.5 rounded-xl text-sm font-bold transition-all border"
+                        :class="genderFilter === 'L' ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm' : 'bg-white/50 text-gray-500 border-transparent hover:bg-white hover:shadow-sm'"
+                    >
+                        Laki-laki
+                    </button>
+                    <button 
+                         @click="setFilter('P')"
+                         class="px-4 py-1.5 rounded-xl text-sm font-bold transition-all border"
+                         :class="genderFilter === 'P' ? 'bg-pink-50 text-pink-600 border-pink-200 shadow-sm' : 'bg-white/50 text-gray-500 border-transparent hover:bg-white hover:shadow-sm'"
+                    >
+                        Perempuan
+                    </button>
+                    <button 
+                        v-if="genderFilter"
+                        @click="setFilter(null)"
+                        class="text-xs font-bold text-red-500 hover:text-red-700 hover:underline ml-auto"
+                    >
+                        Reset Filter
+                    </button>
                 </div>
-            </div>
 
-            <!-- Main Content Container (Desktop Table) -->
-            <div v-else class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
-                <!-- Teacher Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
-                            <tr>
-                                <th class="px-6 py-5 font-extrabold tracking-wider">Nama Lengkap</th>
-                                <th class="px-6 py-5 font-extrabold tracking-wider">NIP</th>
-                                <th class="px-6 py-5 font-extrabold tracking-wider">L/P</th>
-                                <th class="px-6 py-5 font-extrabold tracking-wider">Kontak</th>
-                                <th class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            <!-- Empty State -->
-                            <tr v-if="teachers.data.length === 0">
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                                    <div class="flex flex-col items-center justify-center p-8">
-                                         <div class="bg-blue-50 p-6 rounded-full mb-4">
-                                            <UserIcon class="w-12 h-12 text-blue-400" />
-                                         </div>
-                                        <p class="font-bold text-lg text-gray-800 mb-1">Belum ada data guru</p>
-                                        <p class="text-sm text-gray-500 max-w-xs">Data guru masih kosong. Silakan tambahkan guru baru untuk sekolah ini.</p>
-                                    </div>
-                                </td>
-                            </tr>
+                <!-- Main Content Container (Desktop Table) -->
+                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
+                    <!-- Teacher Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
+                                <tr>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">Nama Lengkap</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">NIP</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">L/P</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">Kontak</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <!-- Empty State -->
+                                <tr v-if="teachers.data.length === 0">
+                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                        <div class="flex flex-col items-center justify-center p-8">
+                                             <div class="bg-blue-50 p-6 rounded-full mb-4">
+                                                <UserIcon class="w-12 h-12 text-blue-400" />
+                                             </div>
+                                            <p class="font-bold text-lg text-gray-800 mb-1">Belum ada data guru</p>
+                                            <p class="text-sm text-gray-500 max-w-xs">Data guru masih kosong. Silakan tambahkan guru baru untuk sekolah ini.</p>
+                                        </div>
+                                    </td>
+                                </tr>
 
-                            <tr v-for="teacher in teachers.data" :key="teacher.id" class="group hover:bg-teal-50/30 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm group-hover:border-namira-teal/50 transition-colors">
-                                            <img v-if="teacher.photo" :src="`/storage/${teacher.photo}`" class="w-full h-full object-cover">
-                                            <div v-else class="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
-                                                {{ teacher.full_name?.substring(0,2).toUpperCase() }}
+                                <tr v-for="teacher in teachers.data" :key="teacher.id" class="group hover:bg-teal-50/30 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm group-hover:border-namira-teal/50 transition-colors">
+                                                <img v-if="teacher.photo" :src="`/storage/${teacher.photo}`" class="w-full h-full object-cover">
+                                                <div v-else class="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
+                                                    {{ teacher.full_name?.substring(0,2).toUpperCase() }}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Link :href="route('yayasan.teachers.show', teacher.id)" class="font-bold text-gray-800 text-base group-hover:text-namira-teal transition-colors hover:underline">
+                                                    {{ teacher.full_name }}
+                                                </Link>
+                                                <div class="text-xs text-gray-500 flex items-center gap-1">
+                                                    <EnvelopeIcon class="w-3 h-3 opacity-70" />
+                                                    {{ teacher.user?.email || 'Belum ada email' }}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div>
-                                            <Link :href="route('yayasan.teachers.show', teacher.id)" class="font-bold text-gray-800 text-base group-hover:text-namira-teal transition-colors hover:underline">
-                                                {{ teacher.full_name }}
+                                    </td>
+                                    <td class="px-6 py-4 font-mono font-bold text-gray-700">
+                                        {{ teacher.nip || '-' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-3 py-1 text-[10px] font-extrabold uppercase rounded-full border shadow-sm" 
+                                              :class="teacher.gender === 'L' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-pink-50 text-pink-600 border-pink-100'">
+                                            {{ teacher.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-xs font-semibold text-gray-600">
+                                        {{ teacher.phone || '-' }}
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                            <Link :href="route('yayasan.teachers.show', teacher.id)" class="p-2 rounded-xl text-gray-400 hover:text-namira-teal hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-100" title="Lihat Detail">
+                                                <EyeIcon class="w-4 h-4" />
                                             </Link>
-                                            <div class="text-xs text-gray-500 flex items-center gap-1">
-                                                <EnvelopeIcon class="w-3 h-3 opacity-70" />
-                                                {{ teacher.user?.email || 'Belum ada email' }}
-                                            </div>
+                                            <button @click="openEditModal(teacher)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-100" title="Edit Data">
+                                                <PencilSquareIcon class="w-4 h-4" />
+                                            </button>
+                                            <button @click="confirmDelete(teacher)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100" title="Hapus Guru">
+                                                <TrashIcon class="w-4 h-4" />
+                                            </button>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="font-mono text-xs font-bold text-gray-600 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg shadow-sm">{{ teacher.nip || '-' }}</span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-3 py-1 text-[10px] font-extrabold uppercase rounded-full border shadow-sm" 
-                                          :class="teacher.gender === 'L' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-pink-50 text-pink-600 border-pink-100'">
-                                        {{ teacher.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-600 font-mono text-xs">
-                                    {{ teacher.phone || '-' }}
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                        <Link :href="route('yayasan.teachers.show', teacher.id)" class="p-2 rounded-xl text-gray-400 hover:text-namira-teal hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-100" title="Lihat Detail">
-                                            <EyeIcon class="w-4 h-4" />
-                                        </Link>
-                                        <button @click="openEditModal(teacher)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-100" title="Edit Data">
-                                            <PencilSquareIcon class="w-4 h-4" />
-                                        </button>
-                                        <button @click="confirmDelete(teacher)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100" title="Hapus Guru">
-                                            <TrashIcon class="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <!-- Pagination -->
-                <div v-if="teachers.links.length > 3" class="p-6 flex justify-center border-t border-gray-100 bg-white/50">
-                     <div class="flex gap-1">
-                        <template v-for="(link, k) in teachers.links" :key="k">
-                            <Link 
-                                v-if="link.url" 
-                                :href="link.url" 
-                                v-html="link.label"
-                                class="px-4 py-2 border rounded-xl text-sm font-bold transition-all"
-                                :class="link.active ? 'bg-namira-teal text-white border-namira-teal shadow-lg shadow-namira-teal/30' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'"
-                            />
-                             <span v-else v-html="link.label" class="px-4 py-2 text-gray-400 text-sm font-medium"></span>
-                        </template>
-                     </div>
+                    <!-- Pagination -->
+                    <Pagination :links="teachers.links" class="p-6 border-t border-gray-100 bg-white/50" />
                 </div>
             </div>
+            <!-- END DESKTOP VIEW -->
         </div>
 
         <!-- Create/Edit Modal (Premium Glassmorphism) -->
@@ -419,6 +527,20 @@ const deleteItem = () => {
                         </h3>
 
                         <form @submit.prevent="submit" class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                            <!-- Option 1: Pick from Existing User -->
+                            <div v-if="!isEditing" class="md:col-span-2 p-4 bg-teal-50/70 border border-teal-100/80 rounded-2xl shadow-sm">
+                                <InputLabel value="Pilih Akun User Terdaftar (Opsional)" class="text-xs font-bold text-teal-800 uppercase tracking-wider mb-2" />
+                                <select v-model="form.user_id" @change="onSelectUser" class="w-full h-11 px-3 text-sm border-teal-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-white font-medium text-gray-800 shadow-sm transition-all">
+                                    <option value="">-- Buat Akun Baru dari Awal --</option>
+                                    <option v-for="u in availableUsers" :key="u.id" :value="u.id">
+                                        {{ u.name }} ({{ u.email }})
+                                    </option>
+                                </select>
+                                <p class="text-xs text-teal-600 mt-2 font-medium">
+                                    {{ form.user_id ? '✓ Akun user terdaftar dipilih. Nama & email otomatis terisi.' : 'Pilih akun terdaftar di Manajemen Pengguna untuk langsung menarik datanya, atau pilih buat akun baru dari awal.' }}
+                                </p>
+                            </div>
+
                             <!-- Photo Upload -->
                            <div class="md:col-span-2 flex justify-center mb-4">
                                 <div class="relative group cursor-pointer text-center">

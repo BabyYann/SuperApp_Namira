@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AttendanceLocation;
-use App\Models\Unit;
+use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Database\Seeder;
 
 class AttendanceLocationSeeder extends Seeder

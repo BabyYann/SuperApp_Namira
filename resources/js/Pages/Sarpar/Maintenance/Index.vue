@@ -82,9 +82,10 @@ const getStatusLabel = (status) => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-center gap-4">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 space-y-5 md:space-y-6">
+            
+            <!-- 1A. DESKTOP TOOLBAR (Unchanged Desktop Layout) -->
+            <div class="hidden md:flex flex-row items-center gap-4">
                 <div class="relative flex-1 w-full">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                         <MagnifyingGlassIcon class="w-5 h-5" />
@@ -100,8 +101,64 @@ const getStatusLabel = (status) => {
                 </select>
             </div>
 
-            <!-- Table -->
-            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
+            <!-- 1B. MOBILE TOOLBAR (Executive Namira Teal-to-Slate Header Card with Stats) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
+                            <h1 class="text-xl font-black leading-tight">Perawatan & Perbaikan</h1>
+                        </div>
+                        <div class="p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                            <WrenchScrewdriverIcon class="w-6 h-6 text-amber-300" />
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Grid (3 Columns) -->
+                    <div class="grid grid-cols-3 gap-2 text-center mt-3">
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                            <p class="text-lg font-black text-amber-300 leading-none">
+                                {{ logs.data.filter(l => l.status === 'pending').length }}
+                            </p>
+                            <p class="text-[8px] text-amber-200 font-bold mt-1 uppercase">Menunggu</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                            <p class="text-lg font-black text-blue-300 leading-none">
+                                {{ logs.data.filter(l => l.status === 'in_progress').length }}
+                            </p>
+                            <p class="text-[8px] text-blue-200 font-bold mt-1 uppercase">Ditangani</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                            <p class="text-lg font-black text-emerald-300 leading-none">
+                                {{ logs.data.filter(l => l.status === 'resolved').length }}
+                            </p>
+                            <p class="text-[8px] text-emerald-200 font-bold mt-1 uppercase">Selesai</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Search & Filter Row -->
+                <div class="px-4 space-y-2">
+                    <div class="relative">
+                        <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                        <input 
+                            v-model="searchQuery" 
+                            type="text" 
+                            placeholder="Cari barang / masalah..." 
+                            class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-teal-500 focus:border-teal-500 shadow-sm" 
+                        />
+                    </div>
+                    <select v-model="filterStatus" @change="applyFilters" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm">
+                        <option value="">Semua Status Laporan</option>
+                        <option value="pending">Status: Menunggu</option>
+                        <option value="in_progress">Status: Ditangani</option>
+                        <option value="resolved">Status: Selesai</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 2A. DESKTOP TABLE (Unchanged Desktop Layout) -->
+            <div class="hidden md:block bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -121,7 +178,7 @@ const getStatusLabel = (status) => {
                                     <p class="font-bold">Tidak ada laporan perawatan</p>
                                 </td>
                             </tr>
-                            <tr v-for="log in logs.data" :key="log.id" class="hover:bg-amber-50/30 transition-colors">
+                            <tr v-for="log in logs.data" :key="'desk-'+log.id" class="hover:bg-amber-50/30 transition-colors">
                                 <td class="p-4">
                                     <Link :href="route('sarpar.inventories.show', log.inventory?.id)" class="font-bold text-gray-800 hover:text-namira-teal">{{ log.inventory?.name }}</Link>
                                     <div class="text-xs text-gray-400">{{ log.inventory?.code }}</div>
@@ -156,6 +213,51 @@ const getStatusLabel = (status) => {
                     <Link v-for="link in logs.links" :key="link.label" :href="link.url || '#'" :class="['px-3 py-1.5 rounded-xl text-sm', link.active ? 'bg-namira-teal text-white' : 'text-gray-600 hover:bg-gray-100']" v-html="link.label" />
                 </div>
             </div>
+
+            <!-- 2B. MOBILE NATIVE MAINTENANCE CARDS -->
+            <div class="grid md:hidden grid-cols-1 gap-3.5">
+                <div v-if="logs.data.length === 0" class="text-center py-12 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                    <CheckCircleIcon class="w-12 h-12 text-slate-400 mx-auto mb-2 opacity-50" />
+                    <p class="font-extrabold text-sm text-slate-900">Tidak ada laporan perawatan</p>
+                </div>
+
+                <div 
+                    v-for="log in logs.data" 
+                    :key="'mob-'+log.id" 
+                    class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm flex flex-col space-y-3"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <span class="text-[10px] font-mono text-slate-400">{{ log.inventory?.code }}</span>
+                            <h4 class="font-extrabold text-base text-slate-900 leading-snug">{{ log.inventory?.name }}</h4>
+                        </div>
+                        <span :class="['px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-xl border', getStatusBadge(log.status)]">
+                            {{ getStatusLabel(log.status) }}
+                        </span>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        <p class="text-xs text-slate-700 font-medium leading-relaxed">{{ log.issue }}</p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+                        <span>Pelapor: <strong>{{ log.reporter?.name || '-' }}</strong></span>
+                        <span>{{ new Date(log.reported_date).toLocaleDateString('id-ID') }}</span>
+                    </div>
+
+                    <div v-if="log.status === 'pending' || log.status === 'in_progress'" class="flex items-center gap-2 pt-1">
+                        <button @click="openHandleModal(log)" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold rounded-2xl shadow-md flex items-center justify-center gap-1.5 active:scale-95">
+                            <WrenchScrewdriverIcon class="w-4 h-4" />
+                            <span>Tangani Laporan</span>
+                        </button>
+                        <button v-if="log.status === 'pending'" @click="cancelLog(log)" class="px-4 py-2.5 bg-rose-50 text-rose-700 text-xs font-extrabold rounded-2xl border border-rose-200 flex items-center justify-center gap-1 active:scale-95">
+                            <XCircleIcon class="w-4 h-4" />
+                            <span>Batal</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Handle Modal -->

@@ -145,141 +145,220 @@ const deleteItem = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
-            <!-- Toolbar -->
-            <div class="flex flex-col md:flex-row items-center gap-4">
-                 <!-- Search Bar -->
-                 <div class="relative group flex-1 w-full">
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
-                            <MagnifyingGlassIcon v-if="!isLoading" class="w-5 h-5" />
-                            <ArrowPathIcon v-else class="animate-spin h-5 w-5 text-namira-teal" />
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
+
+            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <!-- Header Card Gradient -->
+                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Kepegawaian</p>
+                            <h1 class="text-xl font-black leading-tight">Tenaga Kependidikan</h1>
+                        </div>
+                        <button 
+                            @click="openCreateModal"
+                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah Staf</span>
+                        </button>
                     </div>
-                    <input 
-                        v-model="searchQuery"
-                        type="text" 
-                        placeholder="Cari Nama / NIP / Jabatan..." 
-                        class="pl-10 pr-4 py-2.5 w-full bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-2 gap-2 mt-4 text-center">
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-3 py-2.5">
+                            <p class="text-2xl font-black text-white leading-none">{{ stats.total || 0 }}</p>
+                            <p class="text-[10px] text-teal-200 font-bold mt-1 uppercase">Total Staf</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-3 py-2.5">
+                            <p class="text-2xl font-black text-emerald-300 leading-none">{{ staff.total || staff.data.length }}</p>
+                            <p class="text-[10px] text-emerald-200 font-bold mt-1 uppercase">Staf Aktif</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Controls -->
+                <div class="px-4">
+                    <div class="relative">
+                        <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                        <ArrowPathIcon v-else class="w-4 h-4 absolute left-3 top-3.5 animate-spin text-teal-600" />
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Cari nama, NIP, atau jabatan staf..."
+                            class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-teal-500 focus:border-teal-500 shadow-sm"
+                        />
+                    </div>
+                </div>
+
+                <!-- Staff Mobile Touch Cards -->
+                <div class="px-4 space-y-3">
+                    <div v-if="staff.data.length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <UserGroupIcon class="w-10 h-10 mx-auto text-teal-300 mb-2" />
+                        <p class="font-extrabold text-sm text-slate-800">Belum ada data staf</p>
+                        <p class="text-xs text-slate-400 mt-1">Data tenaga kependidikan masih kosong.</p>
+                    </div>
+
+                    <div
+                        v-for="s in staff.data"
+                        :key="s.id"
+                        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3 relative overflow-hidden"
                     >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-slate-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm">
+                                    <img v-if="s.photo" :src="`/storage/${s.photo}`" class="w-full h-full object-cover">
+                                    <div v-else class="w-full h-full flex items-center justify-center text-xs font-black text-slate-400 bg-slate-100">
+                                        {{ s.full_name?.substring(0,2).toUpperCase() }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-sm leading-tight">{{ s.full_name }}</h3>
+                                    <p class="text-[11px] text-slate-500 font-medium mt-0.5">{{ s.user?.email || 'Belum ada email' }}</p>
+                                </div>
+                            </div>
+                            <span v-if="s.position" class="px-2.5 py-1 text-[10px] font-black uppercase rounded-xl bg-purple-50 text-purple-700 border border-purple-100 shrink-0">
+                                {{ s.position }}
+                            </span>
+                        </div>
+
+                        <!-- Details Row: NIP & Phone -->
+                        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
+                            <div>
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">NIP</span>
+                                <span class="font-bold text-slate-800 text-[11px]">{{ s.nip || '-' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">Kontak</span>
+                                <span class="font-bold text-slate-800 text-[11px]">{{ s.phone || '-' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Footer Actions -->
+                        <div class="pt-1 flex items-center justify-end gap-2 border-t border-slate-100">
+                            <Link :href="route('yayasan.staff.show', s.id)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 transition flex items-center gap-1">
+                                <EyeIcon class="w-3.5 h-3.5" />
+                                <span>Detail</span>
+                            </Link>
+                            <button @click="openEditModal(s)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition flex items-center gap-1">
+                                <PencilSquareIcon class="w-3.5 h-3.5" />
+                                <span>Edit</span>
+                            </button>
+                            <button @click="confirmDelete(s)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 transition flex items-center gap-1">
+                                <TrashIcon class="w-3.5 h-3.5" />
+                                <span>Hapus</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pagination Mobile -->
+                    <Pagination :links="staff.links" class="pt-2" />
+                </div>
+            </div>
+            <!-- END MOBILE VIEW -->
+
+            <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar -->
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                     <!-- Search Bar -->
+                     <div class="relative group flex-1 w-full">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-namira-teal transition-colors">
+                                <MagnifyingGlassIcon v-if="!isLoading" class="w-5 h-5" />
+                                <ArrowPathIcon v-else class="animate-spin h-5 w-5 text-namira-teal" />
+                        </div>
+                        <input 
+                            v-model="searchQuery"
+                            type="text" 
+                            placeholder="Cari Nama / NIP / Jabatan..." 
+                            class="pl-10 pr-4 py-2.5 w-full bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
+                        >
+                    </div>
+
+                    <!-- Add Button -->
+                    <button 
+                        @click="openCreateModal"
+                        class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
+                    >
+                        <PlusIcon class="w-5 h-5" />
+                        <span>Tambah Staf</span>
+                    </button>
                 </div>
 
-                <!-- Add Button -->
-                <button 
-                    @click="openCreateModal"
-                    class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
-                >
-                    <PlusIcon class="w-5 h-5" />
-                    <span>Tambah Staf</span>
-                </button>
-            </div>
-
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                 <div class="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
-                        <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:scale-110 transition-transform">
-                        <UserGroupIcon class="w-8 h-8" />
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Staf</div>
-                        <div class="text-3xl font-extrabold text-gray-800">{{ stats.total }}</div>
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                     <div class="bg-white/80 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm flex items-center gap-4 hover:shadow-md transition-all group">
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:scale-110 transition-transform">
+                            <UserGroupIcon class="w-8 h-8" />
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Staf</div>
+                            <div class="text-3xl font-extrabold text-gray-800">{{ stats.total }}</div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Main Content Container (Desktop Table) -->
-            <div v-if="!isMobile" class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
-                <table class="w-full text-sm text-left">
-                    <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
-                        <tr>
-                            <th class="px-6 py-5 font-extrabold tracking-wider">Nama & Email</th>
-                            <th class="px-6 py-5 font-extrabold tracking-wider">Jabatan</th>
-                            <th class="px-6 py-5 font-extrabold tracking-wider">NIP</th>
-                             <th class="px-6 py-5 font-extrabold tracking-wider">Kontak</th>
-                            <th class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50">
-                         <tr v-if="staff.data.length === 0">
-                            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                                <p class="font-bold text-lg text-gray-800 mb-1">Belum ada data</p>
-                                <p class="text-sm">Silakan tambahkan data staf baru.</p>
-                            </td>
-                        </tr>
-                        <tr v-for="s in staff.data" :key="s.id" class="group hover:bg-teal-50/30 transition-colors">
-                             <td class="px-6 py-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm group-hover:border-namira-teal/50 transition-colors">
-                                        <img v-if="s.photo" :src="`/storage/${s.photo}`" class="w-full h-full object-cover">
-                                        <div v-else class="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
-                                            {{ s.full_name?.substring(0,2).toUpperCase() }}
+                <!-- Main Content Container (Desktop Table) -->
+                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-5 font-extrabold tracking-wider">Nama & Email</th>
+                                <th class="px-6 py-5 font-extrabold tracking-wider">Jabatan</th>
+                                <th class="px-6 py-5 font-extrabold tracking-wider">NIP</th>
+                                 <th class="px-6 py-5 font-extrabold tracking-wider">Kontak</th>
+                                <th class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                             <tr v-if="staff.data.length === 0">
+                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                    <p class="font-bold text-lg text-gray-800 mb-1">Belum ada data</p>
+                                    <p class="text-sm">Silakan tambahkan data staf baru.</p>
+                                </td>
+                            </tr>
+                            <tr v-for="s in staff.data" :key="s.id" class="group hover:bg-teal-50/30 transition-colors">
+                                 <td class="px-6 py-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm group-hover:border-namira-teal/50 transition-colors">
+                                            <img v-if="s.photo" :src="`/storage/${s.photo}`" class="w-full h-full object-cover">
+                                            <div v-else class="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
+                                                {{ s.full_name?.substring(0,2).toUpperCase() }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Link :href="route('yayasan.staff.show', s.id)" class="font-bold text-gray-800 text-base group-hover:text-namira-teal transition-colors hover:underline">{{ s.full_name }}</Link>
+                                            <div class="text-xs text-gray-500">{{ s.user?.email || 'No Email' }}</div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <Link :href="route('yayasan.staff.show', s.id)" class="font-bold text-gray-800 text-base group-hover:text-namira-teal transition-colors hover:underline">{{ s.full_name }}</Link>
-                                        <div class="text-xs text-gray-500">{{ s.user?.email || 'No Email' }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold border border-purple-100">{{ s.position || '-' }}</span>
+                                </td>
+                                <td class="px-6 py-4 font-mono text-xs font-bold text-gray-600">{{ s.nip || '-' }}</td>
+                                 <td class="px-6 py-4 font-mono text-xs text-gray-600">{{ s.phone || '-' }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                         <Link :href="route('yayasan.staff.show', s.id)" class="p-2 bg-teal-50 text-namira-teal rounded-lg hover:bg-namira-teal hover:text-white transition-colors shadow-sm" title="Lihat Detail">
+                                            <EyeIcon class="w-4 h-4" />
+                                         </Link>
+                                        <button @click="openEditModal(s)" class="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-colors shadow-sm" title="Edit Data">
+                                            <PencilSquareIcon class="w-4 h-4" />
+                                        </button>
+                                        <button @click="confirmDelete(s)" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors shadow-sm" title="Hapus Staf">
+                                            <TrashIcon class="w-4 h-4" />
+                                        </button>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold border border-purple-100">{{ s.position || '-' }}</span>
-                            </td>
-                            <td class="px-6 py-4 font-mono text-xs font-bold text-gray-600">{{ s.nip || '-' }}</td>
-                             <td class="px-6 py-4 font-mono text-xs text-gray-600">{{ s.phone || '-' }}</td>
-                            <td class="px-6 py-4 text-right">
-                                <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                     <Link :href="route('yayasan.staff.show', s.id)" class="p-2 bg-teal-50 text-namira-teal rounded-lg hover:bg-namira-teal hover:text-white transition-colors shadow-sm" title="Lihat Detail">
-                                        <EyeIcon class="w-4 h-4" />
-                                     </Link>
-                                    <button @click="openEditModal(s)" class="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-colors shadow-sm" title="Edit Data">
-                                        <PencilSquareIcon class="w-4 h-4" />
-                                    </button>
-                                    <button @click="confirmDelete(s)" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors shadow-sm" title="Hapus Staf">
-                                        <TrashIcon class="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                 <!-- Pagination -->
-                <div v-if="staff.links.length > 3" class="p-6 flex justify-center border-t border-gray-100 bg-white/50">
-                     <div class="flex gap-1">
-                        <template v-for="(link, k) in staff.links" :key="k">
-                            <Link 
-                                v-if="link.url" 
-                                :href="link.url" 
-                                v-html="link.label"
-                                class="px-4 py-2 border rounded-xl text-sm font-bold transition-all"
-                                :class="link.active ? 'bg-namira-teal text-white border-namira-teal shadow-lg shadow-namira-teal/30' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'"
-                            />
-                             <span v-else v-html="link.label" class="px-4 py-2 text-gray-400 text-sm font-medium"></span>
-                        </template>
-                     </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                     <!-- Pagination -->
+                    <Pagination :links="staff.links" class="p-6 border-t border-gray-100 bg-white/50" />
                 </div>
             </div>
-             <!-- Mobile View -->
-            <div v-else class="space-y-4">
-                 <MobileCard 
-                    v-for="s in staff.data" 
-                    :key="s.id"
-                    :title="s.full_name"
-                    :subtitle="s.position || 'Staf'"
-                    :image="s.photo ? `/storage/${s.photo}` : null"
-                    :status="s.nip || 'No NIP'"
-                    statusColor="bg-gray-100 text-gray-600"
-                >
-                    <template #details>
-                        <div class="mt-2 text-xs text-gray-500">
-                             <div>{{ s.user?.email }}</div>
-                             <div>{{ s.phone }}</div>
-                        </div>
-                    </template>
-                    <template #actions>
-                         <Link :href="route('yayasan.staff.show', s.id)" class="text-namira-teal font-bold text-xs">Detail</Link>
-                        <button @click="openEditModal(s)" class="text-amber-600 font-bold text-xs">Edit</button>
-                        <button @click="confirmDelete(s)" class="text-red-500 font-bold text-xs">Hapus</button>
-                    </template>
-                </MobileCard>
-            </div>
+            <!-- END DESKTOP VIEW -->
         </div>
 
          <!-- Create/Edit Modal -->

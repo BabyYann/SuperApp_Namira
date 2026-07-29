@@ -3,13 +3,16 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ config('app.name', 'Namira App') }}</title>
 
-        <!-- PWA & Meta -->
+        <!-- PWA, Favicon & Meta -->
+        <link rel="icon" type="image/webp" href="/images/namira-foundation-logo.webp">
+        <link rel="shortcut icon" href="/images/namira-foundation-logo.webp">
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#009688">
-        <link rel="apple-touch-icon" href="/images/logo.png">
+        <link rel="apple-touch-icon" href="/images/namira-foundation-logo.webp">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

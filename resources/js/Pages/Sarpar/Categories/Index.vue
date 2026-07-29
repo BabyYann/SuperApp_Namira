@@ -92,54 +92,129 @@ const deleteItem = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
-            <!-- Toolbar -->
-            <div class="flex justify-end">
-                <button 
-                    @click="openCreateModal"
-                    class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 active:scale-95"
-                >
-                    <PlusIcon class="w-5 h-5" />
-                    <span>Tambah Kategori</span>
-                </button>
-            </div>
+        <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 space-y-5 md:space-y-6">
 
-            <!-- Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div v-for="category in categories" :key="category.id" class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all group">
-                    <div class="flex items-start gap-4">
-                        <div class="p-3 bg-gradient-to-br from-namira-teal/10 to-teal-100 text-namira-teal rounded-2xl">
-                            <TagIcon class="w-6 h-6" />
+            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <!-- Header Card Gradient -->
+                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
+                            <h1 class="text-xl font-black leading-tight">Kategori Inventaris</h1>
                         </div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-xs font-mono font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{{ category.code }}</span>
-                            </div>
-                            <h3 class="text-lg font-bold text-gray-800">{{ category.name }}</h3>
-                            <p class="text-sm text-gray-500 line-clamp-2 mt-1">{{ category.description || '-' }}</p>
-                            <div class="mt-3 text-xs text-gray-400">
-                                {{ category.inventories_count || 0 }} item terdaftar
-                            </div>
-                        </div>
+                        <button
+                            @click="openCreateModal"
+                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah</span>
+                        </button>
                     </div>
-                    
-                    <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-all">
-                        <button @click="openEditModal(category)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
-                            <PencilSquareIcon class="w-4 h-4" />
-                        </button>
-                        <button @click="confirmDelete(category)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" :disabled="category.inventories_count > 0">
-                            <TrashIcon class="w-4 h-4" />
-                        </button>
+
+                    <!-- Quick Stats Banner -->
+                    <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs">
+                        <span class="text-teal-200 font-bold">Total Kategori Terdaftar</span>
+                        <span class="font-black text-white text-base">{{ categories.length }}</span>
                     </div>
                 </div>
 
-                <!-- Empty State -->
-                <div v-if="categories.length === 0" class="col-span-full bg-white/80 backdrop-blur-xl rounded-3xl p-12 text-center border border-white/50">
-                    <TagIcon class="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 class="text-lg font-bold text-gray-800 mb-1">Belum ada kategori</h3>
-                    <p class="text-sm text-gray-500">Buat kategori untuk mengelompokkan inventaris</p>
+                <!-- Categories Mobile Touch Cards List -->
+                <div class="px-4 space-y-3">
+                    <div v-if="categories.length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <TagIcon class="w-10 h-10 mx-auto text-teal-300 mb-2" />
+                        <p class="font-extrabold text-sm text-slate-800">Belum ada kategori</p>
+                    </div>
+
+                    <div
+                        v-for="cat in categories"
+                        :key="`mob-cat-${cat.id}`"
+                        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-2.5 relative overflow-hidden"
+                    >
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="p-2 bg-teal-50 text-teal-600 rounded-xl">
+                                    <TagIcon class="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <span class="font-mono text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                                        {{ cat.code }}
+                                    </span>
+                                    <h3 class="font-extrabold text-slate-900 text-sm leading-tight mt-0.5">{{ cat.name }}</h3>
+                                </div>
+                            </div>
+                            <div class="flex gap-1">
+                                <button @click="openEditModal(cat)" class="p-1.5 rounded-xl text-amber-600 bg-amber-50 active:scale-95">
+                                    <PencilSquareIcon class="w-4 h-4" />
+                                </button>
+                                <button @click="confirmDelete(cat)" class="p-1.5 rounded-xl text-red-600 bg-red-50 active:scale-95" :disabled="cat.inventories_count > 0">
+                                    <TrashIcon class="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-500 line-clamp-2">{{ cat.description || 'Tidak ada deskripsi' }}</p>
+
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
+                            <span>Item Terdaftar</span>
+                            <span class="font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg">{{ cat.inventories_count || 0 }} item</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <!-- END MOBILE VIEW -->
+
+            <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar -->
+                <div class="flex justify-end">
+                    <button 
+                        @click="openCreateModal"
+                        class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 active:scale-95"
+                    >
+                        <PlusIcon class="w-5 h-5" />
+                        <span>Tambah Kategori</span>
+                    </button>
+                </div>
+
+                <!-- Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="category in categories" :key="category.id" class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all group">
+                        <div class="flex items-start gap-4">
+                            <div class="p-3 bg-gradient-to-br from-namira-teal/10 to-teal-100 text-namira-teal rounded-2xl">
+                                <TagIcon class="w-6 h-6" />
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs font-mono font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{{ category.code }}</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-800">{{ category.name }}</h3>
+                                <p class="text-sm text-gray-500 line-clamp-2 mt-1">{{ category.description || '-' }}</p>
+                                <div class="mt-3 text-xs text-gray-400">
+                                    {{ category.inventories_count || 0 }} item terdaftar
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-all">
+                            <button @click="openEditModal(category)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+                                <PencilSquareIcon class="w-4 h-4" />
+                            </button>
+                            <button @click="confirmDelete(category)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" :disabled="category.inventories_count > 0">
+                                <TrashIcon class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div v-if="categories.length === 0" class="col-span-full bg-white/80 backdrop-blur-xl rounded-3xl p-12 text-center border border-white/50">
+                        <TagIcon class="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">Belum ada kategori</h3>
+                        <p class="text-sm text-gray-500">Buat kategori untuk mengelompokkan inventaris</p>
+                    </div>
+                </div>
+            </div>
+            <!-- END DESKTOP VIEW -->
         </div>
 
         <!-- Create/Edit Modal -->

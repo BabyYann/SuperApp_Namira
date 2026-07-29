@@ -8,12 +8,11 @@
             </h2>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-5 md:space-y-6">
             
-            <!-- Status Card -->
-            <div class="bg-white/80 backdrop-blur-xl overflow-hidden shadow-sm sm:rounded-3xl border border-white/50 p-6">
-                <!-- ... (Keep Header Info) ... -->
-                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- 1A. DESKTOP VIEW STATUS CARD (Unchanged Desktop Layout) -->
+            <div class="hidden md:block bg-white/80 backdrop-blur-xl overflow-hidden shadow-sm rounded-3xl border border-white/50 p-6">
+                <div class="flex justify-between items-center gap-4">
                     <div>
                         <h3 class="text-xl font-bold text-gray-800">Halo, {{ $page.props.auth.user.name }}! 👋</h3>
                         <p class="text-gray-500 font-medium">{{ new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
@@ -35,35 +34,92 @@
                 </div>
             </div>
 
-            <!-- Tabs Navigation -->
-            <div v-if="!todayAttendance" class="flex space-x-2 bg-white/50 backdrop-blur-sm border border-white/50 p-1.5 rounded-2xl w-full md:w-fit mx-auto md:mx-0 shadow-sm">
-                <button @click="activeTab = 'present'" :class="activeTab === 'present' ? 'bg-namira-teal text-white shadow-md shadow-namira-teal/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all w-full md:w-auto">WFO (Hadir)</button>
-                <button @click="activeTab = 'business_trip'" :class="activeTab === 'business_trip' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all w-full md:w-auto">Dinas Luar</button>
-                <button @click="activeTab = 'permit'" :class="activeTab === 'permit' ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all w-full md:w-auto">Izin / Sakit</button>
+            <!-- 1B. MOBILE VIEW STATUS CARD (Executive Deep Emerald Mobile Layout) -->
+            <div class="block md:hidden bg-[#064e3b] text-white rounded-3xl p-5 shadow-xl border border-emerald-800/80 relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-teal-500/10 blur-xl pointer-events-none"></div>
+
+                <div class="flex flex-col justify-between items-start gap-4 relative z-10">
+                    <div>
+                        <span class="text-[10px] font-black tracking-widest text-teal-400 uppercase">Presensi Pegawai</span>
+                        <h3 class="text-xl font-extrabold text-white mt-0.5">Halo, {{ $page.props.auth.user.name }}</h3>
+                        <p class="text-xs text-slate-400 font-medium mt-1">
+                            {{ new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-2.5 w-full">
+                        <div v-if="todayAttendance" class="px-3.5 py-2 rounded-2xl font-black text-xs border shadow-sm flex items-center gap-2"
+                            :class="todayAttendance.approval_status === 'pending' ? 'bg-amber-950/80 text-amber-300 border-amber-800/60' : 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60'">
+                            <span class="w-2 h-2 rounded-full" :class="todayAttendance.approval_status === 'pending' ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'"></span>
+                            <span>{{ todayAttendance.check_in_time ? 'Sudah Masuk: ' + todayAttendance.check_in_time : 'Sudah Mengajukan' }}</span>
+                        </div>
+                        <div v-else class="px-3.5 py-2 bg-slate-800 text-slate-300 rounded-2xl font-bold text-xs border border-slate-700/80 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                            <span>Belum Absen Masuk</span>
+                        </div>
+
+                        <div v-if="todayAttendance && todayAttendance.check_out_time" class="px-3.5 py-2 bg-sky-950/80 text-sky-300 rounded-2xl font-bold text-xs border border-sky-800/60 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                            <span>Sudah Pulang: {{ todayAttendance.check_out_time }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2A. DESKTOP TABS NAVIGATION -->
+            <div v-if="!todayAttendance" class="hidden md:flex space-x-2 bg-white/50 backdrop-blur-sm border border-white/50 p-1.5 rounded-2xl w-fit shadow-sm">
+                <button @click="activeTab = 'present'" :class="activeTab === 'present' ? 'bg-namira-teal text-white shadow-md shadow-namira-teal/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">WFO (Hadir)</button>
+                <button @click="activeTab = 'business_trip'" :class="activeTab === 'business_trip' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">Dinas Luar</button>
+                <button @click="activeTab = 'permit'" :class="activeTab === 'permit' ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">Izin / Sakit</button>
+            </div>
+
+            <!-- 2B. MOBILE TABS NAVIGATION -->
+            <div v-if="!todayAttendance" class="flex md:hidden bg-slate-200/80 p-1.5 rounded-2xl space-x-1.5 w-full shadow-inner">
+                <button 
+                    @click="activeTab = 'present'" 
+                    :class="activeTab === 'present' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'" 
+                    class="px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex-1 text-center"
+                >
+                    WFO (Hadir)
+                </button>
+                <button 
+                    @click="activeTab = 'business_trip'" 
+                    :class="activeTab === 'business_trip' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'" 
+                    class="px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex-1 text-center"
+                >
+                    Dinas Luar
+                </button>
+                <button 
+                    @click="activeTab = 'permit'" 
+                    :class="activeTab === 'permit' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'" 
+                    class="px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex-1 text-center"
+                >
+                    Izin / Sakit
+                </button>
             </div>
 
             <!-- Content Area -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                 
                 <!-- Helper/Info Section (Map or Form Info) -->
-                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm overflow-hidden border border-white/50 min-h-[400px] relative z-0">
+                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm overflow-hidden border border-white/50 min-h-[350px] md:min-h-[400px] relative z-0 flex flex-col">
                     
                     <!-- WFO / Business Trip: Show Map -->
-                    <div v-show="activeTab !== 'permit'" class="h-full w-full relative">
-                        <div id="map" ref="mapContainer" class="w-full h-full"></div>
+                    <div v-show="activeTab !== 'permit'" class="h-full w-full relative flex-1 min-h-[320px]">
+                        <div id="map" ref="mapContainer" class="w-full h-full min-h-[320px]"></div>
                         <!-- Overlay Status -->
-                        <div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-lg z-[1000] border border-white/50">
+                        <div class="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-4 bg-slate-900/95 text-white md:bg-white/90 md:text-gray-800 backdrop-blur-md p-3.5 md:p-4 rounded-2xl shadow-lg z-[1000] border border-slate-800 md:border-white/50">
                              <div class="flex items-center gap-3">
-                                <div :class="isWithinRadius ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'" class="w-3 h-3 rounded-full animate-pulse"></div>
-                                <div>
-                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Status Lokasi</p>
-                                    <p v-if="isWithinRadius" class="text-green-700 font-bold text-sm">
+                                <div :class="isWithinRadius ? 'bg-emerald-400 md:bg-green-500 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'" class="w-3 h-3 rounded-full animate-pulse"></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-[9px] md:text-[10px] text-slate-400 md:text-gray-400 font-bold uppercase tracking-wider mb-0.5">Status Lokasi</p>
+                                    <p v-if="isWithinRadius" class="text-emerald-300 md:text-green-700 font-bold text-xs md:text-sm truncate">
                                         Di dalam jangkauan {{ nearestLocation?.name }}
                                     </p>
-                                    <p v-else-if="activeTab === 'business_trip'" class="text-blue-600 font-bold text-sm">
+                                    <p v-else-if="activeTab === 'business_trip'" class="text-sky-300 md:text-blue-600 font-bold text-xs md:text-sm truncate">
                                         Lokasi Bebas (Dinas Luar)
                                     </p>
-                                    <p v-else class="text-red-600 font-bold text-sm">
+                                    <p v-else class="text-rose-300 md:text-red-600 font-bold text-xs md:text-sm truncate">
                                         Di luar jangkauan (Jarak: {{ distanceToNearest ? distanceToNearest + 'm' : 'Menghitung...' }})
                                     </p>
                                 </div>
@@ -73,25 +129,25 @@
 
                     <!-- Permit: Info Upload -->
                     <div v-if="activeTab === 'permit'" class="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-purple-50/50 backdrop-blur-sm">
-                        <ClipboardDocumentCheckIcon class="w-24 h-24 text-purple-200 mb-4" />
-                        <h3 class="text-xl font-bold text-purple-800 mb-2">Form Pengajuan Izin/Sakit</h3>
-                        <p class="text-gray-600">Pastikan melampirkan bukti surat dokter atau dokumen pendukung lainnya.</p>
+                        <ClipboardDocumentCheckIcon class="w-20 h-20 md:w-24 md:h-24 text-purple-300 md:text-purple-200 mb-3 md:mb-4" />
+                        <h3 class="text-lg md:text-xl font-bold text-purple-900 md:text-purple-800 mb-1 md:mb-2">Form Pengajuan Izin/Sakit</h3>
+                        <p class="text-xs md:text-sm text-slate-500 md:text-gray-600 max-w-xs">Pastikan melampirkan bukti surat dokter atau dokumen pendukung lainnya.</p>
                     </div>
                 </div>
 
                 <!-- Input Action Section -->
-                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm p-8 border border-white/50 flex flex-col justify-center items-center text-center space-y-6 relative overflow-hidden">
+                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm p-6 md:p-8 border border-white/50 flex flex-col justify-center items-center text-center space-y-5 md:space-y-6 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-gray-100 to-transparent rounded-bl-[100px] opacity-50 -z-10"></div>
                     
                     <!-- Camera for WFO/Dinas -->
                     <div v-show="activeTab !== 'permit' && (!todayAttendance)" class="w-full">
-                         <div v-if="isCameraOpen || photoPreview" class="relative w-full max-w-xs mx-auto aspect-[3/4] bg-gray-100 rounded-3xl overflow-hidden border-4 border-white shadow-lg flex items-center justify-center mb-4">
+                         <div v-if="isCameraOpen || photoPreview" class="relative w-full max-w-xs mx-auto aspect-[3/4] bg-slate-900 md:bg-gray-100 rounded-3xl overflow-hidden border-4 border-slate-900 md:border-white shadow-xl flex items-center justify-center mb-2 md:mb-4">
                             <video v-show="isCameraOpen" ref="videoRef" autoplay playsinline class="w-full h-full object-cover"></video>
                             <img v-if="photoPreview && !isCameraOpen" :src="photoPreview" class="w-full h-full object-cover" />
                             <canvas ref="canvasRef" class="hidden"></canvas>
                             
-                            <button v-if="isCameraOpen" @click="takePhoto" class="absolute bottom-6 w-16 h-16 bg-white rounded-full border-4 border-gray-100 flex items-center justify-center shadow-xl active:scale-95 transition-transform hover:scale-105">
-                                <div class="w-12 h-12 bg-red-500 rounded-full border-2 border-white"></div>
+                            <button v-if="isCameraOpen" @click="takePhoto" class="absolute bottom-5 md:bottom-6 w-16 h-16 bg-white rounded-full border-4 border-slate-200 md:border-gray-100 flex items-center justify-center shadow-2xl active:scale-95 transition-transform hover:scale-105">
+                                <div class="w-11 h-11 md:w-12 md:h-12 bg-rose-600 md:bg-red-500 rounded-full border-2 border-white"></div>
                             </button>
                         </div>
                     </div>
@@ -101,29 +157,32 @@
                         
                         <!-- Note Input (All non-WFO requires note) -->
                         <div v-if="activeTab !== 'present'" class="text-left">
-                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Keterangan / Alasan</label>
-                            <textarea v-model="form.note" rows="3" class="w-full bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl shadow-sm focus:border-namira-teal focus:ring-namira-teal resize-none" placeholder="Jelaskan detail kegiatan..."></textarea>
+                            <label class="block text-[11px] md:text-xs font-bold text-slate-500 md:text-gray-400 uppercase tracking-wider mb-1">Keterangan / Alasan</label>
+                            <textarea v-model="form.note" rows="3" class="w-full bg-slate-50 md:bg-white/50 backdrop-blur-sm border-slate-200 md:border-white/50 rounded-2xl shadow-sm focus:border-namira-teal focus:ring-namira-teal resize-none p-3" placeholder="Jelaskan detail kegiatan..."></textarea>
                         </div>
 
                         <!-- Permit File Upload -->
-                        <div v-if="activeTab === 'permit'" class="text-left">
-                             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Upload Bukti (Surat/Foto)</label>
-                             <input type="file" @change="e => form.document = e.target.files[0]" class="block w-full text-sm text-gray-500
-                                file:mr-4 file:py-2.5 file:px-4
-                                file:rounded-xl file:border-0
-                                file:text-xs file:font-bold
-                                file:bg-purple-50 file:text-purple-700
-                                hover:file:bg-purple-100
-                                transition-all
-                              "/>
-                             <div class="mt-4 flex gap-4 text-left bg-gray-50/50 p-3 rounded-xl border border-white/50">
+                        <div v-if="activeTab === 'permit'" class="text-left space-y-3">
+                             <div>
+                                 <label class="block text-[11px] md:text-xs font-bold text-slate-500 md:text-gray-400 uppercase tracking-wider mb-1">Upload Bukti (Surat/Foto)</label>
+                                 <input type="file" @change="e => form.document = e.target.files[0]" class="block w-full text-xs md:text-sm text-slate-500 md:text-gray-500
+                                    file:mr-3 md:file:mr-4 file:py-2 md:file:py-2.5 file:px-3 md:file:px-4
+                                    file:rounded-xl file:border-0
+                                    file:text-xs file:font-bold
+                                    file:bg-purple-100 md:file:bg-purple-50 file:text-purple-800 md:file:text-purple-700
+                                    hover:file:bg-purple-200 md:hover:file:bg-purple-100
+                                    transition-all
+                                  "/>
+                             </div>
+
+                             <div class="flex gap-4 text-left bg-slate-50 md:bg-gray-50/50 p-3 rounded-2xl border border-slate-200 md:border-white/50">
                                 <label class="flex items-center gap-2 cursor-pointer">
                                      <input type="radio" value="permit" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
-                                     <span class="text-sm font-bold text-gray-700">Izin</span>
+                                     <span class="text-xs md:text-sm font-bold text-slate-700 md:text-gray-700">Izin</span>
                                 </label>
                                 <label class="flex items-center gap-2 cursor-pointer">
                                      <input type="radio" value="sick" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
-                                     <span class="text-sm font-bold text-gray-700">Sakit</span>
+                                     <span class="text-xs md:text-sm font-bold text-slate-700 md:text-gray-700">Sakit</span>
                                 </label>
                              </div>
                         </div>
@@ -132,57 +191,58 @@
                         
                         <!-- WFO Button -->
                         <div v-if="activeTab === 'present'">
-                            <button v-if="!photoPreview" @click="startCamera" :disabled="!isWithinRadius" :class="!isWithinRadius ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1 hover:shadow-xl'" class="w-full py-4 bg-namira-teal text-white rounded-2xl font-bold text-lg shadow-lg shadow-namira-teal/30 flex items-center justify-center gap-2 transition-all duration-300">
-                                <CameraIcon class="h-6 w-6" />
+                            <button v-if="!photoPreview" @click="startCamera" :disabled="!isWithinRadius" :class="!isWithinRadius ? 'opacity-50 cursor-not-allowed bg-slate-300 md:bg-namira-teal text-slate-500 md:text-white' : 'bg-slate-900 md:bg-namira-teal hover:bg-slate-800 text-white shadow-lg md:shadow-namira-teal/30 active:scale-95 md:hover:-translate-y-1 md:hover:shadow-xl'" class="w-full py-3.5 md:py-4 rounded-2xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all">
+                                <CameraIcon class="h-5 w-5 md:h-6 md:w-6 text-teal-400 md:text-white" />
                                 Ambil Foto & Absen
                             </button>
-                            <div v-else class="space-y-3">
-                                <button @click="submitCheckIn('present')" :disabled="form.processing" class="w-full py-4 bg-green-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-green-600/30 transition-all hover:scale-105">
+                            <div v-else class="space-y-2 md:space-y-3">
+                                <button @click="submitCheckIn('present')" :disabled="form.processing" class="w-full py-3.5 md:py-4 bg-emerald-600 md:bg-green-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-green-600/30 transition-all active:scale-95 md:hover:scale-105">
                                     {{ form.processing ? 'Mengirim...' : 'Konfirmasi Hadir' }}
                                 </button>
-                                <button @click="photoPreview = null; startCamera()" class="text-gray-500 text-sm font-bold hover:text-namira-teal transition-colors">Foto Ulang</button>
+                                <button @click="photoPreview = null; startCamera()" class="text-slate-500 text-xs md:text-sm font-bold hover:text-teal-700 transition-colors py-1">Foto Ulang</button>
                             </div>
                         </div>
 
                         <!-- Business Trip Button -->
                         <div v-if="activeTab === 'business_trip'">
-                             <button v-if="!photoPreview" @click="startCamera" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all hover:-translate-y-1 hover:shadow-xl">
-                                 <CameraIcon class="h-6 w-6" />
-                                Foto Bukti Dinas
+                             <button v-if="!photoPreview" @click="startCamera" class="w-full py-3.5 md:py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-blue-600/30 flex items-center justify-center gap-2 transition-all active:scale-95 md:hover:-translate-y-1 md:hover:shadow-xl">
+                                 <CameraIcon class="h-5 w-5 md:h-6 md:w-6" />
+                                 Foto Bukti Dinas
                              </button>
-                             <div v-else class="space-y-3">
-                                <button @click="submitCheckIn('business_trip')" :disabled="form.processing || !form.note" class="w-full py-4 bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-700/30 transition-all hover:scale-105 disabled:opacity-50">
+                             <div v-else class="space-y-2 md:space-y-3">
+                                <button @click="submitCheckIn('business_trip')" :disabled="form.processing || !form.note" class="w-full py-3.5 md:py-4 bg-blue-700 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-blue-700/30 transition-all active:scale-95 md:hover:scale-105 disabled:opacity-50">
                                     {{ form.processing ? 'Mengirim...' : 'Konfirmasi Dinas Luar' }}
                                 </button>
-                                <button @click="photoPreview = null; startCamera()" class="text-gray-500 text-sm font-bold hover:text-blue-600 transition-colors">Foto Ulang</button>
+                                <button @click="photoPreview = null; startCamera()" class="text-slate-500 text-xs md:text-sm font-bold hover:text-blue-600 transition-colors py-1">Foto Ulang</button>
                              </div>
                         </div>
 
                         <!-- Permit Button -->
                         <div v-if="activeTab === 'permit'">
-                             <button @click="submitCheckIn(permitType)" :disabled="form.processing || !form.note || !form.document" class="w-full py-4 bg-purple-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-purple-600/30 transition-all hover:scale-105 disabled:opacity-50">
-                                {{ form.processing ? 'Mengirim...' : 'Ajukan Izin/Sakit' }}
+                             <button @click="submitCheckIn(permitType)" :disabled="form.processing || !form.note || !form.document" class="w-full py-3.5 md:py-4 bg-purple-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-purple-600/30 transition-all active:scale-95 md:hover:scale-105 disabled:opacity-50">
+                                {{ form.processing ? 'Mengirim...' : 'Ajukan Izin / Sakit' }}
                             </button>
                         </div>
 
                     </div>
 
                     <!-- Check Out Button (Showing logic when already checked in) -->
-                    <div v-else-if="todayAttendance && !todayAttendance.check_out_time && (todayAttendance.status === 'present' || todayAttendance.status === 'business_trip' || todayAttendance.status === 'late')" class="w-full max-w-xs">
+                    <div v-else-if="todayAttendance && !todayAttendance.check_out_time && (todayAttendance.status === 'present' || todayAttendance.status === 'business_trip' || todayAttendance.status === 'late')" class="w-full max-w-xs space-y-2">
                           <button 
                             @click="submitCheckOut(todayAttendance.id)"
                             :disabled="!isWithinRadius && todayAttendance.status !== 'business_trip'"
-                            class="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-orange-500/30 hover:scale-105 transition-all disabled:opacity-50"
+                            class="w-full py-3.5 md:py-4 bg-rose-600 md:bg-orange-500 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-orange-500/30 transition-all active:scale-95 md:hover:scale-105 disabled:opacity-50"
                         >
-                            {{ form.processing ? 'Mengirim...' : 'Absen Pulang' }}
+                            {{ form.processing ? 'Mengirim...' : 'Absen Pulang Sekarang' }}
                         </button>
-                        <p v-if="todayAttendance.status !== 'business_trip' && !isWithinRadius" class="text-xs text-red-500 mt-2 font-bold">Harus berada di lokasi untuk Checkout (kecuali DL)</p>
+                        <p v-if="todayAttendance.status !== 'business_trip' && !isWithinRadius" class="text-xs text-rose-600 md:text-red-500 font-bold">Harus berada di lokasi kantor untuk Absen Pulang</p>
                     </div>
-                     <div v-else-if="todayAttendance" class="p-6 bg-green-50 text-green-700 rounded-2xl border border-green-200 font-bold flex flex-col items-center">
-                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                            <CheckIcon class="w-6 h-6" />
+
+                    <div v-else-if="todayAttendance" class="p-5 md:p-6 bg-emerald-50 md:bg-green-50 text-emerald-800 md:text-green-700 rounded-2xl border border-emerald-200 md:border-green-200 font-bold flex flex-col items-center w-full">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 md:bg-green-100 text-emerald-700 rounded-full flex items-center justify-center mb-2">
+                            <CheckIcon class="w-5 h-5 md:w-6 md:h-6 stroke-[2.5]" />
                         </div>
-                        Absensi hari ini selesai.
+                        <span class="text-xs md:text-base">Absensi Hari Ini Telah Selesai</span>
                     </div>
 
                 </div>

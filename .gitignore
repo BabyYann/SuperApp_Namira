@@ -37,3 +37,20 @@ vendor.zip
 php.ini
 scratch/
 .mimocode/
+
+# Personal files & archives (jangan ikut ke repo)
+*.7z
+*.zip
+*.rar
+*.exe
+*.dmg
+*.pkg
+photo_*.jpg
+photo_*.png
+photo_*.jpeg
+
+# Flutter/Android temp files
+flutter_app/android/.kotlin/
+flutter_app/android/.gradle/
+flutter_app/build/
+flutter_app/**/*.class

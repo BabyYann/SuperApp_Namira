@@ -49,12 +49,16 @@ class ClassroomController extends Controller
          ]);
 
          try {
-             Classroom::create([
+             $classroom = Classroom::create([
                  'unit_id' => $unitId,
                  'name' => $validated['name'],
                  'level' => $validated['level'],
                  'homeroom_teacher_id' => $validated['homeroom_teacher_id'],
              ]);
+
+             if ($classroom->homeroom_teacher_id) {
+                 $this->syncHomeroomTeacherRole($classroom->homeroom_teacher_id, $unitId);
+             }
 
              return redirect()->back()->with('success', 'Kelas berhasil dibuat.');
          } catch (\Exception $e) {
@@ -90,7 +94,17 @@ class ClassroomController extends Controller
              'homeroom_teacher_id' => 'nullable|exists:teachers,id',
          ]);
 
+        $oldTeacherId = $classroom->homeroom_teacher_id;
         $classroom->update($validated);
+        $newTeacherId = $classroom->homeroom_teacher_id;
+
+        // Sync roles for both old and new homeroom teacher
+        if ($oldTeacherId) {
+            $this->syncHomeroomTeacherRole($oldTeacherId, $classroom->unit_id);
+        }
+        if ($newTeacherId) {
+            $this->syncHomeroomTeacherRole($newTeacherId, $classroom->unit_id);
+        }
 
         return redirect()->back()->with('success', 'Kelas berhasil diperbarui.');
     }
@@ -181,9 +195,50 @@ class ClassroomController extends Controller
             abort(403, 'Akses Ditolak: Anda tidak dapat menghapus kelas dari unit lain.');
         }
         
+        $teacherId = $classroom->homeroom_teacher_id;
+        $unitId = $classroom->unit_id;
+
         $classroom->students()->update(['classroom_id' => null]);
         
         $classroom->delete();
+
+        if ($teacherId) {
+            $this->syncHomeroomTeacherRole($teacherId, $unitId);
+        }
+
         return redirect()->back()->with('success', 'Kelas dihapus.');
+    }
+
+    /**
+     * Helper to automatically assign or revoke 'wali_kelas' role based on homeroom teacher assignments.
+     */
+    private function syncHomeroomTeacherRole($teacherId, $unitId)
+    {
+        if (!$teacherId || !$unitId) return;
+
+        $teacher = \App\Modules\Academic\Models\Teacher::find($teacherId);
+        if (!$teacher || !$teacher->user_id) return;
+
+        $user = \App\Models\User::find($teacher->user_id);
+        if (!$user) return;
+
+        // Check if teacher is assigned as homeroom teacher for ANY class in this unit
+        $isHomeroomTeacher = \App\Modules\Academic\Models\Classroom::where('unit_id', $unitId)
+            ->where('homeroom_teacher_id', $teacherId)
+            ->exists();
+
+        setPermissionsTeamId($unitId);
+
+        if ($isHomeroomTeacher) {
+            if (!$user->hasRole('wali_kelas')) {
+                $user->assignRole('wali_kelas');
+            }
+        } else {
+            if ($user->hasRole('wali_kelas')) {
+                $user->removeRole('wali_kelas');
+            }
+        }
+
+        setPermissionsTeamId(session('active_unit_id'));
     }
 }

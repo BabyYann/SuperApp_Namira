@@ -4,7 +4,8 @@ import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, onMounted, watch, computed } from 'vue';
 import { 
     ChevronLeftIcon, ChevronRightIcon, CheckIcon, 
-    ExclamationCircleIcon, ArrowPathIcon 
+    ExclamationCircleIcon, ArrowPathIcon,
+    ClipboardDocumentCheckIcon, BookOpenIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -13,7 +14,10 @@ const props = defineProps({
     attendances: Object,
     date: String,
     history: Object, // { student_id: { A: 2, S: 1 } }
+    subject_journals: Array, // [{ subject_name, start_time, end_time, attendances }]
 });
+
+const activeTab = ref('daily'); // 'daily' | 'subject_matrix'
 
 const form = useForm({
     attendances: [],
@@ -188,8 +192,31 @@ const getHistoryWarning = (studentId) => {
         <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-slate-200">
                 
-                <!-- Toolbar -->
-                <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                <!-- Navigation Tabs (Absensi Harian vs Presensi Per-Mapel) -->
+                <div class="px-4 pt-3 bg-slate-50/50 border-b border-slate-200 flex gap-4 text-xs font-bold">
+                    <button
+                        @click="activeTab = 'daily'"
+                        class="pb-3 border-b-2 transition-all flex items-center gap-2"
+                        :class="activeTab === 'daily' ? 'border-slate-900 text-slate-900 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                    >
+                        <ClipboardDocumentCheckIcon class="w-4 h-4" />
+                        Absensi Harian Kelas
+                    </button>
+                    <button
+                        @click="activeTab = 'subject_matrix'"
+                        class="pb-3 border-b-2 transition-all flex items-center gap-2"
+                        :class="activeTab === 'subject_matrix' ? 'border-slate-900 text-slate-900 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                    >
+                        <BookOpenIcon class="w-4 h-4" />
+                        Matriks Presensi Per-Mata Pelajaran
+                        <span v-if="subject_journals.length > 0" class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px]">
+                            {{ subject_journals.length }} Mapel
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Toolbar (Only for Daily Tab) -->
+                <div v-if="activeTab === 'daily'" class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
                     <div class="flex items-center gap-4 text-sm text-slate-500">
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-slate-300"></span>
@@ -212,7 +239,7 @@ const getHistoryWarning = (studentId) => {
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div v-if="activeTab === 'daily'" class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-slate-600">
                         <thead class="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
                             <tr>
@@ -293,6 +320,51 @@ const getHistoryWarning = (studentId) => {
                                             </button>
                                         </div>
                                     </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Subject Attendance Matrix View (Tab 2) -->
+                <div v-if="activeTab === 'subject_matrix'" class="overflow-x-auto">
+                    <div v-if="subject_journals.length === 0" class="p-12 text-center text-slate-400">
+                        <p class="font-bold text-sm">Belum Ada Jurnal Mengajar Terisi Hari Ini</p>
+                        <p class="text-xs mt-1 text-slate-400">Guru mata pelajaran belum mengisi jurnal mengajar pada tanggal {{ new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) }}.</p>
+                    </div>
+                    <table v-else class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-3 w-10 text-center">No</th>
+                                <th class="px-4 py-3 min-w-[200px]">Nama Siswa</th>
+                                <th v-for="j in subject_journals" :key="j.id" class="px-4 py-3 text-center min-w-[140px]">
+                                    <div class="font-black text-slate-800">{{ j.subject_name }}</div>
+                                    <div class="text-[10px] font-medium text-slate-400 lowercase">({{ j.start_time }} - {{ j.end_time }})</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-for="(student, sIdx) in students" :key="student.id" class="hover:bg-slate-50/70">
+                                <td class="px-4 py-3 text-center text-slate-400 font-mono text-xs">{{ sIdx + 1 }}</td>
+                                <td class="px-4 py-3 font-bold text-slate-800">
+                                    {{ student.full_name }}
+                                    <div class="text-[10px] text-slate-400 font-normal">NIS: {{ student.nis }}</div>
+                                </td>
+                                <td v-for="j in subject_journals" :key="j.id" class="px-4 py-3 text-center">
+                                    <span v-if="j.attendances[student.id]" 
+                                          class="px-2.5 py-1 rounded-full text-[10px] font-black inline-block uppercase tracking-wider"
+                                          :class="{
+                                              'bg-emerald-100 text-emerald-800 border border-emerald-300': j.attendances[student.id].status === 'present',
+                                              'bg-blue-100 text-blue-800 border border-blue-300': j.attendances[student.id].status === 'sick',
+                                              'bg-amber-100 text-amber-800 border border-amber-300': j.attendances[student.id].status === 'permission',
+                                              'bg-rose-100 text-rose-800 border border-rose-300': j.attendances[student.id].status === 'alpha' || j.attendances[student.id].status === 'skipped',
+                                              'bg-orange-100 text-orange-800 border border-orange-300': j.attendances[student.id].status === 'late',
+                                          }"
+                                          :title="j.attendances[student.id].note"
+                                    >
+                                        {{ j.attendances[student.id].status === 'present' ? 'Hadir' : (j.attendances[student.id].status === 'sick' ? 'Sakit' : (j.attendances[student.id].status === 'permission' ? 'Izin' : (j.attendances[student.id].status === 'late' ? 'Telat' : 'Alpha'))) }}
+                                    </span>
+                                    <span v-else class="text-xs text-slate-300 italic">-</span>
                                 </td>
                             </tr>
                         </tbody>

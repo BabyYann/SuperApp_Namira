@@ -22,6 +22,7 @@ Route::get('/dashboard', function () {
         ->whereIn('roles.name', [
             'super_admin_yayasan', 
             'admin_yayasan', 
+            'pengawas_yayasan',
             'admin_unit', 
             'staff_yayasan', 
             'staff_unit', 

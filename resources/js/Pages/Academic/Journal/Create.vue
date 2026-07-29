@@ -33,8 +33,8 @@ const form = useForm({
     custom_theme: '',
     attendance: props.students.map(s => ({
         student_id: s.id,
-        status: 'present', // Default Hadir
-        note: ''
+        status: s.default_status || 'present',
+        note: s.default_note || ''
     })),
     notes: '',
     photo: null,
@@ -250,7 +250,13 @@ const formatDate = (dateString) => {
                                     <td class="px-4 py-3 text-center text-gray-400">{{ idx + 1 }}</td>
                                     <td class="px-4 py-3 font-bold text-gray-800">
                                         {{ students.find(s => s.id === att.student_id)?.name }}
-                                        <div class="text-[10px] text-gray-400 font-normal">{{ students.find(s => s.id === att.student_id)?.nis }}</div>
+                                        <div class="text-[10px] text-gray-400 font-normal flex items-center gap-1.5 mt-0.5">
+                                            <span>NIS: {{ students.find(s => s.id === att.student_id)?.nis }}</span>
+                                            <span v-if="students.find(s => s.id === att.student_id)?.source_badge" 
+                                                  class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                                                {{ students.find(s => s.id === att.student_id)?.source_badge }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="flex justify-center flex-wrap gap-2">

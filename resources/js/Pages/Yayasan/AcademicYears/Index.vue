@@ -129,88 +129,177 @@ const deleteItem = () => {
             </div>
         </template>
 
-        <div class="py-6 max-w-7xl mx-auto space-y-6">
-            <!-- Toolbar: Actions -->
-            <div class="flex items-center justify-end">
-                 <button 
-                    @click="openCreateModal"
-                    class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 active:scale-95 h-[46px]"
-                >
-                    <PlusIcon class="w-5 h-5" />
-                    <span>Buat Tahun Baru</span>
-                </button>
-            </div>
-            
-            <!-- Active Year Card (Highlight) -->
-            <div v-if="academicYears.find(y => y.is_active)" class="bg-gradient-to-r from-namira-teal to-teal-600 rounded-3xl p-8 text-white shadow-xl shadow-teal-900/10 relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-8 opacity-10">
-                     <AcademicCapIcon class="w-48 h-48" />
-                </div>
-                <div class="relative z-10">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm">Sedang Aktif</span>
-                    </div>
-                    <h3 class="text-4xl font-extrabold mb-1">
-                        {{ academicYears.find(y => y.is_active).name }}
-                    </h3>
-                    <p class="text-xl font-medium opacity-90 capitalize">
-                        Semester {{ academicYears.find(y => y.is_active).semester }}
-                    </p>
-                </div>
-            </div>
+        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
-            <!-- List Card -->
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50/80 border-b border-gray-100 text-xs uppercase text-gray-500 font-extrabold tracking-wider">
-                            <th class="p-6">Tahun Ajaran</th>
-                            <th class="p-6">Semester</th>
-                            <th class="p-6">Status</th>
-                            <th class="p-6 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50">
-                         <tr v-if="academicYears.length === 0">
-                            <td colspan="4" class="p-12 text-center text-gray-500">Belum ada data tahun akademik.</td>
-                        </tr>
-                        <tr v-for="year in sortedYears" :key="year.id" class="group hover:bg-gray-50 transition-colors">
-                            <td class="p-6">
-                                <span class="font-bold text-gray-900 text-lg">{{ year.name }}</span>
-                            </td>
-                            <td class="p-6">
-                                <span class="capitalize px-3 py-1 rounded-lg text-sm font-medium border" 
-                                    :class="year.semester === 'ganjil' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'">
-                                    {{ year.semester }}
+            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+                <!-- Header Card Gradient -->
+                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Data Master</p>
+                            <h1 class="text-xl font-black leading-tight">Tahun Akademik</h1>
+                        </div>
+                        <button
+                            @click="openCreateModal"
+                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Buat Baru</span>
+                        </button>
+                    </div>
+
+                    <!-- Highlight Active Academic Year -->
+                    <div v-if="academicYears.find(y => y.is_active)" class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-4 mt-4 relative overflow-hidden">
+                        <div class="flex items-center gap-1.5 mb-1 text-teal-300">
+                            <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+                            <span class="text-[10px] font-black uppercase tracking-wider">Semester Aktif Saat Ini</span>
+                        </div>
+                        <h2 class="text-2xl font-black text-white leading-tight">
+                            {{ academicYears.find(y => y.is_active).name }}
+                        </h2>
+                        <p class="text-xs font-bold text-teal-200 capitalize mt-0.5">
+                            Semester {{ academicYears.find(y => y.is_active).semester }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Academic Years Mobile Touch Cards List -->
+                <div class="px-4 space-y-3">
+                    <div v-if="academicYears.length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
+                        <AcademicCapIcon class="w-10 h-10 mx-auto text-teal-300 mb-2" />
+                        <p class="font-extrabold text-sm text-slate-800">Belum ada data</p>
+                        <p class="text-xs text-slate-400 mt-1">Data tahun akademik belum tersedia.</p>
+                    </div>
+
+                    <div
+                        v-for="year in sortedYears"
+                        :key="year.id"
+                        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3 relative overflow-hidden"
+                    >
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-black text-slate-900 text-base leading-tight">{{ year.name }}</h3>
+                                <span class="capitalize inline-block mt-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border"
+                                      :class="year.semester === 'ganjil' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'">
+                                    Semester {{ year.semester }}
                                 </span>
-                            </td>
-                            <td class="p-6">
-                                <button 
-                                    @click="confirmActivate(year)"
-                                    type="button"
-                                    class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all relative z-20"
-                                    :class="year.is_active 
-                                        ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-500/20 cursor-default' 
-                                        : 'bg-gray-100 text-gray-500 hover:bg-namira-teal hover:text-white cursor-pointer hover:shadow-lg hover:shadow-namira-teal/30'"
-                                >
-                                    <div class="w-2 h-2 rounded-full" :class="year.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-current'"></div>
-                                    {{ year.is_active ? 'AKTIF' : 'Set Aktif' }}
-                                </button>
-                            </td>
-                            <td class="p-6 text-right">
-                                <div class="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                                    <button @click="openEditModal(year)" class="p-2 text-gray-400 hover:text-namira-teal hover:bg-teal-50 rounded-lg">
-                                        <PencilSquareIcon class="w-5 h-5" />
-                                    </button>
-                                    <button @click="confirmDelete(year)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
-                                        <TrashIcon class="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </div>
+                            
+                            <button
+                                @click="confirmActivate(year)"
+                                type="button"
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition active:scale-95"
+                                :class="year.is_active 
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-default' 
+                                    : 'bg-slate-100 text-slate-600 hover:bg-teal-600 hover:text-white border border-slate-200'"
+                            >
+                                <div class="w-2 h-2 rounded-full" :class="year.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></div>
+                                <span>{{ year.is_active ? 'AKTIF' : 'Set Aktif' }}</span>
+                            </button>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                            <button @click="openEditModal(year)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition flex items-center gap-1">
+                                <PencilSquareIcon class="w-3.5 h-3.5" />
+                                <span>Edit</span>
+                            </button>
+                            <button @click="confirmDelete(year)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 transition flex items-center gap-1">
+                                <TrashIcon class="w-3.5 h-3.5" />
+                                <span>Hapus</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <!-- END MOBILE VIEW -->
+
+            <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
+            <div class="hidden md:block space-y-6">
+                <!-- Toolbar: Actions -->
+                <div class="flex items-center justify-end">
+                     <button 
+                        @click="openCreateModal"
+                        class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 active:scale-95 h-[46px]"
+                    >
+                        <PlusIcon class="w-5 h-5" />
+                        <span>Buat Tahun Baru</span>
+                    </button>
+                </div>
+                
+                <!-- Active Year Card (Highlight) -->
+                <div v-if="academicYears.find(y => y.is_active)" class="bg-gradient-to-r from-namira-teal to-teal-600 rounded-3xl p-8 text-white shadow-xl shadow-teal-900/10 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-8 opacity-10">
+                         <AcademicCapIcon class="w-48 h-48" />
+                    </div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm">Sedang Aktif</span>
+                        </div>
+                        <h3 class="text-4xl font-extrabold mb-1">
+                            {{ academicYears.find(y => y.is_active).name }}
+                        </h3>
+                        <p class="text-xl font-medium opacity-90 capitalize">
+                            Semester {{ academicYears.find(y => y.is_active).semester }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- List Card -->
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50/80 border-b border-gray-100 text-xs uppercase text-gray-500 font-extrabold tracking-wider">
+                                <th class="p-6">Tahun Ajaran</th>
+                                <th class="p-6">Semester</th>
+                                <th class="p-6">Status</th>
+                                <th class="p-6 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                             <tr v-if="academicYears.length === 0">
+                                <td colspan="4" class="p-12 text-center text-gray-500">Belum ada data tahun akademik.</td>
+                            </tr>
+                            <tr v-for="year in sortedYears" :key="year.id" class="group hover:bg-gray-50 transition-colors">
+                                <td class="p-6">
+                                    <span class="font-bold text-gray-900 text-lg">{{ year.name }}</span>
+                                </td>
+                                <td class="p-6">
+                                    <span class="capitalize px-3 py-1 rounded-lg text-sm font-medium border" 
+                                        :class="year.semester === 'ganjil' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'">
+                                        {{ year.semester }}
+                                    </span>
+                                </td>
+                                <td class="p-6">
+                                    <button 
+                                        @click="confirmActivate(year)"
+                                        type="button"
+                                        class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all relative z-20"
+                                        :class="year.is_active 
+                                            ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-500/20 cursor-default' 
+                                            : 'bg-gray-100 text-gray-500 hover:bg-namira-teal hover:text-white cursor-pointer hover:shadow-lg hover:shadow-namira-teal/30'"
+                                    >
+                                        <div class="w-2 h-2 rounded-full" :class="year.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-current'"></div>
+                                        {{ year.is_active ? 'AKTIF' : 'Set Aktif' }}
+                                    </button>
+                                </td>
+                                <td class="p-6 text-right">
+                                    <div class="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                        <button @click="openEditModal(year)" class="p-2 text-gray-400 hover:text-namira-teal hover:bg-teal-50 rounded-lg">
+                                            <PencilSquareIcon class="w-5 h-5" />
+                                        </button>
+                                        <button @click="confirmDelete(year)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                                            <TrashIcon class="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- END DESKTOP VIEW -->
         </div>
 
         <!-- Create/Edit Form Modal -->
