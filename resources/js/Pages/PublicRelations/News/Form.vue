@@ -19,7 +19,7 @@ const page = usePage();
 const currentUser = page.props.auth.user;
 
 const form = useForm({
-    unit_id: props.news?.unit_id || currentUser.unit_id || '',
+    unit_id: props.news?.unit_id || props.units?.[0]?.id || page.props.session?.active_unit_id || '',
     title: props.news?.title || '',
     content: props.news?.content || '',
     status: props.news?.status || 'published',

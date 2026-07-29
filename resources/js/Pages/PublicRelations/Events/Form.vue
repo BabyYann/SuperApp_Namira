@@ -26,7 +26,7 @@ const formatDateForInput = (dateString) => {
 };
 
 const form = useForm({
-    unit_id: props.event?.unit_id || currentUser.unit_id || '',
+    unit_id: props.event?.unit_id || props.units?.[0]?.id || page.props.session?.active_unit_id || '',
     title: props.event?.title || '',
     description: props.event?.description || '',
     location: props.event?.location || '',
