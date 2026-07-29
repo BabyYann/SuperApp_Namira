@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, usePage, router } from '@inertiajs/vue3';
 import { 
     HomeIcon, 
     BookOpenIcon, 
@@ -26,7 +26,9 @@ import {
     ArrowPathRoundedSquareIcon,
     ClipboardDocumentListIcon,
     PresentationChartBarIcon,
-    EyeIcon
+    EyeIcon,
+    ChevronDownIcon,
+    CheckCircleIcon
 } from '@heroicons/vue/24/outline';
 import { 
     HomeIcon as HomeIconSolid, 
@@ -44,8 +46,26 @@ const activeUnit = computed(() => page.props.session.active_unit_name || 'Yayasa
 const userRoles = computed(() => user.value?.roles || []);
 const isTeacher = computed(() => user.value?.is_teacher || userRoles.value.includes('teacher'));
 const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
+const isGlobalAdmin = computed(() => userRoles.value.some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'].includes(r)));
 
 const showDrawer = ref(false);
+const showUnitModal = ref(false);
+
+const canSwitchUnit = computed(() => {
+    return userRoles.value.some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'staff_yayasan'].includes(r));
+});
+
+const availableUnits = computed(() => page.props.session?.available_units || []);
+const activeUnitId = computed(() => page.props.session?.active_unit_id);
+
+const switchUnit = (unitId) => {
+    router.post(route('yayasan.switch-unit'), {
+        unit_id: unitId
+    }, {
+        onSuccess: () => showUnitModal.value = false,
+        preserveScroll: true,
+    });
+};
 
 const toggleDrawer = () => {
     showDrawer.value = !showDrawer.value;
@@ -108,11 +128,21 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <div class="flex flex-col">
-                    <span class="text-[10px] font-extrabold tracking-wider uppercase text-teal-700 flex items-center gap-1">
+                    <button 
+                        v-if="canSwitchUnit"
+                        @click="showUnitModal = true" 
+                        type="button"
+                        class="text-[10px] font-extrabold tracking-wider uppercase text-teal-700 hover:text-teal-900 flex items-center gap-1 bg-teal-50 hover:bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200/80 shadow-2xs transition-all active:scale-95 text-left"
+                    >
+                        <span class="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse"></span>
+                        <span class="truncate max-w-[130px]">{{ activeUnit }}</span>
+                        <ChevronDownIcon class="w-3 h-3 text-teal-600 stroke-[2.5]" />
+                    </button>
+                    <span v-else class="text-[10px] font-extrabold tracking-wider uppercase text-teal-700 flex items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse"></span>
                         {{ activeUnit }}
                     </span>
-                    <h1 class="font-black text-sm text-slate-900 leading-tight truncate max-w-[180px]">
+                    <h1 class="font-black text-sm text-slate-900 leading-tight truncate max-w-[170px]">
                         {{ user?.name || 'Pengguna Namira' }}
                     </h1>
                 </div>
@@ -120,6 +150,18 @@ const isRouteActive = (pattern) => {
 
             <!-- Profile & Quick Action -->
             <div class="flex items-center gap-2">
+                <!-- Unit Switcher Button for Pengawas & Global Admin -->
+                <button 
+                    v-if="canSwitchUnit"
+                    @click="showUnitModal = true"
+                    type="button"
+                    class="p-2 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors border border-teal-200/80 flex items-center gap-1 text-xs font-extrabold active:scale-95"
+                    title="Switch Unit Sekolah"
+                >
+                    <BuildingOfficeIcon class="w-4 h-4 stroke-[2.2]" />
+                    <span class="hidden sm:inline">Pilih Unit</span>
+                </button>
+
                 <Link 
                     :href="safeRoute('profile.edit')" 
                     class="p-2 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors border border-slate-200/80"
@@ -326,8 +368,8 @@ const isRouteActive = (pattern) => {
                     <!-- Dynamic Role-Based App Categorized Groups -->
                     <div class="space-y-6">
 
-                        <!-- 1. AKADEMIK & MENGAJAR (Jika Guru / Wali Kelas / Koordinator Kurikulum) -->
-                        <div v-if="isTeacher || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum'])" class="space-y-2">
+                        <!-- 1. AKADEMIK & MENGAJAR -->
+                        <div v-if="isTeacher || isGlobalAdmin || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-teal-700 tracking-wider flex items-center gap-1.5">
                                 <BookOpenIcon class="w-4 h-4" />
                                 <span>Akademik & Kurikulum</span>
@@ -404,8 +446,8 @@ const isRouteActive = (pattern) => {
                             </div>
                         </div>
 
-                        <!-- 2. BIMBINGAN & KONSELING (Jika BK / Wali Kelas / Admin) -->
-                        <div v-if="hasRole(['bk', 'counseling', 'wali_kelas'])" class="space-y-2">
+                        <!-- 2. BIMBINGAN & KONSELING -->
+                        <div v-if="isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-indigo-700 tracking-wider flex items-center gap-1.5">
                                 <ChatBubbleLeftRightIcon class="w-4 h-4" />
                                 <span>Bimbingan Konseling (BK)</span>
@@ -446,8 +488,8 @@ const isRouteActive = (pattern) => {
                             </div>
                         </div>
 
-                        <!-- 3. HUMAS & PUBLIKASI (Jika Humas) -->
-                        <div v-if="hasRole('humas_unit')" class="space-y-2">
+                        <!-- 3. HUMAS & PUBLIKASI -->
+                        <div v-if="isGlobalAdmin || hasRole('humas_unit')" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-blue-700 tracking-wider flex items-center gap-1.5">
                                 <MegaphoneIcon class="w-4 h-4" />
                                 <span>Humas & Hubungan Masyarakat</span>
@@ -510,8 +552,8 @@ const isRouteActive = (pattern) => {
                             </div>
                         </div>
 
-                        <!-- 4. SARANA & PRASARANA (Jika Sarpar / Admin / Guru) -->
-                        <div v-if="hasRole(['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])" class="space-y-2">
+                        <!-- 4. SARANA & PRASARANA -->
+                        <div v-if="isGlobalAdmin || hasRole(['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-amber-700 tracking-wider flex items-center gap-1.5">
                                 <CubeIcon class="w-4 h-4" />
                                 <span>Sarana & Prasarana (Sarpar)</span>
@@ -574,8 +616,8 @@ const isRouteActive = (pattern) => {
                             </div>
                         </div>
 
-                        <!-- 5. KEUANGAN (Jika Finance) -->
-                        <div v-if="hasRole('finance')" class="space-y-2">
+                        <!-- 5. KEUANGAN -->
+                        <div v-if="isGlobalAdmin || hasRole('finance')" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-emerald-700 tracking-wider flex items-center gap-1.5">
                                 <BanknotesIcon class="w-4 h-4" />
                                 <span>Keuangan & SPP</span>
@@ -638,6 +680,61 @@ const isRouteActive = (pattern) => {
                             </div>
                         </div>
 
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- Unit Switcher Bottom Sheet Modal for Mobile -->
+        <Teleport to="body">
+            <div v-if="showUnitModal" class="fixed inset-0 z-[110] overflow-hidden">
+                <!-- Backdrop -->
+                <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm transition-opacity" @click="showUnitModal = false"></div>
+                
+                <!-- Bottom Sheet Card -->
+                <div class="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl max-h-[80vh] overflow-y-auto shadow-2xl p-6 border-t border-slate-100 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div>
+                            <h3 class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+                                <BuildingOfficeIcon class="w-5 h-5 text-teal-600" />
+                                <span>Pilih Unit Monitoring</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Pilih unit sekolah untuk memantau data operasional</p>
+                        </div>
+                        <button @click="showUnitModal = false" class="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- List of Units -->
+                    <div class="space-y-2.5 pt-1">
+                        <button
+                            v-for="u in availableUnits"
+                            :key="u.id"
+                            @click="switchUnit(u.id)"
+                            type="button"
+                            class="w-full p-4 rounded-2xl border text-left flex items-center justify-between transition-all active:scale-[0.98]"
+                            :class="u.id === activeUnitId 
+                                ? 'bg-teal-50/90 border-teal-500 text-teal-900 shadow-sm ring-1 ring-teal-500/30 font-extrabold' 
+                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-bold'"
+                        >
+                            <div class="flex items-center gap-3">
+                                <div 
+                                    class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs"
+                                    :class="u.id === activeUnitId ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600'"
+                                >
+                                    {{ u.name.substring(0, 2).toUpperCase() }}
+                                </div>
+                                <div>
+                                    <p class="text-sm tracking-tight leading-tight">{{ u.name }}</p>
+                                    <span class="text-[10px] font-medium text-slate-400">
+                                        {{ u.id === activeUnitId ? 'Unit Aktif Saat Ini' : 'Ketuk untuk beralih' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <CheckCircleIcon v-if="u.id === activeUnitId" class="w-6 h-6 text-teal-600" />
+                        </button>
                     </div>
                 </div>
             </div>

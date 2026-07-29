@@ -322,8 +322,9 @@ const eventTypeLabels = {
 
             <!-- 4. QUICK ACTIONS GRID (Dynamic Multi-Role App Grid) -->
             <div class="grid grid-cols-2 gap-3.5">
-                <!-- 0. Presensi Pegawai (All Employees) -->
+                <!-- 0. Presensi Pegawai (All Employees except Pengawas) -->
                 <Link 
+                    v-if="!isPengawas"
                     :href="safeRoute('attendance.index')"
                     class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
                 >
@@ -365,8 +366,9 @@ const eventTypeLabels = {
                     </div>
                 </Link>
 
-                <!-- 3. Scan Gerbang (All Users) -->
+                <!-- 3. Scan Gerbang (All Users except Pengawas) -->
                 <Link 
+                    v-if="!isPengawas"
                     :href="safeRoute('yayasan.student-checkin.index')"
                     class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
                 >
@@ -394,9 +396,9 @@ const eventTypeLabels = {
                     </div>
                 </Link>
 
-                <!-- 5. Berita Humas (Humas Only) -->
+                <!-- 5. Berita Humas (Humas / Pengawas) -->
                 <Link 
-                    v-if="hasRole('humas_unit')"
+                    v-if="hasRole('humas_unit') || isPengawas"
                     :href="safeRoute('public-relations.news.index')"
                     class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
                 >
@@ -406,6 +408,21 @@ const eventTypeLabels = {
                     <div>
                         <h4 class="font-extrabold text-sm text-slate-800">Berita Sekolah</h4>
                         <p class="text-[10px] text-slate-400 font-medium mt-0.5">Publikasi & warta</p>
+                    </div>
+                </Link>
+
+                <!-- 6. Monitoring Center (Pengawas) -->
+                <Link 
+                    v-if="isPengawas"
+                    :href="safeRoute('yayasan.monitoring.index', {}, '#')"
+                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
+                >
+                    <div class="w-10 h-10 rounded-2xl bg-teal-100/80 text-teal-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <GlobeAltIcon class="w-5 h-5 stroke-[2.2]" />
+                    </div>
+                    <div>
+                        <h4 class="font-extrabold text-sm text-slate-800">Monitoring Unit</h4>
+                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Statistik & laporan unit</p>
                     </div>
                 </Link>
 
