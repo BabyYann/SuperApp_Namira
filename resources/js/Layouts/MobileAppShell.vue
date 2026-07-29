@@ -150,18 +150,6 @@ const isRouteActive = (pattern) => {
 
             <!-- Profile & Quick Action -->
             <div class="flex items-center gap-2">
-                <!-- Unit Switcher Button for Pengawas & Global Admin -->
-                <button 
-                    v-if="canSwitchUnit"
-                    @click="showUnitModal = true"
-                    type="button"
-                    class="p-2 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors border border-teal-200/80 flex items-center gap-1 text-xs font-extrabold active:scale-95"
-                    title="Switch Unit Sekolah"
-                >
-                    <BuildingOfficeIcon class="w-4 h-4 stroke-[2.2]" />
-                    <span class="hidden sm:inline">Pilih Unit</span>
-                </button>
-
                 <Link 
                     :href="safeRoute('profile.edit')" 
                     class="p-2 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors border border-slate-200/80"
