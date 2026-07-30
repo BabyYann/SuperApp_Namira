@@ -48,9 +48,15 @@ const submitWithStatus = (targetStatus) => {
 
 const submitForm = () => {
     if (isEdit.value) {
-        form.post(route('public-relations.testimonials.update', props.testimonial.id));
+        form.post(route('public-relations.testimonials.update', props.testimonial.id), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     } else {
-        form.post(route('public-relations.testimonials.store'));
+        form.post(route('public-relations.testimonials.store'), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     }
 };
 </script>

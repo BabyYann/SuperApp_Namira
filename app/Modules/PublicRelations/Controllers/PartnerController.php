@@ -158,6 +158,10 @@ class PartnerController extends Controller
             abort(403, 'Akses Ditolak.');
         }
 
+        if (!$request->hasFile('logo')) {
+            $request->request->remove('logo');
+        }
+
         $validated = $request->validate([
             'unit_id' => 'required|exists:units,id',
             'name' => 'required|string|max:255',

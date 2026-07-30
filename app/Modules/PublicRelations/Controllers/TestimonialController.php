@@ -87,6 +87,10 @@ class TestimonialController extends Controller
         $unitId = session('active_unit_id');
         $isApprover = $this->isApprover($user);
 
+        if (!$request->hasFile('photo')) {
+            $request->request->remove('photo');
+        }
+
         $validated = $request->validate([
             'unit_id' => 'required|exists:units,id',
             'name' => 'required|string|max:255',
@@ -160,6 +164,10 @@ class TestimonialController extends Controller
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $testimonial->unit_id != $unitId) {
             abort(403, 'Akses Ditolak.');
+        }
+
+        if (!$request->hasFile('photo')) {
+            $request->request->remove('photo');
         }
 
         $validated = $request->validate([

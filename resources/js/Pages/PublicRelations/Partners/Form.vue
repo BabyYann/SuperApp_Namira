@@ -48,9 +48,15 @@ const submitWithStatus = (targetStatus) => {
 
 const submitForm = () => {
     if (isEdit) {
-        form.post(route('public-relations.partners.update', props.partner.id));
+        form.post(route('public-relations.partners.update', props.partner.id), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     } else {
-        form.post(route('public-relations.partners.store'));
+        form.post(route('public-relations.partners.store'), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     }
 };
 </script>
