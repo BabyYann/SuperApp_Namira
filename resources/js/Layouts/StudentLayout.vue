@@ -146,17 +146,18 @@ const logout = () => {
         <!-- MAIN LAYOUT -->
         <!-- Added top padding for mobile to account for header, but verify. Sticky top needs spacing. Desktop uses h-20 header. -->
         <main class="flex-1 w-full pb-24 md:pb-12 pt-6 md:pt-8 bg-gray-50 bg-[url('/pattern.svg')]">
-             <!-- Mobile Header -->
-            <header class="md:hidden sticky top-0 z-20 px-6 py-4 flex items-center justify-between mb-6">
-                <div>
-                     <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Portal Siswa</p>
-                     <h1 class="font-bold text-xl text-gray-800">Namira School</h1>
-                </div>
-                <Link :href="route('profile.edit')" class="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 overflow-hidden relative">
-                     <img v-if="$page.props.auth.user.profile_photo_url" :src="$page.props.auth.user.profile_photo_url" class="w-full h-full object-cover">
-                     <div v-else class="w-full h-full flex items-center justify-center text-gray-400 font-bold bg-gray-100">
-                        {{ user.name.charAt(0) }}
+             <!-- Mobile Top Header -->
+            <header class="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3 mb-4 flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3">
+                    <ApplicationLogo class="h-7 w-auto" />
+                    <div>
+                        <h1 class="font-extrabold text-sm text-slate-800 leading-tight">Namira School</h1>
+                        <p class="text-[9px] uppercase font-bold text-namira-teal tracking-widest">Portal Siswa</p>
                     </div>
+                </div>
+                <Link :href="route('profile.edit')" class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-slate-700 font-bold text-xs">
+                     <img v-if="$page.props.auth.user.profile_photo_url" :src="$page.props.auth.user.profile_photo_url" class="w-full h-full object-cover">
+                     <span v-else>{{ user.name.charAt(0) }}</span>
                 </Link>
             </header>
 
