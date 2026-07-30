@@ -3,24 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Api\Traits\HasUnitScope;
 use App\Models\Notification;
-use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NotificationApiController extends Controller
 {
-    use HasUnitScope;
-
     // GET /notifications
     public function index(Request $request): JsonResponse
     {
-        $unitId = $this->resolveUnitId($request);
         $items = Notification::where('user_id', $request->user()->id)
-            ->when($unitId, fn ($q) => $q->where(function($sub) use ($unitId) {
-                $sub->where('unit_id', $unitId)->orWhereNull('unit_id');
-            }))
             ->latest()
             ->paginate($request->get('per_page', 20))
             ->through(fn ($n) => [
@@ -51,11 +43,7 @@ class NotificationApiController extends Controller
     // POST /notifications/read-all
     public function markAllRead(Request $request): JsonResponse
     {
-        $unitId = $this->resolveUnitId($request);
         Notification::where('user_id', $request->user()->id)
-            ->when($unitId, fn ($q) => $q->where(function($sub) use ($unitId) {
-                $sub->where('unit_id', $unitId)->orWhereNull('unit_id');
-            }))
             ->where('is_read', false)
             ->update([
                 'is_read' => true,

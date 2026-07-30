@@ -21,22 +21,41 @@ class NotificationDispatcher
      */
     public static function sendToRoles(array $roles, ?int $unitId, string $title, string $message, string $type, array $data = []): void
     {
-        $roleNames = (array) $roles;
+        $globalRoleNames = ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'];
 
-        // Bypass Spatie team_id lock by querying relation directly
-        $query = User::whereHas('roles', function ($q) use ($roleNames) {
-            $q->whereIn('name', $roleNames);
-        });
+        $targetGlobalRoles = array_intersect($roles, $globalRoleNames);
+        $targetUnitRoles   = array_diff($roles, $globalRoleNames);
 
-        if ($unitId) {
-            $query->where(function ($q) use ($unitId) {
-                $q->where('unit_id', $unitId)->orWhereNull('unit_id');
-            });
+        $usersToNotify = collect();
+
+        // 1. Fetch Global Roles: receive notifications for ALL units regardless of user's unit_id setting
+        if (!empty($targetGlobalRoles)) {
+            $globalUsers = User::whereHas('roles', function ($q) use ($targetGlobalRoles) {
+                $q->whereIn('name', $targetGlobalRoles);
+            })->get();
+            $usersToNotify = $usersToNotify->concat($globalUsers);
         }
 
-        $users = $query->get();
+        // 2. Fetch Unit-Scoped Roles: receive notifications filtered by active unit_id
+        if (!empty($targetUnitRoles)) {
+            $unitQuery = User::whereHas('roles', function ($q) use ($targetUnitRoles) {
+                $q->whereIn('name', $targetUnitRoles);
+            });
 
-        foreach ($users as $user) {
+            if ($unitId) {
+                $unitQuery->where(function ($q) use ($unitId) {
+                    $q->where('unit_id', $unitId)->orWhereNull('unit_id');
+                });
+            }
+
+            $unitUsers = $unitQuery->get();
+            $usersToNotify = $usersToNotify->concat($unitUsers);
+        }
+
+        // Deduplicate users
+        $uniqueUsers = $usersToNotify->unique('id');
+
+        foreach ($uniqueUsers as $user) {
             self::sendToUser($user, $title, $message, $type, $data);
         }
     }
