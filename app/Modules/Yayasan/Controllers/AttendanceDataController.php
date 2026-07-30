@@ -31,7 +31,7 @@ class AttendanceDataController extends Controller
         }
 
         // Force unit restriction for non-global admins
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan'])) {
             $unitId = session('active_unit_id');
         }
 
