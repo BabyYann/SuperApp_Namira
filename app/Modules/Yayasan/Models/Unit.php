@@ -34,4 +34,9 @@ class Unit extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'principal_id');
     }
+
+    public function students(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Academic\Models\Student::class);
+    }
 }
