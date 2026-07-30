@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
@@ -44,20 +44,18 @@ const getStatusLabel = (status) => {
 </script>
 
 <template>
-    <Head title="LMS - Nilai Akademik Saya" />
-
-    <AuthenticatedLayout>
-        <!-- Header -->
-        <template #header>
-            <div>
-                <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
-                    LMS - Nilai Akademik Saya
-                </h2>
-                <p class="text-sm text-gray-500 mt-1">Daftar rekapitulasi nilai tugas dan masukan dari guru pengampu.</p>
+    <StudentLayout title="LMS - Nilai Akademik Saya">
+        <div class="py-4 md:py-6 max-w-5xl mx-auto space-y-6">
+            <!-- Header Bar -->
+            <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+                <div>
+                    <h2 class="font-black text-lg md:text-xl text-slate-800 leading-tight">
+                        LMS - Nilai Akademik Saya
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Rekapitulasi perolehan nilai tugas & hasil evaluasi pembelajaran.</p>
+                </div>
             </div>
-        </template>
 
-        <div class="py-6 max-w-4xl mx-auto space-y-6">
             <!-- Grades Overview Cards (Accordion Style) -->
             <div v-for="item in gradesOverview" :key="item.classroom_id" class="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-sm overflow-hidden transition-all duration-300">
                 <!-- Accordion Header -->
@@ -132,5 +130,5 @@ const getStatusLabel = (status) => {
                 <p class="text-sm font-semibold">Tidak ada kelas atau data nilai yang tercatat.</p>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </StudentLayout>
 </template>

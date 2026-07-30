@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import StudentLayout from '@/Layouts/StudentLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { 
     MegaphoneIcon, BookOpenIcon, ClipboardDocumentIcon, ArrowLeftIcon, 
@@ -46,26 +46,25 @@ const formatDate = (dateStr) => {
 </script>
 
 <template>
-    <Head :title="lmsClassroom.subject?.name" />
-
-    <AuthenticatedLayout>
-        <!-- Header -->
-        <template #header>
-            <div class="flex items-center gap-3">
-                <Link :href="route('lms.student.classrooms.index')" class="p-2 bg-white dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition shadow-sm border border-gray-100 dark:border-gray-700">
-                    <ArrowLeftIcon class="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                </Link>
-                <div>
-                    <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
-                        {{ lmsClassroom.subject?.name }}
-                    </h2>
-                    <p class="text-sm text-gray-500 mt-1">Kelas: {{ lmsClassroom.classroom?.name }} | Guru: {{ lmsClassroom.teacher?.full_name }}</p>
+    <StudentLayout :title="lmsClassroom.subject?.name || 'Aktivitas Kelas'">
+        <div class="py-4 md:py-6 max-w-5xl mx-auto space-y-6">
+            <!-- Header Bar -->
+            <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <Link :href="route('lms.student.classrooms.index')" class="p-2.5 bg-slate-100 hover:bg-slate-200 rounded-2xl transition shadow-xs border border-slate-200">
+                        <ArrowLeftIcon class="w-4 h-4 text-slate-700" />
+                    </Link>
+                    <div>
+                        <h2 class="font-black text-lg md:text-xl text-slate-800 leading-tight">
+                            {{ lmsClassroom.subject?.name }}
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Kelas: {{ lmsClassroom.classroom?.name }} | Guru: {{ lmsClassroom.teacher?.full_name }}</p>
+                    </div>
                 </div>
             </div>
-        </template>
 
-        <div class="py-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <!-- Left Info Panel -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Left Info Panel -->
             <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white/85 border border-white/60 rounded-3xl p-6 shadow-sm">
                     <h4 class="font-bold text-gray-900 mb-4 text-sm border-b border-gray-50 pb-2">Informasi Kelas</h4>
@@ -157,5 +156,6 @@ const formatDate = (dateStr) => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
+</StudentLayout>
 </template>
