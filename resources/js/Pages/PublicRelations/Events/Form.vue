@@ -29,22 +29,22 @@ const defaultApprovalStatus = computed(() => {
 const form = useForm({
     unit_id: props.event?.unit_id || props.units?.[0]?.id || page.props.session?.active_unit_id || '',
     title: props.event?.title || '',
-    content: props.event?.content || '',
+    description: props.event?.description || '',
     start_date: formatDateForInput(props.event?.start_date),
     end_date: formatDateForInput(props.event?.end_date),
     location: props.event?.location || '',
     status: props.event?.status || 'upcoming',
     approval_status: defaultApprovalStatus.value,
-    banner: null,
+    image: null,
     _method: isEdit.value ? 'PUT' : 'POST'
 });
 
-const bannerPreview = ref(props.event?.banner_path ? `/${props.event.banner_path}` : null);
+const bannerPreview = ref(props.event?.image_path ? (props.event.image_path.startsWith('http') ? props.event.image_path : `/storage/${props.event.image_path}`) : null);
 
 const handleBannerChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-        form.banner = file;
+        form.image = file;
         const reader = new FileReader();
         reader.onload = (e) => {
             bannerPreview.value = e.target.result;
@@ -119,7 +119,7 @@ const submitWithApprovalStatus = (targetApprovalStatus) => {
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Selesai</label>
-                            <input v-model="form.end_date" type="datetime-local" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20" required>
+                            <input v-model="form.end_date" type="datetime-local" class="w-full rounded-xl border-gray-300 focus:border-namira-teal focus:ring focus:ring-namira-teal/20">
                             <p v-if="form.errors.end_date" class="text-sm text-red-600 mt-1">{{ form.errors.end_date }}</p>
                         </div>
                         <div>
@@ -133,9 +133,9 @@ const submitWithApprovalStatus = (targetApprovalStatus) => {
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi / Detail Acara</label>
                         <div class="border border-gray-300 rounded-xl overflow-hidden focus-within:border-namira-teal focus-within:ring focus-within:ring-namira-teal/20 transition-all bg-white">
-                            <QuillEditor v-model:content="form.content" contentType="html" theme="snow" toolbar="full" class="min-h-[250px] text-base" placeholder="Tuliskan rincian susunan acara, persyaratan, dll..." />
+                            <QuillEditor v-model:content="form.description" contentType="html" theme="snow" toolbar="full" class="min-h-[250px] text-base" placeholder="Tuliskan rincian susunan acara, persyaratan, dll..." />
                         </div>
-                        <p v-if="form.errors.content" class="text-sm text-red-600 mt-1">{{ form.errors.content }}</p>
+                        <p v-if="form.errors.description" class="text-sm text-red-600 mt-1">{{ form.errors.description }}</p>
                     </div>
 
                     <!-- Banner Upload -->
@@ -156,7 +156,7 @@ const submitWithApprovalStatus = (targetApprovalStatus) => {
                                 <p class="text-xs text-gray-500">PNG, JPG up to 2MB (Format WebP Otomatis)</p>
                             </div>
                         </div>
-                        <p v-if="form.errors.banner" class="text-sm text-red-600 mt-1">{{ form.errors.banner }}</p>
+                        <p v-if="form.errors.image" class="text-sm text-red-600 mt-1">{{ form.errors.image }}</p>
                     </div>
 
                     <!-- Event Status (Upcoming / Ongoing / Completed / Cancelled) -->
