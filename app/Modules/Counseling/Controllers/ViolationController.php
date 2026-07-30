@@ -128,6 +128,28 @@ class ViolationController extends Controller
             'approved_by' => Auth::id(), // Auto-approve for now (BK Input)
         ]);
 
+        $student = Student::with(['unit', 'classroom', 'user'])->find($request->student_id);
+
+        if ($student) {
+            if ($student->user) {
+                \App\Services\NotificationDispatcher::sendToUser(
+                    $student->user,
+                    '⚠️ Catatan Kedisiplinan Siswa',
+                    "Tercatat pelanggaran kedisiplinan: {$category->name} ({$category->default_points} poin) pada {$request->date}.",
+                    'counseling',
+                    ['violation_id' => $violation->id]
+                );
+            }
+            \App\Services\NotificationDispatcher::sendToRoles(
+                ['wali_kelas', 'bk', 'admin_unit'],
+                $violation->unit_id,
+                '⚠️ Catatan Kedisiplinan Siswa',
+                "Siswa {$student->full_name} ({$student->classroom->name}) tercatat pelanggaran {$category->name} ({$category->default_points} poin).",
+                'counseling',
+                ['violation_id' => $violation->id]
+            );
+        }
+
         // Automated WhatsApp Notification to parents
         try {
             $student = Student::with(['unit', 'classroom'])->find($request->student_id);

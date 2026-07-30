@@ -133,6 +133,18 @@ class TestimonialController extends Controller
 
         $testimonial->save();
 
+        if ($approvalStatus === 'pending') {
+            $unitName = Unit::find($testimonial->unit_id)->name ?? 'Unit';
+            \App\Services\NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                '💬 Pengajuan Testimoni Baru',
+                "{$unitName} mengajukan testimoni baru dari \"{$testimonial->name}\". Butuh verifikasi.",
+                'public_relations',
+                ['testimonial_id' => $testimonial->id]
+            );
+        }
+
         $msg = $approvalStatus === 'pending'
             ? 'Testimoni berhasil ditambahkan dan diajukan untuk verifikasi.'
             : 'Testimoni berhasil ditambahkan.';
@@ -213,6 +225,18 @@ class TestimonialController extends Controller
 
         $testimonial->save();
 
+        if ($approvalStatus === 'pending') {
+            $unitName = Unit::find($testimonial->unit_id)->name ?? 'Unit';
+            \App\Services\NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                '💬 Pengajuan Testimoni Baru',
+                "{$unitName} mengajukan testimoni baru dari \"{$testimonial->name}\". Butuh verifikasi.",
+                'public_relations',
+                ['testimonial_id' => $testimonial->id]
+            );
+        }
+
         $msg = $approvalStatus === 'pending'
             ? 'Testimoni diperbarui dan diajukan untuk verifikasi.'
             : 'Testimoni berhasil diperbarui.';
@@ -234,6 +258,16 @@ class TestimonialController extends Controller
         $testimonial->approved_at = now();
         $testimonial->save();
 
+        if ($testimonial->creator) {
+            \App\Services\NotificationDispatcher::sendToUser(
+                $testimonial->creator,
+                '📢 Testimoni Berhasil Diterbitkan',
+                "Testimoni \"{$testimonial->name}\" telah disetujui dan diterbitkan.",
+                'public_relations',
+                ['testimonial_id' => $testimonial->id]
+            );
+        }
+
         return redirect()->back()->with('success', 'Testimoni berhasil diverifikasi & diterbitkan!');
     }
 
@@ -253,6 +287,16 @@ class TestimonialController extends Controller
         $testimonial->rejection_note = $validated['rejection_note'];
         $testimonial->approved_by = $user->id;
         $testimonial->save();
+
+        if ($testimonial->creator) {
+            \App\Services\NotificationDispatcher::sendToUser(
+                $testimonial->creator,
+                '⚠️ Testimoni Perlu Revisi',
+                "Testimoni \"{$testimonial->name}\" perlu revisi. Catatan: {$testimonial->rejection_note}",
+                'public_relations',
+                ['testimonial_id' => $testimonial->id]
+            );
+        }
 
         return redirect()->back()->with('success', 'Testimoni dikembalikan untuk perbaikan.');
     }

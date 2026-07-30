@@ -154,6 +154,15 @@ class EmployeeActivityLogController extends Controller
 
         $log->save();
 
+        \App\Services\NotificationDispatcher::sendToRoles(
+            ['admin_unit', 'kepala_sekolah', 'super_admin_yayasan'],
+            $log->unit_id,
+            '📋 Giat Tugas Baru SDM',
+            "{$user->name} mencatat giat tugas baru: \"{$log->title}\".",
+            'employee',
+            ['log_id' => $log->id]
+        );
+
         return redirect()->back()->with('success', 'Giat Tugas berhasil dicatat!');
     }
 

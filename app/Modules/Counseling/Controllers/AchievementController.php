@@ -114,6 +114,28 @@ class AchievementController extends Controller
 
         $achievement = Achievement::create($data);
 
+        $student = Student::with(['unit', 'classroom', 'user'])->find($request->student_id);
+
+        if ($student) {
+            if ($student->user) {
+                \App\Services\NotificationDispatcher::sendToUser(
+                    $student->user,
+                    '🏆 Prestasi Siswa Baru',
+                    "Selamat! Pencapaian prestasi: {$request->title} (Tingkat {$request->level}) pada {$request->date}.",
+                    'counseling',
+                    ['achievement_id' => $achievement->id]
+                );
+            }
+            \App\Services\NotificationDispatcher::sendToRoles(
+                ['wali_kelas', 'bk', 'admin_unit'],
+                $achievement->unit_id,
+                '🏆 Prestasi Siswa Baru',
+                "Siswa {$student->full_name} ({$student->classroom->name}) meraih prestasi {$request->title} (Tingkat {$request->level}).",
+                'counseling',
+                ['achievement_id' => $achievement->id]
+            );
+        }
+
         // Automated WhatsApp Notification to parents
         try {
             $student = Student::with(['unit', 'classroom'])->find($request->student_id);

@@ -129,6 +129,18 @@ class NewsController extends Controller
 
         $news->save();
 
+        if ($status === 'pending') {
+            $unitName = Unit::find($news->unit_id)->name ?? 'Unit';
+            \App\Services\NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                '📰 Pengajuan Berita Baru',
+                "{$unitName} mengajukan berita baru: \"{$news->title}\". Butuh verifikasi.",
+                'public_relations',
+                ['news_id' => $news->id]
+            );
+        }
+
         $msg = $status === 'pending'
             ? 'Berita berhasil diajukan untuk verifikasi.'
             : 'Berita berhasil disimpan.';
@@ -213,6 +225,18 @@ class NewsController extends Controller
 
         $news->save();
 
+        if ($status === 'pending') {
+            $unitName = Unit::find($news->unit_id)->name ?? 'Unit';
+            \App\Services\NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                '📰 Pengajuan Berita Baru',
+                "{$unitName} mengajukan berita baru: \"{$news->title}\". Butuh verifikasi.",
+                'public_relations',
+                ['news_id' => $news->id]
+            );
+        }
+
         $msg = $status === 'pending' 
             ? 'Berita berhasil diperbarui dan diajukan untuk verifikasi.' 
             : 'Berita berhasil diperbarui.';
@@ -237,6 +261,16 @@ class NewsController extends Controller
         }
         $news->save();
 
+        if ($news->author) {
+            \App\Services\NotificationDispatcher::sendToUser(
+                $news->author,
+                '📢 Berita Berhasil Diterbitkan',
+                "Berita Anda \"{$news->title}\" telah disetujui dan diterbitkan.",
+                'public_relations',
+                ['news_id' => $news->id]
+            );
+        }
+
         return redirect()->back()->with('success', 'Berita berhasil diverifikasi & diterbitkan!');
     }
 
@@ -249,15 +283,26 @@ class NewsController extends Controller
         }
 
         $validated = $request->validate([
-            'rejection_note' => 'required|string|max:1000'
+            'rejection_note' => 'required|string|max:500',
         ]);
 
         $news->status = 'rejected';
         $news->rejection_note = $validated['rejection_note'];
         $news->approved_by = auth()->id();
+        $news->approved_at = now();
         $news->save();
 
-        return redirect()->back()->with('success', 'Berita dikembalikan untuk perbaikan.');
+        if ($news->author) {
+            \App\Services\NotificationDispatcher::sendToUser(
+                $news->author,
+                '⚠️ Pengajuan Berita Perlu Revisi',
+                "Berita \"{$news->title}\" perlu revisi. Catatan: {$news->rejection_note}",
+                'public_relations',
+                ['news_id' => $news->id]
+            );
+        }
+
+        return redirect()->back()->with('success', 'Berita telah ditolak dengan catatan revisi.');
     }
 
     public function destroy(News $news)
