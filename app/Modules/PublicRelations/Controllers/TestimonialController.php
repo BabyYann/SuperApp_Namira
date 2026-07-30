@@ -87,7 +87,11 @@ class TestimonialController extends Controller
         $unitId = session('active_unit_id');
         $isApprover = $this->isApprover($user);
 
-        if (!$request->hasFile('photo')) {
+        if (!$request->filled('unit_id')) {
+            $request->merge(['unit_id' => $unitId]);
+        }
+
+        if (!$request->hasFile('photo') || $request->file('photo') === null) {
             $request->offsetUnset('photo');
         }
 
@@ -166,7 +170,11 @@ class TestimonialController extends Controller
             abort(403, 'Akses Ditolak.');
         }
 
-        if (!$request->hasFile('photo')) {
+        if (!$request->filled('unit_id')) {
+            $request->merge(['unit_id' => $unitId]);
+        }
+
+        if (!$request->hasFile('photo') || $request->file('photo') === null) {
             $request->offsetUnset('photo');
         }
 

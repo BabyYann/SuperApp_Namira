@@ -14,13 +14,15 @@ const isEdit = computed(() => !!props.testimonial);
 const page = usePage();
 const currentUser = page.props.auth.user;
 
-const defaultApprovalStatus = computed(() => {
-    if (props.testimonial?.approval_status) return props.testimonial.approval_status;
-    return props.is_approver ? 'published' : 'pending';
+const defaultUnitId = computed(() => {
+    if (props.testimonial?.unit_id) return props.testimonial.unit_id;
+    if (currentUser?.unit_id) return currentUser.unit_id;
+    if (props.units && props.units.length > 0) return props.units[0].id;
+    return '';
 });
 
 const form = useForm({
-    unit_id: props.testimonial?.unit_id || currentUser.unit_id || '',
+    unit_id: defaultUnitId.value,
     name: props.testimonial?.name || '',
     role_or_title: props.testimonial?.role_or_title || '',
     quote: props.testimonial?.quote || '',
@@ -38,7 +40,7 @@ const onFileChange = (e) => {
     }
 };
 
-const charCount = computed(() => form.quote.length);
+const charCount = computed(() => form.quote ? form.quote.length : 0);
 
 const submitWithStatus = (targetStatus) => {
     form.approval_status = targetStatus;
@@ -81,6 +83,17 @@ const submitForm = () => {
         </template>
 
         <div class="py-6 max-w-3xl mx-auto space-y-6">
+
+            <!-- Validation Error Alert Banner -->
+            <div v-if="Object.keys(form.errors).length > 0" class="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                <ExclamationCircleIcon class="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                    <h4 class="font-bold text-rose-800 text-sm">Gagal Menyimpan Testimoni</h4>
+                    <ul class="text-xs text-rose-700 mt-1 list-disc list-inside space-y-0.5">
+                        <li v-for="(err, key) in form.errors" :key="key">{{ err }}</li>
+                    </ul>
+                </div>
+            </div>
 
             <!-- Rejection Note Alert Banner if status is rejected -->
             <div v-if="isEdit && testimonial.approval_status === 'rejected' && testimonial.rejection_note" class="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
@@ -201,7 +214,7 @@ const submitForm = () => {
                         Simpan Draft
                     </button>
 
-                    <button type="submit" :disabled="form.processing"
+                    <button type="submit" @click="submitWithStatus(is_approver ? form.approval_status : 'pending')" :disabled="form.processing"
                         class="px-6 py-2.5 bg-namira-teal text-white rounded-xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center gap-2 text-sm">
                         <svg v-if="form.processing" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
