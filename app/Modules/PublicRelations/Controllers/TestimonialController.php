@@ -88,7 +88,7 @@ class TestimonialController extends Controller
         $isApprover = $this->isApprover($user);
 
         if (!$request->hasFile('photo')) {
-            $request->request->remove('photo');
+            $request->offsetUnset('photo');
         }
 
         $validated = $request->validate([
@@ -167,7 +167,7 @@ class TestimonialController extends Controller
         }
 
         if (!$request->hasFile('photo')) {
-            $request->request->remove('photo');
+            $request->offsetUnset('photo');
         }
 
         $validated = $request->validate([

@@ -26,7 +26,6 @@ const form = useForm({
     quote: props.testimonial?.quote || '',
     approval_status: defaultApprovalStatus.value,
     photo: null,
-    _method: isEdit.value ? 'PUT' : 'POST',
 });
 
 const photoPreviewUrl = ref(props.testimonial?.photo_path ? '/' + props.testimonial.photo_path : null);
@@ -48,12 +47,19 @@ const submitWithStatus = (targetStatus) => {
 
 const submitForm = () => {
     if (isEdit.value) {
-        form.post(route('public-relations.testimonials.update', props.testimonial.id), {
+        form.transform((data) => ({
+            ...data,
+            _method: 'PUT',
+        })).post(route('public-relations.testimonials.update', props.testimonial.id), {
             forceFormData: true,
             preserveScroll: true,
         });
     } else {
-        form.post(route('public-relations.testimonials.store'), {
+        form.transform((data) => {
+            const copy = { ...data };
+            delete copy._method;
+            return copy;
+        }).post(route('public-relations.testimonials.store'), {
             forceFormData: true,
             preserveScroll: true,
         });
