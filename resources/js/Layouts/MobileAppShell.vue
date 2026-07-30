@@ -655,7 +655,7 @@ const isRouteActive = (pattern) => {
 
                                 <Link 
                                     v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'staff_yayasan'])"
-                                    :href="safeRoute('activity-logs.feed')" 
+                                    :href="safeRoute('yayasan.activity-logs.feed')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center p-3 rounded-2xl bg-purple-50/60 border border-purple-100/80 hover:bg-purple-100/80 text-center gap-2 transition-all active:scale-95"
                                 >

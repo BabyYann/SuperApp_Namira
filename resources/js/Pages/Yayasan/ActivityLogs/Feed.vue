@@ -21,7 +21,7 @@ const selectedCategory = ref(props.filters.category || '');
 const selectedDate = ref(props.filters.date || '');
 
 const applyFilters = () => {
-    router.get(route('activity-logs.feed'), {
+    router.get(route('yayasan.activity-logs.feed'), {
         search: search.value,
         unit_id: selectedUnit.value,
         category: selectedCategory.value,

@@ -143,8 +143,8 @@ const menuGroups = [
             },
             { 
                 label: 'Linimasa Giat SDM', 
-                route: 'activity-logs.feed', 
-                active: 'activity-logs.feed',
+                route: 'yayasan.activity-logs.feed', 
+                active: 'yayasan.activity-logs.feed',
                 icon: SparklesIcon 
             },
             { 
