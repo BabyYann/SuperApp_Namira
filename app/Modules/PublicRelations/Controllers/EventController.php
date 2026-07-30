@@ -134,13 +134,22 @@ class EventController extends Controller
 
         $event->save();
 
+        $unitName = Unit::find($event->unit_id)->name ?? 'Unit';
         if ($approvalStatus === 'pending') {
-            $unitName = Unit::find($event->unit_id)->name ?? 'Unit';
             \App\Services\NotificationDispatcher::sendToRoles(
                 ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
                 null,
                 '📅 Pengajuan Agenda Acara Baru',
                 "{$unitName} mengajukan acara baru: \"{$event->title}\". Butuh verifikasi.",
+                'public_relations',
+                ['event_id' => $event->id]
+            );
+        } else {
+            \App\Services\NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan', 'admin_unit'],
+                $event->unit_id,
+                '📅 Agenda Acara Baru Diterbitkan',
+                "Acara baru diterbitkan di {$unitName}: \"{$event->title}\".",
                 'public_relations',
                 ['event_id' => $event->id]
             );

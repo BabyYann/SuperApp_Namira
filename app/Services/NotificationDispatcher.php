@@ -21,17 +21,26 @@ class NotificationDispatcher
      */
     public static function sendToRoles(array $roles, ?int $unitId, string $title, string $message, string $type, array $data = []): void
     {
-        $query = User::role($roles);
+        $originalTeamId = getPermissionsTeamId();
 
-        if ($unitId) {
-            $query->where(function ($q) use ($unitId) {
-                $q->where('unit_id', $unitId)->orWhereNull('unit_id');
-            });
+        // 1. Fetch Global Role Users (team_id = null)
+        setPermissionsTeamId(null);
+        $globalUsers = User::role($roles)->get();
+
+        // 2. Fetch Unit-Scoped Role Users if unitId provided
+        $unitUsers = collect();
+        $targetUnitId = $unitId ?? session('active_unit_id');
+        if ($targetUnitId) {
+            setPermissionsTeamId($targetUnitId);
+            $unitUsers = User::role($roles)->get();
         }
 
-        $users = $query->get();
+        // Restore original team ID
+        setPermissionsTeamId($originalTeamId);
 
-        foreach ($users as $user) {
+        $allUsers = $globalUsers->concat($unitUsers)->unique('id');
+
+        foreach ($allUsers as $user) {
             self::sendToUser($user, $title, $message, $type, $data);
         }
     }
