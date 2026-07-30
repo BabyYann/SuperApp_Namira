@@ -110,12 +110,12 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const getApprovalBadge = (status) => {
+const getStatusBadge = (status) => {
     switch (status) {
         case 'published':
             return { label: 'Terbit', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
         case 'pending':
-            return { label: 'Menunggu Verifikasi', class: 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse' };
+            return { label: 'Menunggu Verifikasi', class: 'bg-amber-50 text-amber-700 border-amber-200' };
         case 'rejected':
             return { label: 'Perlu Revisi', class: 'bg-rose-50 text-rose-700 border-rose-200' };
         default:
