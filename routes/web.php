@@ -10,6 +10,12 @@ require __DIR__.'/dashboard.php';
 
 // Auth-protected routes
 Route::middleware('auth')->group(function () {
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\NotificationApiController::class, 'index']);
+        Route::post('/test-trigger', [\App\Http\Controllers\Api\NotificationApiController::class, 'testTrigger']);
+        Route::post('/{id}/read', [\App\Http\Controllers\Api\NotificationApiController::class, 'markRead']);
+        Route::post('/read-all', [\App\Http\Controllers\Api\NotificationApiController::class, 'markAllRead']);
+    });
     require __DIR__.'/profile.php';
     require __DIR__.'/yayasan.php';
     require __DIR__.'/public-relations.php';

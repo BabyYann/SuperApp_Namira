@@ -8,6 +8,7 @@ import {
     MegaphoneIcon, ClipboardDocumentCheckIcon
 } from '@heroicons/vue/24/outline';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     user: Object,
@@ -25,7 +26,7 @@ let pollInterval = null;
 const fetchNotifications = async () => {
     try {
         isLoading.value = true;
-        const res = await axios.get('/api/notifications?per_page=10');
+        const res = await axios.get('/notifications?per_page=10');
         notifications.value = res.data.data || [];
         unreadCount.value = notifications.value.filter(n => !n.is_read).length;
     } catch (e) {
@@ -44,7 +45,7 @@ const toggleDropdown = () => {
 
 const markAllRead = async () => {
     try {
-        await axios.post('/api/notifications/read-all');
+        await axios.post('/notifications/read-all');
         notifications.value.forEach(n => n.is_read = true);
         unreadCount.value = 0;
     } catch (e) {
@@ -55,7 +56,7 @@ const markAllRead = async () => {
 const markRead = async (item) => {
     if (!item.is_read) {
         try {
-            await axios.post(`/api/notifications/${item.id}/read`);
+            await axios.post(`/notifications/${item.id}/read`);
             item.is_read = true;
             unreadCount.value = Math.max(0, unreadCount.value - 1);
         } catch (e) {
@@ -68,10 +69,24 @@ const isSendingTest = ref(false);
 const sendTestNotification = async () => {
     try {
         isSendingTest.value = true;
-        await axios.post('/api/notifications/test-trigger');
+        await axios.post('/notifications/test-trigger');
         await fetchNotifications();
+        Swal.fire({
+            icon: 'success',
+            title: 'Notifikasi Terkirim! 🚀',
+            text: 'Notifikasi tes berhasil dikirim dan sudah muncul di lonceng atas!',
+            timer: 3000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end',
+        });
     } catch (e) {
         console.error('Failed to send test notification:', e);
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Mengirim',
+            text: e.response?.data?.message || 'Terjadi kesalahan saat menguji notifikasi.',
+        });
     } finally {
         isSendingTest.value = false;
     }
@@ -137,9 +152,10 @@ onUnmounted(() => {
                                 @click="sendTestNotification"
                                 :disabled="isSendingTest"
                                 type="button"
-                                class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold shadow-xs transition"
+                                class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold shadow-xs transition flex items-center gap-1"
                             >
-                                {{ isSendingTest ? 'Mengirim...' : '🧪 Tes Notif' }}
+                                <span v-if="isSendingTest">Mengirim...</span>
+                                <span v-else>🧪 Tes Notif</span>
                             </button>
                             <button
                                 v-if="unreadCount > 0"
