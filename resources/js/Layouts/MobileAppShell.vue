@@ -639,7 +639,30 @@ const isRouteActive = (pattern) => {
                                     <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
                                         <FingerPrintIcon class="w-5 h-5" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Presensi Masuk Saya</span>
+                                    <span class="text-xs font-bold text-slate-800">Presensi Saya</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('employee.activity-logs.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
+                                        <ClipboardDocumentCheckIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Giat Tugas Saya</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'staff_yayasan'])"
+                                    :href="safeRoute('activity-logs.feed')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-purple-50/60 border border-purple-100/80 hover:bg-purple-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md">
+                                        <SparklesIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Linimasa SDM</span>
                                 </Link>
 
                                 <Link 

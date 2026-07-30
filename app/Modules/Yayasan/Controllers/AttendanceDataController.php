@@ -459,6 +459,12 @@ class AttendanceDataController extends Controller
         $activeDays = $present + $late + $sick + $permit + $businessTrip;
         $attendancePercentage = $activeDays > 0 ? round((($present + $late) / $activeDays) * 100) : 100;
 
+        // Activity logs / Giat Tugas count & details
+        $activityLogs = \App\Modules\Employee\Models\EmployeeActivityLog::where('user_id', $user->id)
+            ->whereBetween('activity_date', [$start->toDateString(), $end->toDateString()])
+            ->latest('activity_date')
+            ->get();
+
         $stats = [
             'total' => $total,
             'present' => $present,
@@ -468,6 +474,7 @@ class AttendanceDataController extends Controller
             'business_trip' => $businessTrip,
             'total_late_minutes' => $totalLateMinutes,
             'attendance_percentage' => $attendancePercentage,
+            'total_activity_logs' => $activityLogs->count(),
         ];
 
         return response()->json([
@@ -479,6 +486,7 @@ class AttendanceDataController extends Controller
                 'photo' => $user->profile_photo_url,
             ],
             'attendances' => $attendances,
+            'activity_logs' => $activityLogs,
             'stats' => $stats,
             'month' => $month,
             'year' => $year,

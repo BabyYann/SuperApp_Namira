@@ -10,7 +10,7 @@ import {
     BookOpenIcon, TrophyIcon, ClockIcon, PencilSquareIcon, AcademicCapIcon, 
     ClipboardDocumentCheckIcon, ChevronDownIcon, ChatBubbleLeftRightIcon,
     CubeIcon, WrenchScrewdriverIcon, TagIcon, ArrowPathIcon, ArrowUpCircleIcon,
-    Cog6ToothIcon, ChartPieIcon, CameraIcon, GlobeAltIcon
+    Cog6ToothIcon, ChartPieIcon, CameraIcon, GlobeAltIcon, SparklesIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({
@@ -134,6 +134,18 @@ const menuGroups = [
                 route: 'employee.attendance.index', 
                 active: 'employee.attendance.*',
                 icon: FingerPrintIcon 
+            },
+            { 
+                label: 'Giat Tugas Saya', 
+                route: 'employee.activity-logs.index', 
+                active: 'employee.activity-logs.index',
+                icon: ClipboardDocumentCheckIcon 
+            },
+            { 
+                label: 'Linimasa Giat SDM', 
+                route: 'activity-logs.feed', 
+                active: 'activity-logs.feed',
+                icon: SparklesIcon 
             },
             { 
                 label: 'Penyetujuan Absensi', 

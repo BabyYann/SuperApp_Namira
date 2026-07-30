@@ -103,6 +103,9 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::get('attendance-data/{user}/history', [\App\Modules\Yayasan\Controllers\AttendanceDataController::class, 'employeeHistory'])->name('attendance-data.employee-history');
     Route::get('attendance-data/{user}/export-individual-pdf', [\App\Modules\Yayasan\Controllers\AttendanceDataController::class, 'exportIndividualPdf'])->name('attendance-data.export-individual-pdf');
 
+    // Giat Tugas Feed (Executive & Monitoring)
+    Route::get('activity-logs/feed', [\App\Modules\Employee\Controllers\EmployeeActivityLogController::class, 'feed'])->name('activity-logs.feed');
+
     // Holidays / Academic Calendar
     Route::get('holidays/export-ical', [\App\Modules\Yayasan\Controllers\HolidayController::class, 'exportIcal'])->name('holidays.export-ical');
     Route::resource('holidays', \App\Modules\Yayasan\Controllers\HolidayController::class)->only(['index', 'store', 'update', 'destroy']);
