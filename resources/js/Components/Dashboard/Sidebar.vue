@@ -259,9 +259,50 @@ const hasAnyRole = (roles) => roles.some(r => userRoles.value.includes(r)) || ro
 // Filtered Menu
 const filteredMenuGroups = computed(() => {
     
-    // We can reuse the top level helper
     const isTeacher = page.props.session?.is_teacher || hasRole('guru') || hasRole('teacher');
     const isSuperAdmin = hasRole('super_admin_yayasan');
+    const isPembina = hasRole('pembina_yayasan');
+
+    if (isPembina && !isSuperAdmin) {
+        return [
+            {
+                title: 'Executive Portal',
+                key: 'pembina_portal',
+                items: [
+                    { 
+                        label: 'Executive Dashboard', 
+                        route: 'yayasan.pembina.dashboard', 
+                        active: 'yayasan.pembina.dashboard',
+                        icon: ComputerDesktopIcon 
+                    },
+                    { 
+                        label: 'Monitoring Center', 
+                        route: 'yayasan.monitoring.index', 
+                        active: 'yayasan.monitoring.*',
+                        icon: ChartPieIcon 
+                    },
+                    { 
+                        label: 'Destinasi Alumni & Kunjungan', 
+                        route: 'public-relations.university-destinations.index', 
+                        active: 'public-relations.university-destinations.*',
+                        icon: GlobeAltIcon 
+                    },
+                    { 
+                        label: 'Laporan Keuangan', 
+                        route: 'yayasan.finance.reports.arrears', 
+                        active: 'yayasan.finance.reports.*',
+                        icon: BanknotesIcon 
+                    },
+                    { 
+                        label: 'Rekap Presensi SDM', 
+                        route: 'yayasan.attendance-data.index', 
+                        active: 'yayasan.attendance-data.*',
+                        icon: FingerPrintIcon 
+                    },
+                ]
+            }
+        ];
+    }
 
     // Feature flag helper — Super Admin always sees everything
     const settings = page.props.app_settings || {};

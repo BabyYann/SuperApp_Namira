@@ -26,6 +26,30 @@ class AdditionalUserSeeder extends Seeder
 
         // 2. Create Sample Users
 
+        // Pembina Yayasan - Nabila Faza, S.E
+        Role::firstOrCreate(['name' => 'pembina_yayasan', 'guard_name' => 'web']);
+        $pembina = User::where('name', 'like', '%Nabila Faza%')
+            ->orWhere('email', 'pembina@namira.school')
+            ->orWhere('email', 'nabilahfaza28@gmail.com')
+            ->first();
+
+        if ($pembina) {
+            $pembina->update([
+                'name' => 'Nabila Faza, S.E',
+                'email' => 'nabilahfaza28@gmail.com',
+                'phone' => '628123508479',
+            ]);
+        } else {
+            $pembina = User::create([
+                'name' => 'Nabila Faza, S.E',
+                'email' => 'nabilahfaza28@gmail.com',
+                'phone' => '628123508479',
+                'password' => Hash::make('password'),
+            ]);
+        }
+        $pembina->syncRoles(['pembina_yayasan']);
+        $this->command->info('Created/Updated User: nabilahfaza28@gmail.com [pembina_yayasan]');
+
         // A. Staf Yayasan
         $staf = User::updateOrCreate(
             ['email' => 'staf@namira.school'],
