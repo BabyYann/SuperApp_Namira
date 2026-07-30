@@ -18,7 +18,9 @@ class NotificationApiController extends Controller
     {
         $unitId = $this->resolveUnitId($request);
         $items = Notification::where('user_id', $request->user()->id)
-            ->when($unitId, fn ($q) => $q->where('unit_id', $unitId))
+            ->when($unitId, fn ($q) => $q->where(function($sub) use ($unitId) {
+                $sub->where('unit_id', $unitId)->orWhereNull('unit_id');
+            }))
             ->latest()
             ->paginate($request->get('per_page', 20))
             ->through(fn ($n) => [
@@ -51,7 +53,9 @@ class NotificationApiController extends Controller
     {
         $unitId = $this->resolveUnitId($request);
         Notification::where('user_id', $request->user()->id)
-            ->when($unitId, fn ($q) => $q->where('unit_id', $unitId))
+            ->when($unitId, fn ($q) => $q->where(function($sub) use ($unitId) {
+                $sub->where('unit_id', $unitId)->orWhereNull('unit_id');
+            }))
             ->where('is_read', false)
             ->update([
                 'is_read' => true,
