@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.namiraschool.twa",
+    "sha256_cert_fingerprints": ["94:EA:00:EE:FE:93:56:88:B3:65:D7:5A:2F:C7:BD:22:A5:4D:51:5A:94:37:1E:6F:43:DC:1E:6F:86:48:10:ED"]
+  }
+}]
