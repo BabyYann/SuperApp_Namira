@@ -11,7 +11,7 @@ class NotificationDispatcher
     /**
      * Dispatch notification (In-App DB record + FCM Push) to specific roles.
      *
-     * @param array $roles Spatie role names (e.g. ['super_admin_yayasan', 'admin_yayasan'])
+     * @param array $roles Spatie role names (e.g. ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'])
      * @param int|null $unitId Unit ID to filter unit-scoped users (null means global / all units)
      * @param string $title Notification Title
      * @param string $message Notification Body / Content
@@ -21,26 +21,22 @@ class NotificationDispatcher
      */
     public static function sendToRoles(array $roles, ?int $unitId, string $title, string $message, string $type, array $data = []): void
     {
-        $originalTeamId = getPermissionsTeamId();
+        $roleNames = (array) $roles;
 
-        // 1. Fetch Global Role Users (team_id = null)
-        setPermissionsTeamId(null);
-        $globalUsers = User::role($roles)->get();
+        // Bypass Spatie team_id lock by querying relation directly
+        $query = User::whereHas('roles', function ($q) use ($roleNames) {
+            $q->whereIn('name', $roleNames);
+        });
 
-        // 2. Fetch Unit-Scoped Role Users if unitId provided
-        $unitUsers = collect();
-        $targetUnitId = $unitId ?? session('active_unit_id');
-        if ($targetUnitId) {
-            setPermissionsTeamId($targetUnitId);
-            $unitUsers = User::role($roles)->get();
+        if ($unitId) {
+            $query->where(function ($q) use ($unitId) {
+                $q->where('unit_id', $unitId)->orWhereNull('unit_id');
+            });
         }
 
-        // Restore original team ID
-        setPermissionsTeamId($originalTeamId);
+        $users = $query->get();
 
-        $allUsers = $globalUsers->concat($unitUsers)->unique('id');
-
-        foreach ($allUsers as $user) {
+        foreach ($users as $user) {
             self::sendToUser($user, $title, $message, $type, $data);
         }
     }
