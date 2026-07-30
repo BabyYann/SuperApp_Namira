@@ -44,14 +44,35 @@ const loadFirebaseScripts = () => {
 
 const setupPushNotifications = async () => {
     const config = page.props.firebase;
+
+    // --- Verbose Debug Logs ---
+    console.group('[FCM Setup]');
+    console.log('Firebase config from server:', {
+        apiKey: config?.apiKey ? '✅ Set' : '❌ MISSING',
+        authDomain: config?.authDomain ? '✅ Set' : '❌ MISSING',
+        projectId: config?.projectId || '❌ MISSING',
+        messagingSenderId: config?.messagingSenderId ? '✅ Set' : '❌ MISSING (CRITICAL)',
+        appId: config?.appId ? '✅ Set' : '❌ MISSING',
+        vapidKey: config?.vapidKey ? '✅ Set' : '❌ MISSING (CRITICAL for token)',
+    });
+
     // Skip if configuration is not complete
     if (!config || !config.messagingSenderId) {
-        console.warn('FCM Sender ID is missing. Push notifications skipped.');
+        console.warn('[FCM] FIREBASE_SENDER_ID is missing from .env - Push notifications DISABLED.');
+        console.groupEnd();
+        return;
+    }
+
+    if (!config.vapidKey) {
+        console.warn('[FCM] FIREBASE_VAPID_KEY is missing from .env - Cannot retrieve FCM browser token. Push notifications will NOT work.');
+        console.groupEnd();
         return;
     }
 
     try {
+        console.log('[FCM] Loading Firebase scripts...');
         await loadFirebaseScripts();
+        console.log('[FCM] Firebase scripts loaded.');
 
         // Initialize Firebase
         if (!firebase.apps.length) {
@@ -63,38 +84,65 @@ const setupPushNotifications = async () => {
                 messagingSenderId: config.messagingSenderId,
                 appId: config.appId
             });
+            console.log('[FCM] Firebase app initialized.');
+        } else {
+            console.log('[FCM] Firebase app already initialized.');
         }
 
         const messaging = firebase.messaging();
 
         // Register Service Worker explicitly from root domain scope
+        console.log('[FCM] Registering service worker...');
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
             scope: '/'
         });
+        console.log('[FCM] Service worker registered:', registration.scope);
 
         // Request permission
         const permission = await Notification.requestPermission();
+        console.log('[FCM] Notification permission:', permission);
+
         if (permission === 'granted') {
-            // Retrieve token
+            console.log('[FCM] Retrieving FCM token with vapidKey...');
             const token = await messaging.getToken({
                 serviceWorkerRegistration: registration,
                 vapidKey: config.vapidKey
             });
 
             if (token) {
+                console.log('[FCM] FCM Token obtained:', token.substring(0, 30) + '...');
                 // Post token to backend
                 await axios.post(route('push-tokens.store'), {
                     token: token,
                     device_type: 'web'
                 });
-                console.log('FCM Device Token registered successfully.');
+                console.log('[FCM] ✅ Device token registered to backend successfully.');
+            } else {
+                console.warn('[FCM] ⚠️ No token returned from getToken(). Check VAPID key and Firebase project config.');
             }
         } else {
-            console.warn('Notification permission denied.');
+            console.warn('[FCM] ⚠️ Notification permission denied by user. Push notifications will NOT work.');
         }
+
+        // Background message handler (when app is in foreground)
+        messaging.onMessage((payload) => {
+            console.log('[FCM] Foreground message received:', payload);
+            const n = payload.notification || {};
+            Swal.fire({
+                icon: 'info',
+                title: n.title || 'Notifikasi Baru',
+                text: n.body || '',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 5000,
+                timerProgressBar: true,
+            });
+        });
     } catch (error) {
-        console.error('Error setting up FCM in layout:', error);
+        console.error('[FCM] Error setting up FCM:', error);
     }
+    console.groupEnd();
 };
 
 const setupEcho = () => {
