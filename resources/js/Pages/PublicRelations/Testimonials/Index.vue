@@ -283,8 +283,8 @@ const getApprovalBadge = (status) => {
                                 </td>
                                 <td class="p-5">
                                     <div class="flex flex-col gap-1">
-                                        <span :class="getStatusBadge(item.approval_status).class" class="px-3 py-1 rounded-xl text-xs font-bold border shadow-sm w-fit">
-                                            {{ getStatusBadge(item.approval_status).label }}
+                                        <span :class="getApprovalBadge(item.approval_status).class" class="px-3 py-1 rounded-xl text-xs font-bold border shadow-sm w-fit">
+                                            {{ getApprovalBadge(item.approval_status).label }}
                                         </span>
                                         <button v-if="item.approval_status === 'rejected' && item.rejection_note" @click="viewNote(item.rejection_note)" class="text-[11px] text-rose-600 underline font-medium hover:text-rose-800 text-left">
                                             Lihat Catatan Revisi
