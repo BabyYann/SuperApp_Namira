@@ -57,9 +57,15 @@ class NotificationDebugController extends Controller
                 'tokens' => $t->token_count,
             ]);
 
-        // 5. Admin users and whether they have tokens
+        // 5. Admin users and whether they have tokens (bypass Spatie team scope)
         $adminRoles = ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'];
-        $adminUsers = User::whereHas('roles', fn($q) => $q->whereIn('name', $adminRoles))->get(['id', 'name', 'email']);
+        $adminUsers = User::whereIn('id', function ($q) use ($adminRoles) {
+            $q->select('model_id')
+                ->from('model_has_roles')
+                ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                ->whereIn('roles.name', $adminRoles)
+                ->where('model_has_roles.model_type', \App\Models\User::class);
+        })->get(['id', 'name', 'email']);
         $adminStatus = $adminUsers->map(function ($admin) {
             $tokens = UserDeviceToken::where('user_id', $admin->id)->count();
             return [

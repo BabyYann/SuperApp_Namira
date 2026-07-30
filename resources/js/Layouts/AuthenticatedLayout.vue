@@ -146,21 +146,26 @@ const setupPushNotifications = async () => {
 };
 
 const setupEcho = () => {
-    // Check if configuration exists
-    if (!import.meta.env.VITE_REVERB_APP_KEY) {
-        console.warn('Reverb configuration missing. Echo listening disabled.');
+    // Use the live server's own hostname, not the VITE env value which gets
+    // baked in at local build time (127.0.0.1 / localhost).
+    const reverbHost = window.location.hostname;
+    const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
+
+    if (!reverbKey) {
+        console.warn('[Echo] VITE_REVERB_APP_KEY missing. Echo listening disabled.');
         return;
     }
 
     try {
         window.Echo = new Echo({
             broadcaster: 'reverb',
-            key: import.meta.env.VITE_REVERB_APP_KEY,
-            wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
+            key: reverbKey,
+            wsHost: reverbHost,
             wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
             wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-            forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+            forceTLS: location.protocol === 'https:',
             enabledTransports: ['ws', 'wss'],
+            disableStats: true,
         });
 
         // Listen for EmployeeCheckedIn event

@@ -28,27 +28,37 @@ class NotificationDispatcher
 
         $usersToNotify = collect();
 
-        // 1. Fetch Global Roles: receive notifications for ALL units regardless of user's unit_id setting
+        // 1. Fetch Global Roles via raw DB subquery to BYPASS Spatie team scope.
+        //    Using whereHas('roles') goes through Spatie's scoped relationship which adds
+        //    a team_id filter — causing super_admin_yayasan (team_id=NULL) to be excluded.
         if (!empty($targetGlobalRoles)) {
-            $globalUsers = User::whereHas('roles', function ($q) use ($targetGlobalRoles) {
-                $q->whereIn('name', $targetGlobalRoles);
+            $globalUsers = User::whereIn('id', function ($q) use ($targetGlobalRoles) {
+                $q->select('model_id')
+                    ->from('model_has_roles')
+                    ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                    ->whereIn('roles.name', array_values($targetGlobalRoles))
+                    ->where('model_has_roles.model_type', \App\Models\User::class);
             })->get();
             $usersToNotify = $usersToNotify->concat($globalUsers);
         }
 
-        // 2. Fetch Unit-Scoped Roles: receive notifications filtered by active unit_id
+        // 2. Fetch Unit-Scoped Roles via raw DB subquery (also bypasses Spatie scope).
         if (!empty($targetUnitRoles)) {
-            $unitQuery = User::whereHas('roles', function ($q) use ($targetUnitRoles) {
-                $q->whereIn('name', $targetUnitRoles);
+            $query = User::whereIn('id', function ($q) use ($targetUnitRoles) {
+                $q->select('model_id')
+                    ->from('model_has_roles')
+                    ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                    ->whereIn('roles.name', array_values($targetUnitRoles))
+                    ->where('model_has_roles.model_type', \App\Models\User::class);
             });
 
             if ($unitId) {
-                $unitQuery->where(function ($q) use ($unitId) {
+                $query->where(function ($q) use ($unitId) {
                     $q->where('unit_id', $unitId)->orWhereNull('unit_id');
                 });
             }
 
-            $unitUsers = $unitQuery->get();
+            $unitUsers = $query->get();
             $usersToNotify = $usersToNotify->concat($unitUsers);
         }
 
