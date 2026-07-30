@@ -175,7 +175,7 @@ class AttendanceDataController extends Controller
 
     public function index(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengakses data absensi karyawan.');
         }
 
@@ -231,7 +231,7 @@ class AttendanceDataController extends Controller
 
     public function export(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengekspor data absensi.');
         }
 
@@ -351,7 +351,7 @@ class AttendanceDataController extends Controller
 
     public function exportPdf(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengekspor PDF absensi.');
         }
 
@@ -430,7 +430,7 @@ class AttendanceDataController extends Controller
 
     public function employeeHistory(Request $request, User $user)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
             return response()->json(['error' => 'Akses Ditolak'], 403);
         }
 
@@ -487,7 +487,7 @@ class AttendanceDataController extends Controller
 
     public function exportIndividualPdf(Request $request, User $user)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak.');
         }
 

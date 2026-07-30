@@ -8,7 +8,7 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::get('/pembina/dashboard', [\App\Modules\Yayasan\Controllers\PembinaDashboardController::class, 'index'])->name('pembina.dashboard');
     
     // Admin Only Routes
-    Route::middleware(['role:super_admin_yayasan|admin_yayasan|pengawas_yayasan|admin_unit|staff_yayasan|staff_unit|kepala_sekolah'])->group(function () {
+    Route::middleware(['role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|admin_unit|staff_yayasan|staff_unit|kepala_sekolah'])->group(function () {
         Route::get('/monitoring', [\App\Modules\Yayasan\Controllers\MonitoringController::class, 'index'])->name('monitoring.index');
         Route::resource('units', \App\Modules\Yayasan\Controllers\UnitController::class);
         Route::resource('academic-years', \App\Modules\Yayasan\Controllers\AcademicYearController::class);
