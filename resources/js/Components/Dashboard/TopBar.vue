@@ -64,6 +64,19 @@ const markRead = async (item) => {
     }
 };
 
+const isSendingTest = ref(false);
+const sendTestNotification = async () => {
+    try {
+        isSendingTest.value = true;
+        await axios.post('/api/notifications/test-trigger');
+        await fetchNotifications();
+    } catch (e) {
+        console.error('Failed to send test notification:', e);
+    } finally {
+        isSendingTest.value = false;
+    }
+};
+
 onMounted(() => {
     fetchNotifications();
     pollInterval = setInterval(fetchNotifications, 30000); // poll every 30s
@@ -119,14 +132,24 @@ onUnmounted(() => {
                                 {{ unreadCount }} Baru
                             </span>
                         </div>
-                        <button
-                            v-if="unreadCount > 0"
-                            @click="markAllRead"
-                            type="button"
-                            class="text-[11px] text-teal-600 font-bold hover:underline"
-                        >
-                            Tandai Semua Dibaca
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button
+                                @click="sendTestNotification"
+                                :disabled="isSendingTest"
+                                type="button"
+                                class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold shadow-xs transition"
+                            >
+                                {{ isSendingTest ? 'Mengirim...' : '🧪 Tes Notif' }}
+                            </button>
+                            <button
+                                v-if="unreadCount > 0"
+                                @click="markAllRead"
+                                type="button"
+                                class="text-[11px] text-teal-600 font-bold hover:underline"
+                            >
+                                Dibaca
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Notification List -->

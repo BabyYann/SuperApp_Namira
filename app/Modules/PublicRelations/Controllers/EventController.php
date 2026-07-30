@@ -266,6 +266,19 @@ class EventController extends Controller
         $event->approved_at = now();
         $event->save();
 
+        if ($event->author_id) {
+            $author = User::find($event->author_id);
+            if ($author) {
+                \App\Services\NotificationDispatcher::sendToUser(
+                    $author,
+                    '✅ Acara Disetujui & Diterbitkan',
+                    "Acara \"{$event->title}\" telah disetujui dan diterbitkan.",
+                    'public_relations',
+                    ['event_id' => $event->id]
+                );
+            }
+        }
+
         return redirect()->back()->with('success', 'Acara berhasil diverifikasi & diterbitkan!');
     }
 
@@ -285,6 +298,19 @@ class EventController extends Controller
         $event->rejection_note = $validated['rejection_note'];
         $event->approved_by = auth()->id();
         $event->save();
+
+        if ($event->author_id) {
+            $author = User::find($event->author_id);
+            if ($author) {
+                \App\Services\NotificationDispatcher::sendToUser(
+                    $author,
+                    '❌ Acara Ditolak / Perlu Perbaikan',
+                    "Acara \"{$event->title}\" dikembalikan untuk perbaikan: {$validated['rejection_note']}",
+                    'public_relations',
+                    ['event_id' => $event->id]
+                );
+            }
+        }
 
         return redirect()->back()->with('success', 'Acara dikembalikan untuk perbaikan.');
     }

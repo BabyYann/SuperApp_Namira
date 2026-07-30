@@ -40,6 +40,21 @@ class NotificationApiController extends Controller
         return response()->json(['message' => 'Notifikasi ditandai dibaca']);
     }
 
+    // POST /notifications/test-trigger
+    public function testTrigger(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        \App\Services\NotificationDispatcher::sendToUser(
+            $user,
+            '🧪 Tes Notifikasi Sukses!',
+            "Halo {$user->name}, notifikasi aplikasi & FCM push berhasil terkirim!",
+            'test',
+            ['test' => true]
+        );
+
+        return response()->json(['message' => 'Tes notifikasi berhasil dikirim!']);
+    }
+
     // POST /notifications/read-all
     public function markAllRead(Request $request): JsonResponse
     {
