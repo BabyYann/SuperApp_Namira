@@ -306,15 +306,15 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Konseling</span>
                 </Link>
 
-                <!-- Staff biasa: Presensi (Pulang) -->
+                <!-- Staff biasa / Guru: Presensi Pegawai -->
                 <Link 
                     v-else
-                    :href="safeRoute('attendance.index')"
+                    :href="safeRoute('employee.attendance.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
-                    :class="isRouteActive('attendance.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
+                    :class="isRouteActive('employee.attendance.*') || isRouteActive('attendance.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                 >
-                    <ClipboardDocumentListIcon class="w-6 h-6 transition-transform" />
-                    <span class="text-[10px] font-bold tracking-tight">Riwayat</span>
+                    <ClipboardDocumentCheckIcon class="w-6 h-6 transition-transform" />
+                    <span class="text-[10px] font-bold tracking-tight">Presensi</span>
                 </Link>
 
                 <!-- 5. Drawer Menu "Lainnya" -->
