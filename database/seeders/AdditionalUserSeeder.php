@@ -37,13 +37,11 @@ class AdditionalUserSeeder extends Seeder
             $pembina->update([
                 'name' => 'Nabila Faza, S.E',
                 'email' => 'nabilahfaza28@gmail.com',
-                'phone' => '628123508479',
             ]);
         } else {
             $pembina = User::create([
                 'name' => 'Nabila Faza, S.E',
                 'email' => 'nabilahfaza28@gmail.com',
-                'phone' => '628123508479',
                 'password' => Hash::make('password'),
             ]);
         }
