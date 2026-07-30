@@ -13,6 +13,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('notifications')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\NotificationApiController::class, 'index']);
         Route::post('/test-trigger', [\App\Http\Controllers\Api\NotificationApiController::class, 'testTrigger']);
+        Route::post('/test-trigger-admin', [\App\Http\Controllers\Api\NotificationApiController::class, 'testTriggerAdmin']);
         Route::post('/{id}/read', [\App\Http\Controllers\Api\NotificationApiController::class, 'markRead']);
         Route::post('/read-all', [\App\Http\Controllers\Api\NotificationApiController::class, 'markAllRead']);
     });

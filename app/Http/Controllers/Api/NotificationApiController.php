@@ -46,13 +46,29 @@ class NotificationApiController extends Controller
         $user = $request->user();
         \App\Services\NotificationDispatcher::sendToUser(
             $user,
-            '🧪 Tes Notifikasi Sukses!',
-            "Halo {$user->name}, notifikasi aplikasi & FCM push berhasil terkirim!",
+            '🧪 Tes Notifikasi Saya Sukses!',
+            "Halo {$user->name}, notifikasi pribadi berhasil terkirim!",
             'test',
             ['test' => true]
         );
 
         return response()->json(['message' => 'Tes notifikasi berhasil dikirim!']);
+    }
+
+    // POST /notifications/test-trigger-admin
+    public function testTriggerAdmin(Request $request): JsonResponse
+    {
+        $sender = $request->user();
+        \App\Services\NotificationDispatcher::sendToRoles(
+            ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+            null,
+            '📢 Uji Coba Notifikasi dari ' . $sender->name,
+            "Pengguna {$sender->name} ({$sender->email}) mengirim tes notifikasi lintas-role ke Admin Yayasan.",
+            'test',
+            ['sender_id' => $sender->id]
+        );
+
+        return response()->json(['message' => 'Tes notifikasi ke Admin berhasil dikirim!']);
     }
 
     // POST /notifications/read-all

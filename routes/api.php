@@ -119,6 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationApiController::class, 'index']);
         Route::post('/test-trigger', [NotificationApiController::class, 'testTrigger']);
+        Route::post('/test-trigger-admin', [NotificationApiController::class, 'testTriggerAdmin']);
         Route::post('/{id}/read', [NotificationApiController::class, 'markRead']);
         Route::post('/read-all', [NotificationApiController::class, 'markAllRead']);
     });

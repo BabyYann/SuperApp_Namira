@@ -74,7 +74,7 @@ const sendTestNotification = async () => {
         Swal.fire({
             icon: 'success',
             title: 'Notifikasi Terkirim! 🚀',
-            text: 'Notifikasi tes berhasil dikirim dan sudah muncul di lonceng atas!',
+            text: 'Notifikasi tes berhasil dikirim ke akun kamu!',
             timer: 3000,
             showConfirmButton: false,
             toast: true,
@@ -86,6 +86,32 @@ const sendTestNotification = async () => {
             icon: 'error',
             title: 'Gagal Mengirim',
             text: e.response?.data?.message || 'Terjadi kesalahan saat menguji notifikasi.',
+        });
+    } finally {
+        isSendingTest.value = false;
+    }
+};
+
+const sendTestNotificationAdmin = async () => {
+    try {
+        isSendingTest.value = true;
+        await axios.post('/notifications/test-trigger-admin');
+        await fetchNotifications();
+        Swal.fire({
+            icon: 'success',
+            title: 'Notifikasi ke Admin Terkirim! 📢',
+            text: 'Notifikasi tes berhasil dikirimkan ke akun Super Admin & Admin Yayasan!',
+            timer: 4000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end',
+        });
+    } catch (e) {
+        console.error('Failed to send test notification to admin:', e);
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Mengirim',
+            text: e.response?.data?.message || 'Terjadi kesalahan saat menguji notifikasi ke Admin.',
         });
     } finally {
         isSendingTest.value = false;
@@ -147,21 +173,30 @@ onUnmounted(() => {
                                 {{ unreadCount }} Baru
                             </span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
                             <button
                                 @click="sendTestNotification"
                                 :disabled="isSendingTest"
                                 type="button"
-                                class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold shadow-xs transition flex items-center gap-1"
+                                class="px-2 py-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[10px] font-bold shadow-xs transition"
+                                title="Kirim notifikasi tes ke akun Anda sendiri"
                             >
-                                <span v-if="isSendingTest">Mengirim...</span>
-                                <span v-else>🧪 Tes Notif</span>
+                                🧪 Tes Saya
+                            </button>
+                            <button
+                                @click="sendTestNotificationAdmin"
+                                :disabled="isSendingTest"
+                                type="button"
+                                class="px-2 py-0.5 bg-teal-600 hover:bg-teal-700 text-white rounded-md text-[10px] font-bold shadow-xs transition"
+                                title="Kirim notifikasi tes dari Anda ke Super Admin Yayasan"
+                            >
+                                📢 Tes ke Admin
                             </button>
                             <button
                                 v-if="unreadCount > 0"
                                 @click="markAllRead"
                                 type="button"
-                                class="text-[11px] text-teal-600 font-bold hover:underline"
+                                class="text-[10px] text-slate-500 font-bold hover:underline ml-1"
                             >
                                 Dibaca
                             </button>
