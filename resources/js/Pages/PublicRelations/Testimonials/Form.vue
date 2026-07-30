@@ -21,6 +21,11 @@ const defaultUnitId = computed(() => {
     return '';
 });
 
+const defaultApprovalStatus = computed(() => {
+    if (props.testimonial?.approval_status) return props.testimonial.approval_status;
+    return props.is_approver ? 'published' : 'pending';
+});
+
 const form = useForm({
     unit_id: defaultUnitId.value,
     name: props.testimonial?.name || '',
