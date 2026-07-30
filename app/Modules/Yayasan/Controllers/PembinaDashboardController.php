@@ -8,6 +8,8 @@ use App\Models\UniversityDestination;
 use App\Modules\Academic\Models\Student;
 use App\Modules\Yayasan\Models\Unit;
 use App\Modules\Sarpar\Models\SarparAsset;
+use App\Modules\Finance\Models\StudentBill;
+use App\Modules\Finance\Models\Transaction;
 use App\Modules\Employee\Models\AttendanceLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -40,56 +42,66 @@ class PembinaDashboardController extends Controller
         $totalStaff = User::role(['staff_yayasan', 'staff_unit', 'admin_unit', 'staff_admin_keuangan', 'finance'])->count();
         $totalUsers = User::count();
 
-        // 3. Finance Executive Overview (SPP Collection & Arrears)
+        // 3. Finance Executive Overview (SPP Collection & Arrears using Eloquent)
         $totalPaidBills = 0;
         $totalUnpaidBills = 0;
         $paymentPercentage = 100;
 
-        if (DB::getSchemaBuilder()->hasTable('student_bills')) {
-            $billQuery = DB::table('student_bills');
+        try {
+            $billQuery = StudentBill::query();
             if ($selectedUnitId) {
-                $billQuery->where('unit_id', $selectedUnitId);
+                $billQuery->whereHas('student', fn($q) => $q->where('unit_id', $selectedUnitId));
             }
 
-            $totalPaidBills = (clone $billQuery)->where('status', 'paid')->sum('amount') ?? 0;
-            $totalUnpaidBills = (clone $billQuery)->whereIn('status', ['unpaid', 'partially_paid'])->sum('amount') ?? 0;
-            $totalBills = $totalPaidBills + $totalUnpaidBills;
-            $paymentPercentage = $totalBills > 0 ? round(($totalPaidBills / $totalBills) * 100, 1) : 100;
+            $totalPaidBills = (clone $billQuery)->sum('paid_amount') ?? 0;
+            $totalBillsAmount = (clone $billQuery)->sum('final_amount') ?? 0;
+            $totalUnpaidBills = max(0, $totalBillsAmount - $totalPaidBills);
+            $paymentPercentage = $totalBillsAmount > 0 ? round(($totalPaidBills / $totalBillsAmount) * 100, 1) : 100;
+        } catch (\Throwable $e) {
+            // Fallback if table doesn't exist
         }
 
         // Monthly trends for cashflow
         $recentTransactions = [];
-        if (DB::getSchemaBuilder()->hasTable('bank_transactions')) {
-            $recentTransactions = DB::table('bank_transactions')
-                ->select('type', DB::raw('SUM(amount) as total_amount'), DB::raw('MONTH(transaction_date) as month_num'))
-                ->whereYear('transaction_date', date('Y'))
-                ->groupBy('type', DB::raw('MONTH(transaction_date)'))
-                ->get();
+        try {
+            $trxQuery = Transaction::query();
+            if ($selectedUnitId) {
+                $trxQuery->whereHas('student', fn($q) => $q->where('unit_id', $selectedUnitId));
+            }
+            $recentTransactions = $trxQuery->latest('created_at')->take(5)->get();
+        } catch (\Throwable $e) {
+            // Fallback if table doesn't exist
         }
 
         // 4. Asset / Sarpar Overview
         $totalAssetCount = 0;
         $totalAssetValue = 0;
-        if (DB::getSchemaBuilder()->hasTable('sarpar_assets')) {
+        try {
             $totalAssetCount = SarparAsset::count();
             $totalAssetValue = SarparAsset::sum('purchase_price') ?? 0;
+        } catch (\Throwable $e) {
+            // Fallback
         }
 
         // 5. University Destinations & Alumni Accomplishments
         $topDestinations = [];
-        if (DB::getSchemaBuilder()->hasTable('university_destinations')) {
+        try {
             $topDestinations = UniversityDestination::with('unit')
                 ->where('is_active', true)
                 ->latest('visit_date')
                 ->take(6)
                 ->get();
+        } catch (\Throwable $e) {
+            // Fallback
         }
 
         // 6. Employee Today Attendance Overview
         $todayAttendanceCount = 0;
-        if (DB::getSchemaBuilder()->hasTable('attendance_logs')) {
+        try {
             $today = date('Y-m-d');
             $todayAttendanceCount = AttendanceLog::whereDate('scanned_at', $today)->distinct('user_id')->count('user_id');
+        } catch (\Throwable $e) {
+            // Fallback
         }
         $attendancePercentage = $totalUsers > 0 ? round(($todayAttendanceCount / max($totalUsers, 1)) * 100, 1) : 0;
 
