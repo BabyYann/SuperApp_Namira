@@ -4,15 +4,17 @@ namespace App\Modules\Yayasan\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeAttendance;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class AttendanceApprovalController extends Controller
 {
     public function index()
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengakses persetujuan absensi.');
         }
 
@@ -46,7 +48,7 @@ class AttendanceApprovalController extends Controller
 
     public function update(Request $request, EmployeeAttendance $attendance)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses persetujuan absensi.');
         }
 
@@ -69,12 +71,36 @@ class AttendanceApprovalController extends Controller
             'approval_status' => $request->status,
             'approved_by' => Auth::id(),
             'rejection_reason' => $request->status === 'rejected' ? $request->reason : null,
-            // If rejected, does 'status' column change? 
-            // Maybe status remains 'sick'/'permit' but approval is 'rejected'.
-            // OR status changes to 'alpha' or 'rejected'?
-            // Start simple: Keep original status, just mark approval. 
-            // Display logic will showing 'Rejected'.
         ]);
+
+        // Send feedback notification to the employee
+        if ($attendance->user) {
+            $dateFormatted = Carbon::parse($attendance->date)->translatedFormat('d F Y');
+            $statusLabel = [
+                'business_trip' => 'Dinas Luar',
+                'sick'          => 'Sakit',
+                'permit'        => 'Izin',
+            ][$attendance->status] ?? $attendance->status;
+
+            if ($request->status === 'approved') {
+                NotificationDispatcher::sendToUser(
+                    $attendance->user,
+                    '✅ Pengajuan Absensi Disetujui',
+                    "Pengajuan absensi {$statusLabel} Anda pada tanggal {$dateFormatted} telah disetujui.",
+                    'employee',
+                    ['attendance_id' => $attendance->id]
+                );
+            } else {
+                $reasonText = $request->reason ? " Catatan: {$request->reason}" : '';
+                NotificationDispatcher::sendToUser(
+                    $attendance->user,
+                    '❌ Pengajuan Absensi Ditolak',
+                    "Pengajuan absensi {$statusLabel} Anda pada tanggal {$dateFormatted} tidak disetujui.{$reasonText}",
+                    'employee',
+                    ['attendance_id' => $attendance->id]
+                );
+            }
+        }
 
         return redirect()->back()->with('success', 'Status pengajuan diperbarui.');
     }

@@ -227,7 +227,7 @@ class AttendanceController extends Controller
                 $adminIds = \DB::table('model_has_roles')
                     ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
                     ->whereIn('model_has_roles.team_id', $unitIds)
-                    ->whereIn('roles.name', ['admin_unit', 'super_admin_yayasan', 'admin_yayasan'])
+                    ->whereIn('roles.name', ['admin_unit', 'kepala_sekolah', 'super_admin_yayasan', 'admin_yayasan'])
                     ->pluck('model_has_roles.model_id')
                     ->unique()
                     ->toArray();
@@ -272,7 +272,7 @@ class AttendanceController extends Controller
             $unitId = ($units && $units->isNotEmpty()) ? $units->first()->id : null;
 
             NotificationDispatcher::sendToRoles(
-                ['admin_unit', 'super_admin_yayasan', 'admin_yayasan'],
+                ['admin_unit', 'kepala_sekolah', 'super_admin_yayasan', 'admin_yayasan'],
                 $unitId,
                 'Pengajuan Absensi Menunggu Persetujuan',
                 "{$user->name} mengajukan absensi {$statusLabel} pada " . Carbon::parse($today)->translatedFormat('d F Y') . ". Silakan verifikasi.",
@@ -365,7 +365,7 @@ class AttendanceController extends Controller
                 $adminIds = \DB::table('model_has_roles')
                     ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
                     ->whereIn('model_has_roles.team_id', $unitIds)
-                    ->whereIn('roles.name', ['admin_unit', 'super_admin_yayasan', 'admin_yayasan'])
+                    ->whereIn('roles.name', ['admin_unit', 'kepala_sekolah', 'super_admin_yayasan', 'admin_yayasan'])
                     ->pluck('model_has_roles.model_id')
                     ->unique()
                     ->toArray();
