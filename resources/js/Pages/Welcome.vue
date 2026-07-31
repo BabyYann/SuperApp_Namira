@@ -1027,9 +1027,9 @@ const prevTesti = () => {
                             <span class="text-[#fbbf24] text-xs uppercase tracking-widest">Education Group</span>
                         </div>
                         <ul class="space-y-3 text-[12px] text-gray-400">
-                            <li>{{ appSettings.contact_phone || '0804 1500 501' }}</li>
-                            <li>{{ appSettings.contact_email || 'info.school@namira.edu' }}</li>
-                            <li class="mt-4">{{ appSettings.address || 'Headquarters Namira, Indonesia' }}</li>
+                            <li><span class="text-gray-200">Telp/WA:</span> +62 823-3292-2521</li>
+                            <li><span class="text-gray-200">Email:</span> info@foundationnamira.com</li>
+                            <li class="mt-4">{{ appSettings.address || 'Yayasan Namira, Probolinggo, Jawa Timur' }}</li>
                         </ul>
                     </div>
 
@@ -1037,12 +1037,12 @@ const prevTesti = () => {
                         <h4 class="text-white font-bold mb-6 tracking-widest uppercase text-xs">Quick Links</h4>
                         <ul class="space-y-2 text-[12px]">
                             <li><a href="#home" class="hover:text-[#fbbf24] transition">Home</a></li>
+                            <li><a href="/ppdb" class="text-[#fbbf24] font-semibold hover:underline transition">PPDB Online (SPMB)</a></li>
                             <li><a href="#campuses" class="hover:text-[#fbbf24] transition">Campuses</a></li>
                             <li><a href="#destinations" class="hover:text-[#fbbf24] transition">Destinations</a></li>
                             <li><a href="#testimonials" class="hover:text-[#fbbf24] transition">Testimonials</a></li>
                             <li><a href="#news" class="hover:text-[#fbbf24] transition">News</a></li>
                             <li><a href="#events" class="hover:text-[#fbbf24] transition">Events</a></li>
-                            <li><a href="#partners" class="hover:text-[#fbbf24] transition">Partners</a></li>
                         </ul>
                     </div>
                     

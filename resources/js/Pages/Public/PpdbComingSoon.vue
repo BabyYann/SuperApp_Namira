@@ -95,7 +95,7 @@ const units = [
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row items-center gap-4">
                 <a 
-                    href="https://wa.me/6282337298150?text=Halo%20Admin%20Yayasan%20Namira,%20saya%20ingin%20bertanya%20informasi%20PPDB/SPMB" 
+                    href="https://wa.me/6282332922521?text=Halo%20Admin%20Yayasan%20Namira,%20saya%20ingin%20bertanya%20informasi%20PPDB/SPMB" 
                     target="_blank"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-[#064e3b] hover:bg-emerald-800 text-white font-bold px-8 py-4 rounded-2xl transition shadow-lg shadow-emerald-950/60 border border-emerald-400/20 text-sm"
                 >
