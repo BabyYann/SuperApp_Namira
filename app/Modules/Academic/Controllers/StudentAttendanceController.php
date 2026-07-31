@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StudentAttendance;
 use App\Modules\Academic\Models\Classroom;
 use App\Modules\Academic\Models\Student;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -189,10 +190,10 @@ class StudentAttendanceController extends Controller
             );
             \Log::info("Saved attendance for Student {$data['student_id']}: {$data['status']}", $attendance->toArray());
 
-            // Automated WhatsApp Notification via WAHA to parents for Sakit (S), Izin (I), and Alpha (A)
+            // Automated WhatsApp & Push Notification (In-App + FCM) for Sakit (S), Izin (I), and Alpha (A)
             try {
-                $student = Student::with('unit')->find($data['student_id']);
-                if ($student && !empty($student->parent_phone) && in_array($data['status'], ['S', 'I', 'A'])) {
+                $student = Student::with(['unit', 'user'])->find($data['student_id']);
+                if ($student && in_array($data['status'], ['S', 'I', 'A'])) {
                     $statusName = [
                         'S' => 'Sakit',
                         'I' => 'Izin',
@@ -201,14 +202,41 @@ class StudentAttendanceController extends Controller
 
                     $dateFormatted = Carbon::parse($date)->translatedFormat('d F Y');
                     $unitName = $student->unit->name ?? 'Namira School Foundation';
-                    $message = "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: {$classroom->name}).\n\nKami menginformasikan bahwa putra/putri Anda tercatat *{$statusName}* pada tanggal *{$dateFormatted}*.\n\n" . 
-                               (!empty($data['note']) ? "Keterangan: {$data['note']}\n\n" : "") .
-                               "Terima kasih.\n-- *{$unitName}*";
 
-                    \App\Helpers\WhatsAppHelper::send($student->parent_phone, $message);
+                    // 1. WhatsApp to Parent
+                    if (!empty($student->parent_phone)) {
+                        $message = "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: {$classroom->name}).\n\nKami menginformasikan bahwa putra/putri Anda tercatat *{$statusName}* pada tanggal *{$dateFormatted}*.\n\n" . 
+                                   (!empty($data['note']) ? "Keterangan: {$data['note']}\n\n" : "") .
+                                   "Terima kasih.\n-- *{$unitName}*";
+
+                        \App\Helpers\WhatsAppHelper::send($student->parent_phone, $message);
+                    }
+
+                    // 2. In-App & FCM Push Notification to Student User Account (Backup if WA down)
+                    if ($student->user) {
+                        NotificationDispatcher::sendToUser(
+                            $student->user,
+                            '📋 Catatan Presensi Kelas',
+                            "Anda tercatat {$statusName} pada tanggal {$dateFormatted}." . (!empty($data['note']) ? " Catatan: {$data['note']}" : ''),
+                            'academic',
+                            ['student_id' => $student->id]
+                        );
+                    }
+
+                    // 3. Alert to BK, Kepala Sekolah, & Admin Unit if Alpha (A)
+                    if ($data['status'] === 'A') {
+                        NotificationDispatcher::sendToRoles(
+                            ['bk', 'kepala_sekolah', 'admin_unit'],
+                            $student->unit_id,
+                            '⚠️ Laporan Siswa Alpha',
+                            "Siswa {$student->full_name} ({$classroom->name}) tercatat ALPHA pada {$dateFormatted}.",
+                            'academic',
+                            ['student_id' => $student->id, 'classroom_id' => $classroom->id]
+                        );
+                    }
                 }
             } catch (\Exception $e) {
-                \Log::error("Failed to send automated WA attendance notification: " . $e->getMessage());
+                \Log::error("Failed to send automated attendance notifications: " . $e->getMessage());
             }
         }
 

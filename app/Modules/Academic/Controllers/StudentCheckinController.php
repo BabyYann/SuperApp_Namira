@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Academic\Models\Student;
 use App\Modules\Academic\Models\StudentCheckin;
 use App\Modules\Yayasan\Models\SystemSetting;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -135,6 +136,36 @@ class StudentCheckinController extends Controller
 
         // 5. Kirim WA notifikasi ke orang tua (non-blocking via queue)
         $this->dispatchWhatsAppNotification($student, $checkin, $status, $now);
+
+        // 6. Push Notification (FCM + In-App) via NotificationDispatcher
+        try {
+            $student->loadMissing(['user', 'classroom.homeroomTeacher.user']);
+            $statusText = $status === 'terlambat' ? 'TERLAMBAT' : 'HADIR';
+
+            // Send to student user account if exists
+            if ($student->user) {
+                NotificationDispatcher::sendToUser(
+                    $student->user,
+                    'Kehadiran Gerbang',
+                    "Halo {$student->full_name}, Anda tercatat {$statusText} masuk gerbang pukul " . $now->format('H:i') . " WIB.",
+                    'academic',
+                    ['checkin_id' => $checkin->id]
+                );
+            }
+
+            // If late, notify homeroom teacher
+            if ($status === 'terlambat' && $student->classroom?->homeroomTeacher?->user) {
+                NotificationDispatcher::sendToUser(
+                    $student->classroom->homeroomTeacher->user,
+                    '⚠️ Siswa Terlambat di Gerbang',
+                    "Siswa {$student->full_name} ({$student->classroom->name}) tercatat TERLAMBAT masuk gerbang pukul " . $now->format('H:i') . " WIB.",
+                    'academic',
+                    ['student_id' => $student->id]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Student checkin push notification error: " . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
