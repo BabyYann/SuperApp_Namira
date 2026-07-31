@@ -25,15 +25,27 @@ const props = defineProps({
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
-const isAdmin = computed(() => {
+
+const isOnlyTeacher = computed(() => {
     const u = user.value;
     if (!u) return false;
-    const roles = u.roles || [];
-    const role = u.role;
-    const allRoles = role ? [...roles, role] : roles;
-    return allRoles.some(r => ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'].includes(r));
+    
+    const rolesList = [];
+    if (u.role) rolesList.push(u.role);
+    if (Array.isArray(u.roles)) {
+        u.roles.forEach(r => {
+            if (typeof r === 'string') rolesList.push(r);
+            else if (r && r.name) rolesList.push(r.name);
+        });
+    }
+
+    const adminRoles = ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit', 'pembina_yayasan', 'pengawas_yayasan'];
+    const hasAdminRole = rolesList.some(r => adminRoles.includes(r));
+
+    if (hasAdminRole) return false;
+    return !!u.is_teacher;
 });
-const isTeacher = computed(() => user.value?.is_teacher && !isAdmin.value);
+
 const teacherId = computed(() => user.value?.teacher_profile?.id);
 
 // State
@@ -117,7 +129,7 @@ const deleteItem = () => {
 };
 
 const canManageClass = (classroom) => {
-    if (!isTeacher.value) return true; // Admin can manage all
+    if (!isOnlyTeacher.value) return true; // Admin/Staff can manage all
     return classroom.homeroom_teacher_id === teacherId.value;
 };
 </script>
@@ -156,7 +168,7 @@ const canManageClass = (classroom) => {
 
                     <!-- Add Button -->
                     <button 
-                        v-if="isAdmin || !isTeacher"
+                        v-if="!isOnlyTeacher"
                         @click="openCreateModal"
                         class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
                     >
@@ -228,7 +240,7 @@ const canManageClass = (classroom) => {
                                 Edit
                             </button>
                             <!-- Only Admin can delete -->
-                            <button v-if="isAdmin" @click="confirmDelete(classroom)" class="text-xs font-bold text-gray-400 hover:text-red-600 flex items-center gap-1 transition-colors">
+                            <button v-if="!isOnlyTeacher" @click="confirmDelete(classroom)" class="text-xs font-bold text-gray-400 hover:text-red-600 flex items-center gap-1 transition-colors">
                                 <TrashIcon class="w-4 h-4" />
                                 Hapus
                             </button>

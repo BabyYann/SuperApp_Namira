@@ -16,15 +16,26 @@ const props = defineProps({
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
-const isAdmin = computed(() => {
+
+const isOnlyTeacher = computed(() => {
     const u = user.value;
     if (!u) return false;
-    const roles = u.roles || [];
-    const role = u.role;
-    const allRoles = role ? [...roles, role] : roles;
-    return allRoles.some(r => ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'].includes(r));
+    
+    const rolesList = [];
+    if (u.role) rolesList.push(u.role);
+    if (Array.isArray(u.roles)) {
+        u.roles.forEach(r => {
+            if (typeof r === 'string') rolesList.push(r);
+            else if (r && r.name) rolesList.push(r.name);
+        });
+    }
+
+    const adminRoles = ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit', 'pembina_yayasan', 'pengawas_yayasan'];
+    const hasAdminRole = rolesList.some(r => adminRoles.includes(r));
+
+    if (hasAdminRole) return false;
+    return !!u.is_teacher;
 });
-const isTeacher = computed(() => user.value?.is_teacher && !isAdmin.value);
 
 // State
 const searchQuery = ref('');
@@ -56,7 +67,7 @@ const filteredAvailable = computed(() => {
 });
 
 const canManage = computed(() => {
-    if (isAdmin.value) return true; // Admin
+    if (!isOnlyTeacher.value) return true; // Admin/Staff can manage all
     return props.isHomeroomTeacher;
 });
 
