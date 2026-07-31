@@ -8,6 +8,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import { useMediaQuery } from '@vueuse/core';
 import MobileCard from '@/Components/MobileCard.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { 
     MagnifyingGlassIcon, FunnelIcon, ArrowPathIcon, PlusIcon, 
     UserIcon, UserGroupIcon, EnvelopeIcon, PhoneIcon, EyeIcon, 
