@@ -30,7 +30,7 @@ class TeacherController extends Controller
                 $query->where('gender', $gender);
             })
             ->latest()
-            ->paginate(10)
+            ->paginate(request('per_page', 10))
             ->withQueryString();
 
         // Fetch registered users who don't have a teacher profile in this unit yet
