@@ -9,6 +9,20 @@ use Inertia\Inertia;
 
 class ClassroomController extends Controller
 {
+    private function isAdminUser($user): bool
+    {
+        if (!$user) return false;
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'])) {
+            return true;
+        }
+        return \Illuminate\Support\Facades\DB::table('model_has_roles')
+            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->where('model_has_roles.model_id', $user->id)
+            ->where('model_has_roles.model_type', get_class($user))
+            ->whereIn('roles.name', ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'])
+            ->exists();
+    }
+
     public function index()
     {
         $unitId = session('active_unit_id');
@@ -36,11 +50,13 @@ class ClassroomController extends Controller
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!$this->isAdminUser(auth()->user())) {
             abort(403, 'Akses Ditolak: Hanya Admin yang dapat menambah data kelas.');
         }
 
-        $unitId = session('active_unit_id') ?? \App\Modules\Yayasan\Models\Unit::first()->id;
+        $unitId = session('active_unit_id') 
+            ?? \Illuminate\Support\Facades\DB::table('model_has_roles')->where('model_id', auth()->id())->whereNotNull('team_id')->value('team_id')
+            ?? \App\Modules\Yayasan\Models\Unit::first()->id;
 
          $validated = $request->validate([
              'name' => 'required|string|max:50',
@@ -73,13 +89,13 @@ class ClassroomController extends Controller
 
     public function update(Request $request, Classroom $classroom)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $classroom->unit_id != session('active_unit_id')) {
+        $user = auth()->user();
+        if (!$this->isAdminUser($user) && $classroom->unit_id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengubah data kelas dari unit lain.');
         }
 
         // Security: Only Admin or Homeroom Teacher can update
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!$this->isAdminUser($user)) {
             $isTeacher = $user->hasRole('teacher') || $user->hasRole('wali_kelas');
             $teacherProfile = $user->teacher_profile;
 
@@ -111,7 +127,7 @@ class ClassroomController extends Controller
 
     public function show(Classroom $classroom)
     {
-        if ($classroom->unit_id != session('active_unit_id')) abort(403);
+        if (!$this->isAdminUser(auth()->user()) && $classroom->unit_id != session('active_unit_id')) abort(403);
 
         $classroom->load(['homeroomTeacher', 'students' => function($q) {
             $q->orderBy('full_name');
@@ -132,13 +148,13 @@ class ClassroomController extends Controller
 
     public function addStudent(Request $request, Classroom $classroom)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $classroom->unit_id != session('active_unit_id')) {
+        $user = auth()->user();
+        if (!$this->isAdminUser($user) && $classroom->unit_id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengakses kelas dari unit lain.');
         }
 
         // Security Check
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!$this->isAdminUser($user)) {
             $isTeacher = $user->hasRole('teacher') || $user->hasRole('wali_kelas');
             $teacherProfile = $user->teacher_profile;
 
@@ -161,13 +177,13 @@ class ClassroomController extends Controller
 
     public function removeStudent(Classroom $classroom, \App\Modules\Academic\Models\Student $student)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $classroom->unit_id != session('active_unit_id')) {
+        $user = auth()->user();
+        if (!$this->isAdminUser($user) && $classroom->unit_id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengakses kelas dari unit lain.');
         }
 
         // Security Check
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        if (!$this->isAdminUser($user)) {
             $isTeacher = $user->hasRole('teacher') || $user->hasRole('wali_kelas');
             $teacherProfile = $user->teacher_profile;
 
@@ -187,11 +203,12 @@ class ClassroomController extends Controller
 
     public function destroy(Classroom $classroom)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+        $user = auth()->user();
+        if (!$this->isAdminUser($user)) {
             abort(403, 'Akses Ditolak: Hanya Admin yang dapat menghapus data kelas.');
         }
 
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $classroom->unit_id != session('active_unit_id')) {
+        if (!$this->isAdminUser($user) && $classroom->unit_id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat menghapus kelas dari unit lain.');
         }
         
