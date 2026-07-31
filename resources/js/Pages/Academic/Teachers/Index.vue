@@ -328,7 +328,7 @@ const deleteItem = () => {
                     </div>
 
                     <!-- Pagination Mobile -->
-                    <Pagination :links="teachers.links" class="pt-2" />
+                    <Pagination :links="teachers.links" :from="teachers.from" :to="teachers.to" :total="teachers.total" :per-page="teachers.per_page" class="pt-2" />
                 </div>
             </div>
             <!-- END MOBILE VIEW -->
@@ -346,7 +346,7 @@ const deleteItem = () => {
                         <input 
                             v-model="searchQuery"
                             type="text" 
-                            placeholder="Cari Nama / NIP..." 
+                            placeholder="Cari Nama / NIP / NIY..." 
                             class="pl-10 pr-4 py-2.5 w-full bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md h-[46px]"
                         >
                     </div>
@@ -432,7 +432,7 @@ const deleteItem = () => {
                             <thead class="text-xs text-gray-500 uppercase bg-white/50 border-b border-gray-100">
                                 <tr>
                                     <th class="px-6 py-5 font-extrabold tracking-wider">Nama Lengkap</th>
-                                    <th class="px-6 py-5 font-extrabold tracking-wider">NIP</th>
+                                    <th class="px-6 py-5 font-extrabold tracking-wider">NIP / NIY</th>
                                     <th class="px-6 py-5 font-extrabold tracking-wider">L/P</th>
                                     <th class="px-6 py-5 font-extrabold tracking-wider">Kontak</th>
                                     <th class="px-6 py-5 font-extrabold tracking-wider text-right">Aksi</th>
@@ -503,7 +503,7 @@ const deleteItem = () => {
                     </div>
 
                     <!-- Pagination -->
-                    <Pagination :links="teachers.links" class="p-6 border-t border-gray-100 bg-white/50" />
+                    <Pagination :links="teachers.links" :from="teachers.from" :to="teachers.to" :total="teachers.total" :per-page="teachers.per_page" class="p-6 border-t border-gray-100 bg-white/50" />
                 </div>
             </div>
             <!-- END DESKTOP VIEW -->
@@ -566,8 +566,8 @@ const deleteItem = () => {
                             </div>
 
                             <div>
-                                <InputLabel for="nip" value="NIP / NUPTK" class="text-sm font-bold text-gray-700" />
-                                <TextInput id="nip" v-model="form.nip" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 focus:border-namira-teal focus:ring-namira-teal rounded-xl bg-gray-50/50" placeholder="Nomor Induk Pegawai" />
+                                <InputLabel for="nip" value="NIP / NIY" class="text-sm font-bold text-gray-700" />
+                                <TextInput id="nip" v-model="form.nip" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 focus:border-namira-teal focus:ring-namira-teal rounded-xl bg-gray-50/50" placeholder="Nomor NIP atau NIY" />
                                 <InputError :message="form.errors.nip" class="mt-1" />
                             </div>
 
