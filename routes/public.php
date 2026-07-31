@@ -292,3 +292,37 @@ Route::get('/testimonials', function () {
         'testimonials' => $testimonials
     ]);
 })->name('testimonials.index');
+
+Route::get('/sitemap.xml', function () {
+    $baseUrl = config('app.url', 'https://namiraschool.com');
+    
+    $news = \App\Models\News::where('status', 'published')->latest('published_at')->get(['slug', 'updated_at']);
+    $events = \App\Models\Event::where('status', '!=', 'cancelled')->latest('start_date')->get(['id', 'updated_at']);
+
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    
+    // Main pages
+    $xml .= '<url><loc>' . $baseUrl . '</loc><changefreq>daily</changefreq><priority>1.0</priority></url>';
+    $xml .= '<url><loc>' . $baseUrl . '/berita</loc><changefreq>daily</changefreq><priority>0.9</priority></url>';
+    $xml .= '<url><loc>' . $baseUrl . '/events</loc><changefreq>daily</changefreq><priority>0.9</priority></url>';
+    $xml .= '<url><loc>' . $baseUrl . '/testimonials</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>';
+    
+    // News detail pages
+    foreach ($news as $item) {
+        $lastMod = $item->updated_at ? $item->updated_at->toAtomString() : date('c');
+        $xml .= '<url><loc>' . $baseUrl . '/berita/' . urlencode($item->slug) . '</loc><lastmod>' . $lastMod . '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>';
+    }
+
+    // Event detail pages
+    foreach ($events as $item) {
+        $lastMod = $item->updated_at ? $item->updated_at->toAtomString() : date('c');
+        $xml .= '<url><loc>' . $baseUrl . '/events/' . $item->id . '</loc><lastmod>' . $lastMod . '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>';
+    }
+
+    $xml .= '</urlset>';
+
+    return response($xml, 200, [
+        'Content-Type' => 'text/xml'
+    ]);
+});

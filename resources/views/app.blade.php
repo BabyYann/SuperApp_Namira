@@ -7,12 +7,68 @@
 
         <title inertia>{{ config('app.name', 'Namira App') }}</title>
 
+        <!-- SEO & Meta Tags -->
+        <meta name="description" content="Yayasan Namira - Multi-unit School Management Platform (SD, SMP, TK, KB, Daycare). Pendidikan Islam Terpadu berkualitas tinggi.">
+        <meta name="keywords" content="Yayasan Namira, Namira School, SD Namira, SMP Namira, TK Namira, KB Namira, Daycare Namira, Sekolah Islam Probolinggo">
+        <meta name="author" content="Yayasan Namira">
+        <link rel="canonical" href="{{ config('app.url', 'https://namiraschool.com') }}">
+        <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+
+        <!-- Open Graph / Facebook / WhatsApp -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ config('app.url', 'https://namiraschool.com') }}">
+        <meta property="og:title" content="Yayasan Namira - Sekolah Islam Terpadu">
+        <meta property="og:description" content="Pendidikan Islam Terpadu berkualitas tinggi dari Daycare, KB, TK, SD, hingga SMP Namira.">
+        <meta property="og:image" content="{{ asset('images/namira-foundation-logo.webp') }}">
+
         <!-- PWA, Favicon & Meta -->
         <link rel="icon" type="image/webp" href="/images/namira-foundation-logo.webp">
         <link rel="shortcut icon" href="/images/namira-foundation-logo.webp">
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#009688">
         <link rel="apple-touch-icon" href="/images/namira-foundation-logo.webp">
+
+        <!-- Schema.org JSON-LD Structured Data for Google Sitelinks -->
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "EducationalOrganization",
+              "@id": "{{ config('app.url', 'https://namiraschool.com') }}/#organization",
+              "name": "Yayasan Namira",
+              "url": "{{ config('app.url', 'https://namiraschool.com') }}",
+              "logo": "{{ asset('images/namira-foundation-logo.webp') }}",
+              "description": "Yayasan Namira - Sekolah Islam Terpadu (SD, SMP, TK, KB, Daycare)",
+              "sameAs": [
+                "https://www.facebook.com/namiraschool",
+                "https://www.instagram.com/namiraschool"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": "{{ config('app.url', 'https://namiraschool.com') }}/#website",
+              "url": "{{ config('app.url', 'https://namiraschool.com') }}",
+              "name": "Yayasan Namira School",
+              "publisher": {
+                "@id": "{{ config('app.url', 'https://namiraschool.com') }}/#organization"
+              }
+            },
+            {
+              "@type": "SiteNavigationElement",
+              "name": ["Berita & Artikel", "Agenda & Kegiatan", "SD Namira", "SMP Namira", "TK Namira", "KB Namira"],
+              "url": [
+                "{{ config('app.url', 'https://namiraschool.com') }}/berita",
+                "{{ config('app.url', 'https://namiraschool.com') }}/events",
+                "{{ config('app.url', 'https://namiraschool.com') }}/unit/sd",
+                "{{ config('app.url', 'https://namiraschool.com') }}/unit/smp",
+                "{{ config('app.url', 'https://namiraschool.com') }}/unit/tk",
+                "{{ config('app.url', 'https://namiraschool.com') }}/unit/kb"
+              ]
+            }
+          ]
+        }
+        </script>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
