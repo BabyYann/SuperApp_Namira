@@ -420,9 +420,9 @@ const prevTesti = () => {
             <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center">
                     <!-- Logo Section -->
-                    <div class="flex items-center gap-4">
-                        <div class="bg-white p-1.5 rounded-full shadow-lg border border-slate-100">
-                            <img :src="appLogo" alt="Logo" class="object-contain transition-all duration-300" :class="isScrolled ? 'h-9 w-9 md:h-11 md:w-11' : 'h-11 w-11 md:h-13 md:w-13'" />
+                    <div class="flex items-center gap-3.5">
+                        <div class="bg-white p-2 rounded-2xl shadow-md border border-slate-100 flex items-center justify-center shrink-0">
+                            <img :src="appLogo" alt="Logo" class="w-auto object-contain transition-all duration-300" :class="isScrolled ? 'h-8 md:h-10' : 'h-10 md:h-12'" />
                         </div>
                         <div class="flex flex-col">
                             <span class="font-extrabold text-base md:text-lg tracking-[0.05em] uppercase leading-none transition-colors duration-300" :class="isScrolled ? 'text-[#082a3a]' : 'text-white drop-shadow-md'">Yayasan Namira</span>
@@ -517,8 +517,8 @@ const prevTesti = () => {
                 <!-- Header inside Drawer -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="bg-white p-1.5 rounded-full shadow-lg">
-                            <img :src="appLogo" alt="Logo" class="h-8 w-8 object-contain" />
+                        <div class="bg-white p-1.5 rounded-2xl shadow-lg shrink-0">
+                            <img :src="appLogo" alt="Logo" class="h-9 w-auto object-contain" />
                         </div>
                         <div>
                             <span class="text-white font-bold text-sm tracking-widest uppercase leading-none block">Yayasan Namira</span>
