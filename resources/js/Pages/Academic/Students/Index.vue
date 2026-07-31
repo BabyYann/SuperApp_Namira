@@ -6,6 +6,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { 
     MagnifyingGlassIcon, FunnelIcon, ArrowPathIcon, ArrowUpTrayIcon, 
     PlusIcon, UserIcon, EnvelopeIcon, EyeIcon, PencilSquareIcon, 
