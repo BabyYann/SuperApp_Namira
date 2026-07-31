@@ -13,19 +13,16 @@ Route::get('/', function () {
         ->take(6)
         ->get();
 
-    if ($events->isEmpty()) {
-        $events = \App\Models\Event::with('unit')
+    if ($events->count() < 6) {
+        $needed = 6 - $events->count();
+        $excludeIds = $events->pluck('id')->toArray();
+        $pastEvents = \App\Models\Event::with('unit')
             ->where('status', '!=', 'cancelled')
-            ->where(function ($q) use ($now) {
-                $q->where(function ($sub) use ($now) {
-                    $sub->whereNotNull('end_date')->where('end_date', '<', $now);
-                })->orWhere(function ($sub) use ($now) {
-                    $sub->whereNull('end_date')->where('start_date', '<', $now->copy()->startOfDay());
-                });
-            })
+            ->whereNotIn('id', $excludeIds)
             ->orderByRaw("COALESCE(end_date, start_date) DESC")
-            ->take(6)
+            ->take($needed)
             ->get();
+        $events = $events->concat($pastEvents);
     }
 
     $partners = \App\Models\Partner::latest()->get();

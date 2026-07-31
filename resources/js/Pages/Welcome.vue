@@ -58,7 +58,7 @@ const props = defineProps({
 
 const page = usePage();
 const appSettings = page.props.app_settings || {};
-const appName = appSettings.app_name || 'Yayasan Namira School';
+const appName = 'Yayasan Namira';
 const appLogo = appSettings.app_logo || '/images/landing/logo-yayasan.webp'; 
 
 // Scroll effect for Navbar & Scroll Spy
@@ -1029,7 +1029,7 @@ const prevTesti = () => {
                         <ul class="space-y-3 text-[12px] text-gray-400">
                             <li><span class="text-gray-200">Telp/WA:</span> +62 823-3292-2521</li>
                             <li><span class="text-gray-200">Email:</span> info@foundationnamira.com</li>
-                            <li class="mt-4">{{ appSettings.address || 'Yayasan Namira, Probolinggo, Jawa Timur' }}</li>
+                            <li class="mt-4">Jl. Pelita No. 8, Mayangan, Kota Probolinggo, Jawa Timur</li>
                         </ul>
                     </div>
 
