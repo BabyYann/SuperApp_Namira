@@ -59,7 +59,7 @@ const props = defineProps({
 const page = usePage();
 const appSettings = page.props.app_settings || {};
 const appName = 'Yayasan Namira';
-const appLogo = appSettings.app_logo || '/images/landing/logo-yayasan.webp'; 
+const appLogo = '/images/landing/logo-yayasan.webp'; 
 
 // Scroll effect for Navbar & Scroll Spy
 const isScrolled = ref(false);
@@ -421,8 +421,8 @@ const prevTesti = () => {
                 <div class="flex justify-between items-center">
                     <!-- Logo Section -->
                     <div class="flex items-center gap-3.5">
-                        <div class="bg-white p-2 rounded-2xl shadow-md border border-slate-100 flex items-center justify-center shrink-0">
-                            <img :src="appLogo" alt="Logo" class="w-auto object-contain transition-all duration-300" :class="isScrolled ? 'h-8 md:h-10' : 'h-10 md:h-12'" />
+                        <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 md:w-12 md:h-12 aspect-square overflow-hidden">
+                            <img :src="appLogo" alt="Logo" class="w-full h-full object-contain" />
                         </div>
                         <div class="flex flex-col">
                             <span class="font-extrabold text-base md:text-lg tracking-[0.05em] uppercase leading-none transition-colors duration-300" :class="isScrolled ? 'text-[#082a3a]' : 'text-white drop-shadow-md'">Yayasan Namira</span>
