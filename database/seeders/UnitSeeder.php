@@ -17,6 +17,7 @@ class UnitSeeder extends Seeder
             ['name' => 'TK Namira Dringu', 'code' => 'TK-DRI', 'category' => 'formal', 'level' => 'TK'],
             ['name' => 'SD Namira', 'code' => 'SD', 'category' => 'formal', 'level' => 'SD'],
             ['name' => 'SMP Namira', 'code' => 'SMP', 'category' => 'formal', 'level' => 'SMP'],
+            ['name' => 'Pavlov Center', 'code' => 'PAVLOV', 'category' => 'non-formal', 'level' => 'NON-FORMAL'],
             ['name' => 'Day Care', 'code' => 'DAY', 'category' => 'non-formal', 'level' => 'DAYCARE'],
         ];
 
