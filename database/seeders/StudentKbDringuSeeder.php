@@ -460,17 +460,30 @@ class StudentKbDringuSeeder extends Seeder
             // Parse classroom from section (e.g. DATA PESERTA DIDIK KB A -> KB A)
             $classroomName = null;
             if (preg_match('/(KB\s+[A-Z0-9]+|TK\s+[A-Z0-9]+)/i', $section, $m)) {
-                $classroomName = $m[1];
+                $classroomName = strtoupper(trim($m[1]));
             }
 
             $classroomId = null;
             if (!empty($classroomName)) {
-                $cls = Classroom::where('unit_id', $unitId)
-                    ->where('name', $classroomName)
-                    ->first();
-                if ($cls) {
-                    $classroomId = $cls->id;
+                // Determine level (e.g. KB, TK A, TK B)
+                $level = $classroomName;
+                if (str_contains($classroomName, 'KB')) {
+                    $level = 'KB';
+                } elseif (str_contains($classroomName, 'TK A')) {
+                    $level = 'TK A';
+                } elseif (str_contains($classroomName, 'TK B')) {
+                    $level = 'TK B';
                 }
+
+                // Auto-create classroom if not exists
+                $cls = Classroom::firstOrCreate([
+                    'unit_id' => $unitId,
+                    'name' => $classroomName,
+                ], [
+                    'level' => $level,
+                ]);
+
+                $classroomId = $cls->id;
             }
 
             $password = 'siswa123';
@@ -505,6 +518,6 @@ class StudentKbDringuSeeder extends Seeder
                 'classroom_id' => $classroomId,
             ]);
         }
-        echo "Berhasil mengimpor 32 Siswa KB Namira Dringu!\n";
+        echo "Berhasil mengimpor 32 Siswa KB Namira Dringu beserta pemetaan Kelas!\n";
     }
 }

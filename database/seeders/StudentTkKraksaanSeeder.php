@@ -1853,12 +1853,22 @@ class StudentTkKraksaanSeeder extends Seeder
 
             $classroomId = null;
             if (!empty($classroomName)) {
-                $cls = Classroom::where('unit_id', $unitId)
-                    ->where('name', $classroomName)
-                    ->first();
-                if ($cls) {
-                    $classroomId = $cls->id;
+                // If name is like 'A2', map to 'TK A2' or keep 'A2'
+                $nameForClass = $classroomName;
+                if (preg_match('/^[AB]\d+$/', $classroomName)) {
+                    $nameForClass = 'TK ' . $classroomName;
                 }
+
+                $level = str_contains($nameForClass, 'TK B') ? 'TK B' : 'TK A';
+
+                $cls = Classroom::firstOrCreate([
+                    'unit_id' => $unitId,
+                    'name' => $nameForClass,
+                ], [
+                    'level' => $level,
+                ]);
+
+                $classroomId = $cls->id;
             }
 
             $password = $nis ? $nis : ($nisn ? $nisn : 'siswa123');
@@ -1897,6 +1907,6 @@ class StudentTkKraksaanSeeder extends Seeder
                 'classroom_id' => $classroomId,
             ]);
         }
-        echo "Berhasil mengimpor 129 Siswa TK Namira Kraksaan!\n";
+        echo "Berhasil mengimpor 129 Siswa TK Namira Kraksaan beserta Kelas!\n";
     }
 }
