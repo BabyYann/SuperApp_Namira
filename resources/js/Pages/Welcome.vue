@@ -476,6 +476,10 @@ const prevTesti = () => {
                             Events
                             <span v-if="activeHash !== '#events'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
+                        <Link href="/ppdb" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav font-semibold text-[#fbbf24] hover:text-yellow-300">
+                            PPDB Online
+                            <span class="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#fbbf24]"></span>
+                        </Link>
                         <a href="#partners" @click="activeHash = '#partners'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#partners' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Partners
                             <span v-if="activeHash !== '#partners'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
@@ -1004,9 +1008,9 @@ const prevTesti = () => {
                     Fostering and Empowering Society in Building and Serving the Nation
                 </h2>
                 <div class="mt-10">
-                    <a href="#" class="bg-[#fbbf24] text-[#064e3b] font-bold text-sm tracking-widest uppercase px-10 py-4 rounded-full transition shadow-lg hover:bg-yellow-300">
-                        Join Us Now
-                    </a>
+                    <Link href="/ppdb" class="inline-block bg-[#fbbf24] text-[#064e3b] font-bold text-sm tracking-widest uppercase px-10 py-4 rounded-full transition shadow-lg hover:bg-yellow-300 active:scale-95">
+                        Join Us Now (PPDB)
+                    </Link>
                 </div>
             </div>
         </section>

@@ -293,6 +293,14 @@ Route::get('/testimonials', function () {
     ]);
 })->name('testimonials.index');
 
+Route::get('/ppdb', function () {
+    return Inertia::render('Public/PpdbComingSoon');
+})->name('ppdb.index');
+
+Route::get('/spmb', function () {
+    return redirect()->route('ppdb.index');
+})->name('spmb.index');
+
 Route::get('/sitemap.xml', function () {
     $baseUrl = config('app.url', 'https://namiraschool.com');
     
