@@ -74,7 +74,7 @@ const toggleDrawer = () => {
 // Role Check Helper Function
 const hasRole = (roles) => {
     if (!Array.isArray(roles)) roles = [roles];
-    if (userRoles.value.includes('super_admin_yayasan') || userRoles.value.includes('admin_yayasan') || userRoles.value.includes('admin_unit')) return true;
+    if (userRoles.value.includes('super_admin_yayasan') || userRoles.value.includes('admin_yayasan')) return true;
     return roles.some(role => userRoles.value.includes(role));
 };
 
@@ -480,7 +480,7 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 2. BIMBINGAN & KONSELING -->
-                        <div v-if="isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas'])" class="space-y-2">
+                        <div v-if="isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas', 'kepala_sekolah', 'admin_unit'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-indigo-700 tracking-wider flex items-center gap-1.5">
                                 <ChatBubbleLeftRightIcon class="w-4 h-4" />
                                 <span>Bimbingan Konseling (BK)</span>
@@ -522,7 +522,7 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 3. HUMAS & PUBLIKASI -->
-                        <div v-if="isGlobalAdmin || hasRole('humas_unit')" class="space-y-2">
+                        <div v-if="isGlobalAdmin || hasRole(['humas_unit', 'kepala_sekolah', 'admin_unit'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-blue-700 tracking-wider flex items-center gap-1.5">
                                 <MegaphoneIcon class="w-4 h-4" />
                                 <span>Humas & Hubungan Masyarakat</span>
@@ -650,7 +650,7 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 5. KEUANGAN -->
-                        <div v-if="isGlobalAdmin || hasRole(['finance', 'staff_admin_keuangan', 'admin_unit'])" class="space-y-2">
+                        <div v-if="isGlobalAdmin || hasRole(['finance', 'staff_admin_keuangan'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-emerald-700 tracking-wider flex items-center gap-1.5">
                                 <BanknotesIcon class="w-4 h-4" />
                                 <span>Keuangan & SPP</span>
@@ -711,7 +711,7 @@ const isRouteActive = (pattern) => {
                                 </Link>
 
                                 <Link 
-                                    v-if="hasRole(['admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])"
+                                    v-if="isGlobalAdmin || hasRole('kepala_sekolah')"
                                     :href="safeRoute('yayasan.attendance-approvals.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center p-3 rounded-2xl bg-amber-50/60 border border-amber-100/80 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"

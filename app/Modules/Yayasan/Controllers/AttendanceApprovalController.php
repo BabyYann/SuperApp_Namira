@@ -14,8 +14,8 @@ class AttendanceApprovalController extends Controller
 {
     public function index()
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'])) {
-            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengakses persetujuan absensi.');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Hanya Kepala Sekolah yang memiliki wewenang untuk menyetujui absensi.');
         }
 
         $unitId = session('active_unit_id');
@@ -48,8 +48,8 @@ class AttendanceApprovalController extends Controller
 
     public function update(Request $request, EmployeeAttendance $attendance)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'])) {
-            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses persetujuan absensi.');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Hanya Kepala Sekolah yang memiliki wewenang untuk memproses persetujuan absensi.');
         }
 
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {

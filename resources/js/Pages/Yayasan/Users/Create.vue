@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { UserIcon, ShieldCheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -13,13 +14,19 @@ const props = defineProps({
     isGlobalAdmin: Boolean,
 });
 
+const page = usePage();
+
+const isGlobalAdminUser = computed(() => {
+    return props.isGlobalAdmin && (page.props.auth.user?.roles || []).some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'].includes(r));
+});
+
 const form = useForm({
     name: '',
     email: '',
     password: '',
     password_confirmation: '',
     roles: [],
-    unit_id: (!props.isGlobalAdmin && props.units && props.units.length > 0) ? props.units[0].id : '',
+    unit_id: (!isGlobalAdminUser.value && props.units && props.units.length > 0) ? props.units[0].id : '',
 });
 
 const submit = () => {
@@ -98,7 +105,7 @@ const submit = () => {
                                 <InputLabel for="unit_id" value="Unit Penugasan" class="mb-2" />
                                 <div class="relative max-w-md">
                                     <select id="unit_id" v-model="form.unit_id" class="appearance-none block w-full pl-4 pr-10 py-3 text-base border-gray-200 focus:outline-none focus:ring-namira-teal focus:border-namira-teal sm:text-sm rounded-xl bg-white/50 backdrop-blur-sm transition-all shadow-sm">
-                                        <option v-if="isGlobalAdmin" value="">Global / Yayasan (Super Admin)</option>
+                                        <option v-if="isGlobalAdminUser" value="">Global / Yayasan (Super Admin)</option>
                                         <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">

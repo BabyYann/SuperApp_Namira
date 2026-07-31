@@ -463,6 +463,7 @@ const filteredMenuGroups = computed(() => {
         
         const isGlobalAdmin = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
         const isFinanceStaff = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'finance', 'staff_admin_keuangan']);
+        const isKepalaSekolahOrGlobal = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah']);
 
         let adminGroups = menuGroups.map(group => {
             let items = [...group.items];
@@ -470,6 +471,12 @@ const filteredMenuGroups = computed(() => {
                 items = items.filter(item => {
                     if (item.route === '/pulse' && !hasRole('super_admin_yayasan')) return false;
                     if (item.route === 'yayasan.attendance-locations.index' && !isGlobalAdmin) return false;
+                    return true;
+                });
+            }
+            if (group.key === 'employee') {
+                items = items.filter(item => {
+                    if (item.route === 'yayasan.attendance-approvals.index' && !isKepalaSekolahOrGlobal) return false;
                     return true;
                 });
             }
