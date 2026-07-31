@@ -5,6 +5,8 @@ namespace App\Modules\PublicRelations\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Partner;
 use App\Modules\Yayasan\Models\Unit;
+use App\Models\User;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
@@ -121,6 +123,18 @@ class PartnerController extends Controller
 
         $partner->save();
 
+        if ($approvalStatus === 'pending') {
+            $unitName = Unit::find($partner->unit_id)->name ?? 'Unit';
+            NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                'Pengajuan Mitra Baru',
+                "{$unitName} mengajukan mitra baru: \"{$partner->name}\". Butuh verifikasi.",
+                'public_relations',
+                ['partner_id' => $partner->id]
+            );
+        }
+
         $msg = $approvalStatus === 'pending'
             ? 'Mitra berhasil ditambahkan dan diajukan untuk verifikasi.'
             : 'Mitra berhasil ditambahkan.';
@@ -196,6 +210,18 @@ class PartnerController extends Controller
 
         $partner->save();
 
+        if ($approvalStatus === 'pending') {
+            $unitName = Unit::find($partner->unit_id)->name ?? 'Unit';
+            NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                'Pengajuan Mitra Diperbarui',
+                "{$unitName} memperbarui data mitra: \"{$partner->name}\". Butuh verifikasi.",
+                'public_relations',
+                ['partner_id' => $partner->id]
+            );
+        }
+
         $msg = $approvalStatus === 'pending'
             ? 'Data mitra diperbarui dan diajukan untuk verifikasi.'
             : 'Data mitra berhasil diperbarui.';
@@ -217,6 +243,17 @@ class PartnerController extends Controller
         $partner->approved_at = now();
         $partner->save();
 
+        $creator = $partner->creator;
+        if ($creator) {
+            NotificationDispatcher::sendToUser(
+                $creator,
+                'Mitra Berhasil Diterbitkan',
+                "Mitra \"{$partner->name}\" telah disetujui dan diterbitkan.",
+                'public_relations',
+                ['partner_id' => $partner->id]
+            );
+        }
+
         return redirect()->back()->with('success', 'Mitra berhasil diverifikasi & diterbitkan!');
     }
 
@@ -236,6 +273,17 @@ class PartnerController extends Controller
         $partner->rejection_note = $validated['rejection_note'];
         $partner->approved_by = $user->id;
         $partner->save();
+
+        $creator = $partner->creator;
+        if ($creator) {
+            NotificationDispatcher::sendToUser(
+                $creator,
+                'Mitra Perlu Revisi',
+                "Mitra \"{$partner->name}\" perlu revisi. Catatan: {$validated['rejection_note']}",
+                'public_relations',
+                ['partner_id' => $partner->id]
+            );
+        }
 
         return redirect()->back()->with('success', 'Mitra dikembalikan untuk perbaikan.');
     }

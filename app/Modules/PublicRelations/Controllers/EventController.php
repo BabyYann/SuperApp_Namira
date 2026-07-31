@@ -4,11 +4,13 @@ namespace App\Modules\PublicRelations\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use App\Modules\Yayasan\Models\Unit;
 use App\Helpers\ImageHelper;
+use App\Services\NotificationDispatcher;
 
 class EventController extends Controller
 {
@@ -245,6 +247,18 @@ class EventController extends Controller
 
         $event->save();
 
+        if ($approvalStatus === 'pending') {
+            $unitName = Unit::find($event->unit_id)->name ?? 'Unit';
+            NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                'Pengajuan Acara Diperbarui',
+                "{$unitName} memperbarui pengajuan acara: \"{$event->title}\". Butuh verifikasi.",
+                'public_relations',
+                ['event_id' => $event->id]
+            );
+        }
+
         $msg = $approvalStatus === 'pending'
             ? 'Acara berhasil diperbarui dan diajukan untuk verifikasi.'
             : 'Acara berhasil diperbarui.';
@@ -266,17 +280,14 @@ class EventController extends Controller
         $event->approved_at = now();
         $event->save();
 
-        if ($event->author_id) {
-            $author = User::find($event->author_id);
-            if ($author) {
-                \App\Services\NotificationDispatcher::sendToUser(
-                    $author,
-                    '✅ Acara Disetujui & Diterbitkan',
-                    "Acara \"{$event->title}\" telah disetujui dan diterbitkan.",
-                    'public_relations',
-                    ['event_id' => $event->id]
-                );
-            }
+        if ($event->author) {
+            NotificationDispatcher::sendToUser(
+                $event->author,
+                'Acara Disetujui & Diterbitkan',
+                "Acara \"{$event->title}\" telah disetujui dan diterbitkan.",
+                'public_relations',
+                ['event_id' => $event->id]
+            );
         }
 
         return redirect()->back()->with('success', 'Acara berhasil diverifikasi & diterbitkan!');
@@ -299,17 +310,14 @@ class EventController extends Controller
         $event->approved_by = auth()->id();
         $event->save();
 
-        if ($event->author_id) {
-            $author = User::find($event->author_id);
-            if ($author) {
-                \App\Services\NotificationDispatcher::sendToUser(
-                    $author,
-                    '❌ Acara Ditolak / Perlu Perbaikan',
-                    "Acara \"{$event->title}\" dikembalikan untuk perbaikan: {$validated['rejection_note']}",
-                    'public_relations',
-                    ['event_id' => $event->id]
-                );
-            }
+        if ($event->author) {
+            NotificationDispatcher::sendToUser(
+                $event->author,
+                'Acara Ditolak / Perlu Perbaikan',
+                "Acara \"{$event->title}\" dikembalikan untuk perbaikan: {$validated['rejection_note']}",
+                'public_relations',
+                ['event_id' => $event->id]
+            );
         }
 
         return redirect()->back()->with('success', 'Acara dikembalikan untuk perbaikan.');

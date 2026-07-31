@@ -4,6 +4,8 @@ namespace App\Modules\PublicRelations\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\UniversityDestination;
 use App\Modules\Yayasan\Models\Unit;
+use App\Models\User;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -125,6 +127,18 @@ class UniversityDestinationController extends Controller
 
         UniversityDestination::create($validated);
 
+        if ($approvalStatus === 'pending') {
+            $unitName = Unit::find($validated['unit_id'])->name ?? 'Unit';
+            NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                'Pengajuan Destinasi Universitas Baru',
+                "{$unitName} mengajukan destinasi baru: \"{$validated['name']}\" ({$validated['city']}). Butuh verifikasi.",
+                'public_relations',
+                []
+            );
+        }
+
         $msg = $approvalStatus === 'pending'
             ? 'Destinasi berhasil ditambahkan dan diajukan untuk verifikasi.'
             : 'Destinasi berhasil ditambahkan.';
@@ -191,6 +205,18 @@ class UniversityDestinationController extends Controller
 
         $universityDestination->update($validated);
 
+        if ($approvalStatus === 'pending') {
+            $unitName = Unit::find($universityDestination->unit_id)->name ?? 'Unit';
+            NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan', 'admin_yayasan', 'humas_yayasan'],
+                null,
+                'Pengajuan Destinasi Universitas Diperbarui',
+                "{$unitName} memperbarui destinasi: \"{$universityDestination->name}\". Butuh verifikasi.",
+                'public_relations',
+                []
+            );
+        }
+
         $msg = $approvalStatus === 'pending'
             ? 'Destinasi diperbarui dan diajukan untuk verifikasi.'
             : 'Destinasi berhasil diperbarui.';
@@ -212,6 +238,17 @@ class UniversityDestinationController extends Controller
         $universityDestination->approved_at = now();
         $universityDestination->save();
 
+        $creator = $universityDestination->creator;
+        if ($creator) {
+            NotificationDispatcher::sendToUser(
+                $creator,
+                'Destinasi Universitas Diterbitkan',
+                "Destinasi \"{$universityDestination->name}\" telah disetujui dan diterbitkan.",
+                'public_relations',
+                []
+            );
+        }
+
         return redirect()->back()->with('success', 'Destinasi berhasil diverifikasi & diterbitkan!');
     }
 
@@ -231,6 +268,17 @@ class UniversityDestinationController extends Controller
         $universityDestination->rejection_note = $validated['rejection_note'];
         $universityDestination->approved_by = $user->id;
         $universityDestination->save();
+
+        $creator = $universityDestination->creator;
+        if ($creator) {
+            NotificationDispatcher::sendToUser(
+                $creator,
+                'Destinasi Universitas Perlu Revisi',
+                "Destinasi \"{$universityDestination->name}\" perlu revisi. Catatan: {$validated['rejection_note']}",
+                'public_relations',
+                []
+            );
+        }
 
         return redirect()->back()->with('success', 'Destinasi dikembalikan untuk perbaikan.');
     }
