@@ -17,7 +17,15 @@ const props = defineProps({
 });
 
 const page = usePage();
-const isTeacher = computed(() => page.props.auth.user.is_teacher);
+const isAdmin = computed(() => {
+    const u = page.props.auth.user;
+    if (!u) return false;
+    const roles = u.roles || [];
+    const role = u.role;
+    const allRoles = role ? [...roles, role] : roles;
+    return allRoles.some(r => ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan', 'staff_unit'].includes(r));
+});
+const isTeacher = computed(() => page.props.auth.user?.is_teacher && !isAdmin.value);
 
 // State
 const searchQuery = ref(props.filters.search || '');
