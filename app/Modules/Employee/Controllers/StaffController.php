@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Employee\Models\Staff;
 use App\Modules\Yayasan\Models\Unit;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -102,6 +103,16 @@ class StaffController extends Controller
                 'is_active' => true,
             ]);
         });
+
+        $unitName = Unit::find($unitId)->name ?? 'Unit';
+        NotificationDispatcher::sendToRoles(
+            ['admin_unit', 'super_admin_yayasan', 'admin_yayasan'],
+            $unitId,
+            '👤 Data Staf Baru Ditambahkan',
+            "{$validated['full_name']} telah ditambahkan sebagai staf baru di {$unitName}.",
+            'employee',
+            []
+        );
 
         return redirect()->back()->with('success', 'Data staf berhasil ditambahkan.');
     }

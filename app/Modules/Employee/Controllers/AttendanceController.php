@@ -5,6 +5,7 @@ namespace App\Modules\Employee\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLocation;
 use App\Models\EmployeeAttendance;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -257,6 +258,27 @@ class AttendanceController extends Controller
             ))->toOthers();
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('WebSocket broadcast check-in error: ' . $e->getMessage());
+        }
+
+        // In-app notification: for sick/permit/business_trip (pending approval) → notify admin
+        if ($approvalStatus === 'pending') {
+            $statusLabel = [
+                'business_trip' => 'Dinas Luar',
+                'sick'          => 'Sakit',
+                'permit'        => 'Izin',
+            ][$status] ?? $status;
+
+            $units = $user->getUnitsAttribute();
+            $unitId = ($units && $units->isNotEmpty()) ? $units->first()->id : null;
+
+            NotificationDispatcher::sendToRoles(
+                ['admin_unit', 'super_admin_yayasan', 'admin_yayasan'],
+                $unitId,
+                'Pengajuan Absensi Menunggu Persetujuan',
+                "{$user->name} mengajukan absensi {$statusLabel} pada " . Carbon::parse($today)->translatedFormat('d F Y') . ". Silakan verifikasi.",
+                'employee',
+                ['user_id' => $user->id]
+            );
         }
 
         return redirect()->back()->with('success', 'Data absensi berhasil dikirim.');
