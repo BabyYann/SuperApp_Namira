@@ -141,7 +141,7 @@ class ViolationController extends Controller
                 );
             }
             \App\Services\NotificationDispatcher::sendToRoles(
-                ['wali_kelas', 'bk', 'admin_unit'],
+                ['wali_kelas', 'bk', 'admin_unit', 'kepala_sekolah'],
                 $violation->unit_id,
                 '⚠️ Catatan Kedisiplinan Siswa',
                 "Siswa {$student->full_name} ({$student->classroom->name}) tercatat pelanggaran {$category->name} ({$category->default_points} poin).",

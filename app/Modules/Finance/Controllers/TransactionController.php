@@ -8,6 +8,8 @@ use App\Modules\Finance\Models\StudentBill;
 use App\Modules\Finance\Models\BillPayment;
 use App\Modules\Finance\Models\FinanceAccount;
 use App\Modules\Academic\Models\Student;
+use App\Services\NotificationDispatcher;
+use App\Helpers\WhatsAppHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -189,7 +191,7 @@ class TransactionController extends Controller
                 $this->applyWaterfallPayment($student, $amount, $financeAccountId, $description);
                 $processed++;
 
-                // Broadcast Reverb Event
+                // Broadcast Reverb Event & Dispatch Push/WA Notification
                 try {
                     event(new \App\Events\PaymentTransactionRecorded(
                         $student->full_name ?? 'Siswa',
@@ -198,8 +200,36 @@ class TransactionController extends Controller
                         (int) ($student->unit_id ?? 1),
                         now()->format('H:i:s')
                     ));
+
+                    $student->loadMissing(['user', 'unit', 'classroom']);
+                    $formattedAmount = 'Rp ' . number_format($amount, 0, ',', '.');
+                    $dateFormatted = now()->translatedFormat('d F Y');
+
+                    if ($student->user) {
+                        NotificationDispatcher::sendToUser(
+                            $student->user,
+                            '✅ Pembayaran Berhasil Diterima',
+                            "Pembayaran sebesar {$formattedAmount} telah berhasil diterima dan diproses pada {$dateFormatted}.",
+                            'finance',
+                            []
+                        );
+                    }
+
+                    if (!empty($student->parent_phone)) {
+                        $unitName = $student->unit->name ?? 'Namira School';
+                        $message = "🧾 *Kuitansi Digital - Pembayaran Diterima*\n\n"
+                            . "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: " . ($student->classroom->name ?? '-') . ").\n\n"
+                            . "Terima kasih, pembayaran telah kami terima dengan rincian:\n"
+                            . "• *Nominal*: {$formattedAmount}\n"
+                            . "• *Tanggal*: {$dateFormatted}\n"
+                            . "• *Metode*: Transfer / Virtual Account\n\n"
+                            . "Pesan ini berfungsi sebagai bukti pembayaran resmi.\n\n"
+                            . "Terima kasih.\n-- *{$unitName}*";
+
+                        WhatsAppHelper::send($student->parent_phone, $message);
+                    }
                 } catch (\Throwable $e) {
-                    // Fail-safe
+                    Log::error("Transaction payment notification error for student {$student->id}: " . $e->getMessage());
                 }
             }
             DB::commit();

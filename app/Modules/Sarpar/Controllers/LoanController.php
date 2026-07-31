@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Modules\Sarpar\Models\Inventory;
 use App\Modules\Sarpar\Models\Loan;
 use App\Modules\Academic\Models\Teacher;
+use App\Models\User;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -89,6 +91,18 @@ class LoanController extends Controller
             // Update inventory status
             $inventory->update(['status' => 'dipinjam']);
 
+            $borrower = User::find($validated['borrower_id']);
+            if ($borrower) {
+                $dueDateFormatted = \Carbon\Carbon::parse($validated['due_date'])->translatedFormat('d F Y');
+                NotificationDispatcher::sendToUser(
+                    $borrower,
+                    '📦 Peminjaman Inventaris Sarpras',
+                    "Anda telah meminjam {$inventory->name} ({$validated['quantity']} unit). Tanggal jatuh tempo pengembalian: {$dueDateFormatted}.",
+                    'sarpar',
+                    ['inventory_id' => $inventory->id]
+                );
+            }
+
             return redirect()->back()->with('success', 'Peminjaman berhasil dicatat.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mencatat peminjaman.');
@@ -129,6 +143,16 @@ class LoanController extends Controller
                 'status' => 'tersedia',
                 'condition' => $validated['condition'],
             ]);
+
+            if ($loan->borrower) {
+                NotificationDispatcher::sendToUser(
+                    $loan->borrower,
+                    '✅ Pengembalian Inventaris Sarpras',
+                    "Inventaris {$loan->inventory->name} yang Anda pinjam telah berhasil dikembalikan.",
+                    'sarpar',
+                    ['inventory_id' => $loan->inventory_id]
+                );
+            }
 
             return redirect()->back()->with('success', 'Pengembalian berhasil dicatat.');
         } catch (\Exception $e) {

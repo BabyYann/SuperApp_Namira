@@ -9,6 +9,8 @@ use App\Modules\Finance\Models\StudentDiscount;
 use App\Modules\Academic\Models\Student;
 use App\Modules\Academic\Models\Classroom;
 use App\Modules\Yayasan\Models\Unit; // Correct Namespace
+use App\Services\NotificationDispatcher;
+use App\Helpers\WhatsAppHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -175,7 +177,7 @@ class StudentBillController extends Controller
 
                 $finalAmount = max(0, $financeType->amount - $discountAmount);
 
-                StudentBill::create([
+                $bill = StudentBill::create([
                     'student_id' => $student->id,
                     'finance_type_id' => $financeType->id,
                     'bill_code' => 'INV/' . date('Ym') . '/' . Str::random(5) . '/' . $student->id,
@@ -189,7 +191,53 @@ class StudentBillController extends Controller
                     'status' => 'unpaid',
                 ]);
                 $count++;
+
+                // Send In-App & FCM Push Notification to Student
+                try {
+                    $student->loadMissing(['user', 'unit', 'classroom']);
+                    $formattedAmount = 'Rp ' . number_format($finalAmount, 0, ',', '.');
+                    $dueDateFormatted = \Carbon\Carbon::parse($validated['due_date'])->translatedFormat('d F Y');
+
+                    if ($student->user) {
+                        NotificationDispatcher::sendToUser(
+                            $student->user,
+                            '💳 Tagihan Pembayaran Baru',
+                            "Tagihan {$financeType->name} sebesar {$formattedAmount} telah diterbitkan. Jatuh tempo: {$dueDateFormatted}.",
+                            'finance',
+                            ['bill_id' => $bill->id]
+                        );
+                    }
+
+                    if (!empty($student->parent_phone)) {
+                        $unitName = $student->unit->name ?? 'Namira School';
+                        $message = "📋 *Pemberitahuan Tagihan Sekolah*\n\n"
+                            . "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: " . ($student->classroom->name ?? '-') . ").\n\n"
+                            . "Tagihan pembayaran baru telah diterbitkan:\n"
+                            . "• *Jenis Tagihan*: {$financeType->name}\n"
+                            . "• *Nominal*: {$formattedAmount}\n"
+                            . "• *Jatuh Tempo*: {$dueDateFormatted}\n"
+                            . (!empty($validated['description']) ? "• *Keterangan*: {$validated['description']}\n" : "") . "\n"
+                            . "Mohon dapat melakuakan pembayaran sebelum tanggal jatuh tempo.\n\n"
+                            . "Terima kasih.\n-- *{$unitName}*";
+
+                        WhatsAppHelper::send($student->parent_phone, $message);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error("Bill notification error for student {$student->id}: " . $e->getMessage());
+                }
             }
+
+            if ($count > 0) {
+                NotificationDispatcher::sendToRoles(
+                    ['finance', 'staff_admin_keuangan', 'admin_unit'],
+                    $unitId,
+                    '📋 Penerbitan Tagihan Siswa',
+                    "Sebanyak {$count} tagihan {$financeType->name} telah berhasil diterbitkan.",
+                    'finance',
+                    []
+                );
+            }
+
             DB::commit();
             return redirect()->route('yayasan.finance.bills.index')->with('success', "Berhasil membuat tagihan untuk $count siswa.");
         } catch (\Throwable $e) {

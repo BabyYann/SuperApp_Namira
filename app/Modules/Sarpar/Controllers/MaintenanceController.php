@@ -5,6 +5,7 @@ namespace App\Modules\Sarpar\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Sarpar\Models\Inventory;
 use App\Modules\Sarpar\Models\MaintenanceLog;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -64,7 +65,7 @@ class MaintenanceController extends Controller
                 $inventory->update(['condition' => 'rusak_ringan']);
             }
 
-            // Broadcast Reverb Event
+            // Broadcast Reverb Event & Dispatch Notification
             try {
                 event(new \App\Events\SarprasMaintenanceReported(
                     $inventory->name ?? 'Barang Sarpras',
@@ -76,6 +77,15 @@ class MaintenanceController extends Controller
             } catch (\Throwable $e) {
                 // Fail-safe if Reverb offline
             }
+
+            NotificationDispatcher::sendToRoles(
+                ['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan'],
+                $unitId,
+                '🛠️ Laporan Kerusakan Sarpras',
+                "{$inventory->name} dilaporkan rusak oleh " . auth()->user()->name . ". Detail: {$validated['issue']}",
+                'sarpar',
+                ['inventory_id' => $inventory->id]
+            );
 
             return redirect()->back()->with('success', 'Laporan kerusakan berhasil dikirim.');
         } catch (\Exception $e) {
@@ -120,6 +130,17 @@ class MaintenanceController extends Controller
                 'condition' => $validated['inventory_condition'],
                 'status' => $validated['resolved'] ? 'tersedia' : 'diperbaiki',
             ]);
+
+            if ($log->reporter) {
+                $statusText = $validated['resolved'] ? 'Selesai Diperbaiki' : 'Dalam Perbaikan';
+                NotificationDispatcher::sendToUser(
+                    $log->reporter,
+                    '🛠️ Status Laporan Perbaikan',
+                    "Laporan perbaikan {$log->inventory->name} saat ini berstatus: {$statusText}.",
+                    'sarpar',
+                    ['log_id' => $log->id]
+                );
+            }
 
             return redirect()->back()->with('success', 'Status perbaikan diperbarui.');
         } catch (\Exception $e) {

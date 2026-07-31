@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Modules\Counseling\Models\CounselingSession;
 use App\Modules\Academic\Models\Student;
 use App\Modules\Counseling\Models\Violation;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class CounselingSessionController extends Controller
 {
@@ -103,7 +105,49 @@ class CounselingSessionController extends Controller
         $validated['counselor_id'] = Auth::id();
         $validated['status'] = 'Scheduled';
 
-        CounselingSession::create($validated);
+        $session = CounselingSession::create($validated);
+
+        $student = Student::with(['unit', 'classroom', 'user'])->find($request->student_id);
+        if ($student) {
+            $dateFormatted = Carbon::parse($request->date)->translatedFormat('d F Y');
+            $timeFormatted = substr($request->time, 0, 5);
+
+            if ($student->user) {
+                NotificationDispatcher::sendToUser(
+                    $student->user,
+                    '🗓️ Sesi Konseling Dijadwalkan',
+                    "Jadwal konseling ({$request->method}) untuk Anda pada {$dateFormatted} pukul {$timeFormatted} WIB.",
+                    'counseling',
+                    ['session_id' => $session->id]
+                );
+            }
+
+            NotificationDispatcher::sendToRoles(
+                ['wali_kelas', 'bk', 'kepala_sekolah'],
+                $session->unit_id,
+                '🗓️ Jadwal Konseling Siswa Baru',
+                "Sesi konseling ({$request->method}) dijadwalkan untuk {$student->full_name} ({$student->classroom->name}) pada {$dateFormatted} pukul {$timeFormatted} WIB.",
+                'counseling',
+                ['session_id' => $session->id]
+            );
+
+            // WA to Parent
+            if (!empty($student->parent_phone)) {
+                try {
+                    $unitName = $student->unit->name ?? 'Namira School';
+                    $message = "📋 *Jadwal Konseling Siswa*\n\n"
+                        . "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: {$student->classroom->name}).\n\n"
+                        . "Diberitahukan bahwa ananda memiliki agenda sesi bimbingan konseling ({$request->method}) pada:\n"
+                        . "• *Tanggal*: {$dateFormatted}\n"
+                        . "• *Waktu*: {$timeFormatted} WIB\n\n"
+                        . "Terima kasih atas kerja samanya.\n-- *{$unitName}*";
+
+                    \App\Helpers\WhatsAppHelper::send($student->parent_phone, $message);
+                } catch (\Exception $e) {
+                    \Log::error("Failed to send WA counseling session notification: " . $e->getMessage());
+                }
+            }
+        }
 
         return redirect()->route('counseling.sessions.index')
             ->with('success', 'Sesi konseling berhasil dijadwalkan.');
@@ -156,6 +200,26 @@ class CounselingSessionController extends Controller
         ]);
 
         $session->update($validated);
+
+        $student = Student::with(['unit', 'classroom', 'user'])->find($session->student_id);
+        if ($student) {
+            $dateFormatted = Carbon::parse($session->date)->translatedFormat('d F Y');
+            $statusLabel = [
+                'Scheduled' => 'Dijadwalkan',
+                'Completed' => 'Selesai',
+                'Cancelled' => 'Dibatalkan',
+            ][$session->status] ?? $session->status;
+
+            if ($student->user) {
+                NotificationDispatcher::sendToUser(
+                    $student->user,
+                    '📋 Status Konseling Diperbarui',
+                    "Status sesi konseling Anda tanggal {$dateFormatted} diperbarui menjadi: {$statusLabel}.",
+                    'counseling',
+                    ['session_id' => $session->id]
+                );
+            }
+        }
 
         return redirect()->route('counseling.sessions.index')
             ->with('success', 'Sesi konseling berhasil diperbarui.');

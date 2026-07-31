@@ -127,7 +127,7 @@ class AchievementController extends Controller
                 );
             }
             \App\Services\NotificationDispatcher::sendToRoles(
-                ['wali_kelas', 'bk', 'admin_unit'],
+                ['wali_kelas', 'bk', 'admin_unit', 'kepala_sekolah'],
                 $achievement->unit_id,
                 '🏆 Prestasi Siswa Baru',
                 "Siswa {$student->full_name} ({$student->classroom->name}) meraih prestasi {$request->title} (Tingkat {$request->level}).",
