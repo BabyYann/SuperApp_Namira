@@ -91,13 +91,23 @@ class UserController extends Controller
 
     public function create()
     {
-        $units = auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) 
+        $currentUser = auth()->user();
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
+        $units = $isGlobalAdmin 
             ? Unit::all() 
             : Unit::where('id', session('active_unit_id'))->get();
 
+        $rolesQuery = Role::query();
+        if (!$isGlobalAdmin) {
+            $rolesQuery->whereNotIn('name', ['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'staff_yayasan']);
+        } else {
+            $rolesQuery->where('name', '!=', 'super_admin_yayasan');
+        }
+
         return Inertia::render('Yayasan/Users/Create', [
             'units' => $units,
-            'roles' => Role::where('name', '!=', 'super_admin_yayasan')->pluck('name'), // Exclude Super Admin for safety for now
+            'roles' => $rolesQuery->pluck('name'),
+            'isGlobalAdmin' => $isGlobalAdmin,
         ]);
     }
 
@@ -119,6 +129,14 @@ class UserController extends Controller
         if (!$isGlobalAdmin) {
             if (empty($request->unit_id) || $request->unit_id != session('active_unit_id')) {
                 abort(403, 'Akses Ditolak: Anda tidak dapat membuat pengguna untuk unit lain.');
+            }
+
+            $disallowedRoles = ['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'staff_yayasan'];
+            $requestedRoles = $request->roles ?? ($request->role ? [$request->role] : []);
+            foreach ($requestedRoles as $r) {
+                if (in_array($r, $disallowedRoles)) {
+                    abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memberikan peran global yayasan.');
+                }
             }
         }
 
@@ -178,12 +196,20 @@ class UserController extends Controller
 
         $units = $isGlobalAdmin ? Unit::all() : Unit::where('id', session('active_unit_id'))->get();
 
+        $rolesQuery = Role::query();
+        if (!$isGlobalAdmin) {
+            $rolesQuery->whereNotIn('name', ['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'staff_yayasan']);
+        } else {
+            $rolesQuery->where('name', '!=', 'super_admin_yayasan');
+        }
+
         return Inertia::render('Yayasan/Users/Edit', [
-              'user' => $user,
-              'currentUnitId' => $targetUnitId,
-              'currentRoles' => $currentRoles,
-              'units' => $units,
-              'roles' => Role::where('name', '!=', 'super_admin_yayasan')->pluck('name'),
+            'user' => $user,
+            'currentUnitId' => $targetUnitId,
+            'currentRoles' => $currentRoles,
+            'units' => $units,
+            'roles' => $rolesQuery->pluck('name'),
+            'isGlobalAdmin' => $isGlobalAdmin,
         ]);
     }
 
@@ -198,10 +224,18 @@ class UserController extends Controller
 
         if (!$isGlobalAdmin) {
             if ($oldUnitId != session('active_unit_id')) {
-                abort(403, 'Akses Ditolak: Anda tidak dapat mengubah pengguna di unit lain.');
+                abort(403, 'Akses Ditolak: Anda tidak memiliki akses untuk mengubah pengguna di unit lain.');
             }
             if ($request->unit_id != session('active_unit_id')) {
                 abort(403, 'Akses Ditolak: Anda tidak dapat memindahkan pengguna ke unit lain.');
+            }
+
+            $disallowedRoles = ['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'staff_yayasan'];
+            $requestedRoles = $request->roles ?? ($request->role ? [$request->role] : []);
+            foreach ($requestedRoles as $r) {
+                if (in_array($r, $disallowedRoles)) {
+                    abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memberikan peran global yayasan.');
+                }
             }
         }
 

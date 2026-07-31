@@ -461,11 +461,27 @@ const filteredMenuGroups = computed(() => {
         hasRole('admin') || 
         hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'admin_unit', 'kepala_sekolah'])) {
         
-        let adminGroups = [...menuGroups];
+        const isGlobalAdmin = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
+        const isFinanceStaff = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'finance', 'staff_admin_keuangan']);
 
-        // Filter admin menu groups by feature flags
+        let adminGroups = menuGroups.map(group => {
+            let items = [...group.items];
+            if (group.key === 'master') {
+                items = items.filter(item => {
+                    if (item.route === '/pulse' && !hasRole('super_admin_yayasan')) return false;
+                    if (item.route === 'yayasan.attendance-locations.index' && !isGlobalAdmin) return false;
+                    return true;
+                });
+            }
+            return { ...group, items };
+        });
+
+        // Filter admin menu groups by feature flags & role permissions
         adminGroups = adminGroups.filter(g => {
-            if (g.key === 'finance' && !isFeatureEnabled('feature_finance')) return false;
+            if (g.key === 'finance') {
+                if (!isFeatureEnabled('feature_finance')) return false;
+                if (!isFinanceStaff) return false; // Admin Unit has no access to Keuangan
+            }
             if (g.key === 'employee' && !isFeatureEnabled('feature_employee')) return false;
             if (g.key === 'academic' && !isFeatureEnabled('feature_academic')) return false;
             return true;

@@ -69,7 +69,7 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::get('student-checkin/recap', [\App\Modules\Academic\Controllers\StudentCheckinController::class, 'recap'])->name('student-checkin.recap');
 
     // Finance Module (nested inside Yayasan)
-    Route::prefix('finance')->name('finance.')->middleware(['feature:feature_finance'])->group(function () {
+    Route::prefix('finance')->name('finance.')->middleware(['feature:feature_finance', 'role:super_admin_yayasan|admin_yayasan|finance|staff_admin_keuangan'])->group(function () {
         Route::get('/', [\App\Modules\Finance\Controllers\FinanceDashboardController::class, 'index'])->name('dashboard');
         
         Route::resource('accounts', \App\Modules\Finance\Controllers\FinanceAccountController::class);

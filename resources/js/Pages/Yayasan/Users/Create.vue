@@ -7,9 +7,10 @@ import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-defineProps({
+const props = defineProps({
     units: Array,
     roles: Array,
+    isGlobalAdmin: Boolean,
 });
 
 const form = useForm({
@@ -18,7 +19,7 @@ const form = useForm({
     password: '',
     password_confirmation: '',
     roles: [],
-    unit_id: '',
+    unit_id: (!props.isGlobalAdmin && props.units && props.units.length > 0) ? props.units[0].id : '',
 });
 
 const submit = () => {
@@ -97,7 +98,7 @@ const submit = () => {
                                 <InputLabel for="unit_id" value="Unit Penugasan" class="mb-2" />
                                 <div class="relative max-w-md">
                                     <select id="unit_id" v-model="form.unit_id" class="appearance-none block w-full pl-4 pr-10 py-3 text-base border-gray-200 focus:outline-none focus:ring-namira-teal focus:border-namira-teal sm:text-sm rounded-xl bg-white/50 backdrop-blur-sm transition-all shadow-sm">
-                                        <option value="">Global / Yayasan (Super Admin)</option>
+                                        <option v-if="isGlobalAdmin" value="">Global / Yayasan (Super Admin)</option>
                                         <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
