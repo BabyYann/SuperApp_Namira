@@ -11,8 +11,8 @@ class UnitSeeder extends Seeder
     {
         $units = [
             ['name' => 'Kantor Yayasan', 'code' => 'YAYASAN', 'category' => 'formal', 'level' => 'YAYASAN'],
-            ['name' => 'PAUD Namira Kraksaan', 'code' => 'PAUD-KRA', 'category' => 'formal', 'level' => 'PAUD'],
-            ['name' => 'PAUD Namira Dringu', 'code' => 'PAUD-DRI', 'category' => 'formal', 'level' => 'PAUD'],
+            ['name' => 'KB Namira Kraksaan', 'code' => 'KB-KRA', 'category' => 'formal', 'level' => 'TK'],
+            ['name' => 'KB Namira Dringu', 'code' => 'KB-DRI', 'category' => 'formal', 'level' => 'TK'],
             ['name' => 'TK Namira Kraksaan', 'code' => 'TK-KRA', 'category' => 'formal', 'level' => 'TK'],
             ['name' => 'TK Namira Dringu', 'code' => 'TK-DRI', 'category' => 'formal', 'level' => 'TK'],
             ['name' => 'SD Namira', 'code' => 'SD', 'category' => 'formal', 'level' => 'SD'],

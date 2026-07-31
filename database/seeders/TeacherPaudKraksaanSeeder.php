@@ -13,9 +13,12 @@ class TeacherPaudKraksaanSeeder extends Seeder
 {
     public function run(): void
     {
-        $unit = Unit::where('code', 'PAUD-KRA')->orWhere('name', 'LIKE', '%PAUD%Kraksaan%')->first();
+        $unit = Unit::whereIn('code', ['KB-KRA', 'PAUD-KRA'])
+            ->orWhere('name', 'LIKE', '%KB%Kraksaan%')
+            ->orWhere('name', 'LIKE', '%PAUD%Kraksaan%')
+            ->first();
         if (!$unit) {
-            echo "Unit PAUD Namira Kraksaan tidak ditemukan.\n";
+            echo "Unit KB / PAUD Namira Kraksaan tidak ditemukan.\n";
             return;
         }
         $unitId = $unit->id;
