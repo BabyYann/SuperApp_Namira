@@ -13,17 +13,22 @@ class AttendanceLocationController extends Controller
     public function index(Request $request)
     {
         $query = AttendanceLocation::with('unit')->latest();
+        $user = auth()->user();
+        $isGlobal = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'pembina_yayasan']);
+        $unitId = session('active_unit_id');
+
+        if (!$isGlobal && $unitId) {
+            $query->where('unit_id', $unitId);
+        } elseif ($request->has('unit_id')) {
+            $query->where('unit_id', $request->unit_id);
+        }
 
         if ($request->has('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        if ($request->has('unit_id')) {
-            $query->where('unit_id', $request->unit_id);
-        }
-
         $locations = $query->paginate(10)->withQueryString();
-        $units = Unit::all();
+        $units = $isGlobal ? Unit::all() : Unit::where('id', $unitId)->get();
 
         return Inertia::render('Yayasan/AttendanceLocations/Index', [
             'locations' => $locations,

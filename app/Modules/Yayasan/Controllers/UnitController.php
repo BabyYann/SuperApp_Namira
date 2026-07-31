@@ -12,7 +12,16 @@ class UnitController extends Controller
 {
     public function index()
     {
-        $units = Unit::all();
+        $query = Unit::query();
+
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'pembina_yayasan'])) {
+            $unitId = session('active_unit_id');
+            if ($unitId) {
+                $query->where('id', $unitId);
+            }
+        }
+
+        $units = $query->get();
 
         return Inertia::render('Yayasan/Units/Index', [
             'units' => $units,

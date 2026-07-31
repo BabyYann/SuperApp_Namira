@@ -36,6 +36,9 @@ class TeacherController extends Controller
         // Fetch registered users who don't have a teacher profile in this unit yet
         $existingTeacherUserIds = Teacher::where('unit_id', $unitId)->pluck('user_id')->filter()->toArray();
         $availableUsers = User::whereNotIn('id', $existingTeacherUserIds)
+            ->where(function ($q) use ($unitId) {
+                $q->where('unit_id', $unitId)->orWhereNull('unit_id');
+            })
             ->latest()
             ->get(['id', 'name', 'email']);
 

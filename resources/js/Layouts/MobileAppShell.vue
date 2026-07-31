@@ -74,7 +74,7 @@ const toggleDrawer = () => {
 // Role Check Helper Function
 const hasRole = (roles) => {
     if (!Array.isArray(roles)) roles = [roles];
-    if (userRoles.value.includes('super_admin_yayasan') || userRoles.value.includes('admin_yayasan')) return true;
+    if (userRoles.value.includes('super_admin_yayasan') || userRoles.value.includes('admin_yayasan') || userRoles.value.includes('admin_unit')) return true;
     return roles.some(role => userRoles.value.includes(role));
 };
 
@@ -357,12 +357,48 @@ const isRouteActive = (pattern) => {
                     <div class="space-y-6">
 
                         <!-- 1. AKADEMIK & MENGAJAR -->
-                        <div v-if="isTeacher || isGlobalAdmin || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum'])" class="space-y-2">
+                        <div v-if="isTeacher || isGlobalAdmin || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum', 'admin_unit', 'kepala_sekolah'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-teal-700 tracking-wider flex items-center gap-1.5">
                                 <BookOpenIcon class="w-4 h-4" />
                                 <span>Akademik & Kurikulum</span>
                             </p>
                             <div class="grid grid-cols-3 gap-3">
+                                <Link 
+                                    v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan', 'wali_kelas', 'teacher'])"
+                                    :href="safeRoute('yayasan.students.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
+                                        <UserCircleIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Data Siswa</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan', 'wali_kelas'])"
+                                    :href="safeRoute('yayasan.classrooms.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
+                                        <HomeIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Data Kelas</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan'])"
+                                    :href="safeRoute('yayasan.teachers.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 hover:bg-indigo-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
+                                        <UserCircleIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Data Guru</span>
+                                </Link>
+
                                 <Link 
                                     :href="safeRoute('yayasan.schedules.index')" 
                                     @click="showDrawer = false"
@@ -386,7 +422,6 @@ const isRouteActive = (pattern) => {
                                 </Link>
 
                                 <Link 
-                                    v-if="hasRole('koordinator_kurikulum')"
                                     :href="safeRoute('yayasan.subjects.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center p-3 rounded-2xl bg-sky-50/60 border border-sky-100/80 hover:bg-sky-100/80 text-center gap-2 transition-all active:scale-95"
@@ -405,7 +440,29 @@ const isRouteActive = (pattern) => {
                                     <div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md">
                                         <TrophyIcon class="w-5 h-5" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Tujuan Pembelajaran</span>
+                                    <span class="text-xs font-bold text-slate-800">Tujuan Belajar</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.student-attendance.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-cyan-50/60 border border-cyan-100/80 hover:bg-cyan-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-cyan-600 text-white flex items-center justify-center shadow-md">
+                                        <ClipboardDocumentCheckIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Presensi Siswa</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.student-attendance.recap')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-blue-50/60 border border-blue-100/80 hover:bg-blue-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md">
+                                        <PresentationChartBarIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Rekap Presensi</span>
                                 </Link>
 
                                 <Link 
@@ -418,18 +475,6 @@ const isRouteActive = (pattern) => {
                                         <SparklesIcon class="w-5 h-5" />
                                     </div>
                                     <span class="text-xs font-bold text-slate-800">Kenaikan Kelas</span>
-                                </Link>
-
-                                <Link 
-                                    v-if="hasRole('wali_kelas')"
-                                    :href="safeRoute('yayasan.student-attendance.index')" 
-                                    @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-cyan-50/60 border border-cyan-100/80 hover:bg-cyan-100/80 text-center gap-2 transition-all active:scale-95"
-                                >
-                                    <div class="w-10 h-10 rounded-xl bg-cyan-600 text-white flex items-center justify-center shadow-md">
-                                        <ClipboardDocumentCheckIcon class="w-5 h-5" />
-                                    </div>
-                                    <span class="text-xs font-bold text-slate-800">Absensi Siswa Wali</span>
                                 </Link>
                             </div>
                         </div>
@@ -605,14 +650,14 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 5. KEUANGAN -->
-                        <div v-if="isGlobalAdmin || hasRole('finance')" class="space-y-2">
+                        <div v-if="isGlobalAdmin || hasRole(['finance', 'staff_admin_keuangan', 'admin_unit'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-emerald-700 tracking-wider flex items-center gap-1.5">
                                 <BanknotesIcon class="w-4 h-4" />
                                 <span>Keuangan & SPP</span>
                             </p>
                             <div class="grid grid-cols-3 gap-3">
                                 <Link 
-                                    :href="safeRoute('finance.dashboard')" 
+                                    :href="safeRoute('yayasan.finance.dashboard')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
                                 >
@@ -620,6 +665,28 @@ const isRouteActive = (pattern) => {
                                         <BanknotesIcon class="w-5 h-5" />
                                     </div>
                                     <span class="text-xs font-bold text-slate-800">Keuangan Unit</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.finance.bills.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
+                                        <DocumentTextIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Tagihan Siswa</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.finance.transactions.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-sky-50/60 border border-sky-100/80 hover:bg-sky-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md">
+                                        <ArrowsRightLeftIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Pembayaran</span>
                                 </Link>
                             </div>
                         </div>
@@ -632,11 +699,35 @@ const isRouteActive = (pattern) => {
                             </p>
                             <div class="grid grid-cols-3 gap-3">
                                 <Link 
-                                    :href="safeRoute('attendance.index')" 
+                                    v-if="hasRole(['admin_unit', 'super_admin_yayasan', 'admin_yayasan'])"
+                                    :href="safeRoute('yayasan.staff.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
                                 >
                                     <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
+                                        <UserCircleIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Data Staf</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="hasRole(['admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])"
+                                    :href="safeRoute('yayasan.attendance-approvals.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-amber-50/60 border border-amber-100/80 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md">
+                                        <CheckCircleIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Persetujuan Absen</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('attendance.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
                                         <FingerPrintIcon class="w-5 h-5" />
                                     </div>
                                     <span class="text-xs font-bold text-slate-800">Presensi Saya</span>
