@@ -31,11 +31,11 @@
         <!-- Schema.org JSON-LD Structured Data for Google Sitelinks -->
         <script type="application/ld+json">
         {
-          "@context": "https://schema.org",
-          "@graph": [
+          "@@context": "https://schema.org",
+          "@@graph": [
             {
-              "@type": "EducationalOrganization",
-              "@id": "{{ config('app.url', 'https://namiraschool.com') }}/#organization",
+              "@@type": "EducationalOrganization",
+              "@@id": "{{ config('app.url', 'https://namiraschool.com') }}/#organization",
               "name": "Yayasan Namira",
               "url": "{{ config('app.url', 'https://namiraschool.com') }}",
               "logo": "{{ asset('images/namira-foundation-logo.webp') }}",
@@ -46,16 +46,16 @@
               ]
             },
             {
-              "@type": "WebSite",
-              "@id": "{{ config('app.url', 'https://namiraschool.com') }}/#website",
+              "@@type": "WebSite",
+              "@@id": "{{ config('app.url', 'https://namiraschool.com') }}/#website",
               "url": "{{ config('app.url', 'https://namiraschool.com') }}",
               "name": "Yayasan Namira School",
               "publisher": {
-                "@id": "{{ config('app.url', 'https://namiraschool.com') }}/#organization"
+                "@@id": "{{ config('app.url', 'https://namiraschool.com') }}/#organization"
               }
             },
             {
-              "@type": "SiteNavigationElement",
+              "@@type": "SiteNavigationElement",
               "name": ["Berita & Artikel", "Agenda & Kegiatan", "SD Namira", "SMP Namira", "TK Namira", "KB Namira"],
               "url": [
                 "{{ config('app.url', 'https://namiraschool.com') }}/berita",
