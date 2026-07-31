@@ -35,9 +35,17 @@ class TeacherController extends Controller
 
         // Fetch registered users who don't have a teacher profile in this unit yet
         $existingTeacherUserIds = Teacher::where('unit_id', $unitId)->pluck('user_id')->filter()->toArray();
-        $availableUsers = User::whereNotIn('id', $existingTeacherUserIds)
-            ->latest()
-            ->get(['id', 'name', 'email']);
+        $availableUsersQuery = User::whereNotIn('id', $existingTeacherUserIds);
+        
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            $availableUsersQuery->where(function ($q) use ($unitId) {
+                $q->whereHas('roles', function ($sub) use ($unitId) {
+                    $sub->whereRaw("model_has_roles.model_id = users.id AND (model_has_roles.team_id = ? OR model_has_roles.team_id IS NULL)", [$unitId]);
+                })->orDoesntHave('roles');
+            });
+        }
+
+        $availableUsers = $availableUsersQuery->latest()->get(['id', 'name', 'email']);
 
         // Statistics
         $totalTeachers = Teacher::where('unit_id', $unitId)->count();
