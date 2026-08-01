@@ -337,4 +337,33 @@ class StudentBillController extends Controller
 
         return back()->with('success', 'Tagihan berhasil dihapus.');
     }
+
+    public function confirmPayment(Request $request, StudentBill $bill)
+    {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_admin_keuangan', 'finance'])) {
+            abort(403, 'Akses Ditolak');
+        }
+
+        DB::transaction(function () use ($bill) {
+            $bill->update([
+                'paid_amount' => $bill->final_amount,
+                'status' => 'paid',
+            ]);
+
+            // Create Transaction record if not existing
+            \App\Modules\Finance\Models\Transaction::create([
+                'student_id' => $bill->student_id,
+                'user_id' => auth()->id(),
+                'transaction_code' => 'TRX/' . date('Y/m/') . sprintf('%04d', $bill->id),
+                'amount' => $bill->final_amount,
+                'payment_method' => 'transfer',
+                'source' => 'manual_proof_confirm',
+                'notes' => 'Konfirmasi pembayaran: ' . ($bill->description ?? 'SPP'),
+                'transaction_date' => now(),
+                'allocated_amount' => $bill->final_amount,
+            ]);
+        });
+
+        return back()->with('success', 'Pembayaran berhasil diverifikasi & status tagihan LUNAS!');
+    }
 }

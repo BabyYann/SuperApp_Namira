@@ -75,6 +75,7 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
         Route::resource('accounts', \App\Modules\Finance\Controllers\FinanceAccountController::class);
         Route::resource('types', \App\Modules\Finance\Controllers\FinanceTypeController::class);
         Route::resource('bills', \App\Modules\Finance\Controllers\StudentBillController::class);
+        Route::post('bills/{bill}/confirm-payment', [\App\Modules\Finance\Controllers\StudentBillController::class, 'confirmPayment'])->name('bills.confirm-payment');
         
         // Transactions
         Route::get('transactions/import', [\App\Modules\Finance\Controllers\TransactionController::class, 'import'])->name('transactions.import');

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 800" width="500" height="800">
+  <defs>
+    <linearGradient id="bcaHead" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00529C"/>
+      <stop offset="100%" stop-color="#003366"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="500" height="800" fill="#F0F4F8"/>
+
+  <!-- Card Body -->
+  <rect x="25" y="30" width="450" height="740" rx="24" fill="#FFFFFF" filter="url(#shadow)"/>
+
+  <!-- Header Banner -->
+  <path d="M 25 54 A 24 24 0 0 1 49 30 L 451 30 A 24 24 0 0 1 475 54 L 475 140 L 25 140 Z" fill="url(#bcaHead)"/>
+  
+  <!-- Bank Logo & Title -->
+  <text x="50" y="75" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="bold" font-size="22" fill="#FFFFFF" letter-spacing="1">m-BCA</text>
+  <text x="50" y="100" font-family="'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#B0D5FF">m-Transfer Success Receipt</text>
+
+  <rect x="360" y="55" width="85" height="32" rx="16" fill="#00A99D"/>
+  <text x="402" y="76" font-family="Arial, sans-serif" font-weight="bold" font-size="12" fill="#FFFFFF" text-anchor="middle">SUKSES</text>
+
+  <!-- Checkmark Icon Circle -->
+  <circle cx="250" cy="185" r="32" fill="#E6F9F0"/>
+  <circle cx="250" cy="185" r="24" fill="#10B981"/>
+  <path d="M 240 185 L 247 192 L 261 178" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <text x="250" y="240" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="bold" font-size="18" fill="#111827" text-anchor="middle">TRANSFER BERHASIL</text>
+  <text x="250" y="262" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6B7280" text-anchor="middle">01 Agustus 2026 • 08:30:15 WIB</text>
+
+  <!-- Divider -->
+  <line x1="55" y1="285" x2="445" y2="285" stroke="#E5E7EB" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <!-- Transaction Details -->
+  <!-- Amount -->
+  <text x="55" y="325" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6B7280">Jumlah Transfer</text>
+  <text x="445" y="325" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="bold" font-size="22" fill="#00529C" text-anchor="end">Rp 450.000</text>
+
+  <!-- Reference No -->
+  <text x="55" y="370" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6B7280">No. Referensi</text>
+  <text x="445" y="370" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="600" font-size="13" fill="#1F2937" text-anchor="end">2026080198273641</text>
+
+  <!-- Divider -->
+  <line x1="55" y1="395" x2="445" y2="395" stroke="#F3F4F6" stroke-width="1"/>
+
+  <!-- Sender -->
+  <text x="55" y="430" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6B7280">Pengirim</text>
+  <text x="445" y="430" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="bold" font-size="14" fill="#1F2937" text-anchor="end">AHMAD ZAKI PRATAMA</text>
+  <text x="445" y="448" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#9CA3AF" text-anchor="end">BCA • 823091****</text>
+
+  <!-- Receiver -->
+  <text x="55" y="495" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6B7280">Penerima</text>
+  <text x="445" y="495" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="bold" font-size="14" fill="#00529C" text-anchor="end">YAYASAN NAMIRA</text>
+  <text x="445" y="513" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#9CA3AF" text-anchor="end">BCA • 0283749102</text>
+
+  <!-- Divider -->
+  <line x1="55" y1="535" x2="445" y2="535" stroke="#F3F4F6" stroke-width="1"/>
+
+  <!-- Note / News -->
+  <text x="55" y="570" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6B7280">Catatan / Berita</text>
+  <text x="445" y="570" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="500" font-size="13" fill="#374151" text-anchor="end">Pembayaran SPP Agt 2026 Ahmad Zaki</text>
+
+  <!-- Admin Fee -->
+  <text x="55" y="610" font-family="'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6B7280">Biaya Admin</text>
+  <text x="445" y="610" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="600" font-size="13" fill="#10B981" text-anchor="end">Rp 0 (Bebas Biaya)</text>
+
+  <!-- Footer Box -->
+  <rect x="45" y="650" width="410" height="90" rx="14" fill="#F8FAFC" stroke="#E2E8F0"/>
+  <text x="250" y="683" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="bold" font-size="12" fill="#00529C" text-anchor="middle">Bukti Transaksi Sah PT Bank Central Asia Tbk</text>
+  <text x="250" y="705" font-family="'Helvetica Neue', Arial, sans-serif" font-size="10" fill="#94A3B8" text-anchor="middle">Simpan struk ini sebagai bukti pembayaran resmi Yayasan Namira</text>
+</svg>

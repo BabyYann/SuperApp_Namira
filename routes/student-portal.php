@@ -8,6 +8,7 @@ Route::prefix('student')->name('student.')->middleware([\App\Http\Middleware\Ens
     Route::get('/academic', [\App\Http\Controllers\StudentPortalController::class, 'academic'])->name('academic');
     Route::get('/finance', [\App\Http\Controllers\StudentPortalController::class, 'finance'])->name('finance');
     Route::get('/counseling', [\App\Http\Controllers\StudentPortalController::class, 'counseling'])->name('counseling');
+    Route::post('/finance/upload-proof/{bill}', [\App\Http\Controllers\StudentPortalController::class, 'uploadPaymentProof'])->name('finance.upload-proof');
     
     Route::get('/productivity', [\App\Http\Controllers\StudentTaskController::class, 'index'])->name('productivity.index');
     Route::post('/productivity/tasks', [\App\Http\Controllers\StudentTaskController::class, 'store'])->name('tasks.store');

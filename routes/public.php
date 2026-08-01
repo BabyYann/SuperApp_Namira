@@ -331,3 +331,32 @@ Route::get('/sitemap.xml', function () {
         'Content-Type' => 'text/xml'
     ]);
 });
+
+Route::get('/setup-demo-student', function () {
+    try {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('student_bills', 'payment_proof')) {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE student_bills ADD COLUMN payment_proof VARCHAR(255) NULL AFTER status;");
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('student_bills', 'payment_notes')) {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE student_bills ADD COLUMN payment_notes TEXT NULL AFTER payment_proof;");
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('student_bills', 'proof_uploaded_at')) {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE student_bills ADD COLUMN proof_uploaded_at TIMESTAMP NULL AFTER payment_notes;");
+        }
+
+        (new \Database\Seeders\DemoStudentSeeder())->run();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Akun Siswa Demo Ahmad Zaki Pratama (7A) berhasil disiapkan!',
+            'credentials' => [
+                'email' => 'siswa.demo@namiraschool.com',
+                'password' => 'password123',
+                'nama' => 'Ahmad Zaki Pratama (SMP Namira Kelas 7A)',
+                'tagihan' => 'SPP Bulan Agustus 2026 (Rp 450.000)',
+            ]
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+    }
+});

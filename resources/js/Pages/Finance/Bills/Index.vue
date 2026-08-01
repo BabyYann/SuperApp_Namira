@@ -43,6 +43,7 @@ const formatDate = (date) => new Date(date).toLocaleDateString('id-ID', { day: '
 const statusClass = (status) => {
     switch(status) {
         case 'paid': return 'bg-green-100 text-green-700 border-green-200';
+        case 'pending': return 'bg-amber-100 text-amber-800 border-amber-300 animate-pulse';
         case 'partial': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
         case 'cancelled': return 'bg-gray-100 text-gray-500 border-gray-200';
         default: return 'bg-red-50 text-red-600 border-red-100';
@@ -52,6 +53,7 @@ const statusClass = (status) => {
 const statusLabel = (status) => {
     switch(status) {
         case 'paid': return 'LUNAS';
+        case 'pending': return 'MENUNGGU VERIFIKASI';
         case 'partial': return 'CICIL';
         case 'cancelled': return 'BATAL';
         default: return 'BELUM LUNAS';
@@ -247,8 +249,16 @@ const statusLabel = (status) => {
                                             {{ statusLabel(bill.status) }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <Link :href="route('yayasan.finance.bills.show', bill.id)" class="text-xs font-bold text-namira-teal hover:underline flex items-center justify-end gap-1">
+                                    <td class="px-6 py-4 text-right flex items-center justify-end gap-2">
+                                        <button 
+                                            v-if="bill.status === 'pending' || bill.status === 'unpaid'" 
+                                            @click="router.post(route('yayasan.finance.bills.confirm-payment', bill.id))" 
+                                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1 active:scale-95"
+                                            title="Verifikasi & Tandai Lunas"
+                                        >
+                                            <span>Konfirmasi Lunas</span>
+                                        </button>
+                                        <Link :href="route('yayasan.finance.bills.show', bill.id)" class="text-xs font-bold text-namira-teal hover:underline flex items-center gap-1">
                                             Detail
                                             <ArrowRightIcon class="w-4 h-4" />
                                         </Link>

@@ -414,39 +414,66 @@ class StudentPortalController extends Controller
 
         // Fetch All Bills
         $bills = StudentBill::where('student_id', $student->id)
-            ->with('financeType') // Corrected relation
+            ->with('financeType')
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($bill) {
                 return [
                     'id' => $bill->id,
-                    'title' => $bill->financeType->name, // Corrected column
-                    'amount' => $bill->final_amount, // Corrected column
+                    'title' => $bill->financeType?->name ?? $bill->description ?? 'Tagihan Sekolah',
+                    'amount' => $bill->final_amount,
                     'amount_formatted' => 'Rp ' . number_format($bill->final_amount, 0, ',', '.'),
                     'paid' => $bill->paid_amount,
                     'remaining' => $bill->final_amount - $bill->paid_amount,
                     'remaining_formatted' => 'Rp ' . number_format($bill->final_amount - $bill->paid_amount, 0, ',', '.'),
                     'status' => $bill->status, 
+                    'payment_proof' => $bill->payment_proof ? asset('storage/' . $bill->payment_proof) : null,
+                    'payment_notes' => $bill->payment_notes,
                     'date' => $bill->created_at->format('d M Y'),
-                    'due_date' => $bill->created_at->addWeeks(2)->format('d M Y'), // Mock due date
-                    'payment_date' => $bill->updated_at->format('d M Y'), // Mock payment date
+                    'due_date' => $bill->due_date ? $bill->due_date->format('d M Y') : $bill->created_at->addWeeks(2)->format('d M Y'),
+                    'payment_date' => $bill->updated_at->format('d M Y'),
                 ];
             });
 
-        $unpaidTotal = $bills->whereIn('status', ['unpaid', 'partial'])->sum('remaining');
-        
-        $financeAccounts = []; // Hidden to prevent ambiguity (Manual Transfer disabled)
+        $unpaidTotal = $bills->whereIn('status', ['unpaid', 'partial', 'pending'])->sum('remaining');
 
         return Inertia::render('Student/Finance', [
-            'student' => $student, // Contains va_number
+            'student' => $student,
             'bills' => $bills,
-            'finance_accounts' => $financeAccounts,
             'stats' => [
                 'unpaid_total' => 'Rp ' . number_format($unpaidTotal, 0, ',', '.'),
                 'paid_count' => $bills->where('status', 'paid')->count(),
-                'pending_count' => $bills->whereIn('status', ['unpaid', 'partial'])->count(),
+                'pending_count' => $bills->whereIn('status', ['unpaid', 'partial', 'pending'])->count(),
             ]
         ]);
+    }
+
+    public function uploadPaymentProof(Request $request, $billId)
+    {
+        $request->validate([
+            'proof' => 'required|file|mimes:jpeg,png,jpg,svg,pdf|max:5120',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $student = $this->getStudent();
+        if (!$student) return redirect()->back()->withErrors(['message' => 'Siswa tidak ditemukan']);
+
+        $bill = StudentBill::where('student_id', $student->id)->where('id', $billId)->firstOrFail();
+
+        if ($request->hasFile('proof')) {
+            $file = $request->file('proof');
+            $filename = 'proof_' . $bill->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('payment_proofs', $filename, 'public');
+
+            $bill->update([
+                'payment_proof' => $path,
+                'payment_notes' => $request->notes ?? 'Upload bukti via Portal Siswa',
+                'proof_uploaded_at' => Carbon::now(),
+                'status' => 'pending',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Bukti pembayaran berhasil dikirim! Menunggu konfirmasi admin.');
     }
     
     public function menu() {
