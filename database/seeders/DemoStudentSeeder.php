@@ -126,10 +126,10 @@ class DemoStudentSeeder extends Seeder
 
         // 6. Create Finance Type & Student Bill
         $financeType = FinanceType::firstOrCreate(
-            ['code' => 'SPP_SMP', 'unit_id' => $unitId],
+            ['name' => 'SPP Bulanan SMP Namira', 'unit_id' => $unitId],
             [
-                'name' => 'SPP Bulanan SMP Namira',
-                'description' => 'Sumbangan Pembinaan Pendidikan Bulanan',
+                'amount' => 450000,
+                'billing_cycle' => 'monthly',
                 'is_active' => true,
             ]
         );
