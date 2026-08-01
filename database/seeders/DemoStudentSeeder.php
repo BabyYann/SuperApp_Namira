@@ -117,6 +117,7 @@ class DemoStudentSeeder extends Seeder
                     'start_time'   => $s['start'],
                 ],
                 [
+                    'unit_id'    => $unitId,
                     'end_time'   => $s['end'],
                     'subject_id' => $subjects[$s['subject']]->id,
                 ]
