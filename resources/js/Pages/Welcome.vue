@@ -431,7 +431,7 @@ const prevTesti = () => {
                     </div>
 
                     <!-- Desktop Navigation Links -->
-                    <nav class="hidden lg:flex items-center space-x-6 xl:space-x-8">
+                    <nav class="hidden lg:flex items-center space-x-5 xl:space-x-7 ml-auto">
                         <a href="#home" @click="activeHash = '#home'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#home' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Home
                             <span v-if="activeHash !== '#home'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
