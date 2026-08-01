@@ -81,19 +81,29 @@ class StudentPortalController extends Controller
                  $dayName = $dayMap[$englishDay] ?? $dayName;
             }
             
-            $todaysSchedule = ClassSchedule::where('classroom_id', $student->classroom_id)
+            $query = ClassSchedule::where('classroom_id', $student->classroom_id)
                 ->where('day', $dayName)
                 ->with(['subject', 'teacher'])
                 ->orderBy('start_time')
-                ->get()
-                ->map(function ($q) {
-                    return [
-                        'time' => substr($q->start_time, 0, 5) . ' - ' . substr($q->end_time, 0, 5),
-                        'subject' => $q->subject->name ?? 'Unknown',
-                        'room' => $q->classroom->name, // Explicitly use classroom name as room
-                        'teacher' => $q->teacher?->full_name ?? '-',
-                    ];
-                });
+                ->get();
+
+            // Fallback: If today is Weekend (Sabtu/Minggu) or no schedule today, show Monday schedule for Demo
+            if ($query->isEmpty()) {
+                $query = ClassSchedule::where('classroom_id', $student->classroom_id)
+                    ->where('day', 'Senin')
+                    ->with(['subject', 'teacher'])
+                    ->orderBy('start_time')
+                    ->get();
+            }
+
+            $todaysSchedule = $query->map(function ($q) {
+                return [
+                    'time' => substr($q->start_time, 0, 5) . ' - ' . substr($q->end_time, 0, 5),
+                    'subject' => $q->subject->name ?? 'Unknown',
+                    'room' => $q->classroom->name ?? '7A',
+                    'teacher' => $q->teacher?->full_name ?? '-',
+                ];
+            });
         }
 
         // 4. Counseling: Violation Points Summary

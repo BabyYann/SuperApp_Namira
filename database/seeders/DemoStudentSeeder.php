@@ -107,6 +107,9 @@ class DemoStudentSeeder extends Seeder
             ['day' => 'Kamis', 'subject' => 'IPA', 'start' => '09:15:00', 'end' => '10:45:00'],
             ['day' => 'Jumat', 'subject' => 'PAI', 'start' => '07:30:00', 'end' => '09:00:00'],
             ['day' => 'Jumat', 'subject' => 'BIG', 'start' => '09:15:00', 'end' => '10:30:00'],
+            ['day' => 'Sabtu', 'subject' => 'TAF', 'start' => '07:30:00', 'end' => '09:00:00'],
+            ['day' => 'Sabtu', 'subject' => 'INF', 'start' => '09:15:00', 'end' => '10:45:00'],
+            ['day' => 'Sabtu', 'subject' => 'IPS', 'start' => '11:00:00', 'end' => '12:30:00'],
         ];
 
         foreach ($schedules as $s) {
