@@ -431,71 +431,73 @@ const prevTesti = () => {
                     </div>
 
                     <!-- Desktop Navigation Links -->
-                    <nav class="hidden lg:flex items-center space-x-5 xl:space-x-7 ml-auto">
-                        <a href="#home" @click="activeHash = '#home'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#home' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                    <nav class="hidden lg:flex items-center gap-2.5 xl:gap-5 ml-auto">
+                        <a href="#home" @click="activeHash = '#home'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#home' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Home
                             <span v-if="activeHash !== '#home'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
                         
                         <!-- Our Campuses with Dropdown -->
                         <div class="relative group" @mouseenter="showCampusesDropdown = true" @mouseleave="showCampusesDropdown = false">
-                            <a href="#campuses" @click="activeHash = '#campuses'" class="relative py-4 text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5 group/nav" :class="[activeHash === '#campuses' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                            <a href="#campuses" @click="activeHash = '#campuses'" class="relative py-4 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group/nav" :class="[activeHash === '#campuses' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                                 Campuses
                                 <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-300" :class="{'rotate-180': showCampusesDropdown}" />
                                 <span v-if="activeHash !== '#campuses'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                             </a>
                             
-                            <!-- Dropdown Menu -->
+                            <!-- Dropdown Menu with Hover Bridge -->
                             <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
-                                <div v-show="showCampusesDropdown" class="absolute left-0 w-64 bg-white rounded-xl shadow-2xl py-3 mt-0 border border-slate-100 overflow-hidden z-50">
-                                    <div class="px-4 py-2 border-b border-slate-50 mb-1">
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daftar Unit Sekolah</p>
-                                    </div>
-                                    <a v-for="(unit, i) in campuses" :key="i" :href="'#campus-' + i" class="flex items-center gap-3 px-4 py-3 hover:bg-[#f8f9fa] transition-colors group/item">
-                                        <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center p-1 group-hover/item:bg-[#fbbf24]/10 transition-colors">
-                                            <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" />
+                                <div v-show="showCampusesDropdown" class="absolute left-0 top-full pt-1.5 w-64 z-50">
+                                    <div class="bg-white rounded-xl shadow-2xl py-3 border border-slate-100 overflow-hidden">
+                                        <div class="px-4 py-2 border-b border-slate-50 mb-1">
+                                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daftar Unit Sekolah</p>
                                         </div>
-                                        <span class="text-xs font-semibold text-[#082a3a] group-hover/item:translate-x-1 transition-transform">{{ unit.name }}</span>
-                                    </a>
+                                        <a v-for="(unit, i) in campuses" :key="i" :href="'#campus-' + i" class="flex items-center gap-3 px-4 py-3 hover:bg-[#f8f9fa] transition-colors group/item">
+                                            <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center p-1 group-hover/item:bg-[#fbbf24]/10 transition-colors">
+                                                <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" />
+                                            </div>
+                                            <span class="text-xs font-semibold text-[#082a3a] group-hover/item:translate-x-1 transition-transform">{{ unit.name }}</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </transition>
                         </div>
-                        <a href="#destinations" @click="activeHash = '#destinations'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#destinations' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                        <a href="#destinations" @click="activeHash = '#destinations'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#destinations' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Destinations
                             <span v-if="activeHash !== '#destinations'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
-                        <a href="#testimonials" @click="activeHash = '#testimonials'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#testimonials' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                        <a href="#testimonials" @click="activeHash = '#testimonials'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#testimonials' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Testimonials
                             <span v-if="activeHash !== '#testimonials'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
-                        <a href="#news" @click="activeHash = '#news'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#news' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                        <a href="#news" @click="activeHash = '#news'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#news' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             News
                             <span v-if="activeHash !== '#news'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
-                        <a href="#events" @click="activeHash = '#events'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#events' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                        <a href="#events" @click="activeHash = '#events'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#events' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Events
                             <span v-if="activeHash !== '#events'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
-                        <Link href="/ppdb" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav font-semibold text-[#fbbf24] hover:text-yellow-300">
+                        <Link href="/ppdb" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-bold text-[#fbbf24] hover:text-yellow-300">
                             PPDB Online
                             <span class="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#fbbf24]"></span>
                         </Link>
-                        <a href="#partners" @click="activeHash = '#partners'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#partners' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                        <a href="#partners" @click="activeHash = '#partners'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#partners' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Partners
                             <span v-if="activeHash !== '#partners'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
-                        <a href="#footer" @click="activeHash = '#footer'" class="relative py-2 text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                        <a href="#footer" @click="activeHash = '#footer'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Contact
                             <span v-if="activeHash !== '#footer'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
                         
-                        <div class="flex items-center gap-4 ml-6">
+                        <div class="flex items-center gap-4 ml-4 xl:ml-6">
                             <template v-if="canLogin">
-                                <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="activeHash = '#dashboard'" :class="isScrolled ? 'bg-[#00A99D]/10 border border-[#00A99D]/30 hover:bg-[#00A99D] hover:border-[#00A99D] text-[#00A99D] hover:text-white font-semibold text-xs tracking-widest uppercase px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24]/10 border border-[#fbbf24]/30 hover:bg-[#fbbf24] hover:border-[#fbbf24] text-[#fbbf24] hover:text-[#082a3a] font-semibold text-xs tracking-widest uppercase px-6 py-2.5 rounded-full transition-all duration-300 active:scale-95 text-center'">
+                                <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="activeHash = '#dashboard'" :class="isScrolled ? 'bg-[#00A99D]/10 border border-[#00A99D]/30 hover:bg-[#00A99D] hover:border-[#00A99D] text-[#00A99D] hover:text-white font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24]/10 border border-[#fbbf24]/30 hover:bg-[#fbbf24] hover:border-[#fbbf24] text-[#fbbf24] hover:text-[#082a3a] font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 active:scale-95 text-center'">
                                     Dashboard
                                 </Link>
                                 <template v-else>
-                                    <Link :href="route('login')" :class="isScrolled ? 'bg-[#082a3a] hover:bg-[#00A99D] text-white font-semibold text-xs tracking-widest uppercase px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-400 text-[#082a3a] font-semibold text-xs tracking-widest uppercase px-8 py-3 rounded-full transition-all duration-300 shadow-lg shadow-yellow-500/10 hover:shadow-yellow-500/20 active:scale-95 text-center'">
+                                    <Link :href="route('login')" :class="isScrolled ? 'bg-[#082a3a] hover:bg-[#00A99D] text-white font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-400 text-[#082a3a] font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-6 xl:px-8 py-2.5 xl:py-3 rounded-full transition-all duration-300 shadow-lg shadow-yellow-500/10 hover:shadow-yellow-500/20 active:scale-95 text-center'">
                                         Login Portal
                                     </Link>
                                 </template>
@@ -517,8 +519,8 @@ const prevTesti = () => {
                 <!-- Header inside Drawer -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="bg-white p-1.5 rounded-2xl shadow-lg shrink-0">
-                            <img :src="appLogo" alt="Logo" class="h-9 w-auto object-contain" />
+                        <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 aspect-square overflow-hidden">
+                            <img :src="appLogo" alt="Logo" class="w-full h-full object-contain" />
                         </div>
                         <div>
                             <span class="text-white font-bold text-sm tracking-widest uppercase leading-none block">Yayasan Namira</span>
@@ -531,15 +533,19 @@ const prevTesti = () => {
                 </div>
 
                 <!-- Menu Links in Drawer -->
-                <nav class="flex flex-col gap-6 my-auto text-left pl-4">
-                    <a href="#home" @click="isMobileMenuOpen = false" class="text-2xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Home</a>
-                    <a href="#campuses" @click="isMobileMenuOpen = false" class="text-2xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Campuses</a>
-                    <a href="#destinations" @click="isMobileMenuOpen = false" class="text-2xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Destinations</a>
-                    <a href="#testimonials" @click="isMobileMenuOpen = false" class="text-2xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Testimonials</a>
-                    <a href="#news" @click="isMobileMenuOpen = false" class="text-2xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">News</a>
-                    <a href="#events" @click="isMobileMenuOpen = false" class="text-2xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Events</a>
-                    <a href="#partners" @click="isMobileMenuOpen = false" class="text-2xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Partners</a>
-                    <a href="#footer" @click="isMobileMenuOpen = false" class="text-2xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Contact</a>
+                <nav class="flex flex-col gap-5 my-auto text-left pl-4">
+                    <a href="#home" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Home</a>
+                    <a href="#campuses" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Campuses</a>
+                    <a href="#destinations" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Destinations</a>
+                    <a href="#testimonials" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Testimonials</a>
+                    <a href="#news" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">News</a>
+                    <a href="#events" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Events</a>
+                    <Link href="/ppdb" @click="isMobileMenuOpen = false" class="text-xl font-extrabold tracking-widest uppercase text-[#fbbf24] hover:text-yellow-300 transition-colors flex items-center justify-between pr-4">
+                        <span>PPDB Online</span>
+                        <span class="text-[10px] font-extrabold px-2.5 py-0.5 bg-[#fbbf24]/20 border border-[#fbbf24]/50 text-[#fbbf24] rounded-full">BUKA</span>
+                    </Link>
+                    <a href="#partners" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Partners</a>
+                    <a href="#footer" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Contact</a>
                 </nav>
 
                 <!-- Footer/CTA in Drawer -->
