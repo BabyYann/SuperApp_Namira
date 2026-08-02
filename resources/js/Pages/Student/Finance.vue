@@ -221,23 +221,6 @@ const getStatusLabel = (status) => {
                             <p class="font-mono font-bold text-[#064e3b] text-lg mt-1">{{ selectedBill.amount_formatted }}</p>
                         </div>
 
-                        <!-- Quick Demo Download Receipt Button -->
-                        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between">
-                            <div>
-                                <p class="text-xs font-bold text-amber-900">Demo Mode: Contoh Struk BCA</p>
-                                <p class="text-[11px] text-amber-700 mt-0.5">Download bukti transfer BCA buatan untuk langsung di-upload.</p>
-                            </div>
-                            <a 
-                                href="/images/demo/struk-transfer-bca.svg" 
-                                download="struk-transfer-bca-demo.svg"
-                                target="_blank"
-                                class="shrink-0 px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition"
-                            >
-                                <ArrowDownTrayIcon class="w-4 h-4" />
-                                <span>Download Struk</span>
-                            </a>
-                        </div>
-
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-2">Pilih File Bukti Transfer (Gambar / SVG / PDF)</label>
                             <input 

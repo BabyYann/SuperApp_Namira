@@ -332,29 +332,33 @@ Route::get('/sitemap.xml', function () {
     ]);
 });
 
-Route::get('/setup-demo-student', function () {
+Route::get('/cleanup-demo-student', function () {
     try {
-        if (!\Illuminate\Support\Facades\Schema::hasColumn('student_bills', 'payment_proof')) {
-            \Illuminate\Support\Facades\DB::statement("ALTER TABLE student_bills ADD COLUMN payment_proof VARCHAR(255) NULL AFTER status;");
-        }
-        if (!\Illuminate\Support\Facades\Schema::hasColumn('student_bills', 'payment_notes')) {
-            \Illuminate\Support\Facades\DB::statement("ALTER TABLE student_bills ADD COLUMN payment_notes TEXT NULL AFTER payment_proof;");
-        }
-        if (!\Illuminate\Support\Facades\Schema::hasColumn('student_bills', 'proof_uploaded_at')) {
-            \Illuminate\Support\Facades\DB::statement("ALTER TABLE student_bills ADD COLUMN proof_uploaded_at TIMESTAMP NULL AFTER payment_notes;");
+        $user = \App\Models\User::where('email', 'siswa.demo@namiraschool.com')->first();
+        if ($user) {
+            $student = \App\Modules\Academic\Models\Student::where('user_id', $user->id)->first();
+            if ($student) {
+                // Delete demo bills & transactions
+                \App\Modules\Finance\Models\StudentBill::where('student_id', $student->id)->forceDelete();
+                \App\Modules\Finance\Models\Transaction::where('student_id', $student->id)->delete();
+                // Delete student
+                $student->forceDelete();
+            }
+            // Delete roles
+            \Illuminate\Support\Facades\DB::table('model_has_roles')->where('model_id', $user->id)->delete();
+            // Delete user
+            $user->delete();
         }
 
-        (new \Database\Seeders\DemoStudentSeeder())->run();
+        // Clean demo finance type if exists and has no other bills
+        $ft = \App\Modules\Finance\Models\FinanceType::where('name', 'SPP Bulanan SMP Namira')->first();
+        if ($ft && \App\Modules\Finance\Models\StudentBill::where('finance_type_id', $ft->id)->count() === 0) {
+            $ft->delete();
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Akun Siswa Demo Ahmad Zaki Pratama (7A) berhasil disiapkan!',
-            'credentials' => [
-                'email' => 'siswa.demo@namiraschool.com',
-                'password' => 'password123',
-                'nama' => 'Ahmad Zaki Pratama (SMP Namira Kelas 7A)',
-                'tagihan' => 'SPP Bulan Agustus 2026 (Rp 450.000)',
-            ]
+            'message' => 'Akun dummy siswa demo (Ahmad Zaki Pratama) & data demo berhasil dibersihkan total!',
         ]);
     } catch (\Throwable $e) {
         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
