@@ -53,11 +53,74 @@ const closeFormModal = () => {
     showFormModal.value = false;
 };
 
-const handleFileChange = (e) => {
+const isCompressing = ref(false);
+
+const compressAndConvertToWebP = (file, maxWidth = 1200, maxHeight = 1200, quality = 0.8) => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth || height > maxHeight) {
+                    if (width > height) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    } else {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            const newFileName = (file.name || 'photo').replace(/\.[^/.]+$/, '') + '.webp';
+                            const webpFile = new File([blob], newFileName, {
+                                type: 'image/webp',
+                                lastModified: Date.now(),
+                            });
+                            resolve(webpFile);
+                        } else {
+                            resolve(file);
+                        }
+                    },
+                    'image/webp',
+                    quality
+                );
+            };
+            img.onerror = () => resolve(file);
+        };
+        reader.onerror = () => resolve(file);
+    });
+};
+
+const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    try {
+        isCompressing.value = true;
+        const compressedWebPFile = await compressAndConvertToWebP(file);
+        form.photo = compressedWebPFile;
+        photoPreviewUrl.value = URL.createObjectURL(compressedWebPFile);
+    } catch (err) {
+        console.error('Kompresi foto gagal, menggunakan file asli:', err);
         form.photo = file;
         photoPreviewUrl.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -513,11 +576,18 @@ const categoryBadgeClass = (catKey) => {
                                 @click="fileInputRef.click()"
                                 class="w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 hover:border-teal-500 transition-colors bg-slate-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group"
                             >
-                                <img v-if="photoPreviewUrl" :src="photoPreviewUrl" class="w-full h-full object-cover" />
+                                <div v-if="isCompressing" class="flex flex-col items-center justify-center text-teal-600">
+                                    <svg class="animate-spin h-6 w-6 text-teal-600 mb-1.5" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                    </svg>
+                                    <span class="text-xs font-bold">Mengompres & Mengonversi ke WebP...</span>
+                                </div>
+                                <img v-else-if="photoPreviewUrl" :src="photoPreviewUrl" class="w-full h-full object-cover" />
                                 <div v-else class="flex flex-col items-center justify-center text-slate-400 group-hover:text-teal-600 transition-colors">
                                     <CameraIcon class="w-8 h-8 stroke-[1.5]" />
                                     <span class="text-xs font-bold mt-1">Upload / Ambil Foto (Kamera atau Galeri)</span>
-                                    <span class="text-[10px] text-slate-400">Pilih dari kamera atau galeri HP (Maks 5MB)</span>
+                                    <span class="text-[10px] text-slate-400">Otomatis di-kompres ke WebP (Maks 5MB)</span>
                                 </div>
                             </div>
                             <input
