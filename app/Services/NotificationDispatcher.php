@@ -44,19 +44,20 @@ class NotificationDispatcher
 
         // 2. Fetch Unit-Scoped Roles via raw DB subquery (also bypasses Spatie scope).
         if (!empty($targetUnitRoles)) {
-            $query = User::whereIn('id', function ($q) use ($targetUnitRoles) {
+            $query = User::whereIn('id', function ($q) use ($targetUnitRoles, $unitId) {
                 $q->select('model_id')
                     ->from('model_has_roles')
                     ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
                     ->whereIn('roles.name', array_values($targetUnitRoles))
                     ->where('model_has_roles.model_type', \App\Models\User::class);
-            });
 
-            if ($unitId) {
-                $query->where(function ($q) use ($unitId) {
-                    $q->where('unit_id', $unitId)->orWhereNull('unit_id');
-                });
-            }
+                if ($unitId) {
+                    $q->where(function ($sub) use ($unitId) {
+                        $sub->where('model_has_roles.team_id', $unitId)
+                            ->orWhereNull('model_has_roles.team_id');
+                    });
+                }
+            });
 
             $unitUsers = $query->get();
             $usersToNotify = $usersToNotify->concat($unitUsers);
