@@ -33,22 +33,20 @@ class CheckUnitScope
                 })
                 ->exists();
 
-            if (!Session::has('active_unit_id') || Session::get('active_unit_id') === null) {
+            $userTeamIds = \DB::table('model_has_roles')
+                ->where('model_id', $user->id)
+                ->where('model_type', get_class($user))
+                ->whereNotNull('team_id')
+                ->pluck('team_id')
+                ->toArray();
+
+            if (!Session::has('active_unit_id') || Session::get('active_unit_id') === null || (!$hasGlobalRole && !empty($userTeamIds) && !in_array(Session::get('active_unit_id'), $userTeamIds))) {
                 if ($hasGlobalRole) {
                     // Start with first unit if available for data viewing context
                     $firstUnit = \App\Modules\Yayasan\Models\Unit::first();
                     Session::put('active_unit_id', $firstUnit ? $firstUnit->id : null);
-                } else {
-                    // Get the first role with a team_id
-                    $firstTeamId = \DB::table('model_has_roles')
-                        ->where('model_id', $user->id)
-                        ->where('model_type', get_class($user))
-                        ->whereNotNull('team_id')
-                        ->value('team_id');
-                    
-                    if ($firstTeamId) {
-                        Session::put('active_unit_id', $firstTeamId);
-                    }
+                } else if (!empty($userTeamIds)) {
+                    Session::put('active_unit_id', $userTeamIds[0]);
                 }
             }
 

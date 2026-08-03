@@ -289,8 +289,19 @@ class AttendanceController extends Controller
         // Check Out (Only for Present/Late/BusinessTrip)
         // If Sick/Permit, checkout not needed usually.
 
-        if ($attendance->user_id !== Auth::id()) {
-            abort(403, 'Akses Ditolak: Anda hanya dapat melakukan checkout pada absensi Anda sendiri.');
+        $user = Auth::user();
+
+        if ($attendance->user_id !== $user->id) {
+            $today = Carbon::today()->toDateString();
+            $userTodayAttendance = EmployeeAttendance::where('user_id', $user->id)
+                ->where('date', $today)
+                ->first();
+
+            if ($userTodayAttendance) {
+                $attendance = $userTodayAttendance;
+            } else {
+                abort(403, 'Akses Ditolak: Anda hanya dapat melakukan checkout pada absensi Anda sendiri.');
+            }
         }
 
         $request->validate([
