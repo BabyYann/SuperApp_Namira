@@ -30,6 +30,8 @@ const activeTab = ref('today');
 const showFormModal = ref(false);
 const photoPreviewUrl = ref(null);
 const fileInputRef = ref(null);
+const galleryInputRef = ref(null);
+const cameraInputRef = ref(null);
 
 const form = useForm({
     title: '',
@@ -509,21 +511,51 @@ const categoryBadgeClass = (catKey) => {
                                 Foto Bukti Dokumentasi
                             </label>
                             
-                            <div
-                                @click="$refs.fileInputRef.click()"
-                                class="w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 hover:border-teal-500 transition-colors bg-slate-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group"
-                            >
-                                <img v-if="photoPreviewUrl" :src="photoPreviewUrl" class="w-full h-full object-cover" />
-                                <div v-else class="flex flex-col items-center justify-center text-slate-400 group-hover:text-teal-600 transition-colors">
-                                    <CameraIcon class="w-8 h-8 stroke-[1.5]" />
-                                    <span class="text-xs font-bold mt-1">Upload / Ambil Foto Kamera</span>
-                                    <span class="text-[10px] text-slate-400">JPG/PNG maks 5MB</span>
-                                </div>
+                            <div v-if="photoPreviewUrl" class="w-full h-36 rounded-2xl border-2 border-slate-200 overflow-hidden relative group">
+                                <img :src="photoPreviewUrl" class="w-full h-full object-cover" />
+                                <button
+                                    type="button"
+                                    @click="photoPreviewUrl = null; form.photo = null"
+                                    class="absolute top-2 right-2 bg-rose-600 text-white p-1.5 rounded-full shadow-md hover:bg-rose-700 transition"
+                                >
+                                    <XMarkIcon class="w-4 h-4" />
+                                </button>
                             </div>
+
+                            <div v-else class="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    @click="galleryInputRef.click()"
+                                    class="h-28 rounded-2xl border-2 border-dashed border-teal-300 hover:border-teal-500 bg-teal-50/50 hover:bg-teal-50 transition-all flex flex-col items-center justify-center p-3 text-teal-700 active:scale-95"
+                                >
+                                    <PhotoIcon class="w-7 h-7 mb-1 stroke-[1.8]" />
+                                    <span class="text-xs font-extrabold">Pilih dari Galeri</span>
+                                    <span class="text-[9px] text-teal-600/80 font-medium">Foto / File Album</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    @click="cameraInputRef.click()"
+                                    class="h-28 rounded-2xl border-2 border-dashed border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 transition-all flex flex-col items-center justify-center p-3 text-slate-600 active:scale-95"
+                                >
+                                    <CameraIcon class="w-7 h-7 mb-1 stroke-[1.8]" />
+                                    <span class="text-xs font-extrabold">Foto Kamera</span>
+                                    <span class="text-[9px] text-slate-400 font-medium">Kamera Langsung</span>
+                                </button>
+                            </div>
+
                             <input
-                                ref="fileInputRef"
+                                ref="galleryInputRef"
+                                type="file"
+                                accept="image/png, image/jpeg, image/jpg, image/webp, image/heic, .png, .jpg, .jpeg, .webp, .heic"
+                                class="hidden"
+                                @change="handleFileChange"
+                            />
+                            <input
+                                ref="cameraInputRef"
                                 type="file"
                                 accept="image/*"
+                                capture="environment"
                                 class="hidden"
                                 @change="handleFileChange"
                             />
