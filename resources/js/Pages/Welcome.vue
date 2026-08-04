@@ -544,10 +544,10 @@ const prevTesti = () => {
                             </transition>
                         </div>
 
-                        <!-- 5. PPDB Online -->
-                        <Link href="/ppdb" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-bold text-[#fbbf24] hover:text-yellow-300">
-                            PPDB Online
-                            <span class="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#fbbf24]"></span>
+                        <!-- 5. SMPB Online -->
+                        <Link href="/ppdb" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-medium" :class="isScrolled ? 'text-slate-800 hover:text-[#fbbf24]' : 'text-white/90 hover:text-white'">
+                            SMPB Online
+                            <span class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </Link>
 
                         <!-- 6. Contact -->
@@ -649,9 +649,9 @@ const prevTesti = () => {
                         </div>
                     </div>
 
-                    <!-- PPDB Online -->
-                    <Link href="/ppdb" @click="isMobileMenuOpen = false" class="text-lg font-extrabold tracking-widest uppercase text-[#fbbf24] hover:text-yellow-300 transition-colors flex items-center justify-between pr-2 py-1">
-                        <span>PPDB Online</span>
+                    <!-- SMPB Online -->
+                    <Link href="/ppdb" @click="isMobileMenuOpen = false" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors flex items-center justify-between pr-2 py-1">
+                        <span>SMPB Online</span>
                         <span class="text-[10px] font-extrabold px-2.5 py-0.5 bg-[#fbbf24]/20 border border-[#fbbf24]/50 text-[#fbbf24] rounded-full">BUKA</span>
                     </Link>
 
@@ -852,12 +852,12 @@ const prevTesti = () => {
         <section id="destinations" class="py-20 bg-[#f8f9fa] border-t border-gray-200">
             <div class="max-w-[1400px] mx-auto px-4">
                 <div class="text-center mb-10" data-aos="fade-down">
-                    <h2 class="text-3xl font-bold text-[#064e3b] uppercase tracking-wider mb-6">University Destination</h2>
+                    <h2 class="text-3xl font-bold text-[#064e3b] uppercase tracking-wider mb-6">Outing Class</h2>
                     
                     <!-- Toggle Buttons -->
                     <div class="inline-flex bg-gray-200 rounded-full p-1 shadow-inner">
-                        <button @click="mapView = 'overseas'" :class="['px-6 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition', mapView === 'overseas' ? 'bg-[#fbbf24] text-[#064e3b] shadow' : 'text-gray-500 hover:text-gray-700']">🌍 Overseas</button>
-                        <button @click="mapView = 'indonesia'" :class="['px-6 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition', mapView === 'indonesia' ? 'bg-[#fbbf24] text-[#064e3b] shadow' : 'text-gray-500 hover:text-gray-700']">🇮🇩 Indonesia</button>
+                        <button @click="mapView = 'overseas'" :class="['px-6 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition', mapView === 'overseas' ? 'bg-[#fbbf24] text-[#064e3b] shadow' : 'text-gray-500 hover:text-gray-700']">Internasional</button>
+                        <button @click="mapView = 'indonesia'" :class="['px-6 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition', mapView === 'indonesia' ? 'bg-[#fbbf24] text-[#064e3b] shadow' : 'text-gray-500 hover:text-gray-700']">Nasional</button>
                     </div>
                 </div>
 
