@@ -64,7 +64,26 @@ const appLogo = '/images/landing/logo-yayasan.webp';
 // Scroll effect for Navbar & Scroll Spy
 const isScrolled = ref(false);
 const activeHash = ref('#home');
-const showCampusesDropdown = ref(false);
+const showUnitsDropdown = ref(false);
+const showAboutDropdown = ref(false);
+const showMobileUnitsAccordion = ref(false);
+const showMobileAboutAccordion = ref(false);
+
+const isUnitsActive = computed(() => {
+    return activeHash.value === '#campuses' || activeHash.value.startsWith('#campus-');
+});
+
+const isAboutActive = computed(() => {
+    return ['#news', '#events', '#partners', '#testimonials', '#about'].includes(activeHash.value);
+});
+
+const aboutNavItems = [
+    { name: 'Berita & Artikel', href: '#news', hash: '#news', desc: 'Informasi & berita terbaru Yayasan' },
+    { name: 'Agenda & Acara', href: '#events', hash: '#events', desc: 'Jadwal & kegiatan mendatang' },
+    { name: 'Mitra Kerjasama', href: '#partners', hash: '#partners', desc: 'Mitra & jaringan kerjasama' },
+    { name: 'Testimoni', href: '#testimonials', hash: '#testimonials', desc: 'Kesan orang tua & alumni' },
+];
+
 const handleScroll = () => {
     isScrolled.value = window.scrollY > 50;
 
@@ -431,28 +450,45 @@ const prevTesti = () => {
                     </div>
 
                     <!-- Desktop Navigation Links -->
-                    <nav class="hidden lg:flex items-center gap-2.5 xl:gap-5 ml-auto">
-                        <a href="#home" @click="activeHash = '#home'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#home' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                    <nav aria-label="Navigasi Utama" class="hidden lg:flex items-center gap-4 xl:gap-7 ml-auto">
+                        <!-- 1. Home -->
+                        <a href="#home" 
+                           @click="activeHash = '#home'" 
+                           class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
+                           :class="[activeHash === '#home' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Home
                             <span v-if="activeHash !== '#home'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
                         
-                        <!-- Our Campuses with Dropdown -->
-                        <div class="relative group" @mouseenter="showCampusesDropdown = true" @mouseleave="showCampusesDropdown = false">
-                            <a href="#campuses" @click="activeHash = '#campuses'" class="relative py-4 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group/nav" :class="[activeHash === '#campuses' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
-                                Campuses
-                                <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-300" :class="{'rotate-180': showCampusesDropdown}" />
-                                <span v-if="activeHash !== '#campuses'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
+                        <!-- 2. Units (Dropdown: PAUD, TK, SD, SMP) -->
+                        <div class="relative group" 
+                             @mouseenter="showUnitsDropdown = true" 
+                             @mouseleave="showUnitsDropdown = false"
+                             @focusin="showUnitsDropdown = true"
+                             @focusout="showUnitsDropdown = false">
+                            <a href="#campuses" 
+                               @click="activeHash = '#campuses'" 
+                               aria-haspopup="true"
+                               :aria-expanded="showUnitsDropdown"
+                               class="relative py-4 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group/nav" 
+                               :class="[isUnitsActive ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                                Units
+                                <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-300" :class="{'rotate-180': showUnitsDropdown}" />
+                                <span v-if="!isUnitsActive" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                             </a>
                             
-                            <!-- Dropdown Menu with Hover Bridge -->
+                            <!-- Dropdown Menu -->
                             <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
-                                <div v-show="showCampusesDropdown" class="absolute left-0 top-full pt-1.5 w-64 z-50">
+                                <div v-show="showUnitsDropdown" class="absolute left-0 top-full pt-1.5 w-64 z-50">
                                     <div class="bg-white rounded-xl shadow-2xl py-3 border border-slate-100 overflow-hidden">
                                         <div class="px-4 py-2 border-b border-slate-50 mb-1">
                                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daftar Unit Sekolah</p>
                                         </div>
-                                        <a v-for="(unit, i) in campuses" :key="i" :href="'#campus-' + i" class="flex items-center gap-3 px-4 py-3 hover:bg-[#f8f9fa] transition-colors group/item">
+                                        <a v-for="(unit, i) in campuses" 
+                                           :key="i" 
+                                           :href="'#campus-' + i" 
+                                           @click="showUnitsDropdown = false; activeHash = '#campuses'" 
+                                           class="flex items-center gap-3 px-4 py-3 hover:bg-[#f8f9fa] transition-colors group/item">
                                             <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center p-1 group-hover/item:bg-[#fbbf24]/10 transition-colors">
                                                 <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" />
                                             </div>
@@ -462,35 +498,68 @@ const prevTesti = () => {
                                 </div>
                             </transition>
                         </div>
-                        <a href="#destinations" @click="activeHash = '#destinations'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#destinations' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
-                            Destinations
+
+                        <!-- 3. Our Schools (Smooth scroll to locations/map section) -->
+                        <a href="#destinations" 
+                           @click="activeHash = '#destinations'" 
+                           class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
+                           :class="[activeHash === '#destinations' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                            Our Schools
                             <span v-if="activeHash !== '#destinations'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
-                        <a href="#testimonials" @click="activeHash = '#testimonials'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#testimonials' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
-                            Testimonials
-                            <span v-if="activeHash !== '#testimonials'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </a>
-                        <a href="#news" @click="activeHash = '#news'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#news' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
-                            News
-                            <span v-if="activeHash !== '#news'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </a>
-                        <a href="#events" @click="activeHash = '#events'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#events' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
-                            Events
-                            <span v-if="activeHash !== '#events'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </a>
+
+                        <!-- 4. About (Dropdown: News, Events, Partners, Testimonials) -->
+                        <div class="relative group" 
+                             @mouseenter="showAboutDropdown = true" 
+                             @mouseleave="showAboutDropdown = false"
+                             @focusin="showAboutDropdown = true"
+                             @focusout="showAboutDropdown = false">
+                            <button type="button" 
+                                    aria-haspopup="true"
+                                    :aria-expanded="showAboutDropdown"
+                                    class="relative py-4 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group/nav cursor-pointer" 
+                                    :class="[isAboutActive ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                                About
+                                <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-300" :class="{'rotate-180': showAboutDropdown}" />
+                                <span v-if="!isAboutActive" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
+                                <div v-show="showAboutDropdown" class="absolute left-0 top-full pt-1.5 w-60 z-50">
+                                    <div class="bg-white rounded-xl shadow-2xl py-3 border border-slate-100 overflow-hidden">
+                                        <div class="px-4 py-1.5 border-b border-slate-50 mb-1">
+                                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tentang Namira</p>
+                                        </div>
+                                        <a v-for="(item, idx) in aboutNavItems" 
+                                           :key="idx" 
+                                           :href="item.href" 
+                                           @click="showAboutDropdown = false; activeHash = item.hash" 
+                                           class="block px-4 py-2.5 hover:bg-[#f8f9fa] transition-colors group/sub">
+                                            <span class="block text-xs font-semibold text-[#082a3a] group-hover/sub:text-[#00A99D] group-hover/sub:translate-x-1 transition-all">{{ item.name }}</span>
+                                            <span class="block text-[10px] text-slate-400 mt-0.5">{{ item.desc }}</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </transition>
+                        </div>
+
+                        <!-- 5. PPDB Online -->
                         <Link href="/ppdb" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-bold text-[#fbbf24] hover:text-yellow-300">
                             PPDB Online
                             <span class="absolute bottom-0 left-0 w-full h-[1.5px] bg-[#fbbf24]"></span>
                         </Link>
-                        <a href="#partners" @click="activeHash = '#partners'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#partners' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
-                            Partners
-                            <span v-if="activeHash !== '#partners'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </a>
-                        <a href="#footer" @click="activeHash = '#footer'" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+
+                        <!-- 6. Contact -->
+                        <a href="#footer" 
+                           @click="activeHash = '#footer'" 
+                           class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
+                           :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
                             Contact
                             <span v-if="activeHash !== '#footer'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
                         
+                        <!-- 7. Primary CTA Button: Login -->
                         <div class="flex items-center gap-4 ml-4 xl:ml-6">
                             <template v-if="canLogin">
                                 <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="activeHash = '#dashboard'" :class="isScrolled ? 'bg-[#00A99D]/10 border border-[#00A99D]/30 hover:bg-[#00A99D] hover:border-[#00A99D] text-[#00A99D] hover:text-white font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24]/10 border border-[#fbbf24]/30 hover:bg-[#fbbf24] hover:border-[#fbbf24] text-[#fbbf24] hover:text-[#082a3a] font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 active:scale-95 text-center'">
@@ -498,7 +567,7 @@ const prevTesti = () => {
                                 </Link>
                                 <template v-else>
                                     <Link :href="route('login')" :class="isScrolled ? 'bg-[#082a3a] hover:bg-[#00A99D] text-white font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-400 text-[#082a3a] font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-6 xl:px-8 py-2.5 xl:py-3 rounded-full transition-all duration-300 shadow-lg shadow-yellow-500/10 hover:shadow-yellow-500/20 active:scale-95 text-center'">
-                                        Login Portal
+                                        Login
                                     </Link>
                                 </template>
                             </template>
@@ -506,7 +575,7 @@ const prevTesti = () => {
                     </nav>
 
                     <!-- Mobile Menu Hamburger Button -->
-                    <button @click="isMobileMenuOpen = true" class="lg:hidden p-2 rounded-xl transition-colors" :class="isScrolled ? 'text-slate-800 hover:bg-slate-100' : 'text-white hover:bg-white/10'">
+                    <button @click="isMobileMenuOpen = true" aria-label="Buka Menu Navigasi Mobile" class="lg:hidden p-2 rounded-xl transition-colors" :class="isScrolled ? 'text-slate-800 hover:bg-slate-100' : 'text-white hover:bg-white/10'">
                         <Bars3Icon class="w-6.5 h-6.5" />
                     </button>
                 </div>
@@ -515,7 +584,7 @@ const prevTesti = () => {
 
         <!-- Mobile Fullscreen Drawer -->
         <transition enter-active-class="transition ease-out duration-300" enter-from-class="opacity-0 translate-x-full" enter-to-class="opacity-100 translate-x-0" leave-active-class="transition ease-in duration-200" leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-full">
-            <div v-show="isMobileMenuOpen" class="fixed inset-0 z-[100] bg-[#082a3a] flex flex-col justify-between p-8 text-white">
+            <div v-show="isMobileMenuOpen" class="fixed inset-0 z-[100] bg-[#082a3a] flex flex-col justify-between p-6 sm:p-8 text-white">
                 <!-- Header inside Drawer -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -527,38 +596,80 @@ const prevTesti = () => {
                             <span class="text-[#fbbf24] font-medium text-[9px] tracking-wider uppercase block mt-0.5">Fostering Islamic Generation</span>
                         </div>
                     </div>
-                    <button @click="isMobileMenuOpen = false" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                    <button @click="isMobileMenuOpen = false" aria-label="Tutup Menu" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                         <XMarkIcon class="w-6.5 h-6.5 text-white" />
                     </button>
                 </div>
 
-                <!-- Menu Links in Drawer -->
-                <nav class="flex flex-col gap-5 my-auto text-left pl-4">
-                    <a href="#home" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Home</a>
-                    <a href="#campuses" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Campuses</a>
-                    <a href="#destinations" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Destinations</a>
-                    <a href="#testimonials" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Testimonials</a>
-                    <a href="#news" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">News</a>
-                    <a href="#events" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Events</a>
-                    <Link href="/ppdb" @click="isMobileMenuOpen = false" class="text-xl font-extrabold tracking-widest uppercase text-[#fbbf24] hover:text-yellow-300 transition-colors flex items-center justify-between pr-4">
+                <!-- Menu Links in Drawer with Accordions -->
+                <nav class="flex flex-col gap-4 my-auto text-left pl-2 overflow-y-auto max-h-[70vh] py-4" aria-label="Navigasi Mobile">
+                    <!-- Home -->
+                    <a href="#home" @click="isMobileMenuOpen = false; activeHash = '#home'" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors py-1">Home</a>
+                    
+                    <!-- Units Accordion -->
+                    <div class="flex flex-col">
+                        <button type="button" 
+                                @click="showMobileUnitsAccordion = !showMobileUnitsAccordion" 
+                                class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors flex items-center justify-between py-1 w-full text-left">
+                            <span>Units</span>
+                            <ChevronDownIcon class="w-5 h-5 transition-transform duration-300" :class="{'rotate-180': showMobileUnitsAccordion}" />
+                        </button>
+                        <div v-show="showMobileUnitsAccordion" class="flex flex-col pl-4 mt-2 gap-2.5 border-l-2 border-[#fbbf24]/30">
+                            <a v-for="(unit, i) in campuses" 
+                               :key="i" 
+                               :href="'#campus-' + i" 
+                               @click="isMobileMenuOpen = false; activeHash = '#campuses'" 
+                               class="text-sm font-semibold text-white/80 hover:text-[#fbbf24] transition-colors flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
+                                {{ unit.name }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Our Schools -->
+                    <a href="#destinations" @click="isMobileMenuOpen = false; activeHash = '#destinations'" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors py-1">Our Schools</a>
+
+                    <!-- About Accordion -->
+                    <div class="flex flex-col">
+                        <button type="button" 
+                                @click="showMobileAboutAccordion = !showMobileAboutAccordion" 
+                                class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors flex items-center justify-between py-1 w-full text-left">
+                            <span>About</span>
+                            <ChevronDownIcon class="w-5 h-5 transition-transform duration-300" :class="{'rotate-180': showMobileAboutAccordion}" />
+                        </button>
+                        <div v-show="showMobileAboutAccordion" class="flex flex-col pl-4 mt-2 gap-2.5 border-l-2 border-[#fbbf24]/30">
+                            <a v-for="(item, idx) in aboutNavItems" 
+                               :key="idx" 
+                               :href="item.href" 
+                               @click="isMobileMenuOpen = false; activeHash = item.hash" 
+                               class="text-sm font-semibold text-white/80 hover:text-[#fbbf24] transition-colors flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
+                                {{ item.name }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- PPDB Online -->
+                    <Link href="/ppdb" @click="isMobileMenuOpen = false" class="text-lg font-extrabold tracking-widest uppercase text-[#fbbf24] hover:text-yellow-300 transition-colors flex items-center justify-between pr-2 py-1">
                         <span>PPDB Online</span>
                         <span class="text-[10px] font-extrabold px-2.5 py-0.5 bg-[#fbbf24]/20 border border-[#fbbf24]/50 text-[#fbbf24] rounded-full">BUKA</span>
                     </Link>
-                    <a href="#partners" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Partners</a>
-                    <a href="#footer" @click="isMobileMenuOpen = false" class="text-xl font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors">Contact</a>
+
+                    <!-- Contact -->
+                    <a href="#footer" @click="isMobileMenuOpen = false; activeHash = '#footer'" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors py-1">Contact</a>
                 </nav>
 
                 <!-- Footer/CTA in Drawer -->
                 <div class="border-t border-white/10 pt-6">
                     <template v-if="canLogin">
-                        <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="isMobileMenuOpen = false" class="block w-full py-4 text-center bg-[#00A99D] hover:bg-teal-700 text-white font-extrabold text-xs tracking-widest uppercase rounded-full transition-all">
+                        <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#00A99D] hover:bg-teal-700 text-white font-extrabold text-xs tracking-widest uppercase rounded-full transition-all">
                             Dashboard
                         </Link>
-                        <Link v-else :href="route('login')" @click="isMobileMenuOpen = false" class="block w-full py-4 text-center bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-extrabold text-xs tracking-widest uppercase rounded-full transition-all shadow-lg">
-                            Login Portal
+                        <Link v-else :href="route('login')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-extrabold text-xs tracking-widest uppercase rounded-full transition-all shadow-lg">
+                            Login
                         </Link>
                     </template>
-                    <p class="text-center text-[10px] text-white/40 uppercase tracking-widest mt-6">© {{ new Date().getFullYear() }} Yayasan Namira</p>
+                    <p class="text-center text-[10px] text-white/40 uppercase tracking-widest mt-4">© {{ new Date().getFullYear() }} Yayasan Namira</p>
                 </div>
             </div>
         </transition>
