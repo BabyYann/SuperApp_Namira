@@ -424,3 +424,64 @@ Route::get('/download-pdf-guru-sd', function () {
     $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
     return $pdf->download('Daftar_Akun_Guru_SD_Namira.pdf');
 });
+
+Route::get('/download-pdf-guru-pavlov-daycare', function () {
+    $pavlovTeachers = [
+        ["nama" => "Inayah", "NIY" => "41841902", "email" => "inayahzamzami84@gmail.com", "no_hp" => "085234293443"],
+        ["nama" => "Ummil Atiqoh", "NIY" => "41931903", "email" => "ummilatiqoh@gmail.com", "no_hp" => "081357897098"],
+        ["nama" => "Fatimatus Sahro", "NIY" => "41992105", "email" => "fatimatussahro1011@gmail.com", "no_hp" => "085269396801"],
+        ["nama" => "Khairun Nisak", "NIY" => "42972106", "email" => "anisnisak422@gmail.com", "no_hp" => "082330623382"],
+        ["nama" => "Erina Kholidhatus Sholihah", "NIY" => "41012207", "email" => "erinasholihah@gmail.com", "no_hp" => "085607026588"],
+        ["nama" => "Siti Nurhalisah", "NIY" => "41012211", "email" => "sitinurkholisah143@gmail.com", "no_hp" => "083892373324"],
+        ["nama" => "Anis Srifa Ambami", "NIY" => "41002313", "email" => "anisrifaambami@gmail.com", "no_hp" => "089520864248"],
+        ["nama" => "Aprilia Safianti", "NIY" => "41992314", "email" => "apriliasafianti4@gmail.com", "no_hp" => "082244063358"],
+        ["nama" => "Nadita Arifianti Meilani", "NIY" => "41052315", "email" => "naditarifiantimeilani@gmail.com", "no_hp" => "085601612322"],
+        ["nama" => "Lailatul Mukarromah", "NIY" => "41002317", "email" => "lailamukarromah44@gmail.com", "no_hp" => "082247317975"],
+        ["nama" => "Weni Mushonifah", "NIY" => "41002318", "email" => "wenimusonnifah@gmail.com", "no_hp" => "085850669118"],
+        ["nama" => "Nadhifatul Qolbiyah", "NIY" => "41002419", "email" => "nadhifatulqolbiyah622@gmail.com", "no_hp" => "082334062180"],
+        ["nama" => "Kurratul Aini", "NIY" => "41992420", "email" => "kurratulaini145@yahoo.com", "no_hp" => "082228547474"],
+        ["nama" => "Inayatul Maula", "NIY" => "41012422", "email" => "inytl.maula18@gmail.com", "no_hp" => "082245812260"],
+        ["nama" => "Ike Putri Nur Aida", "NIY" => "41012523", "email" => "ikeputrinuraida@gmail.com", "no_hp" => "085746202577"],
+        ["nama" => "Radita Rodiana", "NIY" => "41022524", "email" => "raditarodiana85@gmail.com", "no_hp" => "082245812759"],
+        ["nama" => "Qurrotu Aini", "NIY" => "41022525", "email" => "qurrotu.aini.004@gmail.com", "no_hp" => "082140263050"],
+        ["nama" => "Hairul Zahroni", "NIY" => "", "email" => "hairul@namira.school", "no_hp" => "-"],
+        ["nama" => "Intan Ike Susanti", "NIY" => "41032527", "email" => "intanintan1751@gmail.com", "no_hp" => "085234501158"],
+        ["nama" => "Emilia Monica Ramlan", "NIY" => "41212528", "email" => "emiliam.ramlan@gmail.com", "no_hp" => "085258835152"],
+        ["nama" => "Fitriyah Rizki Amalia", "NIY" => "", "email" => "fitriyah@namira.school", "no_hp" => "-"],
+        ["nama" => "Masruhin", "NIY" => "", "email" => "masruhin@namira.school", "no_hp" => "-"]
+    ];
+
+    $daycareTeachers = [
+        ["nama" => "Badriyah", "unit" => "TPA Kraksaan", "NIY" => "91901301", "email" => "badriyah@namira.school", "no_hp" => "-"],
+        ["nama" => "Murniati, S.M", "unit" => "TPA Kraksaan", "NIY" => "91971602", "email" => "murniati@namira.school", "no_hp" => "082315022331"],
+        ["nama" => "Dwi Cahya Ningsih, S.M", "unit" => "TPA Kraksaan", "NIY" => "91971703", "email" => "dwi.cahya@namira.school", "no_hp" => "-"],
+        ["nama" => "Nurul Jannah", "unit" => "TPA Kraksaan", "NIY" => "91901704", "email" => "nuruljannah5486@gmail.com", "no_hp" => "082330503892"],
+        ["nama" => "Toni Arso Akbar", "unit" => "TPA Kraksaan", "NIY" => "92801907", "email" => "toni@namira.school", "no_hp" => "085232628298"],
+        ["nama" => "Siti Nura", "unit" => "TPA Kraksaan", "NIY" => "91012008", "email" => "noragebangan@gmail.com", "no_hp" => "085237183429"],
+        ["nama" => "Mahfud Diono", "unit" => "TPA Kraksaan", "NIY" => "", "email" => "mahfud@namira.school", "no_hp" => "-"],
+        ["nama" => "Indi Desi Hasanah", "unit" => "TPA Kraksaan", "NIY" => "91042310", "email" => "iindi4803@gmail.com", "no_hp" => "085755087910"],
+        ["nama" => "Joni", "unit" => "TPA Kraksaan", "NIY" => "", "email" => "joni@namira.school", "no_hp" => "-"],
+        ["nama" => "Alifia Nailus Dzikria", "unit" => "TPA Kraksaan", "NIY" => "", "email" => "alifia@namira.school", "no_hp" => "-"],
+        ["nama" => "Sofiatun Hasanah", "unit" => "TPA Kraksaan", "NIY" => "91052313", "email" => "sofiatulhasanah361@gmail.com", "no_hp" => "082325750806"],
+        ["nama" => "Rizki Ayu Syahtika", "unit" => "TPA Kraksaan", "NIY" => "91992514", "email" => "rizkyayusyahtika@gmail.com", "no_hp" => "085935094033"],
+        ["nama" => "Nawal Savina", "unit" => "TPA Kraksaan", "NIY" => "91062515", "email" => "nawalsavina02@gmail.com", "no_hp" => "089517033430"],
+        ["nama" => "Nabilla Ilamalia", "unit" => "TPA Dringu", "NIY" => "", "email" => "nabilla.ilamalia@namira.school", "no_hp" => "-"],
+        ["nama" => "Silvia Anggrayni", "unit" => "TPA Dringu", "NIY" => "", "email" => "silvia@namira.school", "no_hp" => "-"]
+    ];
+
+    $paudTeachers = [
+        ["nama" => "Nur Asia, S. Pd", "unit" => "PG Kraksaan", "NIY" => "11931603", "email" => "asianur90@gmail.com", "no_hp" => "082330512794"],
+        ["nama" => "Dwi Indah Puji Astutik, S. Ap", "unit" => "PG Kraksaan", "NIY" => "11951905", "email" => "dwieindah13579@gmail.com", "no_hp" => "085236108090"],
+        ["nama" => "Tania Nafisah Sehba", "unit" => "PG Kraksaan", "NIY" => "11022407", "email" => "tanianafisah7@gmail.com", "no_hp" => "081515288041"],
+        ["nama" => "Durrotun Nafilah", "unit" => "PG Kraksaan", "NIY" => "11022408", "email" => "durrotunnafilah80@gmail.com", "no_hp" => "082359339513"],
+        ["nama" => "Eva Maghfirah, S. Pd", "unit" => "TK Kraksaan", "NIY" => "21761301", "email" => "firah.ifamaghfirah@gmail.com", "no_hp" => "085257282845"],
+        ["nama" => "Oemi Maktoem, S.Pd", "unit" => "TK Kraksaan", "NIY" => "21881402", "email" => "verinmaktumah@gmail.com", "no_hp" => "082330436690"],
+        ["nama" => "Siti Fatimah", "unit" => "TK Kraksaan", "NIY" => "21951403", "email" => "sfatimah8810@gmail.com", "no_hp" => "082330947254"],
+        ["nama" => "Mustika Ratu Ningsih, S. Pd", "unit" => "TK Kraksaan", "NIY" => "21901504", "email" => "khusnulkhotimahtika@gmail.com", "no_hp" => "082257887417"]
+    ];
+
+    $html = view('pdf.guru-pavlov-daycare-list', compact('pavlovTeachers', 'daycareTeachers', 'paudTeachers'))->render();
+    
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
+    return $pdf->download('Daftar_Akun_Guru_Pavlov_Daycare_PAUD_Namira.pdf');
+});
