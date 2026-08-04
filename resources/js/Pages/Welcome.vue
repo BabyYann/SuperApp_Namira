@@ -563,7 +563,7 @@ const prevTesti = () => {
                         <div class="flex items-center gap-4 ml-4 xl:ml-6">
                             <template v-if="canLogin">
                                 <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="activeHash = '#dashboard'" :class="isScrolled ? 'bg-[#00A99D]/10 border border-[#00A99D]/30 hover:bg-[#00A99D] hover:border-[#00A99D] text-[#00A99D] hover:text-white font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24]/10 border border-[#fbbf24]/30 hover:bg-[#fbbf24] hover:border-[#fbbf24] text-[#fbbf24] hover:text-[#082a3a] font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 active:scale-95 text-center'">
-                                    Dashboard
+                                    Login
                                 </Link>
                                 <template v-else>
                                     <Link :href="route('login')" :class="isScrolled ? 'bg-[#082a3a] hover:bg-[#00A99D] text-white font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-400 text-[#082a3a] font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-6 xl:px-8 py-2.5 xl:py-3 rounded-full transition-all duration-300 shadow-lg shadow-yellow-500/10 hover:shadow-yellow-500/20 active:scale-95 text-center'">
@@ -663,7 +663,7 @@ const prevTesti = () => {
                 <div class="border-t border-white/10 pt-6">
                     <template v-if="canLogin">
                         <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#00A99D] hover:bg-teal-700 text-white font-extrabold text-xs tracking-widest uppercase rounded-full transition-all">
-                            Dashboard
+                            Login
                         </Link>
                         <Link v-else :href="route('login')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-extrabold text-xs tracking-widest uppercase rounded-full transition-all shadow-lg">
                             Login
