@@ -700,8 +700,8 @@ const prevTesti = () => {
                         <!-- Headline — 2 lines, editorial, restrained weight -->
                         <h1 class="animate-fade-in-up font-semibold tracking-tight text-white mb-10"
                             style="animation-delay:0.20s; font-size: clamp(2rem, 4.2vw, 3.6rem); line-height: 1.17; max-width: 580px;">
-                            Membina Generasi Islami,<br/>
-                            <span class="text-[#fbbf24]">Siap Memimpin Masa Depan</span>
+                            Bersama Namira,<br/>
+                            <span class="text-[#fbbf24]">Menjadi Cahaya Menerangi Dunia</span>
                         </h1>
 
                         <!-- Description -->
