@@ -1,1 +1,0 @@
-import{P as e,b as t}from"./app-DW6Ommje.js";import{t as n}from"./_plugin-vue_export-helper-BDNMzG2s.js";var r={},i={src:`/images/namira-foundation-logo.webp`,alt:`Namira School Foundation`};function a(n,r){return e(),t(`img`,i)}var o=n(r,[[`render`,a]]);export{o as t};

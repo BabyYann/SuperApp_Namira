@@ -36,7 +36,7 @@ const attendanceStatus = ref(props.filters.attendance_status);
 // --- PAGINATION STATE ---
 const perPage = ref(10);
 const currentPage = ref(1);
-const perPageOptions = [10, 15, 20, 25, 50, 100];
+const perPageOptions = [5, 10, 15, 20, 25, 50, 100];
 
 // Reset page to 1 when filters or perPage change
 watch([month, year, unitId, search, subjectId, attendanceStatus, perPage, () => props.recapData], () => {
@@ -527,7 +527,7 @@ const getPercentageClass = (pct) => {
                     </div>
 
                     <!-- Page Navigation Buttons -->
-                    <div class="flex items-center gap-1.5" v-if="totalPages > 1">
+                    <div class="flex items-center gap-1.5">
                         <button 
                             @click="goToPage(currentPage - 1)" 
                             :disabled="currentPage === 1"
