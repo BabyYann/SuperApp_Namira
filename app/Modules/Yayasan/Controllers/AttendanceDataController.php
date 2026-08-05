@@ -48,21 +48,32 @@ class AttendanceDataController extends Controller
             $currentDate->addDay();
         }
 
-        // 1. Get base query for Employees
-        $employeesQuery = User::whereHas('roles', function($q) {
-            $q->whereIn('name', ['teacher', 'staff', 'admin_unit', 'staff_unit']);
-        });
-
-        // Filter by unit
+        // Set Spatie team ID if unit is specified
         if ($unitId) {
-            $employeesQuery->where(function($q) use ($unitId) {
-                $q->whereHas('teacher_profile', function($sub) use ($unitId) {
-                    $sub->where('unit_id', $unitId);
-                })->orWhereHas('staff', function($sub) use ($unitId) {
-                    $sub->where('unit_id', $unitId);
-                });
-            });
+            setPermissionsTeamId($unitId);
         }
+
+        // 1. Resolve employee user IDs for the specified unit or global
+        $employeeRoleNames = [
+            'teacher', 'staff', 'admin_unit', 'staff_unit',
+            'wali_kelas', 'bk', 'guru', 'finance',
+            'koordinator_kurikulum', 'koordinator_sarpar', 'koordinator_keuangan', 'koordinator_tahfidz'
+        ];
+
+        $roleUserIds = DB::table('model_has_roles')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->whereIn('roles.name', $employeeRoleNames)
+            ->when($unitId, function($q) use ($unitId) {
+                $q->where('model_has_roles.team_id', $unitId);
+            })
+            ->pluck('model_id');
+
+        $teacherUserIds = \App\Modules\Academic\Models\Teacher::when($unitId, fn($q) => $q->where('unit_id', $unitId))->pluck('user_id');
+        $staffUserIds = \App\Modules\Employee\Models\Staff::when($unitId, fn($q) => $q->where('unit_id', $unitId))->pluck('user_id');
+
+        $allUserIds = $roleUserIds->concat($teacherUserIds)->concat($staffUserIds)->unique()->filter();
+
+        $employeesQuery = User::whereIn('id', $allUserIds);
 
         // Filter by search (name or NIP)
         if ($request->filled('search')) {
@@ -127,7 +138,9 @@ class AttendanceDataController extends Controller
             }
 
             // Unit Name
-            $unitName = $user->teacher_profile?->unit?->name ?? $user->staff?->unit?->name ?? '-';
+            $unitName = $user->teacher_profile?->unit?->name 
+                ?? $user->staff?->unit?->name 
+                ?? ($user->units->first()?->name ?? '-');
 
             return [
                 'id' => $user->id,
