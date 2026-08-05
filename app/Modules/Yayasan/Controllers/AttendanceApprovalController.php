@@ -19,22 +19,34 @@ class AttendanceApprovalController extends Controller
         }
 
         $unitId = session('active_unit_id');
+        if ($unitId === 'all') {
+            $unitId = null;
+        }
+
+        // Force unit restriction for non-global admins
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan'])) {
+            $unitId = session('active_unit_id');
+        }
+
         $tab = $request->input('status', 'pending'); // 'pending' or 'history'
 
-        // Count pending for badge
-        $pendingQuery = EmployeeAttendance::where('approval_status', 'pending');
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+        // Reusable unit scope closure
+        $applyUnitScope = function($q) use ($unitId) {
             if ($unitId) {
-                $pendingQuery->whereHas('user', function ($q) use ($unitId) {
-                    $q->whereHas('roles', function ($sub) use ($unitId) {
-                        $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
+                $q->whereHas('user', function ($subUser) use ($unitId) {
+                    $subUser->whereHas('roles', function ($subRole) use ($unitId) {
+                        $subRole->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
                     });
                 });
             }
-        }
+        };
+
+        // Count pending for badge
+        $pendingQuery = EmployeeAttendance::where('approval_status', 'pending');
+        $applyUnitScope($pendingQuery);
         $pendingCount = $pendingQuery->count();
 
-        // Base approvals query
+        // Base approvals query for table
         $query = EmployeeAttendance::with(['user', 'approver', 'location']);
 
         if ($tab === 'history') {
@@ -43,23 +55,7 @@ class AttendanceApprovalController extends Controller
             $query->where('approval_status', 'pending');
         }
 
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            if ($unitId) {
-                $query->whereHas('user', function ($q) use ($unitId) {
-                    $q->whereHas('roles', function ($sub) use ($unitId) {
-                        $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
-                    });
-                });
-            }
-        } else {
-            if ($unitId) {
-                $query->whereHas('user', function ($q) use ($unitId) {
-                    $q->whereHas('roles', function ($sub) use ($unitId) {
-                        $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
-                    });
-                });
-            }
-        }
+        $applyUnitScope($query);
 
         if ($request->filled('search')) {
             $search = $request->input('search');
