@@ -1,12 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, useForm, Link } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { 
     ClipboardDocumentListIcon, EyeIcon, PaperClipIcon, ArrowDownTrayIcon,
     CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, UserGroupIcon,
     CalendarDaysIcon, ChartBarIcon, DocumentTextIcon, XMarkIcon, ArrowPathIcon,
-    FunnelIcon, AcademicCapIcon, BriefcaseIcon, PlusCircleIcon, UsersIcon, CalendarIcon
+    FunnelIcon, AcademicCapIcon, BriefcaseIcon, PlusCircleIcon, UsersIcon, CalendarIcon,
+    ChevronLeftIcon, ChevronRightIcon
 } from '@heroicons/vue/24/outline';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -31,6 +32,39 @@ const unitId = ref(props.filters.unit_id);
 const search = ref(props.filters.search);
 const subjectId = ref(props.filters.subject_id);
 const attendanceStatus = ref(props.filters.attendance_status);
+
+// --- PAGINATION STATE ---
+const perPage = ref(10);
+const currentPage = ref(1);
+const perPageOptions = [10, 15, 20, 25, 50, 100];
+
+// Reset page to 1 when filters or perPage change
+watch([month, year, unitId, search, subjectId, attendanceStatus, perPage, () => props.recapData], () => {
+    currentPage.value = 1;
+});
+
+const totalPages = computed(() => {
+    return Math.ceil(props.recapData.length / perPage.value) || 1;
+});
+
+const paginatedRecapData = computed(() => {
+    const start = (currentPage.value - 1) * perPage.value;
+    return props.recapData.slice(start, start + perPage.value);
+});
+
+const paginationInfo = computed(() => {
+    const total = props.recapData.length;
+    if (total === 0) return 'Menampilkan 0 data';
+    const from = (currentPage.value - 1) * perPage.value + 1;
+    const to = Math.min(currentPage.value * perPage.value, total);
+    return `Menampilkan ${from} - ${to} dari ${total} data`;
+});
+
+const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page;
+    }
+};
 
 const applyFilters = () => {
     router.get(route('yayasan.attendance-data.index'), {
@@ -418,8 +452,8 @@ const getPercentageClass = (pct) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
-                            <tr v-for="(row, idx) in recapData" :key="row.id" class="hover:bg-slate-50/50 transition-colors">
-                                <td class="px-5 py-3.5 text-center text-gray-400 font-semibold">{{ idx + 1 }}</td>
+                            <tr v-for="(row, idx) in paginatedRecapData" :key="row.id" class="hover:bg-slate-50/50 transition-colors">
+                                <td class="px-5 py-3.5 text-center text-gray-400 font-semibold">{{ (currentPage - 1) * perPage + idx + 1 }}</td>
                                 
                                 <!-- Photo & Name -->
                                 <td class="px-5 py-3.5">
@@ -473,6 +507,61 @@ const getPercentageClass = (pct) => {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Table Footer Pagination Bar -->
+                <div v-if="recapData.length > 0" class="px-6 py-4 border-t border-gray-150 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-4 text-xs text-gray-600 font-medium">
+                        <div class="flex items-center gap-2">
+                            <span>Tampilkan</span>
+                            <select 
+                                v-model="perPage" 
+                                class="bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm cursor-pointer"
+                            >
+                                <option v-for="opt in perPageOptions" :key="opt" :value="opt">{{ opt }}</option>
+                            </select>
+                            <span>data per halaman</span>
+                        </div>
+                        <span class="text-gray-300">|</span>
+                        <span>{{ paginationInfo }}</span>
+                    </div>
+
+                    <!-- Page Navigation Buttons -->
+                    <div class="flex items-center gap-1.5" v-if="totalPages > 1">
+                        <button 
+                            @click="goToPage(currentPage - 1)" 
+                            :disabled="currentPage === 1"
+                            class="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-all shadow-sm flex items-center gap-1 cursor-pointer"
+                        >
+                            <ChevronLeftIcon class="w-3.5 h-3.5" />
+                            <span>Sebelumnya</span>
+                        </button>
+
+                        <div class="flex items-center gap-1 px-1">
+                            <button 
+                                v-for="p in totalPages" 
+                                :key="p" 
+                                @click="goToPage(p)"
+                                :class="[
+                                    'w-8 h-8 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center',
+                                    currentPage === p 
+                                        ? 'bg-namira-teal text-white shadow-sm' 
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                ]"
+                            >
+                                {{ p }}
+                            </button>
+                        </div>
+
+                        <button 
+                            @click="goToPage(currentPage + 1)" 
+                            :disabled="currentPage === totalPages"
+                            class="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent transition-all shadow-sm flex items-center gap-1 cursor-pointer"
+                        >
+                            <span>Selanjutnya</span>
+                            <ChevronRightIcon class="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
