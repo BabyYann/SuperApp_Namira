@@ -5,7 +5,7 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import {
     Bars3BottomLeftIcon, BellIcon, ChevronDownIcon,
     CheckCircleIcon, EnvelopeOpenIcon, CalendarIcon,
-    MegaphoneIcon, ClipboardDocumentCheckIcon
+    MegaphoneIcon, ClipboardDocumentCheckIcon, CheckIcon, XMarkIcon
 } from '@heroicons/vue/24/outline';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -53,14 +53,63 @@ const markAllRead = async () => {
     }
 };
 
-const markRead = async (item) => {
-    if (!item.is_read) {
+const quickApprove = async (item, status) => {
+    const attendanceId = item.data?.attendance_id;
+    if (!attendanceId) return;
+
+    if (status === 'rejected') {
+        const { value: reason } = await Swal.fire({
+            title: 'Tolak Pengajuan Absensi',
+            input: 'textarea',
+            inputPlaceholder: 'Tuliskan alasan penolakan...',
+            showCancelButton: true,
+            confirmButtonText: 'Tolak Pengajuan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#e11d48',
+        });
+        if (!reason) return;
+
         try {
-            await axios.post(`/notifications/${item.id}/read`);
-            item.is_read = true;
-            unreadCount.value = Math.max(0, unreadCount.value - 1);
+            await axios.put(route('yayasan.attendance-approvals.update', attendanceId), {
+                status: 'rejected',
+                reason: reason
+            });
+            markRead(item);
+            if (item.data) {
+                item.data.can_quick_approve = false;
+                item.data.processed_status = 'rejected';
+            }
+            Swal.fire({
+                icon: 'success',
+                title: 'Ditolak',
+                text: 'Pengajuan absensi berhasil ditolak.',
+                timer: 2000,
+                showConfirmButton: false,
+            });
+            fetchNotifications();
         } catch (e) {
-            console.error('Failed to mark read:', e);
+            Swal.fire('Gagal', 'Terjadi kesalahan saat memproses.', 'error');
+        }
+    } else {
+        try {
+            await axios.put(route('yayasan.attendance-approvals.update', attendanceId), {
+                status: 'approved',
+            });
+            markRead(item);
+            if (item.data) {
+                item.data.can_quick_approve = false;
+                item.data.processed_status = 'approved';
+            }
+            Swal.fire({
+                icon: 'success',
+                title: 'Disetujui!',
+                text: 'Pengajuan absensi telah disetujui.',
+                timer: 2000,
+                showConfirmButton: false,
+            });
+            fetchNotifications();
+        } catch (e) {
+            Swal.fire('Gagal', 'Terjadi kesalahan saat memproses.', 'error');
         }
     }
 };
@@ -164,6 +213,27 @@ onUnmounted(() => {
                                     <span class="text-[10px] text-slate-400 shrink-0 font-mono">{{ item.created_at }}</span>
                                 </div>
                                 <p class="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">{{ item.message }}</p>
+                                
+                                <!-- Quick Approve/Reject Action Buttons -->
+                                <div v-if="item.data?.can_quick_approve && item.data?.attendance_id" class="pt-2 flex items-center gap-2" @click.stop>
+                                    <button 
+                                        @click="quickApprove(item, 'approved')"
+                                        class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <CheckIcon class="w-3 h-3" />
+                                        <span>Setujui</span>
+                                    </button>
+                                    <button 
+                                        @click="quickApprove(item, 'rejected')"
+                                        class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] rounded-lg shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <XMarkIcon class="w-3 h-3" />
+                                        <span>Tolak</span>
+                                    </button>
+                                </div>
+                                <div v-else-if="item.data?.processed_status" class="pt-1 text-[10px] font-bold" :class="item.data.processed_status === 'approved' ? 'text-emerald-600' : 'text-rose-600'">
+                                    {{ item.data.processed_status === 'approved' ? '✓ Disetujui' : '✕ Ditolak' }}
+                                </div>
                             </div>
                         </div>
                     </div>

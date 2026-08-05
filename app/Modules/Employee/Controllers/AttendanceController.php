@@ -144,7 +144,7 @@ class AttendanceController extends Controller
             $permitPath = $request->file('document')->store('permits', 'public');
         }
 
-        EmployeeAttendance::create([
+        $attendanceRecord = EmployeeAttendance::create([
             'user_id' => $user->id,
             'date' => $today,
             'check_in_time' => ($request->type === 'present' || $request->type === 'business_trip') ? $checkInTime : null, 
@@ -158,6 +158,36 @@ class AttendanceController extends Controller
             'approval_status' => $approvalStatus,
             'late_minutes' => $lateMinutes,
         ]);
+
+        // Dispatch In-App Notification to Principals & Admins if pending approval
+        if ($approvalStatus === 'pending') {
+            try {
+                $units = $user->getUnitsAttribute();
+                $targetUnitId = ($units && $units->isNotEmpty()) ? $units->first()->id : null;
+                $dateFormatted = Carbon::parse($today)->translatedFormat('d F Y');
+                $statusLabel = [
+                    'business_trip' => 'Dinas Luar',
+                    'sick' => 'Sakit',
+                    'permit' => 'Izin'
+                ][$status] ?? $status;
+
+                NotificationDispatcher::sendToRoles(
+                    ['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'pembina_yayasan'],
+                    $targetUnitId,
+                    '📩 Pengajuan Absensi Baru',
+                    "{$user->name} mengajukan {$statusLabel} pada tanggal {$dateFormatted}.",
+                    'employee',
+                    [
+                        'attendance_id' => $attendanceRecord->id,
+                        'can_quick_approve' => true,
+                        'employee_name' => $user->name,
+                        'status_type' => $statusLabel,
+                    ]
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('In-app notification dispatch error: ' . $e->getMessage());
+            }
+        }
 
         // Automated WhatsApp Notification for Employee Check-in
         try {

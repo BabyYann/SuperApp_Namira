@@ -12,37 +12,72 @@ use Carbon\Carbon;
 
 class AttendanceApprovalController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])) {
-            abort(403, 'Akses Ditolak: Hanya Kepala Sekolah yang memiliki wewenang untuk menyetujui absensi.');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'pembina_yayasan', 'pengawas_yayasan', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk melihat persetujuan absensi.');
         }
 
         $unitId = session('active_unit_id');
+        $tab = $request->input('status', 'pending'); // 'pending' or 'history'
 
-        $query = EmployeeAttendance::with('user')
-            ->where('approval_status', 'pending');
+        // Count pending for badge
+        $pendingQuery = EmployeeAttendance::where('approval_status', 'pending');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            if ($unitId) {
+                $pendingQuery->whereHas('user', function ($q) use ($unitId) {
+                    $q->whereHas('roles', function ($sub) use ($unitId) {
+                        $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
+                    });
+                });
+            }
+        }
+        $pendingCount = $pendingQuery->count();
+
+        // Base approvals query
+        $query = EmployeeAttendance::with(['user', 'approver', 'location']);
+
+        if ($tab === 'history') {
+            $query->whereIn('approval_status', ['approved', 'rejected']);
+        } else {
+            $query->where('approval_status', 'pending');
+        }
 
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            $query->whereHas('user', function ($q) use ($unitId) {
-                $q->whereHas('roles', function ($sub) use ($unitId) {
-                     $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
+            if ($unitId) {
+                $query->whereHas('user', function ($q) use ($unitId) {
+                    $q->whereHas('roles', function ($sub) use ($unitId) {
+                        $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
+                    });
                 });
-            });
+            }
         } else {
             if ($unitId) {
                 $query->whereHas('user', function ($q) use ($unitId) {
                     $q->whereHas('roles', function ($sub) use ($unitId) {
-                         $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
+                        $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
                     });
                 });
             }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            });
         }
 
         $approvals = $query->latest('date')->get();
 
         return Inertia::render('Yayasan/Attendance/Approval', [
             'approvals' => $approvals,
+            'pendingCount' => $pendingCount,
+            'activeTab' => $tab,
+            'filters' => [
+                'search' => $request->input('search', ''),
+                'status' => $tab,
+            ],
         ]);
     }
 
