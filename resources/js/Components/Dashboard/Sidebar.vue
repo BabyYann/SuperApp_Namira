@@ -10,7 +10,7 @@ import {
     BookOpenIcon, TrophyIcon, ClockIcon, PencilSquareIcon, AcademicCapIcon, 
     ClipboardDocumentCheckIcon, ChevronDownIcon, ChatBubbleLeftRightIcon,
     CubeIcon, WrenchScrewdriverIcon, TagIcon, ArrowPathIcon, ArrowUpCircleIcon,
-    Cog6ToothIcon, ChartPieIcon, CameraIcon, GlobeAltIcon, SparklesIcon
+    Cog6ToothIcon, ChartPieIcon, CameraIcon, GlobeAltIcon, SparklesIcon, BriefcaseIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({
@@ -158,6 +158,18 @@ const menuGroups = [
                 route: 'yayasan.attendance-data.index', 
                 active: 'yayasan.attendance-data.*',
                 icon: TableCellsIcon 
+            },
+            { 
+                label: 'Kelola Lowongan Karir', 
+                route: 'yayasan.job-vacancies.index', 
+                active: 'yayasan.job-vacancies.*',
+                icon: BriefcaseIcon 
+            },
+            { 
+                label: 'Daftar Pelamar Kerja', 
+                route: 'yayasan.applicants.index', 
+                active: 'yayasan.applicants.*',
+                icon: UserGroupIcon 
             },
         ]
     },

@@ -290,6 +290,11 @@ Route::get('/testimonials', function () {
     ]);
 })->name('testimonials.index');
 
+// Public Career Center (Karir)
+Route::get('/karir', [\App\Http\Controllers\PublicCareerController::class, 'index'])->name('careers.index');
+Route::get('/karir/{vacancy:slug}', [\App\Http\Controllers\PublicCareerController::class, 'show'])->name('careers.show');
+Route::post('/karir/{vacancy:slug}/lamar', [\App\Http\Controllers\PublicCareerController::class, 'apply'])->name('careers.apply');
+
 Route::get('/ppdb', function () {
     return Inertia::render('Public/PpdbComingSoon');
 })->name('ppdb.index');

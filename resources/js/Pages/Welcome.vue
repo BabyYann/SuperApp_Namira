@@ -550,6 +550,12 @@ const prevTesti = () => {
                             <span class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </Link>
 
+                        <!-- 5.5 Karir / Career Portal -->
+                        <Link :href="route('careers.index')" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-medium" :class="isScrolled ? 'text-[#00A99D] hover:text-[#fbbf24]' : 'text-[#fbbf24] hover:text-white'">
+                            Karir
+                            <span class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
+                        </Link>
+
                         <!-- 6. Contact -->
                         <a href="#footer" 
                            @click="activeHash = '#footer'" 
@@ -1155,6 +1161,7 @@ const prevTesti = () => {
                         <ul class="space-y-2 text-[12px]">
                             <li><a href="#home" class="hover:text-[#fbbf24] transition">Home</a></li>
                             <li><a href="/ppdb" class="text-[#fbbf24] font-semibold hover:underline transition">PPDB Online (SPMB)</a></li>
+                            <li><Link :href="route('careers.index')" class="text-[#00A99D] font-bold hover:underline transition">Portal Karir & Rekrutmen</Link></li>
                             <li><a href="#campuses" class="hover:text-[#fbbf24] transition">Campuses</a></li>
                             <li><a href="#destinations" class="hover:text-[#fbbf24] transition">Destinations</a></li>
                             <li><a href="#testimonials" class="hover:text-[#fbbf24] transition">Testimonials</a></li>

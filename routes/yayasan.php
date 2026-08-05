@@ -119,4 +119,11 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::get('promotion/history', [\App\Modules\Academic\Controllers\ClassPromotionController::class, 'history'])->name('promotion.history');
     Route::get('promotion/export', [\App\Modules\Academic\Controllers\ClassPromotionController::class, 'export'])->name('promotion.export');
     Route::post('promotion/rollback/{promotion}', [\App\Modules\Academic\Controllers\ClassPromotionController::class, 'rollback'])->name('promotion.rollback');
+
+    // Recruitment & Career Management (Role Yayasan)
+    Route::resource('job-vacancies', \App\Modules\Yayasan\Controllers\JobVacancyController::class)->except(['create', 'edit', 'show']);
+    Route::get('applicants', [\App\Modules\Yayasan\Controllers\JobApplicantController::class, 'index'])->name('applicants.index');
+    Route::put('applicants/{applicant}/status', [\App\Modules\Yayasan\Controllers\JobApplicantController::class, 'updateStatus'])->name('applicants.update-status');
+    Route::post('applicants/{applicant}/convert', [\App\Modules\Yayasan\Controllers\JobApplicantController::class, 'convertToEmployee'])->name('applicants.convert');
+    Route::delete('applicants/{applicant}', [\App\Modules\Yayasan\Controllers\JobApplicantController::class, 'destroy'])->name('applicants.destroy');
 });
