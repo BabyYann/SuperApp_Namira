@@ -94,12 +94,21 @@ class EmployeeActivityLogController extends Controller
             });
         }
 
-        $feedItems = $query->paginate(15)->withQueryString();
+        // Calculate summary stats before pagination
+        $statsQuery = clone $query;
+        $summaryStats = [
+            'total_logs' => $statsQuery->count(),
+            'total_sdm' => (clone $statsQuery)->distinct('user_id')->count('user_id'),
+            'total_photos' => (clone $statsQuery)->whereNotNull('photo_path')->count(),
+        ];
+
+        $feedItems = $query->paginate(20)->withQueryString();
         $units = Unit::all();
 
         return Inertia::render('Yayasan/ActivityLogs/Feed', [
             'feedItems' => $feedItems,
             'units' => $units,
+            'summaryStats' => $summaryStats,
             'filters' => [
                 'unit_id' => $unitId ?: 'all',
                 'category' => $request->input('category', ''),
