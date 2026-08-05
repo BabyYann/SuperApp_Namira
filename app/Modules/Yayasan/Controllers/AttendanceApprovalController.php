@@ -33,11 +33,13 @@ class AttendanceApprovalController extends Controller
         // Reusable unit scope closure
         $applyUnitScope = function($q) use ($unitId) {
             if ($unitId) {
-                $q->whereHas('user', function ($subUser) use ($unitId) {
-                    $subUser->whereHas('roles', function ($subRole) use ($unitId) {
-                        $subRole->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
-                    });
-                });
+                $roleUserIds = \DB::table('model_has_roles')->where('team_id', $unitId)->pluck('model_id');
+                $teacherUserIds = \App\Modules\Academic\Models\Teacher::where('unit_id', $unitId)->pluck('user_id');
+                $staffUserIds = \App\Modules\Employee\Models\Staff::where('unit_id', $unitId)->pluck('user_id');
+                
+                $unitUserIds = $roleUserIds->concat($teacherUserIds)->concat($staffUserIds)->unique()->filter();
+                
+                $q->whereIn('user_id', $unitUserIds);
             }
         };
 
