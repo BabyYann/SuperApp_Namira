@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE lms_submissions MODIFY COLUMN status ENUM('submitted','late','missing','returned','graded') DEFAULT 'submitted'");
     }
 
@@ -20,6 +24,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         DB::statement("ALTER TABLE lms_submissions MODIFY COLUMN status ENUM('submitted','late','missing','returned') DEFAULT 'submitted'");
     }
 };
