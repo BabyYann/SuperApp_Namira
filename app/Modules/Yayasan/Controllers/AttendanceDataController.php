@@ -38,14 +38,22 @@ class AttendanceDataController extends Controller
         $start = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $end = $start->copy()->endOfMonth();
 
-        // Calculate work days in month (excluding weekends)
+        $today = Carbon::today();
+        $isCurrentMonth = ($month == $today->month && $year == $today->year);
+        $isFutureMonth = Carbon::createFromDate($year, $month, 1)->startOfMonth()->isFuture();
+
+        $effectiveEnd = $isCurrentMonth ? $today : ($isFutureMonth ? $start->copy()->subDay() : $end);
+
+        // Calculate elapsed work days so far (excluding weekends)
         $workDays = 0;
-        $currentDate = $start->copy();
-        while ($currentDate <= $end) {
-            if (!$currentDate->isWeekend()) {
-                $workDays++;
+        if ($effectiveEnd >= $start) {
+            $currentDate = $start->copy();
+            while ($currentDate <= $effectiveEnd) {
+                if (!$currentDate->isWeekend()) {
+                    $workDays++;
+                }
+                $currentDate->addDay();
             }
-            $currentDate->addDay();
         }
 
         // Set Spatie team ID if unit is specified
