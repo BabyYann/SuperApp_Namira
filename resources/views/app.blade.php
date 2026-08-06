@@ -12,13 +12,13 @@
         <meta name="keywords" content="Namira School, Yayasan Namira, SD Namira, SMP Namira, TK Namira, KB Namira, Daycare Namira, Sekolah Islam Terpadu Probolinggo, PPDB Namira">
         <meta name="author" content="Namira School">
         <meta name="application-name" content="Namira School">
-        <link rel="canonical" href="{{ config('app.url', 'https://namiraschool.com') }}">
+        <link rel="canonical" href="https://namiraschool.com">
         <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
 
         <!-- Open Graph / Facebook / WhatsApp -->
         <meta property="og:type" content="website">
         <meta property="og:site_name" content="Namira School">
-        <meta property="og:url" content="{{ config('app.url', 'https://namiraschool.com') }}">
+        <meta property="og:url" content="https://namiraschool.com">
         <meta property="og:title" content="Namira School - Sekolah Islam Terpadu Probolinggo">
         <meta property="og:description" content="Namira School (Yayasan Namira Probolinggo) - Pendidikan Islam Terpadu berkualitas tinggi dari Daycare, PAUD, TK, SD, hingga SMP.">
         <meta property="og:image" content="{{ asset('images/namira-foundation-logo.webp') }}">
