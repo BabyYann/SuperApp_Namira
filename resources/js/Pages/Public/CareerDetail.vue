@@ -111,7 +111,7 @@ const formatDate = (dateStr) => {
         <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100 shadow-xs">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                 <Link href="/" class="flex items-center gap-3">
-                    <img src="/logo_namira.png" alt="Logo Namira" class="h-10 w-auto object-contain" />
+                    <img :src="$page.props.app_settings?.app_logo || '/images/landing/logo-yayasan.webp'" alt="Logo Namira" class="h-10 w-auto object-contain" />
                     <div>
                         <span class="font-black text-xl text-slate-900 tracking-tight block leading-none">NAMIRA <span class="text-namira-teal">SCHOOL</span></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portal Karir Yayasan</span>

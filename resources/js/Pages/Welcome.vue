@@ -80,6 +80,7 @@ const isAboutActive = computed(() => {
 const aboutNavItems = [
     { name: 'Berita & Artikel', href: '#news', hash: '#news', desc: 'Informasi & berita terbaru Yayasan' },
     { name: 'Agenda & Acara', href: '#events', hash: '#events', desc: 'Jadwal & kegiatan mendatang' },
+    { name: 'Portal Karir & Rekrutmen', href: route('careers.index'), hash: 'careers', desc: 'Peluang karir pendidik & staf', isRoute: true },
     { name: 'Mitra Kerjasama', href: '#partners', hash: '#partners', desc: 'Mitra & jaringan kerjasama' },
     { name: 'Testimoni', href: '#testimonials', hash: '#testimonials', desc: 'Kesan orang tua & alumni' },
 ];
@@ -508,7 +509,22 @@ const prevTesti = () => {
                             <span v-if="activeHash !== '#destinations'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
 
-                        <!-- 4. About (Dropdown: News, Events, Partners, Testimonials) -->
+                        <!-- 4. SMPB Online -->
+                        <Link href="/ppdb" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-medium" :class="isScrolled ? 'text-slate-800 hover:text-[#fbbf24]' : 'text-white/90 hover:text-white'">
+                            SMPB Online
+                            <span class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
+                        </Link>
+
+                        <!-- 5. Contact -->
+                        <a href="#footer" 
+                           @click="activeHash = '#footer'" 
+                           class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
+                           :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                            Contact
+                            <span v-if="activeHash !== '#footer'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
+                        </a>
+
+                        <!-- 6. About (Dropdown: News, Events, Career, Partners, Testimonials) -->
                         <div class="relative group" 
                              @mouseenter="showAboutDropdown = true" 
                              @mouseleave="showAboutDropdown = false"
@@ -526,44 +542,24 @@ const prevTesti = () => {
                             
                             <!-- Dropdown Menu -->
                             <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
-                                <div v-show="showAboutDropdown" class="absolute left-0 top-full pt-1.5 w-60 z-50">
+                                <div v-show="showAboutDropdown" class="absolute right-0 top-full pt-1.5 w-60 z-50">
                                     <div class="bg-white rounded-xl shadow-2xl py-3 border border-slate-100 overflow-hidden">
                                         <div class="px-4 py-1.5 border-b border-slate-50 mb-1">
                                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tentang Namira</p>
                                         </div>
-                                        <a v-for="(item, idx) in aboutNavItems" 
-                                           :key="idx" 
-                                           :href="item.href" 
-                                           @click="showAboutDropdown = false; activeHash = item.hash" 
-                                           class="block px-4 py-2.5 hover:bg-[#f8f9fa] transition-colors group/sub">
+                                        <component v-for="(item, idx) in aboutNavItems" 
+                                                   :key="idx" 
+                                                   :is="item.isRoute ? Link : 'a'" 
+                                                   :href="item.href" 
+                                                   @click="showAboutDropdown = false; activeHash = item.hash" 
+                                                   class="block px-4 py-2.5 hover:bg-[#f8f9fa] transition-colors group/sub">
                                             <span class="block text-xs font-semibold text-[#082a3a] group-hover/sub:text-[#00A99D] group-hover/sub:translate-x-1 transition-all">{{ item.name }}</span>
                                             <span class="block text-[10px] text-slate-400 mt-0.5">{{ item.desc }}</span>
-                                        </a>
+                                        </component>
                                     </div>
                                 </div>
                             </transition>
                         </div>
-
-                        <!-- 5. SMPB Online -->
-                        <Link href="/ppdb" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-medium" :class="isScrolled ? 'text-slate-800 hover:text-[#fbbf24]' : 'text-white/90 hover:text-white'">
-                            SMPB Online
-                            <span class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </Link>
-
-                        <!-- 5.5 Karir / Career Portal -->
-                        <Link :href="route('careers.index')" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-medium" :class="isScrolled ? 'text-[#00A99D] hover:text-[#fbbf24]' : 'text-[#fbbf24] hover:text-white'">
-                            Karir
-                            <span class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </Link>
-
-                        <!-- 6. Contact -->
-                        <a href="#footer" 
-                           @click="activeHash = '#footer'" 
-                           class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
-                           :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
-                            Contact
-                            <span v-if="activeHash !== '#footer'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </a>
                         
                         <!-- 7. Primary CTA Button: Login -->
                         <div class="flex items-center gap-4 ml-4 xl:ml-6">
