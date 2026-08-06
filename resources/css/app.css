@@ -1,7 +1,28 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Grandstander:wght@700;800;900&display=swap');
 
 @theme {
     --color-namira-teal: #009688;
     --color-namira-blue: #003366;
     --font-sans: 'Plus Jakarta Sans', sans-serif;
+}
+
+.font-namira {
+    font-family: 'Grandstander', cursive, sans-serif;
+    font-weight: 800;
+}
+
+.font-school {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+}
+
+.text-stroke-white {
+    -webkit-text-stroke: 3.5px #ffffff;
+    paint-order: stroke fill;
+}
+
+.text-stroke-white-sm {
+    -webkit-text-stroke: 2.5px #ffffff;
+    paint-order: stroke fill;
 }

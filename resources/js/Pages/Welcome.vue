@@ -58,7 +58,7 @@ const props = defineProps({
 
 const page = usePage();
 const appSettings = page.props.app_settings || {};
-const appName = 'Yayasan Namira';
+const appName = 'Namira School';
 const appLogo = '/images/landing/logo-yayasan.webp'; 
 
 // Scroll effect for Navbar & Scroll Spy
@@ -440,13 +440,13 @@ const prevTesti = () => {
             <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center">
                     <!-- Logo Section -->
-                    <div class="flex items-center gap-3.5">
+                    <div class="flex items-center gap-3">
                         <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 md:w-12 md:h-12 aspect-square overflow-hidden">
                             <img :src="appLogo" alt="Logo" class="w-full h-full object-contain" />
                         </div>
-                        <div class="flex flex-col">
-                            <span class="font-extrabold text-base md:text-lg tracking-[0.05em] uppercase leading-none transition-colors duration-300" :class="isScrolled ? 'text-[#082a3a]' : 'text-white drop-shadow-md'">Yayasan Namira</span>
-                            <span class="font-medium text-[10px] tracking-[0.1em] mt-1.5 leading-none transition-colors duration-300" :class="isScrolled ? 'text-[#00A99D]' : 'text-[#fbbf24] drop-shadow'">Fostering Islamic Generation</span>
+                        <div class="flex flex-col select-none leading-none">
+                            <span class="font-namira text-2xl md:text-3xl text-[#1a4373] tracking-tight lowercase text-stroke-white drop-shadow-sm">namira</span>
+                            <span class="font-school text-xs md:text-sm text-slate-500 tracking-wider uppercase text-stroke-white-sm -mt-1 font-bold">SCHOOL</span>
                         </div>
                     </div>
 
