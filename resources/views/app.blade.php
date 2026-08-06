@@ -31,6 +31,7 @@
         <link rel="apple-touch-icon" href="/images/namira-foundation-logo.webp">
 
         <!-- Schema.org JSON-LD Structured Data for Google Search & Sitelinks -->
+        @verbatim
         <script type="application/ld+json">
         {
           "@context": "https://schema.org",
@@ -110,6 +111,7 @@
           ]
         }
         </script>
+        @endverbatim
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
