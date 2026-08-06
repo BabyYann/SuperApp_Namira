@@ -432,7 +432,7 @@ const prevTesti = () => {
 </script>
 
 <template>
-    <Head title="Yayasan Namira - Sekolah Islam Terpadu (SD, SMP, TK, KB, Daycare)" />
+    <Head title="Namira School - Sekolah Islam Terpadu Probolinggo (SD, SMP, PAUD, Daycare)" />
     
     <div class="min-h-screen bg-[#f8f9fa] font-sans text-gray-900 selection:bg-[#fbbf24] selection:text-[#064e3b]">
         <!-- Header & Navigation -->

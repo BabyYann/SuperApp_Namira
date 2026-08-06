@@ -45,7 +45,7 @@ const formatDate = (dateStr) => {
 </script>
 
 <template>
-    <Head title="Portal Karir & Rekrutmen - Yayasan Namira" />
+    <Head title="Portal Karir & Rekrutmen - Namira School" />
 
     <div class="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-teal-500 selection:text-white flex flex-col">
         <!-- Top Navbar -->

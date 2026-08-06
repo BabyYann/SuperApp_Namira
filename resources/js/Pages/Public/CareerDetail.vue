@@ -104,7 +104,7 @@ const formatDate = (dateStr) => {
 </script>
 
 <template>
-    <Head :title="`${vacancy.title} - Karir Yayasan Namira`" />
+    <Head :title="`${vacancy.title} - Karir Namira School`" />
 
     <div class="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-teal-500 selection:text-white flex flex-col">
         <!-- Top Navbar -->

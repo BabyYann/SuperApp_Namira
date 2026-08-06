@@ -5,20 +5,22 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Namira App') }}</title>
+        <title inertia>{{ config('app.name', 'Namira School') }}</title>
 
         <!-- SEO & Meta Tags -->
-        <meta name="description" content="Yayasan Namira - Multi-unit School Management Platform (SD, SMP, TK, KB, Daycare). Pendidikan Islam Terpadu berkualitas tinggi.">
-        <meta name="keywords" content="Yayasan Namira, Namira School, SD Namira, SMP Namira, TK Namira, KB Namira, Daycare Namira, Sekolah Islam Probolinggo">
-        <meta name="author" content="Yayasan Namira">
+        <meta name="description" content="Namira School (Yayasan Namira Probolinggo) adalah Sekolah Islam Terpadu unggulan multi-unit (Daycare, PAUD, TK, SD, SMP). Membentuk generasi Muslim berakhlak mulia & berprestasi.">
+        <meta name="keywords" content="Namira School, Yayasan Namira, SD Namira, SMP Namira, TK Namira, KB Namira, Daycare Namira, Sekolah Islam Terpadu Probolinggo, PPDB Namira">
+        <meta name="author" content="Namira School">
+        <meta name="application-name" content="Namira School">
         <link rel="canonical" href="{{ config('app.url', 'https://namiraschool.com') }}">
         <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
 
         <!-- Open Graph / Facebook / WhatsApp -->
         <meta property="og:type" content="website">
+        <meta property="og:site_name" content="Namira School">
         <meta property="og:url" content="{{ config('app.url', 'https://namiraschool.com') }}">
-        <meta property="og:title" content="Yayasan Namira - Sekolah Islam Terpadu">
-        <meta property="og:description" content="Pendidikan Islam Terpadu berkualitas tinggi dari Daycare, KB, TK, SD, hingga SMP Namira.">
+        <meta property="og:title" content="Namira School - Sekolah Islam Terpadu Probolinggo">
+        <meta property="og:description" content="Namira School (Yayasan Namira Probolinggo) - Pendidikan Islam Terpadu berkualitas tinggi dari Daycare, PAUD, TK, SD, hingga SMP.">
         <meta property="og:image" content="{{ asset('images/namira-foundation-logo.webp') }}">
 
         <!-- PWA, Favicon & Meta -->
@@ -28,42 +30,81 @@
         <meta name="theme-color" content="#009688">
         <link rel="apple-touch-icon" href="/images/namira-foundation-logo.webp">
 
-        <!-- Schema.org JSON-LD Structured Data for Google Sitelinks -->
+        <!-- Schema.org JSON-LD Structured Data for Google Search & Sitelinks -->
         <script type="application/ld+json">
         {
-          "@@context": "https://schema.org",
-          "@@graph": [
+          "@context": "https://schema.org",
+          "@graph": [
             {
-              "@@type": "EducationalOrganization",
-              "@@id": "{{ config('app.url', 'https://namiraschool.com') }}/#organization",
-              "name": "Yayasan Namira",
-              "url": "{{ config('app.url', 'https://namiraschool.com') }}",
-              "logo": "{{ asset('images/namira-foundation-logo.webp') }}",
-              "description": "Yayasan Namira - Sekolah Islam Terpadu (SD, SMP, TK, KB, Daycare)",
+              "@type": "EducationalOrganization",
+              "@id": "https://namiraschool.com/#organization",
+              "name": "Namira School",
+              "alternateName": ["Yayasan Namira", "Yayasan Namira Probolinggo", "Namira School Probolinggo"],
+              "url": "https://namiraschool.com",
+              "logo": "https://namiraschool.com/images/namira-foundation-logo.webp",
+              "image": "https://namiraschool.com/images/namira-foundation-logo.webp",
+              "description": "Namira School (Yayasan Namira Probolinggo) adalah Sekolah Islam Terpadu unggulan multi-unit (Daycare, PAUD, TK, SD, SMP). Membentuk generasi Muslim berakhlak mulia & berprestasi.",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Probolinggo",
+                "addressRegion": "Jawa Timur",
+                "addressCountry": "ID"
+              },
               "sameAs": [
                 "https://www.facebook.com/namiraschool",
                 "https://www.instagram.com/namiraschool"
               ]
             },
             {
-              "@@type": "WebSite",
-              "@@id": "{{ config('app.url', 'https://namiraschool.com') }}/#website",
-              "url": "{{ config('app.url', 'https://namiraschool.com') }}",
-              "name": "Yayasan Namira School",
+              "@type": "WebSite",
+              "@id": "https://namiraschool.com/#website",
+              "url": "https://namiraschool.com",
+              "name": "Namira School",
+              "alternateName": ["Yayasan Namira", "Namira School Probolinggo"],
               "publisher": {
-                "@@id": "{{ config('app.url', 'https://namiraschool.com') }}/#organization"
+                "@id": "https://namiraschool.com/#organization"
               }
             },
             {
-              "@@type": "SiteNavigationElement",
-              "name": ["Berita & Artikel", "Agenda & Kegiatan", "SD Namira", "SMP Namira", "TK Namira", "KB Namira"],
-              "url": [
-                "{{ config('app.url', 'https://namiraschool.com') }}/berita",
-                "{{ config('app.url', 'https://namiraschool.com') }}/events",
-                "{{ config('app.url', 'https://namiraschool.com') }}/unit/sd",
-                "{{ config('app.url', 'https://namiraschool.com') }}/unit/smp",
-                "{{ config('app.url', 'https://namiraschool.com') }}/unit/tk",
-                "{{ config('app.url', 'https://namiraschool.com') }}/unit/kb"
+              "@type": "ItemList",
+              "@id": "https://namiraschool.com/#sitelinks",
+              "name": "Navigasi Utama Namira School",
+              "itemListElement": [
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 1,
+                  "name": "Pendaftaran & PPDB Online",
+                  "description": "Informasi & pendaftaran siswa baru (PPDB) Sekolah Islam Terpadu Namira",
+                  "url": "https://namiraschool.com/ppdb"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 2,
+                  "name": "Portal Karir & Rekrutmen",
+                  "description": "Peluang karir dan rekrutmen guru serta staf kependidikan Namira School",
+                  "url": "https://namiraschool.com/karir"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 3,
+                  "name": "Berita & Pengumuman",
+                  "description": "Kabar berita, artikel, dan pengumuman terbaru Namira School",
+                  "url": "https://namiraschool.com/berita"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 4,
+                  "name": "Agenda & Kegiatan",
+                  "description": "Jadwal kegiatan, agenda sekolah, dan event resmi Namira School",
+                  "url": "https://namiraschool.com/events"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 5,
+                  "name": "Testimoni & Prestasi",
+                  "description": "Ulasan wali murid, alumni, dan pencapaian prestasi siswa Namira",
+                  "url": "https://namiraschool.com/testimonials"
+                }
               ]
             }
           ]
