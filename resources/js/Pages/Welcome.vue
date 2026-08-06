@@ -444,9 +444,9 @@ const prevTesti = () => {
                         <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 md:w-12 md:h-12 aspect-square overflow-hidden">
                             <img :src="appLogo" alt="Logo" class="w-full h-full object-contain" />
                         </div>
-                        <div class="flex items-center gap-2 select-none">
-                            <span class="font-namira text-2xl md:text-3xl text-[#1a4373] tracking-tight lowercase text-stroke-white drop-shadow-sm">namira</span>
-                            <span class="font-school text-sm md:text-base text-slate-500 tracking-wider uppercase text-stroke-white-sm font-bold">SCHOOL</span>
+                        <div class="flex items-center gap-2 select-none whitespace-nowrap">
+                            <span class="font-namira text-2xl md:text-3xl text-[#1a4373] tracking-tight lowercase text-stroke-white drop-shadow-sm leading-none">namira</span>
+                            <span class="font-school text-sm md:text-base text-slate-500 tracking-wider uppercase text-stroke-white-sm font-bold leading-none">SCHOOL</span>
                         </div>
                     </div>
 

@@ -114,9 +114,9 @@ const formatDate = (dateStr) => {
                     <div class="bg-white p-1 rounded-xl shadow-xs border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 overflow-hidden">
                         <img :src="$page.props.app_settings?.app_logo || '/images/landing/logo-yayasan.webp'" alt="Logo Namira" class="w-full h-full object-contain" />
                     </div>
-                    <div class="flex items-center gap-2 select-none">
-                        <span class="font-namira text-2xl text-[#1a4373] tracking-tight lowercase text-stroke-white drop-shadow-xs">namira</span>
-                        <span class="font-school text-sm text-slate-500 tracking-wider uppercase text-stroke-white-sm font-bold">SCHOOL</span>
+                    <div class="flex items-center gap-2 select-none whitespace-nowrap">
+                        <span class="font-namira text-2xl text-[#1a4373] tracking-tight lowercase text-stroke-white drop-shadow-xs leading-none">namira</span>
+                        <span class="font-school text-sm text-slate-500 tracking-wider uppercase text-stroke-white-sm font-bold leading-none">SCHOOL</span>
                     </div>
                 </Link>
 
