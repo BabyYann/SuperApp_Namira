@@ -51,7 +51,7 @@ class User extends Authenticatable implements CanResetPassword
         ];
     }
 
-    // Helper to get units via roles
+    // Helper to get units via roles & profile tables (teachers, staff, students)
     public function getUnitsAttribute()
     {
         // Get team_ids from assigned roles
@@ -59,9 +59,25 @@ class User extends Authenticatable implements CanResetPassword
             ->where('model_id', $this->id)
             ->whereNotNull('team_id')
             ->pluck('team_id')
-            ->unique();
+            ->toArray();
+
+        $teacherUnitId = \DB::table('teachers')->where('user_id', $this->id)->value('unit_id');
+        if ($teacherUnitId) {
+            $teamIds[] = $teacherUnitId;
+        }
+
+        $staffUnitId = \DB::table('staff')->where('user_id', $this->id)->value('unit_id');
+        if ($staffUnitId) {
+            $teamIds[] = $staffUnitId;
+        }
+
+        $studentUnitId = \DB::table('students')->where('user_id', $this->id)->value('unit_id');
+        if ($studentUnitId) {
+            $teamIds[] = $studentUnitId;
+        }
             
-        return \App\Modules\Yayasan\Models\Unit::whereIn('id', $teamIds)->get();
+        $uniqueTeamIds = array_unique(array_filter($teamIds));
+        return \App\Modules\Yayasan\Models\Unit::whereIn('id', $uniqueTeamIds)->get();
     }
 
     public function teacher_profile()

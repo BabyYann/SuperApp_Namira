@@ -21,11 +21,31 @@ class UserController extends Controller
         $currentUser = auth()->user();
         if (!$currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
             $unitId = session('active_unit_id');
-            $query->whereExists(function ($q) use ($unitId) {
-                $q->select(\DB::raw(1))
-                  ->from('model_has_roles')
-                  ->whereColumn('model_has_roles.model_id', 'users.id')
-                  ->where('model_has_roles.team_id', $unitId);
+            $query->where(function ($subQ) use ($unitId) {
+                $subQ->whereExists(function ($q1) use ($unitId) {
+                    $q1->select(\DB::raw(1))
+                      ->from('model_has_roles')
+                      ->whereColumn('model_has_roles.model_id', 'users.id')
+                      ->where('model_has_roles.team_id', $unitId);
+                })
+                ->orWhereExists(function ($q2) use ($unitId) {
+                    $q2->select(\DB::raw(1))
+                       ->from('teachers')
+                       ->whereColumn('teachers.user_id', 'users.id')
+                       ->where('teachers.unit_id', $unitId);
+                })
+                ->orWhereExists(function ($q3) use ($unitId) {
+                    $q3->select(\DB::raw(1))
+                       ->from('staff')
+                       ->whereColumn('staff.user_id', 'users.id')
+                       ->where('staff.unit_id', $unitId);
+                })
+                ->orWhereExists(function ($q4) use ($unitId) {
+                    $q4->select(\DB::raw(1))
+                       ->from('students')
+                       ->whereColumn('students.user_id', 'users.id')
+                       ->where('students.unit_id', $unitId);
+                });
             });
         }
 
@@ -46,16 +66,31 @@ class UserController extends Controller
 
         // Unit Filter
         $query->when($request->unit_id, function ($q, $unitId) {
-            // Check model_has_roles table for team_id match
-            $q->whereHas('roles', function ($sub) use ($unitId) {
-                // This is a bit tricky with Spatie's whereHas, usually it filters the Role model.
-                // But we need to filter the PIVOT table (model_has_roles).
-                // A raw whereExists is often safer for pivot columns in Spatie if relationships aren't standard.
-                // However, let's try a direct join approach for the scope or just use whereHas if the relationship is set up with pivot access.
-                // Simpler approach: Filter users who have ANY role with this team_id.
-                // Spatie doesn't easily expose team_id in 'roles' relation query without custom setup.
-                // Let's use a whereExists on model_has_roles.
-                $sub->whereRaw("model_has_roles.model_id = users.id AND model_has_roles.team_id = ?", [$unitId]);
+            $q->where(function ($subQ) use ($unitId) {
+                $subQ->whereExists(function ($q1) use ($unitId) {
+                    $q1->select(\DB::raw(1))
+                       ->from('model_has_roles')
+                       ->whereColumn('model_has_roles.model_id', 'users.id')
+                       ->where('model_has_roles.team_id', $unitId);
+                })
+                ->orWhereExists(function ($q2) use ($unitId) {
+                    $q2->select(\DB::raw(1))
+                       ->from('teachers')
+                       ->whereColumn('teachers.user_id', 'users.id')
+                       ->where('teachers.unit_id', $unitId);
+                })
+                ->orWhereExists(function ($q3) use ($unitId) {
+                    $q3->select(\DB::raw(1))
+                       ->from('staff')
+                       ->whereColumn('staff.user_id', 'users.id')
+                       ->where('staff.unit_id', $unitId);
+                })
+                ->orWhereExists(function ($q4) use ($unitId) {
+                    $q4->select(\DB::raw(1))
+                       ->from('students')
+                       ->whereColumn('students.user_id', 'users.id')
+                       ->where('students.unit_id', $unitId);
+                });
             });
         });
         
