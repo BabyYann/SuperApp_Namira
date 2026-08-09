@@ -84,12 +84,12 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update user's profile photo.
+     * Update user's profile photo with automatic WebP conversion and compression.
      */
     public function updatePhoto(Request $request): RedirectResponse
     {
         $request->validate([
-            'photo' => ['required', 'image', 'max:2048'],
+            'photo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp,gif,bmp', 'max:5120'],
         ]);
 
         $user = $request->user();
@@ -99,9 +99,39 @@ class ProfileController extends Controller
             \Storage::disk('public')->delete($user->profile_photo);
         }
 
-        // Store new photo
-        $path = $request->file('photo')->store('profile-photos', 'public');
-        $user->profile_photo = $path;
+        $file = $request->file('photo');
+        $randomName = \Illuminate\Support\Str::random(40) . '.webp';
+        $relativePath = 'profile-photos/' . $randomName;
+        $destinationPath = storage_path('app/public/' . $relativePath);
+
+        // Ensure directory exists
+        if (!file_exists(dirname($destinationPath))) {
+            mkdir(dirname($destinationPath), 0755, true);
+        }
+
+        // Try converting image to WebP using native PHP GD
+        try {
+            $imageContent = file_get_contents($file->getRealPath());
+            $srcImage = @imagecreatefromstring($imageContent);
+
+            if ($srcImage !== false) {
+                // Preserve transparency for PNG/WebP images
+                imagealphablending($srcImage, true);
+                imagesavealpha($srcImage, true);
+
+                // Save as WebP with 82% quality for ideal balance of size and clarity
+                imagewebp($srcImage, $destinationPath, 82);
+                imagedestroy($srcImage);
+            } else {
+                // Fallback store if GD couldn't parse string
+                $relativePath = $file->store('profile-photos', 'public');
+            }
+        } catch (\Throwable $e) {
+            // Fallback store in case of error
+            $relativePath = $file->store('profile-photos', 'public');
+        }
+
+        $user->profile_photo = $relativePath;
         $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'photo-updated');
