@@ -174,8 +174,8 @@ const eventTypeLabels = {
             <!-- ============================================================ -->
             <!-- 📱 STANDARD HERO CARD FOR TEACHER & STAFF (Non-Pengawas) -->
             <!-- ============================================================ -->
-            <!-- HERO CARD: Ada Foto = Floating Photo, Tidak Ada Foto = Circle Initials -->
-            <div v-else class="relative" :class="user?.profile_photo_url ? 'pt-14' : 'pt-6'">
+            <!-- HERO CARD: Ada Foto = Floating Portrait Pop-Out, Tidak Ada Foto = Circle Initials -->
+            <div v-else class="relative pt-6">
 
                 <!-- Main Gradient Card Body -->
                 <div class="relative overflow-visible rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 border border-teal-800/60 shadow-xl min-h-[160px] flex flex-col justify-center">
@@ -183,19 +183,19 @@ const eventTypeLabels = {
                     <!-- Background Glow Accent -->
                     <div class="absolute -left-6 -bottom-6 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                    <!-- Right Text Info -->
-                    <div class="z-20" :class="user?.profile_photo_url ? 'w-[55%] ml-auto pl-2' : 'w-[50%] ml-auto pl-2 my-1'">
+                    <!-- Right Text Info (58% width on right side) -->
+                    <div class="z-20 w-[58%] ml-auto pl-1 my-0.5 text-left">
                         <p class="text-xs font-bold text-slate-400">Selamat Datang,</p>
-                        <h3 class="font-black text-2xl text-white tracking-tight leading-tight mt-1 drop-shadow-sm" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                        <h3 class="font-black text-2xl text-white tracking-tight leading-tight mt-1 drop-shadow-sm truncate">
                             {{ user?.name }}
                         </h3>
-                        <p class="text-xs font-bold text-teal-400 mt-1.5 truncate">
+                        <p class="text-xs font-bold text-teal-400 mt-1 truncate">
                             {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Pegawai Yayasan')) }}
                         </p>
                     </div>
 
                     <!-- Action Button -->
-                    <div class="pt-3 z-20" :class="user?.profile_photo_url ? 'w-[55%] ml-auto pl-2' : 'w-[50%] ml-auto pl-2'">
+                    <div class="pt-3 z-20 w-[58%] ml-auto pl-1">
                         <Link
                             :href="safeRoute('attendance.index')"
                             class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-teal-50 text-slate-950 font-extrabold text-xs rounded-full shadow-md transition-all active:scale-95 border border-slate-200"
@@ -211,27 +211,18 @@ const eventTypeLabels = {
                         </Link>
                     </div>
 
-                    <!-- 🌟 KONDISI 1: ADA FOTO → Floating Photo Melayang Keluar Card (Kiri) -->
+                    <!-- 🌟 KONDISI 1: ADA FOTO → Portrait Melayang Keluar Atas Card (Pop-Out Header) -->
                     <div
                         v-if="user?.profile_photo_url"
-                        class="absolute -left-1 -top-14 z-30 pointer-events-none"
+                        class="absolute left-3 bottom-0 h-[122%] w-[38%] flex items-end justify-center pointer-events-none z-30"
                     >
-                        <!-- Floating photo dengan bentuk persegi panjang rounded -->
-                        <div
-                            class="w-[105px] h-[145px] rounded-2xl overflow-hidden"
-                            style="
-                                box-shadow: 0 20px 50px rgba(0,0,0,0.55), 0 6px 20px rgba(0,150,136,0.35);
-                                border: 3px solid rgba(255,255,255,0.18);
-                            "
-                        >
+                        <div class="w-full max-w-[115px] h-[100%] rounded-t-3xl rounded-b-2xl overflow-hidden ring-4 ring-white/20 shadow-2xl drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]">
                             <img
                                 :src="user.profile_photo_url"
                                 :alt="user?.name"
                                 class="w-full h-full object-cover object-top"
                             />
                         </div>
-                        <!-- Reflection/Glow bawah foto -->
-                        <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#009688]/40 to-transparent rounded-b-2xl pointer-events-none"></div>
                     </div>
 
                     <!-- 🌟 KONDISI 2: TIDAK ADA FOTO → Circle dengan Inisial (tetap di dalam card) -->
