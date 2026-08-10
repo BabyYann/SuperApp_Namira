@@ -945,42 +945,33 @@ const filteredMenuGroups = computed(() => {
             </nav>
         </div>
         
-        <!-- Settings Link — Super Admin Only -->
-        <div v-if="hasRole('super_admin_yayasan')" class="flex-none px-3 pb-2">
-            <Link
-                :href="route('yayasan.settings.index')"
-                class="flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 group w-full"
-                :class="[
-                    isActive('yayasan.settings.*')
-                        ? 'bg-white shadow-sm text-teal-700 ring-1 ring-slate-900/5'
-                        : 'text-slate-500 hover:bg-white/60 hover:text-slate-800',
-                    isSidebarOpen ? 'px-3.5' : 'px-0 justify-center'
-                ]"
-            >
-                <Cog6ToothIcon
-                    class="h-5 w-5 min-w-[20px] transition-transform duration-300 group-hover:rotate-45"
-                    :class="isActive('yayasan.settings.*') ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'"
-                />
-                <span
-                    class="transition-all duration-300"
-                    :class="{'w-auto opacity-100': isSidebarOpen, 'w-0 opacity-0 hidden': !isSidebarOpen}"
-                >
-                    Pengaturan Sistem
-                </span>
-            </Link>
-        </div>
+        <!-- Footer / Version with Integrated Settings -->
+        <div class="flex-none p-3.5 border-t border-slate-100/50 bg-white/40 backdrop-blur-sm">
+             <div class="flex items-center justify-between gap-2" :class="{'justify-center': !isSidebarOpen}">
+                <div class="flex items-center gap-2.5 overflow-hidden">
+                    <div class="h-8 w-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs min-w-[32px] shadow-sm">
+                        NF
+                    </div>
+                    <div class="transition-all duration-300 overflow-hidden" 
+                        :class="{'w-auto opacity-100': isSidebarOpen, 'w-0 opacity-0 hidden': !isSidebarOpen}">
+                       <p class="text-xs font-bold text-slate-800 leading-tight truncate">Namira Foundation</p>
+                       <p class="text-[10px] text-slate-400 font-medium leading-tight">v1.2.0 (SaaS)</p>
+                    </div>
+                </div>
 
-        <!-- Footer / Version -->
-        <div class="flex-none p-4 border-t border-slate-100/50 bg-white/30 backdrop-blur-sm">
-             <div class="flex items-center gap-3" :class="{'justify-center': !isSidebarOpen}">
-                <div class="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs min-w-[32px]">
-                    NF
-                </div>
-                <div class="transition-all duration-300 overflow-hidden" 
-                    :class="{'w-full opacity-100': isSidebarOpen, 'w-0 opacity-0 hidden': !isSidebarOpen}">
-                   <p class="text-xs font-bold text-slate-700">Namira Foundation</p>
-                   <p class="text-[10px] text-slate-400">v1.2.0 (SaaS)</p>
-                </div>
+                <!-- Integrated System Settings Gear Icon (Super Admin Only) -->
+                <Link
+                    v-if="hasRole('super_admin_yayasan')"
+                    :href="route('yayasan.settings.index')"
+                    title="Pengaturan Sistem"
+                    class="p-2 rounded-xl text-slate-400 hover:text-teal-700 hover:bg-white shadow-xs border border-transparent hover:border-slate-200/80 transition-all duration-200 group flex items-center justify-center shrink-0"
+                    :class="[
+                        isActive('yayasan.settings.*') ? 'bg-white text-teal-700 border-slate-200/80 shadow-xs' : '',
+                        !isSidebarOpen ? 'hidden' : ''
+                    ]"
+                >
+                    <Cog6ToothIcon class="h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
+                </Link>
              </div>
         </div>
     </aside>
