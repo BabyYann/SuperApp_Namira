@@ -396,6 +396,8 @@ class UnitController extends Controller
                 Storage::disk('public')->delete($unit->logo);
             }
             $validated['logo'] = $request->file('logo')->store('unit-logos', 'public');
+        } else {
+            unset($validated['logo']);
         }
 
         $unit->update($validated);

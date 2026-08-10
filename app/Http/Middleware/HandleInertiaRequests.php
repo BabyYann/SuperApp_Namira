@@ -50,7 +50,16 @@ class HandleInertiaRequests extends Middleware
                 'active_unit_name' => session('active_unit_id') 
                     ? \App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->name 
                     : 'Pilih Unit',
-                'available_units' => \App\Modules\Yayasan\Models\Unit::select('id', 'name')->get(), // Optimized for Super Admin
+                'active_unit_logo' => session('active_unit_id') 
+                    ? \App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->logo_url 
+                    : null,
+                'available_units' => \App\Modules\Yayasan\Models\Unit::select('id', 'name', 'logo')->get()->map(function($u) {
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->name,
+                        'logo_url' => $u->logo_url,
+                    ];
+                }),
             ],
             'app_settings' => \Illuminate\Support\Facades\Cache::rememberForever('system_settings', function () {
                 // If table doesn't exist yet, return empty array to prevent breaking

@@ -822,10 +822,11 @@ const isRouteActive = (pattern) => {
                         >
                             <div class="flex items-center gap-3">
                                 <div 
-                                    class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs"
+                                    class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs overflow-hidden"
                                     :class="u.id === activeUnitId ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600'"
                                 >
-                                    {{ u.name.substring(0, 2).toUpperCase() }}
+                                    <img v-if="u.logo_url" :src="u.logo_url" class="w-full h-full object-cover" />
+                                    <span v-else>{{ u.name.substring(0, 2).toUpperCase() }}</span>
                                 </div>
                                 <div>
                                     <p class="text-sm tracking-tight leading-tight">{{ u.name }}</p>

@@ -25,6 +25,13 @@ class Unit extends Model
         'principal_id',
     ];
 
+    protected $appends = ['logo_url'];
+
+    public function getLogoUrlAttribute()
+    {
+        return $this->logo ? asset('storage/' . $this->logo) : null;
+    }
+
     public function news(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\News::class);
