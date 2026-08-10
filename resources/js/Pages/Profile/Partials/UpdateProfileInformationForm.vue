@@ -5,7 +5,8 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
 import { Link, useForm, usePage } from '@inertiajs/vue3';
-import { UserIcon, EnvelopeIcon } from '@heroicons/vue/24/outline';
+import { UserIcon, EnvelopeIcon, InformationCircleIcon, LockClosedIcon } from '@heroicons/vue/24/outline';
+import { computed } from 'vue';
 
 defineProps({
     mustVerifyEmail: {
@@ -17,6 +18,11 @@ defineProps({
 });
 
 const user = usePage().props.auth.user;
+
+const canEditSelf = computed(() => {
+    const roles = user.roles?.map(r => typeof r === 'string' ? r : r.name) || [];
+    return roles.some(r => ['super_admin_yayasan', 'admin_yayasan', 'admin_unit'].includes(r));
+});
 
 const form = useForm({
     name: user.name,
@@ -32,9 +38,20 @@ const form = useForm({
                 Informasi Profil
             </h2>
             <p class="mt-1 text-sm text-gray-500">
-                Perbarui detail informasi akun dan alamat email Anda.
+                Informasi data akun dan alamat email terdaftar.
             </p>
         </header>
+
+        <!-- Informational Banner for Regular Users -->
+        <div v-if="!canEditSelf" class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-3">
+            <InformationCircleIcon class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+                <p class="font-bold text-sm">Informasi Data Resmi Sekolah</p>
+                <p class="mt-1 text-amber-700 leading-relaxed">
+                    Data Nama Lengkap, Email, dan Foto Profil dikelola secara terpusat oleh Admin Unit / Yayasan. Jika ada kekeliruan data, silakan hubungi Admin Unit tempat Anda bertugas.
+                </p>
+            </div>
+        </div>
 
         <form
             @submit.prevent="form.patch(route('profile.update'))"
@@ -49,8 +66,10 @@ const form = useForm({
                     <TextInput
                         id="name"
                         type="text"
-                        class="block w-full pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                        class="block w-full pl-10 transition-colors"
+                        :class="!canEditSelf ? 'bg-slate-100/80 text-slate-600 border-slate-200 cursor-not-allowed shadow-inner' : 'bg-gray-50 border-gray-200 focus:bg-white'"
                         v-model="form.name"
+                        :readonly="!canEditSelf"
                         required
                         autofocus
                         autocomplete="name"
@@ -70,8 +89,10 @@ const form = useForm({
                     <TextInput
                         id="email"
                         type="email"
-                        class="block w-full pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                        class="block w-full pl-10 transition-colors"
+                        :class="!canEditSelf ? 'bg-slate-100/80 text-slate-600 border-slate-200 cursor-not-allowed shadow-inner' : 'bg-gray-50 border-gray-200 focus:bg-white'"
                         v-model="form.email"
+                        :readonly="!canEditSelf"
                         required
                         autocomplete="username"
                         placeholder="email@sekolah.id"
@@ -102,7 +123,7 @@ const form = useForm({
                 </div>
             </div>
 
-            <div class="flex items-center gap-4 pt-4 border-t border-gray-50">
+            <div v-if="canEditSelf" class="flex items-center gap-4 pt-4 border-t border-gray-50">
                 <PrimaryButton :disabled="form.processing" class="px-6 py-2.5 rounded-xl shadow-lg shadow-namira-teal/20 transition-all hover:scale-105 active:scale-95">
                     Simpan Perubahan
                 </PrimaryButton>

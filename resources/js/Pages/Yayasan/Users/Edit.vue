@@ -1,8 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import { UserIcon, LockClosedIcon, ChevronUpDownIcon, KeyIcon } from '@heroicons/vue/24/outline';
+import { computed, ref } from 'vue';
+import { UserIcon, LockClosedIcon, ChevronUpDownIcon, KeyIcon, CameraIcon } from '@heroicons/vue/24/outline';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -24,16 +24,29 @@ const isGlobalAdminUser = computed(() => {
     return props.isGlobalAdmin && (page.props.auth.user?.roles || []).some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'].includes(r));
 });
 
+const photoPreview = ref(null);
+
 const form = useForm({
     _method: 'PUT',
     name: props.user.name,
     email: props.user.email,
+    photo: null,
     roles: props.currentRoles || (props.currentRole ? [props.currentRole] : []),
     unit_id: props.currentUnitId,
 });
 
+const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        form.photo = file;
+        photoPreview.value = URL.createObjectURL(file);
+    }
+};
+
 const submit = () => {
-    form.post(route('yayasan.users.update', props.user.id));
+    form.post(route('yayasan.users.update', props.user.id), {
+        forceFormData: true,
+    });
 };
 
 // Reset Password Form
@@ -80,7 +93,25 @@ const submitResetPassword = () => {
                             </div>
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900">Informasi Akun</h3>
-                                <p class="text-sm text-gray-500">Data dasar untuk login dan identifikasi pengguna.</p>
+                                <p class="text-sm text-gray-500">Data dasar untuk login, foto profil, dan identifikasi pengguna.</p>
+                            </div>
+                        </div>
+
+                        <!-- Photo Upload & Preview Bar -->
+                        <div class="mb-6 flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80">
+                            <div class="relative w-24 h-24 rounded-2xl overflow-hidden shadow-md border-2 border-white shrink-0 bg-gradient-to-br from-namira-teal to-teal-700 flex items-center justify-center text-white text-2xl font-black">
+                                <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover" />
+                                <img v-else-if="user.profile_photo_url" :src="user.profile_photo_url" class="w-full h-full object-cover" />
+                                <span v-else>{{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}</span>
+                            </div>
+                            <div class="space-y-1.5 text-center sm:text-left">
+                                <label class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-teal-50 text-namira-teal font-bold rounded-xl text-xs border border-gray-200 shadow-sm cursor-pointer transition-all active:scale-95">
+                                    <CameraIcon class="w-4 h-4 text-namira-teal" />
+                                    <span>Unggah / Ganti Foto Profil</span>
+                                    <input type="file" class="hidden" accept="image/*" @change="handlePhotoChange" />
+                                </label>
+                                <p class="text-xs text-gray-500">Foto profil resmi pengguna (.jpg, .png, .webp). Otomatis dikompresi ke WebP super ringan.</p>
+                                <InputError :message="form.errors.photo" class="mt-1" />
                             </div>
                         </div>
 

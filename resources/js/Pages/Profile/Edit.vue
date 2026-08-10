@@ -105,12 +105,14 @@ const layoutComponent = computed(() => {
     }
     return AuthenticatedLayout;
 });
+const canEditSelf = computed(() => {
+    const roles = user.roles?.map(r => typeof r === 'string' ? r : r.name) || [];
+    return roles.some(r => ['super_admin_yayasan', 'admin_yayasan', 'admin_unit'].includes(r));
+});
 </script>
 
 <template>
     <Head title="Pengaturan Akun" />
-
-
 
     <component :is="layoutComponent" :title="layoutComponent === StudentLayout ? 'Profil Saya' : ''">
         <template #header v-if="layoutComponent !== StudentLayout">
@@ -148,8 +150,8 @@ const layoutComponent = computed(() => {
                                 {{ userInitials }}
                             </div>
                             
-                            <!-- Upload Overlay (only for admin/staff, not siswa/guru) -->
-                            <label v-if="!domainProfileRoute" class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                            <!-- Upload Overlay (only for Admin) -->
+                            <label v-if="canEditSelf" class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
                                 <span class="text-white text-xs font-bold text-center px-2">Klik untuk<br>Ubah Foto</span>
                                 <input type="file" class="hidden" accept="image/*" @change="handlePhotoUpload">
                             </label>
