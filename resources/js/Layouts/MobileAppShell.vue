@@ -585,6 +585,37 @@ const isRouteActive = (pattern) => {
                             </div>
                         </div>
 
+                        <!-- DAYCARE & PENGASUHAN (Tampil jika SuperAdmin / Daycare Unit) -->
+                        <div v-if="isGlobalAdmin || $page.props.session?.is_daycare || $page.props.session?.features?.daycare" class="space-y-2">
+                            <p class="text-[11px] font-black uppercase text-amber-700 tracking-wider flex items-center gap-1.5">
+                                <HeartIcon class="w-4 h-4 text-amber-600" />
+                                <span>Daycare & Pengasuhan</span>
+                            </p>
+                            <div class="grid grid-cols-2 gap-3">
+                                <Link 
+                                    :href="safeRoute('daycare.children.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md">
+                                        <UserGroupIcon class="w-6 h-6" />
+                                    </div>
+                                    <span class="text-xs font-extrabold text-slate-800">Data Ananda</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('daycare.attendance.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3.5 rounded-2xl bg-orange-50/80 border border-orange-200 hover:bg-orange-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-11 h-11 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-md">
+                                        <ClockIcon class="w-6 h-6" />
+                                    </div>
+                                    <span class="text-xs font-extrabold text-slate-800">Presensi & Handover</span>
+                                </Link>
+                            </div>
+                        </div>
+
                         <!-- 4. SARANA & PRASARANA -->
                         <div v-if="isGlobalAdmin || hasRole(['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-amber-700 tracking-wider flex items-center gap-1.5">
