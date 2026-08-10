@@ -28,7 +28,10 @@ import {
     PresentationChartBarIcon,
     EyeIcon,
     ChevronDownIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    UserGroupIcon,
+    ClockIcon,
+    HeartIcon
 } from '@heroicons/vue/24/outline';
 import { 
     HomeIcon as HomeIconSolid, 
@@ -401,7 +404,7 @@ const isRouteActive = (pattern) => {
                     <div class="space-y-6">
 
                         <!-- 1. AKADEMIK & MENGAJAR -->
-                        <div v-if="isTeacher || isGlobalAdmin || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum', 'admin_unit', 'kepala_sekolah'])" class="space-y-2">
+                        <div v-if="!isDaycare && (isTeacher || isGlobalAdmin || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum', 'admin_unit', 'kepala_sekolah']))" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-teal-700 tracking-wider flex items-center gap-1.5">
                                 <BookOpenIcon class="w-4 h-4" />
                                 <span>Akademik & Kurikulum</span>
@@ -524,7 +527,7 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 2. BIMBINGAN & KONSELING -->
-                        <div v-if="isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas', 'kepala_sekolah', 'admin_unit'])" class="space-y-2">
+                        <div v-if="!isDaycare && (isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas', 'kepala_sekolah', 'admin_unit']))" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-indigo-700 tracking-wider flex items-center gap-1.5">
                                 <ChatBubbleLeftRightIcon class="w-4 h-4" />
                                 <span>Bimbingan Konseling (BK)</span>
@@ -630,7 +633,7 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- DAYCARE & PENGASUHAN (Tampil jika SuperAdmin / Daycare Unit) -->
-                        <div v-if="isGlobalAdmin || $page.props.session?.is_daycare || $page.props.session?.features?.daycare" class="space-y-2">
+                        <div v-if="isGlobalAdmin || isDaycare" class="space-y-2">
                             <p class="text-[11px] font-black uppercase text-amber-700 tracking-wider flex items-center gap-1.5">
                                 <HeartIcon class="w-4 h-4 text-amber-600" />
                                 <span>Daycare & Pengasuhan</span>
