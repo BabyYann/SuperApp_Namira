@@ -58,6 +58,19 @@ const canSwitchUnit = computed(() => {
 const availableUnits = computed(() => page.props.session?.available_units || []);
 const activeUnitId = computed(() => page.props.session?.active_unit_id);
 
+const isDaycare = computed(() => {
+    const activeUnitName = (page.props.session?.active_unit_name || '').toLowerCase();
+    const userUnitName = (page.props.auth?.user?.unit?.name || '').toLowerCase();
+    return page.props.session?.is_daycare === true 
+        || page.props.session?.features?.daycare === true 
+        || activeUnitName.includes('daycare')
+        || activeUnitName.includes('day care')
+        || activeUnitName.includes('pavlov')
+        || userUnitName.includes('daycare')
+        || userUnitName.includes('day care')
+        || userUnitName.includes('pavlov');
+});
+
 const switchUnit = (unitId) => {
     router.post(route('yayasan.switch-unit'), {
         unit_id: unitId
@@ -185,7 +198,7 @@ const isRouteActive = (pattern) => {
                 <!-- 2. Dynamic Primary Action -->
                 <!-- Daycare: Data Ananda -->
                 <Link 
-                    v-if="$page.props.session?.is_daycare || $page.props.session?.features?.daycare"
+                    v-if="isDaycare"
                     :href="safeRoute('daycare.children.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('daycare.children.*') ? 'text-amber-600 font-bold' : 'text-slate-400 hover:text-slate-600'"
@@ -251,7 +264,7 @@ const isRouteActive = (pattern) => {
                 <div class="flex-1 flex justify-center -mt-6">
                     <!-- Daycare: Absensi Saya (Presensi Pegawai) -->
                     <Link 
-                        v-if="$page.props.session?.is_daycare || $page.props.session?.features?.daycare"
+                        v-if="isDaycare"
                         :href="safeRoute('employee.attendance.index')"
                         class="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
                         title="Absensi Saya"
@@ -281,7 +294,7 @@ const isRouteActive = (pattern) => {
                 <!-- 4. Dynamic Secondary Action -->
                 <!-- Daycare: Handover -->
                 <Link 
-                    v-if="$page.props.session?.is_daycare || $page.props.session?.features?.daycare"
+                    v-if="isDaycare"
                     :href="safeRoute('daycare.attendance.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('daycare.attendance.*') ? 'text-amber-600 font-bold' : 'text-slate-400 hover:text-slate-600'"

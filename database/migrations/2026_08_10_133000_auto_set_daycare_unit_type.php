@@ -22,11 +22,13 @@ return new class extends Migration
         DB::table('units')
             ->where(function ($query) {
                 $query->where('name', 'LIKE', '%daycare%')
-                    ->orWhere('name', 'LIKE', '%Daycare%')
+                    ->orWhere('name', 'LIKE', '%day care%')
+                    ->orWhere('name', 'LIKE', '%DAY CARE%')
+                    ->orWhere('name', 'LIKE', '%DAYCARE%')
                     ->orWhere('name', 'LIKE', '%pavlov%')
                     ->orWhere('name', 'LIKE', '%Pavlov%')
                     ->orWhere('category', 'LIKE', '%daycare%')
-                    ->orWhere('category', 'LIKE', '%Daycare%');
+                    ->orWhere('category', 'LIKE', '%day care%');
             })
             ->update([
                 'unit_type' => 'daycare',
@@ -39,6 +41,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // No action needed for down
+        // No action needed
     }
 };

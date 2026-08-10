@@ -66,14 +66,16 @@ const hasRole = (roles) => {
 const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
 
 const isDaycare = computed(() => {
-    const activeUnitName = page.props.session?.active_unit_name || '';
-    const userUnitName = page.props.auth?.user?.unit?.name || '';
+    const activeUnitName = (page.props.session?.active_unit_name || '').toLowerCase();
+    const userUnitName = (page.props.auth?.user?.unit?.name || '').toLowerCase();
     return page.props.session?.is_daycare === true 
         || page.props.session?.features?.daycare === true 
-        || activeUnitName.toLowerCase().includes('daycare')
-        || activeUnitName.toLowerCase().includes('pavlov')
-        || userUnitName.toLowerCase().includes('daycare')
-        || userUnitName.toLowerCase().includes('pavlov');
+        || activeUnitName.includes('daycare')
+        || activeUnitName.includes('day care')
+        || activeUnitName.includes('pavlov')
+        || userUnitName.includes('daycare')
+        || userUnitName.includes('day care')
+        || userUnitName.includes('pavlov');
 });
 
 const userInitials = computed(() => {

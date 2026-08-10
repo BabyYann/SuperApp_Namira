@@ -48,7 +48,7 @@ class Unit extends Model
         }
         $name = strtolower($this->name ?? '');
         $cat = strtolower($this->category ?? '');
-        return $cat === 'daycare' || str_contains($name, 'daycare') || str_contains($name, 'pavlov');
+        return $cat === 'daycare' || $cat === 'day care' || str_contains($name, 'daycare') || str_contains($name, 'day care') || str_contains($name, 'pavlov') || str_contains($name, 'tpa');
     }
 
     public function isFormalSchool(): bool
