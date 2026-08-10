@@ -45,7 +45,7 @@ class HandleInertiaRequests extends Middleware
                     'units' => $request->user() ? $request->user()->getUnitsAttribute()->toArray() : [],
                 ]),
             ],
-            'session' => fn () => tap([], function () use ($request) {
+            'session' => call_user_func(function () use ($request) {
                 $activeUnitId = session('active_unit_id') ?? $request->user()?->unit_id;
                 $activeUnit = $activeUnitId ? \App\Modules\Yayasan\Models\Unit::find($activeUnitId) : null;
                 if (!$activeUnit) {
