@@ -183,9 +183,20 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- 2. Dynamic Primary Action -->
+                <!-- Daycare: Data Ananda -->
+                <Link 
+                    v-if="$page.props.session?.is_daycare || $page.props.session?.features?.daycare"
+                    :href="safeRoute('daycare.children.index')"
+                    class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
+                    :class="isRouteActive('daycare.children.*') ? 'text-amber-600 font-bold' : 'text-slate-400 hover:text-slate-600'"
+                >
+                    <UserGroupIcon class="w-6 h-6 transition-transform" />
+                    <span class="text-[10px] font-bold tracking-tight">Ananda</span>
+                </Link>
+
                 <!-- Pengawas: Monitoring -->
                 <Link 
-                    v-if="isPengawas"
+                    v-else-if="isPengawas"
                     :href="safeRoute('yayasan.monitoring.index', {}, '#')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('yayasan.monitoring.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
@@ -236,11 +247,20 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Presensi</span>
                 </Link>
 
-                <!-- 3. CENTER FAB: Monitoring & Statistik untuk Pengawas / QR Scanner untuk semua -->
+                <!-- 3. CENTER FAB: Daycare -> Absensi Saya / Pengawas -> Monitoring / Other -> QR Scanner -->
                 <div class="flex-1 flex justify-center -mt-6">
+                    <!-- Daycare: Absensi Saya (Presensi Pegawai) -->
+                    <Link 
+                        v-if="$page.props.session?.is_daycare || $page.props.session?.features?.daycare"
+                        :href="safeRoute('employee.attendance.index')"
+                        class="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
+                        title="Absensi Saya"
+                    >
+                        <FingerPrintIcon class="w-7 h-7 stroke-[2.2]" />
+                    </Link>
                     <!-- Pengawas: Statistik & Monitoring -->
                     <Link 
-                        v-if="isPengawas"
+                        v-else-if="isPengawas"
                         :href="safeRoute('yayasan.monitoring.index')"
                         class="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-700 to-blue-500 text-white flex items-center justify-center shadow-lg shadow-indigo-700/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
                         title="Statistik & Monitoring"
@@ -259,9 +279,20 @@ const isRouteActive = (pattern) => {
                 </div>
 
                 <!-- 4. Dynamic Secondary Action -->
+                <!-- Daycare: Handover -->
+                <Link 
+                    v-if="$page.props.session?.is_daycare || $page.props.session?.features?.daycare"
+                    :href="safeRoute('daycare.attendance.index')"
+                    class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
+                    :class="isRouteActive('daycare.attendance.*') ? 'text-amber-600 font-bold' : 'text-slate-400 hover:text-slate-600'"
+                >
+                    <ClockIcon class="w-6 h-6 transition-transform" />
+                    <span class="text-[10px] font-bold tracking-tight">Handover</span>
+                </Link>
+
                 <!-- Pengawas: Monitoring -->
                 <Link 
-                    v-if="isPengawas"
+                    v-else-if="isPengawas"
                     :href="safeRoute('yayasan.monitoring.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('yayasan.monitoring.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
