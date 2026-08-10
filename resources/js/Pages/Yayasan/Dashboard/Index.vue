@@ -515,6 +515,21 @@ const eventTypeLabels = {
                         <p class="text-[10px] text-slate-400 font-medium mt-0.5">Clock-in / Clock-out HP</p>
                     </div>
                 </Link>
+
+                <!-- Persetujuan Absen (Kepala Sekolah, Admin Unit, Admin Yayasan, Super Admin) -->
+                <Link 
+                    v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])"
+                    :href="safeRoute('attendance-approvals.index', {}, safeRoute('yayasan.attendance-approvals.index'))"
+                    class="bg-white rounded-3xl p-4 border border-amber-100/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
+                >
+                    <div class="w-10 h-10 rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <CheckCircleIcon class="w-5 h-5 stroke-[2.2]" />
+                    </div>
+                    <div>
+                        <h4 class="font-extrabold text-sm text-slate-800">Persetujuan Absen</h4>
+                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">ACC izin & dinas pegawai</p>
+                    </div>
+                </Link>
                 <!-- 1. Isi Jurnal Mapel (Guru Only) -->
                 <Link 
                     v-if="isTeacher || hasRole('teacher')"

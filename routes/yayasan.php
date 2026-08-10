@@ -95,7 +95,9 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
 
     // Attendance Approval
     Route::get('attendance-approvals', [\App\Modules\Yayasan\Controllers\AttendanceApprovalController::class, 'index'])->name('attendance-approvals.index');
+    Route::get('attendance-approvals', [\App\Modules\Yayasan\Controllers\AttendanceApprovalController::class, 'index'])->name('yayasan.attendance-approvals.index');
     Route::put('attendance-approvals/{attendance}', [\App\Modules\Yayasan\Controllers\AttendanceApprovalController::class, 'update'])->name('attendance-approvals.update');
+    Route::put('attendance-approvals/{attendance}', [\App\Modules\Yayasan\Controllers\AttendanceApprovalController::class, 'update'])->name('yayasan.attendance-approvals.update');
 
     // Attendance Data (Daily & Report)
     Route::get('attendance-data', [\App\Modules\Yayasan\Controllers\AttendanceDataController::class, 'index'])->name('attendance-data.index');

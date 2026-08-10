@@ -711,8 +711,8 @@ const isRouteActive = (pattern) => {
                                 </Link>
 
                                 <Link 
-                                    v-if="isGlobalAdmin || hasRole('kepala_sekolah')"
-                                    :href="safeRoute('yayasan.attendance-approvals.index')" 
+                                    v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])"
+                                    :href="safeRoute('attendance-approvals.index', {}, safeRoute('yayasan.attendance-approvals.index'))" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center p-3 rounded-2xl bg-amber-50/60 border border-amber-100/80 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"
                                 >
