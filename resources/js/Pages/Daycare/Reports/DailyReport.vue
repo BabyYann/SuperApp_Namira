@@ -114,8 +114,9 @@ const formattedDate = new Date(props.date).toLocaleDateString('id-ID', {
             </div>
 
             <!-- Footer Message -->
-            <div class="text-center text-xs text-slate-400 font-bold py-4">
-                ❤️ SuperApp Namira — Daycare & Care Log Engine
+            <div class="text-center text-xs text-slate-400 font-bold py-4 flex items-center justify-center gap-1.5">
+                <HeartIcon class="w-4 h-4 text-rose-500" />
+                <span>SuperApp Namira — Daycare & Care Log Engine</span>
             </div>
 
         </div>

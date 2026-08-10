@@ -471,8 +471,9 @@ const eventTypeLabels = {
                 class="rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-6 text-white shadow-lg border border-amber-400/40 space-y-4"
             >
                 <div class="flex items-center justify-between">
-                    <span class="px-3 py-1 rounded-full bg-white/20 text-white font-extrabold text-[10px] uppercase tracking-wider backdrop-blur-md">
-                        👶 Modul Pengasuhan Daycare
+                    <span class="px-3 py-1 rounded-full bg-white/20 text-white font-extrabold text-[10px] uppercase tracking-wider backdrop-blur-md flex items-center gap-1.5">
+                        <HeartIcon class="w-3.5 h-3.5 text-amber-200" />
+                        <span>Modul Pengasuhan Daycare</span>
                     </span>
                     <span class="text-xs font-bold text-amber-100">Unit Daycare Aktif</span>
                 </div>

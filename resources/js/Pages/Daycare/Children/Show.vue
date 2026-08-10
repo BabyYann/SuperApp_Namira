@@ -196,8 +196,9 @@ const categoryBadgeClass = (cat) => {
                             <span v-if="student.daycare_profile?.blood_type" class="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold text-[10px] border border-rose-200">
                                 Gol. Darah: {{ student.daycare_profile.blood_type }}
                             </span>
-                            <span v-if="student.daycare_profile?.allergies" class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold text-[10px] border border-amber-200">
-                                ⚠️ Alergi: {{ student.daycare_profile.allergies }}
+                            <span v-if="student.daycare_profile?.allergies" class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold text-[10px] border border-amber-200 flex items-center gap-1">
+                                <SparklesIcon class="w-3.5 h-3.5 text-amber-600" />
+                                <span>Alergi: {{ student.daycare_profile.allergies }}</span>
                             </span>
                         </div>
                     </div>
@@ -450,16 +451,16 @@ const categoryBadgeClass = (cat) => {
                         <div>
                             <InputLabel value="Kategori Timeline" />
                             <select v-model="logForm.category" class="w-full rounded-xl border-slate-200 text-xs font-bold">
-                                <option value="meal">🍚 Makan Utama</option>
-                                <option value="snack">🍎 Camilan</option>
-                                <option value="milk">🍼 Minum Susu / Air</option>
-                                <option value="nap_start">😴 Mulai Tidur Siang</option>
-                                <option value="nap_end">☀️ Bangun Tidur</option>
-                                <option value="diaper">👶 Diaper / Toilet</option>
-                                <option value="activity">🎨 Aktivitas & Bermain</option>
-                                <option value="mood">😊 Kondisi / Mood</option>
-                                <option value="medication">💊 Minum Obat</option>
-                                <option value="incident">⚠️ Catatan Kejadian</option>
+                                <option value="meal">Makan Utama</option>
+                                <option value="snack">Camilan</option>
+                                <option value="milk">Minum Susu / Air</option>
+                                <option value="nap_start">Mulai Tidur Siang</option>
+                                <option value="nap_end">Bangun Tidur</option>
+                                <option value="diaper">Diaper / Toilet</option>
+                                <option value="activity">Aktivitas & Bermain</option>
+                                <option value="mood">Kondisi / Mood</option>
+                                <option value="medication">Minum Obat</option>
+                                <option value="incident">Catatan Kejadian</option>
                             </select>
                         </div>
                     </div>
