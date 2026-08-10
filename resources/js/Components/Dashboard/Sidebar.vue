@@ -263,10 +263,28 @@ const toggleGroup = (key) => {
 };
 
 const isActive = (routeName) => {
+    if (!routeName) return false;
     if (routeName === 'pulse') {
         return window.location.pathname.startsWith('/pulse');
     }
-    return route().current(routeName);
+    try {
+        return typeof route === 'function' ? route().current(routeName) : false;
+    } catch (e) {
+        return false;
+    }
+};
+
+const resolveRoute = (routeName) => {
+    if (!routeName) return '#';
+    if (routeName.startsWith('/')) return routeName;
+    try {
+        if (typeof route === 'function' && route().has(routeName)) {
+            return route(routeName);
+        }
+    } catch (e) {
+        console.warn(`[Sidebar] Route "${routeName}" unavailable:`, e);
+    }
+    return '#';
 };
 
 // Role Check
@@ -909,7 +927,7 @@ const filteredMenuGroups = computed(() => {
                         <Link 
                             v-for="item in group.items" 
                             :key="item.route"
-                            :href="item.route.startsWith('/') ? item.route : route(item.route)"
+                            :href="resolveRoute(item.route)"
                              class="flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 group relative"
                             :class="[
                                 isActive(item.active) 
