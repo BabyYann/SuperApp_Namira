@@ -92,11 +92,7 @@ const submitResetPassword = () => {
                             </div>
                             <div>
                                 <InputLabel for="email" value="Email Address" class="mb-2" />
-                                <TextInput id="email" v-model="form.email" type="email" class="block w-full rounded-xl border-gray-200 bg-gray-50/50 text-gray-500 cursor-not-allowed shadow-inner" readonly />
-                                <p class="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
-                                    <LockClosedIcon class="w-3 h-3" />
-                                    Email tidak dapat diubah sembarangan.
-                                </p>
+                                <TextInput id="email" v-model="form.email" type="email" class="block w-full rounded-xl border-gray-200 bg-white/50 backdrop-blur-sm focus:border-namira-teal focus:ring-namira-teal transition-all shadow-sm" required />
                                 <InputError :message="form.errors.email" class="mt-2" />
                             </div>
                         </div>
