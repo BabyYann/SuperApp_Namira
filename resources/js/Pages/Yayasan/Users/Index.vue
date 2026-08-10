@@ -34,10 +34,19 @@ const performSearch = debounce(() => {
     });
 }, 300);
 
-// Watchers
+// Watchers for user input
 watch(searchQuery, performSearch);
 watch(roleFilter, performSearch);
 watch(unitFilter, performSearch);
+
+// Sync filters when props change (e.g. via pagination navigation)
+watch(() => props.filters, (newFilters) => {
+    if (newFilters) {
+        if (newFilters.search !== undefined) searchQuery.value = newFilters.search || '';
+        if (newFilters.role !== undefined) roleFilter.value = newFilters.role || '';
+        if (newFilters.unit_id !== undefined) unitFilter.value = newFilters.unit_id || '';
+    }
+}, { deep: true });
 
 // Reset Filters
 const resetFilters = () => {

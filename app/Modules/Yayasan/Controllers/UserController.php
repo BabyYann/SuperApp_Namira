@@ -51,9 +51,40 @@ class UserController extends Controller
 
         // Search Filter
         $query->when($request->search, function ($q, $search) {
-            $q->where(function ($sub) use ($search) {
-                $sub->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+            $term = trim($search);
+            $q->where(function ($sub) use ($term) {
+                $sub->where('users.name', 'like', "%{$term}%")
+                    ->orWhere('users.email', 'like', "%{$term}%")
+                    ->orWhereExists(function ($tQ) use ($term) {
+                        $tQ->select(\DB::raw(1))
+                           ->from('teachers')
+                           ->whereColumn('teachers.user_id', 'users.id')
+                           ->where(function ($tSub) use ($term) {
+                               $tSub->where('nip', 'like', "%{$term}%")
+                                    ->orWhere('phone', 'like', "%{$term}%")
+                                    ->orWhere('full_name', 'like', "%{$term}%");
+                           });
+                    })
+                    ->orWhereExists(function ($sQ) use ($term) {
+                        $sQ->select(\DB::raw(1))
+                           ->from('staff')
+                           ->whereColumn('staff.user_id', 'users.id')
+                           ->where(function ($sSub) use ($term) {
+                               $sSub->where('nip', 'like', "%{$term}%")
+                                    ->orWhere('phone', 'like', "%{$term}%")
+                                    ->orWhere('full_name', 'like', "%{$term}%");
+                           });
+                    })
+                    ->orWhereExists(function ($stQ) use ($term) {
+                        $stQ->select(\DB::raw(1))
+                           ->from('students')
+                           ->whereColumn('students.user_id', 'users.id')
+                           ->where(function ($stSub) use ($term) {
+                               $stSub->where('nis', 'like', "%{$term}%")
+                                    ->orWhere('nisn', 'like', "%{$term}%")
+                                    ->orWhere('full_name', 'like', "%{$term}%");
+                           });
+                    });
             });
         });
 
@@ -94,10 +125,7 @@ class UserController extends Controller
             });
         });
         
-        // Optimization: Eager load roles if possible, but we are doing manual join below anyway.
-        // Actually, let's stick to the manual mapping for now as it handles the specific display needs well.
-        
-        $users = $query->latest()->paginate(10)->through(function ($user) {
+        $users = $query->latest()->paginate(10)->withQueryString()->through(function ($user) {
             
             // Manual fetch of roles for display
             $roles = \DB::table('model_has_roles')
