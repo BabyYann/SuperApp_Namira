@@ -4,7 +4,8 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
     PencilSquareIcon, ClockIcon, ChevronDownIcon, BuildingLibraryIcon, 
-    EnvelopeIcon, PhoneIcon, MapPinIcon, PhotoIcon, XMarkIcon 
+    EnvelopeIcon, PhoneIcon, MapPinIcon, PhotoIcon, XMarkIcon,
+    AdjustmentsHorizontalIcon, CheckCircleIcon 
 } from '@heroicons/vue/24/outline';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -22,6 +23,15 @@ const form = useForm({
     code: props.unit.code,
     category: props.unit.category,
     level: props.unit.level,
+    unit_type: props.unit.unit_type || (props.unit.category === 'Daycare' ? 'daycare' : 'formal_school'),
+    features: {
+        academic: props.unit.features?.academic ?? (props.unit.category !== 'Daycare'),
+        daycare: props.unit.features?.daycare ?? (props.unit.category === 'Daycare' || props.unit.unit_type === 'daycare'),
+        finance: props.unit.features?.finance ?? true,
+        sarpar: props.unit.features?.sarpar ?? true,
+        counseling: props.unit.features?.counseling ?? (props.unit.category !== 'Daycare'),
+        public_relations: props.unit.features?.public_relations ?? true,
+    },
     email: props.unit.email || '',
     phone: props.unit.phone || '',
     address: props.unit.address || '',
@@ -32,6 +42,24 @@ const form = useForm({
     late_tolerance_minutes: props.unit.late_tolerance_minutes || 15,
     principal_id: props.unit.principal_id || null,
 });
+
+const onUnitTypeChange = (type) => {
+    form.unit_type = type;
+    if (type === 'daycare') {
+        form.features.academic = false;
+        form.features.daycare = true;
+        form.features.counseling = false;
+        if (form.category !== 'Daycare') form.category = 'Daycare';
+    } else if (type === 'formal_school') {
+        form.features.academic = true;
+        form.features.daycare = false;
+        form.features.counseling = true;
+    } else if (type === 'hybrid') {
+        form.features.academic = true;
+        form.features.daycare = true;
+        form.features.counseling = true;
+    }
+};
 
 // Logo preview
 const logoPreview = ref(props.unit.logo ? `/storage/${props.unit.logo}` : null);
@@ -143,6 +171,63 @@ const submit = () => {
                             </div>
                         </div>
 
+                        <!-- Unit Type Cards -->
+                        <div class="mb-6">
+                            <InputLabel value="Jenis Operasional Unit" class="mb-2" />
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <button 
+                                    type="button" 
+                                    @click="onUnitTypeChange('formal_school')"
+                                    class="p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between"
+                                    :class="form.unit_type === 'formal_school' 
+                                        ? 'bg-teal-50/80 border-teal-500 text-teal-900 ring-2 ring-teal-500/20 shadow-sm' 
+                                        : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'"
+                                >
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-extrabold text-sm">Sekolah Formal</span>
+                                            <CheckCircleIcon v-if="form.unit_type === 'formal_school'" class="w-5 h-5 text-teal-600" />
+                                        </div>
+                                        <p class="text-xs opacity-75">TK, SD, SMP, SMA, SMK (Akademik, Rapor & Mapel)</p>
+                                    </div>
+                                </button>
+
+                                <button 
+                                    type="button" 
+                                    @click="onUnitTypeChange('daycare')"
+                                    class="p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between"
+                                    :class="form.unit_type === 'daycare' 
+                                        ? 'bg-amber-50/80 border-amber-500 text-amber-900 ring-2 ring-amber-500/20 shadow-sm' 
+                                        : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'"
+                                >
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-extrabold text-sm">Daycare & Pengasuhan</span>
+                                            <CheckCircleIcon v-if="form.unit_type === 'daycare'" class="w-5 h-5 text-amber-600" />
+                                        </div>
+                                        <p class="text-xs opacity-75">Penitipan Anak & PAUD (Care Log, Makan, Tidur & Tumbuh Kembang)</p>
+                                    </div>
+                                </button>
+
+                                <button 
+                                    type="button" 
+                                    @click="onUnitTypeChange('hybrid')"
+                                    class="p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between"
+                                    :class="form.unit_type === 'hybrid' 
+                                        ? 'bg-purple-50/80 border-purple-500 text-purple-900 ring-2 ring-purple-500/20 shadow-sm' 
+                                        : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'"
+                                >
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-extrabold text-sm">Gabungan (Hybrid)</span>
+                                            <CheckCircleIcon v-if="form.unit_type === 'hybrid'" class="w-5 h-5 text-purple-600" />
+                                        </div>
+                                        <p class="text-xs opacity-75">TK + Daycare (Mendukung Akademik sekaligus Care Log)</p>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="col-span-1 md:col-span-2">
                                 <InputLabel for="name" value="Nama Sekolah / Unit" class="mb-2" />
@@ -158,6 +243,7 @@ const submit = () => {
                                 <InputLabel for="category" value="Jenjang Pendidikan" class="mb-2" />
                                 <div class="relative">
                                     <select id="category" v-model="form.category" class="appearance-none block w-full pl-4 pr-10 py-2.5 text-base border-gray-200 focus:outline-none focus:ring-namira-teal focus:border-namira-teal sm:text-sm rounded-xl bg-white/50 transition-colors" required>
+                                        <option value="Daycare">Daycare / Pengasuhan</option>
                                         <option value="TK">TK / PAUD</option>
                                         <option value="SD">SD</option>
                                         <option value="SMP">SMP</option>
@@ -184,6 +270,40 @@ const submit = () => {
                                     </div>
                                 </div>
                                 <InputError :message="form.errors.level" class="mt-2" />
+                            </div>
+
+                            <!-- Feature Matrix Custom Toggles -->
+                            <div class="col-span-1 md:col-span-2 pt-2 border-t border-gray-100">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <AdjustmentsHorizontalIcon class="w-4 h-4 text-gray-500" />
+                                    <span class="text-sm font-bold text-gray-700">Matriks Modul Fitur Aktif</span>
+                                </div>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" v-model="form.features.academic" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-4 h-4" />
+                                        <span class="text-xs font-semibold text-gray-800">Modul Akademik & Rapor</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" v-model="form.features.daycare" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-4 h-4" />
+                                        <span class="text-xs font-semibold text-gray-800">Modul Care Log Daycare</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" v-model="form.features.finance" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-4 h-4" />
+                                        <span class="text-xs font-semibold text-gray-800">Modul Keuangan & SPP</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" v-model="form.features.sarpar" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-4 h-4" />
+                                        <span class="text-xs font-semibold text-gray-800">Modul Sarpras & Inventaris</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" v-model="form.features.counseling" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-4 h-4" />
+                                        <span class="text-xs font-semibold text-gray-800">Modul Bimbingan Konseling</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" v-model="form.features.public_relations" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-4 h-4" />
+                                        <span class="text-xs font-semibold text-gray-800">Modul Humas & Berita</span>
+                                    </label>
+                                </div>
                             </div>
 
                             <div class="col-span-1 md:col-span-2">

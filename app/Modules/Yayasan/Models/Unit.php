@@ -14,6 +14,8 @@ class Unit extends Model
         'code',
         'category',
         'level',
+        'unit_type',
+        'features',
         'logo',
         'email',
         'phone',
@@ -25,11 +27,38 @@ class Unit extends Model
         'principal_id',
     ];
 
+    protected $casts = [
+        'features' => 'array',
+    ];
+
     protected $appends = ['logo_url'];
 
     public function getLogoUrlAttribute()
     {
         return $this->logo ? asset('storage/' . $this->logo) : null;
+    }
+
+    public function isDaycare(): bool
+    {
+        return $this->unit_type === 'daycare' || $this->category === 'Daycare' || ($this->features['daycare'] ?? false);
+    }
+
+    public function isFormalSchool(): bool
+    {
+        return $this->unit_type === 'formal_school' || in_array($this->category, ['TK', 'SD', 'SMP', 'SMA', 'SMK']) || ($this->features['academic'] ?? false);
+    }
+
+    public function hasFeature(string $feature): bool
+    {
+        if ($this->features && isset($this->features[$feature])) {
+            return (bool) $this->features[$feature];
+        }
+
+        if ($this->isDaycare()) {
+            return in_array($feature, ['daycare', 'employee', 'finance', 'public_relations']);
+        }
+
+        return in_array($feature, ['academic', 'employee', 'finance', 'sarpar', 'counseling', 'public_relations']);
     }
 
     public function news(): \Illuminate\Database\Eloquent\Relations\HasMany

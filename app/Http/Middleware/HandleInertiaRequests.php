@@ -53,11 +53,39 @@ class HandleInertiaRequests extends Middleware
                 'active_unit_logo' => session('active_unit_id') 
                     ? \App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->logo_url 
                     : null,
-                'available_units' => \App\Modules\Yayasan\Models\Unit::select('id', 'name', 'logo')->get()->map(function($u) {
+                'active_unit_type' => session('active_unit_id')
+                    ? (\App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->unit_type ?? 'formal_school')
+                    : 'formal_school',
+                'is_daycare' => session('active_unit_id')
+                    ? (\App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->isDaycare() ?? false)
+                    : false,
+                'is_formal_school' => session('active_unit_id')
+                    ? (\App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->isFormalSchool() ?? true)
+                    : true,
+                'features' => session('active_unit_id') && ($unit = \App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))) ? [
+                    'academic' => $unit->hasFeature('academic'),
+                    'daycare' => $unit->hasFeature('daycare'),
+                    'finance' => $unit->hasFeature('finance'),
+                    'sarpar' => $unit->hasFeature('sarpar'),
+                    'counseling' => $unit->hasFeature('counseling'),
+                    'public_relations' => $unit->hasFeature('public_relations'),
+                ] : [
+                    'academic' => true,
+                    'daycare' => false,
+                    'finance' => true,
+                    'sarpar' => true,
+                    'counseling' => true,
+                    'public_relations' => true,
+                ],
+                'available_units' => \App\Modules\Yayasan\Models\Unit::select('id', 'name', 'logo', 'category', 'unit_type', 'features')->get()->map(function($u) {
                     return [
                         'id' => $u->id,
                         'name' => $u->name,
                         'logo_url' => $u->logo_url,
+                        'category' => $u->category,
+                        'unit_type' => $u->unit_type ?? 'formal_school',
+                        'is_daycare' => $u->isDaycare(),
+                        'is_formal_school' => $u->isFormalSchool(),
                     ];
                 }),
             ],

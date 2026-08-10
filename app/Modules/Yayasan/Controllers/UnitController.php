@@ -285,8 +285,10 @@ class UnitController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:10|unique:units,code',
-            'category' => 'required|string|in:TK,SD,SMP,SMA,SMK,Lainnya',
+            'category' => 'required|string|in:TK,SD,SMP,SMA,SMK,Daycare,Lainnya',
             'level' => 'required|string|in:Nasional,Internasional,Plus',
+            'unit_type' => 'nullable|string|in:formal_school,daycare,hybrid',
+            'features' => 'nullable|array',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
@@ -361,8 +363,10 @@ class UnitController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:10|unique:units,code,' . $unit->id,
-            'category' => 'required|string|in:TK,SD,SMP,SMA,SMK,Lainnya',
+            'category' => 'required|string|in:TK,SD,SMP,SMA,SMK,Daycare,Lainnya',
             'level' => 'required|string|in:Nasional,Internasional,Plus',
+            'unit_type' => 'nullable|string|in:formal_school,daycare,hybrid',
+            'features' => 'nullable|array',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
