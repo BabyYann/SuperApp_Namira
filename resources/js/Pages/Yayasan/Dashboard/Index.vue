@@ -65,6 +65,17 @@ const hasRole = (roles) => {
 
 const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
 
+const isDaycare = computed(() => {
+    const activeUnitName = page.props.session?.active_unit_name || '';
+    const userUnitName = page.props.auth?.user?.unit?.name || '';
+    return page.props.session?.is_daycare === true 
+        || page.props.session?.features?.daycare === true 
+        || activeUnitName.toLowerCase().includes('daycare')
+        || activeUnitName.toLowerCase().includes('pavlov')
+        || userUnitName.toLowerCase().includes('daycare')
+        || userUnitName.toLowerCase().includes('pavlov');
+});
+
 const userInitials = computed(() => {
     const name = user.value?.name || 'U';
     const parts = name.trim().split(' ');
@@ -452,7 +463,47 @@ const eventTypeLabels = {
                 </Link>
             </div>
 
-            <!-- Case B: Teacher without active schedule today -->
+            <!-- Case B1: Daycare Unit Teacher/Caregiver -->
+            <div 
+                v-else-if="isDaycare" 
+                class="rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-6 text-white shadow-lg border border-amber-400/40 space-y-4"
+            >
+                <div class="flex items-center justify-between">
+                    <span class="px-3 py-1 rounded-full bg-white/20 text-white font-extrabold text-[10px] uppercase tracking-wider backdrop-blur-md">
+                        👶 Modul Pengasuhan Daycare
+                    </span>
+                    <span class="text-xs font-bold text-amber-100">Unit Daycare Aktif</span>
+                </div>
+
+                <div>
+                    <h3 class="font-black text-2xl tracking-tight leading-snug">
+                        Pengasuhan & Care Log Ananda
+                    </h3>
+                    <p class="text-xs text-amber-100 font-medium leading-relaxed mt-1">
+                        Kelola presensi kedatangan/kepulangan anak, catat aktivitas makan, tidur, susu, & lihat tumbuh kembang.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <Link 
+                        :href="safeRoute('daycare.children.index')" 
+                        class="py-3 px-4 bg-white hover:bg-amber-50 text-amber-900 font-black text-xs rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                    >
+                        <UsersIcon class="w-4 h-4 text-amber-600" />
+                        <span>Data Ananda</span>
+                    </Link>
+
+                    <Link 
+                        :href="safeRoute('daycare.attendance.index')" 
+                        class="py-3 px-4 bg-amber-900/40 hover:bg-amber-900/60 text-white font-black text-xs rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 border border-white/20"
+                    >
+                        <ClockIcon class="w-4 h-4 text-amber-200" />
+                        <span>Handover Pagi/Sore</span>
+                    </Link>
+                </div>
+            </div>
+
+            <!-- Case B2: Formal School Teacher without active schedule today -->
             <div 
                 v-else-if="teacherData" 
                 class="rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 text-white shadow-md border border-teal-800/60"
