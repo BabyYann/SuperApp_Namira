@@ -71,4 +71,34 @@ class Student extends Model
     {
         return $this->hasMany(\App\Modules\Finance\Models\Transaction::class);
     }
+
+    public function daycareProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Modules\Daycare\Models\DaycareChildProfile::class, 'student_id');
+    }
+
+    public function authorizedPickups(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Daycare\Models\DaycareAuthorizedPickup::class, 'student_id');
+    }
+
+    public function daycareAttendances(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Daycare\Models\DaycareAttendance::class, 'student_id');
+    }
+
+    public function daycareDailyLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Daycare\Models\DaycareDailyLog::class, 'student_id');
+    }
+
+    public function growthRecords(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Daycare\Models\DaycareGrowthRecord::class, 'student_id');
+    }
+
+    public function developmentalJournals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Daycare\Models\DaycareDevelopmentalJournal::class, 'student_id');
+    }
 }
