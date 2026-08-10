@@ -40,7 +40,15 @@ class Unit extends Model
 
     public function isDaycare(): bool
     {
-        return $this->unit_type === 'daycare' || $this->category === 'Daycare' || ($this->features['daycare'] ?? false);
+        if ($this->unit_type === 'daycare') {
+            return true;
+        }
+        if ($this->features && isset($this->features['daycare'])) {
+            return (bool) $this->features['daycare'];
+        }
+        $name = strtolower($this->name ?? '');
+        $cat = strtolower($this->category ?? '');
+        return $cat === 'daycare' || str_contains($name, 'daycare') || str_contains($name, 'pavlov');
     }
 
     public function isFormalSchool(): bool

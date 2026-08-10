@@ -45,50 +45,52 @@ class HandleInertiaRequests extends Middleware
                     'units' => $request->user() ? $request->user()->getUnitsAttribute()->toArray() : [],
                 ]),
             ],
-            'session' => [
-                'active_unit_id' => session('active_unit_id'),
-                'active_unit_name' => session('active_unit_id') 
-                    ? \App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->name 
-                    : 'Pilih Unit',
-                'active_unit_logo' => session('active_unit_id') 
-                    ? \App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->logo_url 
-                    : null,
-                'active_unit_type' => session('active_unit_id')
-                    ? (\App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->unit_type ?? 'formal_school')
-                    : 'formal_school',
-                'is_daycare' => session('active_unit_id')
-                    ? (\App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->isDaycare() ?? false)
-                    : false,
-                'is_formal_school' => session('active_unit_id')
-                    ? (\App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))?->isFormalSchool() ?? true)
-                    : true,
-                'features' => session('active_unit_id') && ($unit = \App\Modules\Yayasan\Models\Unit::find(session('active_unit_id'))) ? [
-                    'academic' => $unit->hasFeature('academic'),
-                    'daycare' => $unit->hasFeature('daycare'),
-                    'finance' => $unit->hasFeature('finance'),
-                    'sarpar' => $unit->hasFeature('sarpar'),
-                    'counseling' => $unit->hasFeature('counseling'),
-                    'public_relations' => $unit->hasFeature('public_relations'),
-                ] : [
-                    'academic' => true,
-                    'daycare' => false,
-                    'finance' => true,
-                    'sarpar' => true,
-                    'counseling' => true,
-                    'public_relations' => true,
-                ],
-                'available_units' => \App\Modules\Yayasan\Models\Unit::select('id', 'name', 'logo', 'category', 'unit_type', 'features')->get()->map(function($u) {
-                    return [
-                        'id' => $u->id,
-                        'name' => $u->name,
-                        'logo_url' => $u->logo_url,
-                        'category' => $u->category,
-                        'unit_type' => $u->unit_type ?? 'formal_school',
-                        'is_daycare' => $u->isDaycare(),
-                        'is_formal_school' => $u->isFormalSchool(),
-                    ];
-                }),
-            ],
+            'session' => fn () => tap([], function () use ($request) {
+                $activeUnitId = session('active_unit_id') ?? $request->user()?->unit_id;
+                $activeUnit = $activeUnitId ? \App\Modules\Yayasan\Models\Unit::find($activeUnitId) : null;
+                if (!$activeUnit) {
+                    $activeUnit = \App\Modules\Yayasan\Models\Unit::first();
+                    $activeUnitId = $activeUnit?->id;
+                }
+
+                $isDaycare = $activeUnit ? $activeUnit->isDaycare() : false;
+                $isFormal = $activeUnit ? $activeUnit->isFormalSchool() : true;
+
+                return [
+                    'active_unit_id' => $activeUnitId,
+                    'active_unit_name' => $activeUnit?->name ?? 'Pilih Unit',
+                    'active_unit_logo' => $activeUnit?->logo_url,
+                    'active_unit_type' => $activeUnit?->unit_type ?? ($isDaycare ? 'daycare' : 'formal_school'),
+                    'is_daycare' => $isDaycare,
+                    'is_formal_school' => $isFormal,
+                    'features' => $activeUnit ? [
+                        'academic' => $activeUnit->hasFeature('academic'),
+                        'daycare' => $activeUnit->hasFeature('daycare'),
+                        'finance' => $activeUnit->hasFeature('finance'),
+                        'sarpar' => $activeUnit->hasFeature('sarpar'),
+                        'counseling' => $activeUnit->hasFeature('counseling'),
+                        'public_relations' => $activeUnit->hasFeature('public_relations'),
+                    ] : [
+                        'academic' => !$isDaycare,
+                        'daycare' => $isDaycare,
+                        'finance' => true,
+                        'sarpar' => true,
+                        'counseling' => true,
+                        'public_relations' => true,
+                    ],
+                    'available_units' => \App\Modules\Yayasan\Models\Unit::select('id', 'name', 'logo', 'category', 'unit_type', 'features')->get()->map(function($u) {
+                        return [
+                            'id' => $u->id,
+                            'name' => $u->name,
+                            'logo_url' => $u->logo_url,
+                            'category' => $u->category,
+                            'unit_type' => $u->unit_type ?? ($u->isDaycare() ? 'daycare' : 'formal_school'),
+                            'is_daycare' => $u->isDaycare(),
+                            'is_formal_school' => $u->isFormalSchool(),
+                        ];
+                    }),
+                ];
+            }),
             'app_settings' => \Illuminate\Support\Facades\Cache::rememberForever('system_settings', function () {
                 // If table doesn't exist yet, return empty array to prevent breaking
                 if (!\Illuminate\Support\Facades\Schema::hasTable('system_settings')) {
