@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     require __DIR__.'/sarpar.php';
     require __DIR__.'/student-portal.php';
     require __DIR__.'/lms.php';
+    require __DIR__.'/daycare.php';
 });
 
 require __DIR__.'/auth.php';

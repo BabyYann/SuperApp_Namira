@@ -477,6 +477,26 @@ const filteredMenuGroups = computed(() => {
         ]
     };
 
+    // Daycare Menu
+    const daycareMenu = {
+        title: 'Daycare & Pengasuhan',
+        key: 'daycare',
+        items: [
+            { 
+                label: 'Data Ananda Daycare', 
+                route: 'daycare.children.index', 
+                active: 'daycare.children.*',
+                icon: UserGroupIcon 
+            },
+            { 
+                label: 'Presensi & Handover', 
+                route: 'daycare.attendance.index', 
+                active: 'daycare.attendance.*',
+                icon: ClockIcon 
+            },
+        ]
+    };
+
     if (hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
         humasMenu.items.push({ 
             label: 'Hero Banner Slider', 
@@ -524,6 +544,9 @@ const filteredMenuGroups = computed(() => {
             return true;
         });
 
+        if (isSuperAdmin || page.props.session?.is_daycare || page.props.session?.features?.daycare === true) {
+            adminGroups.push(daycareMenu);
+        }
         if (isFeatureEnabled('feature_sarpar')) adminGroups.push(sarparMenu);
         adminGroups.push(commonEmployeeMenu);
         if (isFeatureEnabled('feature_counseling')) adminGroups.push(counselingMenu);
