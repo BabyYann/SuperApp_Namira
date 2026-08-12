@@ -566,12 +566,12 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                             <!-- Item Type -->
                             <div class="grid grid-cols-2 gap-4">
                                 <button type="button" @click="form.item_type = 'asset'" :class="['p-4 rounded-xl border-2 text-left transition-all', form.item_type === 'asset' ? 'border-namira-teal bg-teal-50' : 'border-gray-200 hover:border-gray-300']" :disabled="isEditing">
-                                    <div class="text-2xl mb-1">🏢</div>
+                                    <BuildingOfficeIcon class="w-7 h-7 text-teal-600 mb-1" />
                                     <div class="font-bold text-gray-800">Aset Tetap</div>
                                     <div class="text-xs text-gray-500">Meja, Komputer, Proyektor</div>
                                 </button>
                                 <button type="button" @click="form.item_type = 'consumable'" :class="['p-4 rounded-xl border-2 text-left transition-all', form.item_type === 'consumable' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300']" :disabled="isEditing">
-                                    <div class="text-2xl mb-1">📦</div>
+                                    <CubeIcon class="w-7 h-7 text-orange-600 mb-1" />
                                     <div class="font-bold text-gray-800">Habis Pakai</div>
                                     <div class="text-xs text-gray-500">Obat, ATK, Tinta</div>
                                 </button>
