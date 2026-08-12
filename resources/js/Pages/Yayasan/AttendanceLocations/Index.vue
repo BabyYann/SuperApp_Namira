@@ -8,7 +8,7 @@ import debounce from 'lodash/debounce';
 import Pagination from '@/Components/Pagination.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import { 
-    MagnifyingGlassIcon, PlusIcon, MapPinIcon, PencilSquareIcon, TrashIcon, MapIcon, BuildingOfficeIcon, XMarkIcon, CheckIcon
+    MagnifyingGlassIcon, PlusIcon, MapPinIcon, PencilSquareIcon, TrashIcon, MapIcon, BuildingOfficeIcon, XMarkIcon, CheckIcon, SparklesIcon, SignalIcon
 } from '@heroicons/vue/24/outline';
 
 // --- PROPS ---
@@ -26,20 +26,25 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom SVG Pin Icon generator
-const createCustomPinIcon = (color = '#0d9488') => {
+// Custom Ultra-Modern SVG Pin Icon Generator with Pulsing Radar Ring
+const createCustomPinIcon = (color = '#0d9488', isActive = true) => {
+    const pulseHtml = isActive ? `
+        <div class="absolute -inset-2 rounded-full bg-teal-400/30 animate-ping pointer-events-none"></div>
+    ` : '';
+
     return L.divIcon({
         className: 'custom-leaflet-pin',
         html: `
             <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <div style="background-color: ${color}; width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); border: 2.5px solid #ffffff;">
-                    <div style="width: 8px; height: 8px; background-color: #ffffff; border-radius: 50%;"></div>
+                ${pulseHtml}
+                <div style="background: linear-gradient(135deg, ${color}, ${isActive ? '#0f766e' : '#475569'}); width: 34px; height: 34px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(13, 148, 136, 0.4); border: 2.5px solid #ffffff; transition: transform 0.3s ease;">
+                    <div style="width: 10px; height: 10px; background-color: #ffffff; border-radius: 50%; box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);"></div>
                 </div>
             </div>
         `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32],
+        iconSize: [34, 34],
+        iconAnchor: [17, 34],
+        popupAnchor: [0, -34],
     });
 };
 
@@ -48,6 +53,7 @@ const mainMapContainer = ref(null);
 const mainMap = ref(null);
 const mainMarkers = ref([]);
 const mainCircles = ref([]);
+const selectedLoc = ref(null);
 
 // Modal Map State
 const showFormModal = ref(false);
@@ -89,25 +95,39 @@ const initMainMap = () => {
         : defaultCenter;
 
     mainMap.value = L.map(mainMapContainer.value, {
-        zoomControl: false // Custom position to avoid search bar overlap
+        zoomControl: false
     }).setView(initialCenter, 16);
 
-    // Add Zoom Control at bottom-left
+    // Zoom Control at bottom-left
     L.control.zoom({ position: 'bottomleft' }).addTo(mainMap.value);
 
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+    // Sleek CartoDB Voyager Light Tiles (Linear/Stripe Aesthetic)
+    const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB & OpenStreetMap'
     });
 
+    // High-Res Satellite View
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri'
     });
 
-    osmLayer.addTo(mainMap.value);
+    // Futuristic Dark Mode Tiles
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB Dark'
+    });
+
+    // Standard OpenStreetMap
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    });
+
+    voyagerLayer.addTo(mainMap.value);
 
     const baseMaps = {
-        "Peta Jalan": osmLayer,
-        "Satelit (Gedung Asli)": satelliteLayer
+        "✨ Modern Voyager": voyagerLayer,
+        "🛰️ Satelit High-Res": satelliteLayer,
+        "🌙 Cyber Dark": darkLayer,
+        "🗺️ Peta Jalan Standard": osmLayer
     };
 
     L.control.layers(baseMaps, null, { position: 'topright' }).addTo(mainMap.value);
@@ -128,27 +148,34 @@ const renderMainLocations = () => {
         const lat = parseFloat(loc.latitude);
         const lng = parseFloat(loc.longitude);
         
-        const pinIcon = createCustomPinIcon(color);
+        const pinIcon = createCustomPinIcon(color, loc.is_active);
 
         const marker = L.marker([lat, lng], { 
             icon: pinIcon,
-            opacity: loc.is_active ? 1 : 0.7 
+            opacity: loc.is_active ? 1 : 0.75 
         }).addTo(mainMap.value);
 
         const circle = L.circle([lat, lng], {
+            className: 'animated-geofence-radar',
             color: color,
             fillColor: color,
             fillOpacity: 0.18,
-            weight: 2,
+            weight: 2.5,
             radius: parseInt(loc.radius)
         }).addTo(mainMap.value);
 
         marker.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
-            openEditModal(loc);
+            selectedLoc.value = loc;
+            focusLocation(loc);
         });
 
-        marker.bindTooltip(`<b>${loc.name}</b><br><span style="font-size:10px">${loc.unit?.name || ''} (${loc.radius}m)</span>`, { permanent: false, direction: 'top' });
+        marker.bindTooltip(`
+            <div class="px-2 py-1 text-center">
+                <div class="font-black text-slate-900 text-xs">${loc.name}</div>
+                <div class="text-[10px] text-teal-700 font-bold">${loc.unit?.name || ''} • Radius ${loc.radius}m</div>
+            </div>
+        `, { permanent: false, direction: 'top', className: 'custom-tooltip-glass' });
         
         mainMarkers.value.push(marker);
         mainCircles.value.push(circle);
@@ -157,9 +184,10 @@ const renderMainLocations = () => {
 
 const focusLocation = (loc) => {
     if (!mainMap.value) return;
+    selectedLoc.value = loc;
     const lat = parseFloat(loc.latitude);
     const lng = parseFloat(loc.longitude);
-    mainMap.value.flyTo([lat, lng], 18, { duration: 1.2 });
+    mainMap.value.flyTo([lat, lng], 18, { duration: 1.4, easeLinearity: 0.25 });
 };
 
 // --- MODAL FORM & MINI MAP LOGIC ---
@@ -169,7 +197,6 @@ const openCreateModal = () => {
     form.unit_id = props.units[0]?.id || '';
     form.is_active = true;
 
-    // Use current main map center or default
     if (mainMap.value) {
         const center = mainMap.value.getCenter();
         form.latitude = center.lat;
@@ -215,10 +242,10 @@ const initModalMap = () => {
     }
 
     const coords = [form.latitude, form.longitude];
-    modalMap.value = L.map(modalMapContainer.value).setView(coords, 17);
+    modalMap.value = L.map(modalMapContainer.value, { zoomControl: false }).setView(coords, 17);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB'
     }).addTo(modalMap.value);
 
     updateModalMapElements();
@@ -237,15 +264,15 @@ const updateModalMapElements = () => {
     if (modalCircle.value) modalMap.value.removeLayer(modalCircle.value);
 
     const coords = [form.latitude, form.longitude];
-    const color = form.is_active ? '#f59e0b' : '#64748b'; // Orange pin for modal picker
-    const pinIcon = createCustomPinIcon(color);
+    const color = form.is_active ? '#f59e0b' : '#64748b';
+    const pinIcon = createCustomPinIcon(color, form.is_active);
 
     modalMarker.value = L.marker(coords, { icon: pinIcon, draggable: true }).addTo(modalMap.value);
     modalCircle.value = L.circle(coords, {
         color: color,
         fillColor: color,
-        fillOpacity: 0.2,
-        weight: 2,
+        fillOpacity: 0.22,
+        weight: 2.5,
         dashArray: '4, 4',
         radius: parseInt(form.radius || 100)
     }).addTo(modalMap.value);
@@ -260,7 +287,6 @@ const updateModalMapElements = () => {
     modalMap.value.panTo(coords);
 };
 
-// --- GEOLOCATION IN MODAL ---
 const useCurrentLocationInModal = () => {
     if (!navigator.geolocation) {
         alert('Browser tidak mendukung Geolocation.');
@@ -291,7 +317,7 @@ const searchLocation = async () => {
             const { lat, lon } = data[0];
             const latitude = parseFloat(lat);
             const longitude = parseFloat(lon);
-            mainMap.value.flyTo([latitude, longitude], 17);
+            mainMap.value.flyTo([latitude, longitude], 17, { duration: 1.5 });
         } else {
             alert('Lokasi tidak ditemukan.');
         }
@@ -342,25 +368,43 @@ onUnmounted(() => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex flex-col gap-1">
-                <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
-                    Lokasi Absensi (Geofencing)
-                </h2>
-                <p class="text-xs text-gray-500">Kelola titik koordinat GPS dan radius presensi sekolah terpusat.</p>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="font-black text-2xl bg-gradient-to-r from-teal-800 via-teal-600 to-emerald-600 bg-clip-text text-transparent leading-tight">
+                            Geofence Presensi Center
+                        </h2>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-800 border border-teal-200 shadow-sm animate-pulse">
+                            <SignalIcon class="w-3 h-3 text-teal-600" />
+                            GPS Live
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">Pemetaan koordinat radar presensi digital sekolah terpusat.</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button 
+                        @click="openCreateModal" 
+                        class="px-4 py-2.5 bg-gradient-to-r from-namira-teal to-teal-600 text-white rounded-2xl font-black text-xs shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 hover:-translate-y-0.5 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                        <PlusIcon class="w-4 h-4 stroke-[3]" />
+                        <span>Tambah Titik Lokasi</span>
+                    </button>
+                </div>
             </div>
         </template>
 
-        <div class="py-4 max-w-[1600px] mx-auto px-2 md:px-4 flex flex-col lg:flex-row gap-5 h-[calc(100vh-150px)] min-h-[650px]">
+        <div class="py-4 max-w-[1600px] mx-auto px-2 md:px-4 flex flex-col lg:flex-row gap-5 h-[calc(100vh-155px)] min-h-[650px]">
             
-            <!-- SIDEBAR: DAFTAR TITIK ABSENSI (Fixed width 380px, Never Cramped) -->
-            <div class="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col transition-all flex-shrink-0">
-                <div class="p-4 md:p-5 border-b border-slate-100 space-y-3.5 bg-slate-50/50">
+            <!-- SIDEBAR: DAFTAR TITIK ABSENSI (Clean 380px) -->
+            <div class="w-full lg:w-[380px] xl:w-[400px] bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden flex flex-col transition-all flex-shrink-0">
+                <div class="p-4 md:p-5 border-b border-slate-100 space-y-3.5 bg-slate-50/60">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h3 class="font-bold text-base text-slate-800">Daftar Titik Absensi</h3>
-                            <p class="text-[11px] text-slate-500">Klik item untuk fokus ke lokasi peta</p>
+                            <h3 class="font-black text-base text-slate-900">Daftar Titik Absensi</h3>
+                            <p class="text-[11px] text-slate-500">Klik item untuk fokus radar di peta</p>
                         </div>
-                        <span class="text-xs font-black bg-teal-100 text-teal-700 px-2.5 py-1 rounded-xl border border-teal-200 shadow-sm">{{ locations.total }} Titik</span>
+                        <span class="text-xs font-black bg-gradient-to-r from-teal-500 to-emerald-600 text-white px-3 py-1 rounded-xl shadow-md shadow-teal-500/20">{{ locations.total }} Titik</span>
                     </div>
                     
                     <!-- Search & Filter Toolbar -->
@@ -371,63 +415,55 @@ onUnmounted(() => {
                                 v-model="search" 
                                 type="text" 
                                 placeholder="Cari nama lokasi..." 
-                                class="pl-9 pr-3 py-2 w-full bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm"
+                                class="pl-9 pr-3 py-2 w-full bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm"
                             >
                         </div>
                         
                         <div class="flex gap-2">
-                            <select v-model="unitFilter" class="w-full py-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm cursor-pointer">
+                            <select v-model="unitFilter" class="w-full py-2 px-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:border-namira-teal focus:ring focus:ring-namira-teal/20 shadow-sm cursor-pointer">
                                 <option value="">Semua Unit Sekolah</option>
                                 <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
                             </select>
                         </div>
-
-                        <!-- Open Modal Button -->
-                        <button 
-                            @click="openCreateModal" 
-                            class="w-full px-4 py-2.5 bg-namira-teal text-white rounded-xl font-bold text-xs shadow-md hover:bg-teal-600 transition-all active:scale-95 flex items-center justify-center gap-2"
-                        >
-                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                            <span>Tambah Lokasi Baru</span>
-                        </button>
                     </div>
                 </div>
                 
                 <!-- Location Cards List -->
                 <div class="flex-1 overflow-y-auto p-3 md:p-4 space-y-2.5">
                     <div v-for="loc in locations.data" :key="loc.id" 
-                        class="p-3.5 rounded-2xl border cursor-pointer bg-white group relative transition-all hover:shadow-md hover:border-namira-teal"
-                        :class="loc.is_active ? 'border-slate-200' : 'border-slate-200 bg-slate-50/60 opacity-75'"
+                        class="p-4 rounded-2xl border cursor-pointer bg-white group relative transition-all duration-300 hover:shadow-lg hover:border-namira-teal"
+                        :class="selectedLoc?.id === loc.id ? 'border-namira-teal ring-2 ring-namira-teal/20 bg-teal-50/20' : (loc.is_active ? 'border-slate-200/90' : 'border-slate-200 bg-slate-50/60 opacity-75')"
                         @click="focusLocation(loc)"
                     >
                         <div class="flex justify-between items-start">
-                            <div class="space-y-1">
+                            <div class="space-y-1.5">
                                 <div class="flex items-center gap-2">
-                                    <h4 class="font-bold text-slate-900 text-sm leading-tight">{{ loc.name }}</h4>
-                                    <span v-if="!loc.is_active" class="px-1.5 py-0.5 bg-slate-200 text-slate-600 text-[9px] font-extrabold rounded uppercase">Non-Aktif</span>
+                                    <h4 class="font-extrabold text-slate-900 text-sm leading-tight group-hover:text-namira-teal transition-colors">{{ loc.name }}</h4>
+                                    <span v-if="!loc.is_active" class="px-1.5 py-0.5 bg-slate-200 text-slate-600 text-[9px] font-extrabold rounded-md uppercase">Non-Aktif</span>
                                 </div>
                                 
                                 <div class="flex items-center gap-2 text-xs text-slate-500">
-                                    <span class="inline-flex items-center gap-1 font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
-                                        <BuildingOfficeIcon class="w-3 h-3 text-teal-600" />
+                                    <span class="inline-flex items-center gap-1 font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg text-[11px]">
+                                        <BuildingOfficeIcon class="w-3.5 h-3.5 text-teal-600" />
                                         {{ loc.unit?.name || 'Unit' }}
                                     </span>
-                                    <span class="text-[11px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">
-                                        Radius: {{ loc.radius }}m
+                                    <span class="text-[11px] font-extrabold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200/80 shadow-xs">
+                                        {{ loc.radius }}m
                                     </span>
                                 </div>
 
-                                <div class="text-[10px] font-mono text-slate-400 pt-0.5">
-                                    GPS: {{ parseFloat(loc.latitude).toFixed(5) }}, {{ parseFloat(loc.longitude).toFixed(5) }}
+                                <div class="text-[10px] font-mono text-slate-400 pt-0.5 flex items-center gap-1">
+                                    <MapPinIcon class="w-3 h-3 text-slate-400" />
+                                    {{ parseFloat(loc.latitude).toFixed(5) }}, {{ parseFloat(loc.longitude).toFixed(5) }}
                                 </div>
                             </div>
 
                             <!-- Action Buttons -->
-                            <div class="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-                                <button @click.stop="openEditModal(loc)" class="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors" title="Edit Lokasi">
+                            <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl shadow-xs border border-slate-200/80">
+                                <button @click.stop="openEditModal(loc)" class="text-blue-600 hover:bg-blue-100/70 p-1.5 rounded-lg transition-colors" title="Edit Lokasi">
                                     <PencilSquareIcon class="h-4 w-4" />
                                 </button>
-                                <button @click.stop="deleteLocation(loc.id)" class="text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors" title="Hapus Lokasi">
+                                <button @click.stop="deleteLocation(loc.id)" class="text-rose-600 hover:bg-rose-100/70 p-1.5 rounded-lg transition-colors" title="Hapus Lokasi">
                                     <TrashIcon class="h-4 w-4" />
                                 </button>
                             </div>
@@ -445,7 +481,7 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- MAIN FULL MAP AREA -->
+            <!-- MAIN FULL MAP AREA (Ultra-Sleek) -->
             <div class="w-full flex-1 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative group">
                 <div ref="mainMapContainer" class="w-full h-full z-0 cursor-crosshair"></div>
                 
@@ -458,33 +494,42 @@ onUnmounted(() => {
                         placeholder="Cari alamat di peta..." 
                         class="w-full border-none text-xs font-semibold focus:ring-0 rounded-xl pl-2.5 bg-transparent placeholder:text-slate-400 min-w-0"
                     >
-                    <button @click="searchLocation" class="bg-namira-teal text-white px-2.5 py-1.5 rounded-xl hover:bg-teal-700 transition-colors flex items-center gap-1 text-xs font-bold shrink-0">
+                    <button @click="searchLocation" class="bg-gradient-to-r from-namira-teal to-teal-600 text-white px-3 py-1.5 rounded-xl hover:shadow-md transition-all flex items-center gap-1 text-xs font-black shrink-0">
                         <MagnifyingGlassIcon class="h-3.5 w-3.5" />
                         <span class="hidden sm:inline">Cari</span>
                     </button>
                 </div>
+
+                <!-- Sleek Bottom-Right Radar HUD Overlay Widget -->
+                <div class="absolute bottom-4 right-4 z-[400] bg-slate-900/85 backdrop-blur-xl text-white p-3 rounded-2xl border border-white/10 shadow-2xl space-y-1.5 max-w-[220px] pointer-events-none hidden sm:block">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400">GPS Geofence System</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300 font-semibold leading-tight">Presensi dikunci otomatis dalam radius zona aman.</p>
+                </div>
             </div>
         </div>
 
-        <!-- 🪟 POP-UP MODAL FORM (OPSI 4: Dedicated Pop-up with Mini Map Picker) -->
+        <!-- 🪟 POP-UP MODAL FORM (Dedicated Pop-up with Mini Map Picker) -->
         <Teleport to="body">
             <div v-if="showFormModal" class="fixed inset-0 z-[100] overflow-y-auto">
-                <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="closeModal"></div>
+                <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-md" @click="closeModal"></div>
                 <div class="flex min-h-full items-center justify-center p-4">
                     <div class="relative bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200">
                         
                         <!-- Modal Header -->
                         <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
-                                    <MapPinIcon class="w-5 h-5" />
+                                <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center font-bold shadow-md shadow-teal-500/10">
+                                    <SparklesIcon class="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 class="text-lg font-extrabold text-slate-900">{{ isEditing ? 'Edit Lokasi Presensi' : 'Tambah Lokasi Presensi Baru' }}</h3>
+                                    <h3 class="text-lg font-black text-slate-900">{{ isEditing ? 'Edit Lokasi Presensi' : 'Tambah Lokasi Presensi Baru' }}</h3>
                                     <p class="text-xs text-slate-500">Atur unit, radius geofence, dan geser pin lokasi di peta</p>
                                 </div>
                             </div>
-                            <button @click="closeModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-xl"><XMarkIcon class="w-6 h-6" /></button>
+                            <button @click="closeModal" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors"><XMarkIcon class="w-6 h-6" /></button>
                         </div>
 
                         <!-- Modal Form Content Grid (2 Columns) -->
@@ -509,7 +554,7 @@ onUnmounted(() => {
                                 <div>
                                     <div class="flex justify-between items-center">
                                         <InputLabel value="Radius Geofence *" class="text-xs font-extrabold text-slate-700" />
-                                        <span class="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">{{ form.radius }} Meter</span>
+                                        <span class="text-xs font-black text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200/80">{{ form.radius }} Meter</span>
                                     </div>
                                     <input 
                                         v-model="form.radius" 
@@ -557,15 +602,15 @@ onUnmounted(() => {
                                     <button 
                                         type="button"
                                         @click="useCurrentLocationInModal"
-                                        class="text-[11px] font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-1 rounded-lg transition-colors flex items-center gap-1"
+                                        class="text-[11px] font-extrabold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2.5 py-1 rounded-xl transition-colors flex items-center gap-1 shadow-xs"
                                     >
                                         <MapPinIcon class="w-3.5 h-3.5" />
                                         <span>GPS Saya</span>
                                     </button>
                                 </div>
 
-                                <div class="flex-1 min-h-[220px] rounded-2xl border border-slate-200 overflow-hidden relative shadow-inner">
-                                    <div ref="modalMapContainer" class="w-full h-full min-h-[220px]"></div>
+                                <div class="flex-1 min-h-[230px] rounded-2xl border border-slate-200 overflow-hidden relative shadow-inner">
+                                    <div ref="modalMapContainer" class="w-full h-full min-h-[230px]"></div>
                                 </div>
                             </div>
                         </div>
@@ -573,8 +618,8 @@ onUnmounted(() => {
                         <!-- Modal Footer -->
                         <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
                             <button type="button" @click="closeModal" class="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl text-xs transition-colors">Batal</button>
-                            <button type="button" @click="submit" :disabled="form.processing" class="px-6 py-2.5 bg-namira-teal hover:bg-teal-600 text-white font-extrabold rounded-xl shadow-lg shadow-teal-500/20 text-xs transition-all active:scale-95 flex items-center gap-1.5">
-                                <CheckIcon class="w-4 h-4 stroke-[2.5]" />
+                            <button type="button" @click="submit" :disabled="form.processing" class="px-6 py-2.5 bg-gradient-to-r from-namira-teal to-teal-600 hover:from-teal-700 hover:to-teal-800 text-white font-black rounded-xl shadow-lg shadow-teal-500/25 text-xs transition-all active:scale-95 flex items-center gap-1.5">
+                                <CheckIcon class="w-4 h-4 stroke-[3]" />
                                 <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Lokasi Presensi' }}</span>
                             </button>
                         </div>
@@ -590,5 +635,32 @@ onUnmounted(() => {
 .custom-leaflet-pin {
     background: none !important;
     border: none !important;
+}
+
+.custom-tooltip-glass {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15) !important;
+}
+
+@keyframes pulse-radar {
+    0% {
+        stroke-opacity: 0.8;
+        stroke-width: 2.5px;
+    }
+    50% {
+        stroke-opacity: 0.3;
+        stroke-width: 4px;
+    }
+    100% {
+        stroke-opacity: 0.8;
+        stroke-width: 2.5px;
+    }
+}
+
+.animated-geofence-radar {
+    animation: pulse-radar 2.5s infinite ease-in-out;
 }
 </style>
