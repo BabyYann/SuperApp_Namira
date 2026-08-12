@@ -1,13 +1,14 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import debounce from 'lodash/debounce';
 import Pagination from '@/Components/Pagination.vue';
+import InputLabel from '@/Components/InputLabel.vue';
 import { 
-    MagnifyingGlassIcon, PlusIcon, MapPinIcon, PencilSquareIcon, TrashIcon, MapIcon, BuildingOfficeIcon, XMarkIcon 
+    MagnifyingGlassIcon, PlusIcon, MapPinIcon, PencilSquareIcon, TrashIcon, MapIcon, BuildingOfficeIcon, XMarkIcon, CheckIcon
 } from '@heroicons/vue/24/outline';
 
 // --- PROPS ---
@@ -17,7 +18,7 @@ const props = defineProps({
     filters: Object,
 });
 
-// Fix Leaflet Default Icon issue in Vite (Fallback)
+// Fix Leaflet Default Icon issue in Vite
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -25,37 +26,36 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom SVG Pin Icon generator (Crisp, no broken images)
+// Custom SVG Pin Icon generator
 const createCustomPinIcon = (color = '#0d9488') => {
     return L.divIcon({
         className: 'custom-leaflet-pin',
         html: `
             <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.35); border: 2.5px solid #ffffff;">
+                <div style="background-color: ${color}; width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); border: 2.5px solid #ffffff;">
                     <div style="width: 8px; height: 8px; background-color: #ffffff; border-radius: 50%;"></div>
                 </div>
             </div>
         `,
-        iconSize: [30, 30],
-        iconAnchor: [15, 30],
-        popupAnchor: [0, -30],
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32],
     });
 };
 
 // --- STATE MANAGEMENT ---
-const VIEW_STATE = {
-    LIST: 'LIST',
-    CREATE: 'CREATE',
-    EDIT: 'EDIT'
-};
+const mainMapContainer = ref(null);
+const mainMap = ref(null);
+const mainMarkers = ref([]);
+const mainCircles = ref([]);
 
-const viewState = ref(VIEW_STATE.LIST);
-const mapContainer = ref(null);
-const map = ref(null);
-const markers = ref([]);
-const circles = ref([]);
-const userMarker = ref(null);
-const previewLayer = ref(null);
+// Modal Map State
+const showFormModal = ref(false);
+const isEditing = ref(false);
+const modalMapContainer = ref(null);
+const modalMap = ref(null);
+const modalMarker = ref(null);
+const modalCircle = ref(null);
 
 // --- FILTERS ---
 const search = ref(props.filters?.search || '');
@@ -79,18 +79,17 @@ const form = useForm({
     is_active: true,
 });
 
-// --- MAP LOGIC ---
-const initMap = () => {
-    if (!mapContainer.value) return;
+// --- MAIN MAP LOGIC ---
+const initMainMap = () => {
+    if (!mainMapContainer.value) return;
 
     const defaultCenter = [-7.754, 113.216];
     const initialCenter = props.locations.data.length > 0 
         ? [parseFloat(props.locations.data[0].latitude), parseFloat(props.locations.data[0].longitude)] 
         : defaultCenter;
 
-    map.value = L.map(mapContainer.value).setView(initialCenter, 16);
+    mainMap.value = L.map(mainMapContainer.value).setView(initialCenter, 16);
 
-    // Layers
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     });
@@ -99,32 +98,28 @@ const initMap = () => {
         attribution: 'Tiles &copy; Esri'
     });
 
-    osmLayer.addTo(map.value);
+    osmLayer.addTo(mainMap.value);
 
     const baseMaps = {
         "Peta Jalan": osmLayer,
         "Satelit (Gedung Asli)": satelliteLayer
     };
 
-    L.control.layers(baseMaps).addTo(map.value);
+    L.control.layers(baseMaps).addTo(mainMap.value);
 
-    // GLOBAL CLICK LISTENER
-    map.value.on('click', (e) => {
-        handleMapClick(e.latlng.lat, e.latlng.lng);
-    });
-
-    renderLocations();
+    renderMainLocations();
 };
 
-const renderLocations = () => {
-    // Clear existing layers
-    markers.value.forEach(m => map.value.removeLayer(m));
-    circles.value.forEach(c => map.value.removeLayer(c));
-    markers.value = [];
-    circles.value = [];
+const renderMainLocations = () => {
+    if (!mainMap.value) return;
+
+    mainMarkers.value.forEach(m => mainMap.value.removeLayer(m));
+    mainCircles.value.forEach(c => mainMap.value.removeLayer(c));
+    mainMarkers.value = [];
+    mainCircles.value = [];
 
     props.locations.data.forEach(loc => {
-        const color = loc.is_active ? '#0d9488' : '#64748b'; // Teal or Slate
+        const color = loc.is_active ? '#0d9488' : '#64748b';
         const lat = parseFloat(loc.latitude);
         const lng = parseFloat(loc.longitude);
         
@@ -133,7 +128,7 @@ const renderLocations = () => {
         const marker = L.marker([lat, lng], { 
             icon: pinIcon,
             opacity: loc.is_active ? 1 : 0.7 
-        }).addTo(map.value);
+        }).addTo(mainMap.value);
 
         const circle = L.circle([lat, lng], {
             color: color,
@@ -141,101 +136,146 @@ const renderLocations = () => {
             fillOpacity: 0.18,
             weight: 2,
             radius: parseInt(loc.radius)
-        }).addTo(map.value);
+        }).addTo(mainMap.value);
 
         marker.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
-            startEdit(loc);
+            openEditModal(loc);
         });
 
         marker.bindTooltip(`<b>${loc.name}</b><br><span style="font-size:10px">${loc.unit?.name || ''} (${loc.radius}m)</span>`, { permanent: false, direction: 'top' });
         
-        markers.value.push(marker);
-        circles.value.push(circle);
+        mainMarkers.value.push(marker);
+        mainCircles.value.push(circle);
     });
 };
 
-const handleMapClick = (lat, lng) => {
-    if (viewState.value === VIEW_STATE.LIST) {
-        startCreate(false);
+const focusLocation = (loc) => {
+    if (!mainMap.value) return;
+    const lat = parseFloat(loc.latitude);
+    const lng = parseFloat(loc.longitude);
+    mainMap.value.flyTo([lat, lng], 18, { duration: 1.2 });
+};
+
+// --- MODAL FORM & MINI MAP LOGIC ---
+const openCreateModal = () => {
+    isEditing.value = false;
+    form.reset();
+    form.unit_id = props.units[0]?.id || '';
+    form.is_active = true;
+
+    // Use current main map center or default
+    if (mainMap.value) {
+        const center = mainMap.value.getCenter();
+        form.latitude = center.lat;
+        form.longitude = center.lng;
     }
+
+    showFormModal.value = true;
+    nextTick(() => {
+        initModalMap();
+    });
+};
+
+const openEditModal = (loc) => {
+    isEditing.value = true;
+    form.id = loc.id;
+    form.unit_id = loc.unit_id;
+    form.name = loc.name;
+    form.latitude = parseFloat(loc.latitude);
+    form.longitude = parseFloat(loc.longitude);
+    form.radius = parseInt(loc.radius);
+    form.is_active = Boolean(loc.is_active);
+
+    showFormModal.value = true;
+    nextTick(() => {
+        initModalMap();
+    });
+};
+
+const closeModal = () => {
+    showFormModal.value = false;
+    if (modalMap.value) {
+        modalMap.value.remove();
+        modalMap.value = null;
+    }
+};
+
+const initModalMap = () => {
+    if (!modalMapContainer.value) return;
     
-    form.latitude = lat;
-    form.longitude = lng;
-    updatePreview();
-};
-
-const updatePreview = () => {
-    if (previewLayer.value) {
-        map.value.removeLayer(previewLayer.value);
+    if (modalMap.value) {
+        modalMap.value.remove();
+        modalMap.value = null;
     }
 
-    const color = form.is_active ? '#f59e0b' : '#64748b'; // Orange preview pin
-    const previewIcon = createCustomPinIcon(color);
+    const coords = [form.latitude, form.longitude];
+    modalMap.value = L.map(modalMapContainer.value).setView(coords, 17);
 
-    previewLayer.value = L.layerGroup([
-        L.marker([form.latitude, form.longitude], { icon: previewIcon }),
-        L.circle([form.latitude, form.longitude], {
-            color: color,
-            fillColor: color,
-            fillOpacity: 0.25,
-            weight: 2,
-            dashArray: '4, 4',
-            radius: parseInt(form.radius || 100)
-        })
-    ]).addTo(map.value);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(modalMap.value);
+
+    updateModalMapElements();
+
+    modalMap.value.on('click', (e) => {
+        form.latitude = e.latlng.lat;
+        form.longitude = e.latlng.lng;
+        updateModalMapElements();
+    });
 };
 
-// --- GEOLOCATION ---
-const getCurrentLocation = () => {
+const updateModalMapElements = () => {
+    if (!modalMap.value) return;
+
+    if (modalMarker.value) modalMap.value.removeLayer(modalMarker.value);
+    if (modalCircle.value) modalMap.value.removeLayer(modalCircle.value);
+
+    const coords = [form.latitude, form.longitude];
+    const color = form.is_active ? '#f59e0b' : '#64748b'; // Orange pin for modal picker
+    const pinIcon = createCustomPinIcon(color);
+
+    modalMarker.value = L.marker(coords, { icon: pinIcon, draggable: true }).addTo(modalMap.value);
+    modalCircle.value = L.circle(coords, {
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.2,
+        weight: 2,
+        dashArray: '4, 4',
+        radius: parseInt(form.radius || 100)
+    }).addTo(modalMap.value);
+
+    modalMarker.value.on('dragend', (e) => {
+        const latlng = e.target.getLatLng();
+        form.latitude = latlng.lat;
+        form.longitude = latlng.lng;
+        updateModalMapElements();
+    });
+
+    modalMap.value.panTo(coords);
+};
+
+// --- GEOLOCATION IN MODAL ---
+const useCurrentLocationInModal = () => {
     if (!navigator.geolocation) {
         alert('Browser tidak mendukung Geolocation.');
         return;
     }
 
-    const handleSuccess = (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        
-        if (userMarker.value) map.value.removeLayer(userMarker.value);
-        
-        userMarker.value = L.circleMarker([latitude, longitude], {
-            radius: 9,
-            fillColor: '#2563eb',
-            color: '#ffffff',
-            weight: 3,
-            opacity: 1,
-            fillOpacity: 0.9
-        }).addTo(map.value).bindPopup(`<b>Lokasi Saya</b><br>Akurasi GPS: ${Math.round(accuracy)}m`).openPopup();
-
-        map.value.setView([latitude, longitude], 18);
-
-        if (viewState.value !== VIEW_STATE.LIST) {
-            form.latitude = latitude;
-            form.longitude = longitude;
-            updatePreview();
-        }
-    };
-
-    const handleError = (error) => {
-        console.warn('GPS High Accuracy Failed, trying fallback...', error);
-        navigator.geolocation.getCurrentPosition(
-            handleSuccess,
-            (err) => {
-                console.error('Geolocation Failed:', err);
-                alert('Gagal mendeteksi lokasi. Silakan gunakan pencarian alamat atau klik langsung di peta.');
-            },
-            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-        );
-    };
-
-    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0
-    });
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            form.latitude = pos.coords.latitude;
+            form.longitude = pos.coords.longitude;
+            updateModalMapElements();
+        },
+        (err) => {
+            alert('Gagal mengambil lokasi GPS saat ini.');
+        },
+        { enableHighAccuracy: true }
+    );
 };
 
-// --- SEARCH LOCATION (NOMINATIM) ---
+// --- MAIN SEARCH LOCATION ---
 const mapSearchQuery = ref('');
 const searchLocation = async () => {
     if (!mapSearchQuery.value) return;
@@ -246,14 +286,7 @@ const searchLocation = async () => {
             const { lat, lon } = data[0];
             const latitude = parseFloat(lat);
             const longitude = parseFloat(lon);
-            
-            map.value.setView([latitude, longitude], 17);
-            
-            if (viewState.value !== VIEW_STATE.LIST) {
-                form.latitude = latitude;
-                form.longitude = longitude;
-                updatePreview();
-            }
+            mainMap.value.flyTo([latitude, longitude], 17);
         } else {
             alert('Lokasi tidak ditemukan.');
         }
@@ -262,53 +295,16 @@ const searchLocation = async () => {
     }
 };
 
-// --- ACTIONS ---
-const startCreate = (resetCoords = true) => {
-    viewState.value = VIEW_STATE.CREATE;
-    form.reset();
-    form.unit_id = props.units[0]?.id || '';
-    form.is_active = true;
-
-    if (resetCoords && map.value) {
-        const center = map.value.getCenter();
-        form.latitude = center.lat;
-        form.longitude = center.lng;
-    }
-    updatePreview();
-};
-
-const startEdit = (loc) => {
-    viewState.value = VIEW_STATE.EDIT;
-    form.id = loc.id;
-    form.unit_id = loc.unit_id;
-    form.name = loc.name;
-    form.latitude = parseFloat(loc.latitude);
-    form.longitude = parseFloat(loc.longitude);
-    form.radius = parseInt(loc.radius);
-    form.is_active = Boolean(loc.is_active);
-    
-    updatePreview();
-    map.value.setView([parseFloat(loc.latitude), parseFloat(loc.longitude)], 18);
-};
-
-const cancelForm = () => {
-    viewState.value = VIEW_STATE.LIST;
-    if (previewLayer.value) {
-        map.value.removeLayer(previewLayer.value);
-        previewLayer.value = null;
-    }
-    form.reset();
-};
-
+// --- SUBMIT & DELETE ---
 const submit = () => {
     const options = {
         onSuccess: () => {
-            cancelForm();
-            renderLocations();
+            closeModal();
+            renderMainLocations();
         }
     };
 
-    if (viewState.value === VIEW_STATE.EDIT) {
+    if (isEditing.value) {
         form.put(route('yayasan.attendance-locations.update', form.id), options);
     } else {
         form.post(route('yayasan.attendance-locations.store'), options);
@@ -318,20 +314,20 @@ const submit = () => {
 const deleteLocation = (id) => {
     if (confirm('Hapus lokasi presensi ini?')) {
         router.delete(route('yayasan.attendance-locations.destroy', id), {
-            onSuccess: () => renderLocations()
+            onSuccess: () => renderMainLocations()
         });
     }
 };
 
 // --- LIFECYCLE ---
 onMounted(() => {
-    initMap();
+    initMainMap();
 });
 
 onUnmounted(() => {
-    if (map.value) {
-        map.value.remove();
-        map.value = null;
+    if (mainMap.value) {
+        mainMap.value.remove();
+        mainMap.value = null;
     }
 });
 </script>
@@ -351,18 +347,18 @@ onUnmounted(() => {
 
         <div class="py-4 max-w-[1600px] mx-auto px-2 md:px-4 flex flex-col lg:flex-row gap-5 h-[calc(100vh-150px)] min-h-[650px]">
             
-            <!-- SIDEBAR: LIST MODE (Wider Width 400px - 450px) -->
-            <div v-if="viewState === VIEW_STATE.LIST" class="w-full lg:w-[420px] xl:w-[460px] bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col transition-all flex-shrink-0">
+            <!-- SIDEBAR: DAFTAR TITIK ABSENSI (Fixed width 380px, Never Cramped) -->
+            <div class="w-full lg:w-[380px] xl:w-[400px] bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col transition-all flex-shrink-0">
                 <div class="p-4 md:p-5 border-b border-slate-100 space-y-3.5 bg-slate-50/50">
                     <div class="flex justify-between items-center">
                         <div>
                             <h3 class="font-bold text-base text-slate-800">Daftar Titik Absensi</h3>
-                            <p class="text-[11px] text-slate-500">Klik item untuk melihat di peta</p>
+                            <p class="text-[11px] text-slate-500">Klik item untuk fokus ke lokasi peta</p>
                         </div>
                         <span class="text-xs font-black bg-teal-100 text-teal-700 px-2.5 py-1 rounded-xl border border-teal-200 shadow-sm">{{ locations.total }} Titik</span>
                     </div>
                     
-                    <!-- Search & Filter -->
+                    <!-- Search & Filter Toolbar -->
                     <div class="space-y-2.5">
                         <div class="relative w-full">
                             <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -381,8 +377,9 @@ onUnmounted(() => {
                             </select>
                         </div>
 
+                        <!-- Open Modal Button -->
                         <button 
-                            @click="startCreate(true)" 
+                            @click="openCreateModal" 
                             class="w-full px-4 py-2.5 bg-namira-teal text-white rounded-xl font-bold text-xs shadow-md hover:bg-teal-600 transition-all active:scale-95 flex items-center justify-center gap-2"
                         >
                             <PlusIcon class="w-4 h-4 stroke-[2.5]" />
@@ -391,12 +388,12 @@ onUnmounted(() => {
                     </div>
                 </div>
                 
-                <!-- Scrollable Location List -->
+                <!-- Location Cards List -->
                 <div class="flex-1 overflow-y-auto p-3 md:p-4 space-y-2.5">
                     <div v-for="loc in locations.data" :key="loc.id" 
-                        class="p-3.5 rounded-2xl border cursor-pointer bg-white group relative transition-all hover:shadow-md hover:-translate-y-0.5"
-                        :class="loc.is_active ? 'border-slate-200 hover:border-namira-teal' : 'border-slate-200 bg-slate-50/60 opacity-75'"
-                        @click="map.setView([parseFloat(loc.latitude), parseFloat(loc.longitude)], 18)"
+                        class="p-3.5 rounded-2xl border cursor-pointer bg-white group relative transition-all hover:shadow-md hover:border-namira-teal"
+                        :class="loc.is_active ? 'border-slate-200' : 'border-slate-200 bg-slate-50/60 opacity-75'"
+                        @click="focusLocation(loc)"
                     >
                         <div class="flex justify-between items-start">
                             <div class="space-y-1">
@@ -422,7 +419,7 @@ onUnmounted(() => {
 
                             <!-- Action Buttons -->
                             <div class="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-                                <button @click.stop="startEdit(loc)" class="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors" title="Edit Lokasi">
+                                <button @click.stop="openEditModal(loc)" class="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors" title="Edit Lokasi">
                                     <PencilSquareIcon class="h-4 w-4" />
                                 </button>
                                 <button @click.stop="deleteLocation(loc.id)" class="text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors" title="Hapus Lokasi">
@@ -443,94 +440,17 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- SIDEBAR: FORM MODE (CREATE/EDIT) -->
-            <div v-else class="w-full lg:w-[420px] xl:w-[460px] bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col transition-all flex-shrink-0">
-                <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                    <div>
-                        <h3 class="font-bold text-base text-slate-900">{{ viewState === VIEW_STATE.EDIT ? 'Edit Lokasi Absensi' : 'Tambah Lokasi Baru' }}</h3>
-                        <p class="text-[11px] text-slate-500">Isi data atau klik di peta untuk atur koordinat</p>
-                    </div>
-                    <button @click="cancelForm" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors">
-                        <XMarkIcon class="w-5 h-5" />
-                    </button>
-                </div>
-                
-                <div class="p-5 space-y-4 flex-1 overflow-y-auto">
-                    <!-- Unit Selection -->
-                    <div>
-                        <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">Unit Sekolah *</label>
-                        <select v-model="form.unit_id" class="w-full rounded-xl border-slate-200 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 text-xs font-semibold py-2.5">
-                            <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
-                        </select>
-                        <div v-if="form.errors.unit_id" class="text-rose-500 text-xs mt-1 font-bold">{{ form.errors.unit_id }}</div>
-                    </div>
-
-                    <!-- Name -->
-                    <div>
-                        <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">Nama Lokasi *</label>
-                        <input v-model="form.name" type="text" class="w-full rounded-xl border-slate-200 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 text-xs font-semibold py-2.5" placeholder="Contoh: Gedung Utama SD Namira">
-                        <div v-if="form.errors.name" class="text-rose-500 text-xs mt-1 font-bold">{{ form.errors.name }}</div>
-                    </div>
-
-                    <!-- Coordinates Card -->
-                    <div class="p-4 bg-teal-50/60 rounded-2xl border border-teal-100 space-y-2">
-                        <p class="text-xs text-teal-800 font-extrabold flex items-center gap-1.5">
-                            <MapPinIcon class="h-4 w-4 text-teal-600" />
-                            Koordinat GPS Geofence
-                        </p>
-                        <div class="grid grid-cols-2 gap-3 text-xs">
-                            <div class="bg-white p-2.5 rounded-xl border border-teal-100">
-                                <span class="text-slate-400 text-[10px] font-bold uppercase block">Latitude</span>
-                                <div class="font-mono text-slate-800 font-bold mt-0.5">{{ typeof form.latitude === 'number' ? form.latitude.toFixed(6) : '-' }}</div>
-                            </div>
-                            <div class="bg-white p-2.5 rounded-xl border border-teal-100">
-                                <span class="text-slate-400 text-[10px] font-bold uppercase block">Longitude</span>
-                                <div class="font-mono text-slate-800 font-bold mt-0.5">{{ typeof form.longitude === 'number' ? form.longitude.toFixed(6) : '-' }}</div>
-                            </div>
-                        </div>
-                        <p class="text-[10.5px] text-teal-700 font-semibold pt-1">💡 Klik di peta untuk menggeser koordinat lokasi ini.</p>
-                    </div>
-
-                    <!-- Radius -->
-                    <div>
-                        <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">Radius Geofence (Meter) *</label>
-                        <input v-model="form.radius" @input="updatePreview" type="number" min="10" max="1000" class="w-full rounded-xl border-slate-200 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 text-xs font-semibold py-2.5">
-                        <p class="text-[10px] text-slate-400 mt-1">Jangkauan jarak toleransi absensi dari titik pusat (default 100m).</p>
-                        <div v-if="form.errors.radius" class="text-rose-500 text-xs mt-1 font-bold">{{ form.errors.radius }}</div>
-                    </div>
-                    
-                    <!-- Active Toggle -->
-                    <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                        <div>
-                            <span class="text-xs font-extrabold text-slate-800 uppercase tracking-wider block">Status Aktif</span>
-                            <span class="text-[10px] text-slate-400">Aktifkan untuk presensi pegawai</span>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" v-model="form.is_active" class="sr-only peer">
-                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-namira-teal"></div>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="px-5 py-3.5 bg-slate-50 flex justify-end gap-2.5 border-t border-slate-100">
-                    <button @click="cancelForm" class="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-xl text-xs transition-colors">Batal</button>
-                    <button @click="submit" :disabled="form.processing" class="px-5 py-2 bg-namira-teal text-white font-extrabold rounded-xl shadow-md hover:bg-teal-600 transition-all text-xs active:scale-95">
-                        {{ form.processing ? 'Menyimpan...' : 'Simpan Lokasi' }}
-                    </button>
-                </div>
-            </div>
-
-            <!-- MAP AREA (2/3 width or remaining flex space) -->
+            <!-- MAIN FULL MAP AREA -->
             <div class="w-full flex-1 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative group">
-                <div ref="mapContainer" class="w-full h-full z-0 cursor-crosshair"></div>
+                <div ref="mainMapContainer" class="w-full h-full z-0 cursor-crosshair"></div>
                 
-                <!-- Search Bar Overlay -->
+                <!-- Address Search Overlay Bar -->
                 <div class="absolute top-4 left-4 right-16 z-[400] bg-white rounded-2xl shadow-lg border border-slate-200 p-1 flex gap-2">
                     <input 
                         v-model="mapSearchQuery" 
                         @keyup.enter="searchLocation"
                         type="text" 
-                        placeholder="Cari alamat (misal: Alun-alun Probolinggo)..." 
+                        placeholder="Cari alamat di peta (misal: Alun-alun Probolinggo)..." 
                         class="w-full border-none text-xs font-semibold focus:ring-0 rounded-xl pl-3"
                     >
                     <button @click="searchLocation" class="bg-namira-teal text-white px-3.5 py-2 rounded-xl hover:bg-teal-700 transition-colors flex items-center gap-1 text-xs font-bold">
@@ -538,23 +458,130 @@ onUnmounted(() => {
                         <span>Cari</span>
                     </button>
                 </div>
-
-                <!-- My Location Button -->
-                <button 
-                    @click="getCurrentLocation"
-                    class="absolute bottom-6 right-6 z-[400] bg-white p-3 rounded-2xl shadow-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition-all active:scale-95 flex items-center gap-2 text-xs font-bold"
-                    title="Deteksi Lokasi Saya"
-                >
-                    <MapPinIcon class="h-5 w-5 text-teal-600" />
-                    <span class="hidden sm:inline">Lokasi Saya</span>
-                </button>
             </div>
         </div>
+
+        <!-- 🪟 POP-UP MODAL FORM (OPSI 4: Dedicated Pop-up with Mini Map Picker) -->
+        <Teleport to="body">
+            <div v-if="showFormModal" class="fixed inset-0 z-[100] overflow-y-auto">
+                <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="closeModal"></div>
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div class="relative bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200">
+                        
+                        <!-- Modal Header -->
+                        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
+                                    <MapPinIcon class="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-extrabold text-slate-900">{{ isEditing ? 'Edit Lokasi Presensi' : 'Tambah Lokasi Presensi Baru' }}</h3>
+                                    <p class="text-xs text-slate-500">Atur unit, radius geofence, dan geser pin lokasi di peta</p>
+                                </div>
+                            </div>
+                            <button @click="closeModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-xl"><XMarkIcon class="w-6 h-6" /></button>
+                        </div>
+
+                        <!-- Modal Form Content Grid (2 Columns) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 py-4">
+                            
+                            <!-- Left Column: Form Fields -->
+                            <div class="space-y-4">
+                                <div>
+                                    <InputLabel value="Unit Sekolah *" class="text-xs font-extrabold text-slate-700" />
+                                    <select v-model="form.unit_id" class="w-full mt-1 rounded-xl border-slate-200 text-xs font-semibold py-2.5 focus:ring-teal-500 focus:border-teal-500">
+                                        <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
+                                    </select>
+                                    <div v-if="form.errors.unit_id" class="text-rose-500 text-xs mt-1 font-bold">{{ form.errors.unit_id }}</div>
+                                </div>
+
+                                <div>
+                                    <InputLabel value="Nama Lokasi *" class="text-xs font-extrabold text-slate-700" />
+                                    <input v-model="form.name" type="text" placeholder="Contoh: Gedung Utama SD Namira" class="w-full mt-1 rounded-xl border-slate-200 text-xs font-semibold py-2.5 focus:ring-teal-500 focus:border-teal-500">
+                                    <div v-if="form.errors.name" class="text-rose-500 text-xs mt-1 font-bold">{{ form.errors.name }}</div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between items-center">
+                                        <InputLabel value="Radius Geofence *" class="text-xs font-extrabold text-slate-700" />
+                                        <span class="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">{{ form.radius }} Meter</span>
+                                    </div>
+                                    <input 
+                                        v-model="form.radius" 
+                                        @input="updateModalMapElements" 
+                                        type="range" 
+                                        min="10" 
+                                        max="500" 
+                                        step="5"
+                                        class="w-full mt-2 accent-teal-600 cursor-pointer"
+                                    >
+                                    <div class="flex justify-between text-[10px] text-slate-400 font-bold">
+                                        <span>10m (Ketat)</span>
+                                        <span>250m</span>
+                                        <span>500m (Luas)</span>
+                                    </div>
+                                    <div v-if="form.errors.radius" class="text-rose-500 text-xs mt-1 font-bold">{{ form.errors.radius }}</div>
+                                </div>
+
+                                <!-- GPS Coordinates Box -->
+                                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase block">Koordinat Terpilih</span>
+                                    <div class="font-mono text-slate-800 font-extrabold">
+                                        Lat: {{ typeof form.latitude === 'number' ? form.latitude.toFixed(6) : '-' }}, 
+                                        Lng: {{ typeof form.longitude === 'number' ? form.longitude.toFixed(6) : '-' }}
+                                    </div>
+                                </div>
+
+                                <!-- Active Status Toggle -->
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 block">Status Aktif</span>
+                                        <span class="text-[10px] text-slate-400">Aktifkan untuk lokasi presensi</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="form.is_active" @change="updateModalMapElements" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-namira-teal"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Interactive Mini-Map Picker -->
+                            <div class="flex flex-col space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-700">Pilih Titik di Peta (Klik / Geser Pin)</span>
+                                    <button 
+                                        type="button"
+                                        @click="useCurrentLocationInModal"
+                                        class="text-[11px] font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-1 rounded-lg transition-colors flex items-center gap-1"
+                                    >
+                                        <MapPinIcon class="w-3.5 h-3.5" />
+                                        <span>GPS Saya</span>
+                                    </button>
+                                </div>
+
+                                <div class="flex-1 min-h-[220px] rounded-2xl border border-slate-200 overflow-hidden relative shadow-inner">
+                                    <div ref="modalMapContainer" class="w-full h-full min-h-[220px]"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                            <button type="button" @click="closeModal" class="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl text-xs transition-colors">Batal</button>
+                            <button type="button" @click="submit" :disabled="form.processing" class="px-6 py-2.5 bg-namira-teal hover:bg-teal-600 text-white font-extrabold rounded-xl shadow-lg shadow-teal-500/20 text-xs transition-all active:scale-95 flex items-center gap-1.5">
+                                <CheckIcon class="w-4 h-4 stroke-[2.5]" />
+                                <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Lokasi Presensi' }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
     </AuthenticatedLayout>
 </template>
 
 <style>
-/* Custom Leaflet Pin Marker Styles */
 .custom-leaflet-pin {
     background: none !important;
     border: none !important;
