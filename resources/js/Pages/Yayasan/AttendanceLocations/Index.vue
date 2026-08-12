@@ -86,6 +86,14 @@ const form = useForm({
 });
 
 // --- MAIN MAP LOGIC ---
+const invalidateMainMap = () => {
+    if (mainMap.value) {
+        requestAnimationFrame(() => {
+            mainMap.value.invalidateSize({ animate: false });
+        });
+    }
+};
+
 const initMainMap = () => {
     if (!mainMapContainer.value) return;
 
@@ -95,30 +103,50 @@ const initMainMap = () => {
         : defaultCenter;
 
     mainMap.value = L.map(mainMapContainer.value, {
-        zoomControl: false
+        zoomControl: false,
+        preferCanvas: true,
     }).setView(initialCenter, 16);
+
+    // Force invalidateSize after every zoom/move to fix tile desync on mousepad
+    mainMap.value.on('zoomend moveend', () => {
+        requestAnimationFrame(() => {
+            if (mainMap.value) mainMap.value.invalidateSize({ animate: false });
+        });
+    });
 
     // Zoom Control at bottom-left
     L.control.zoom({ position: 'bottomleft' }).addTo(mainMap.value);
 
     // Sleek CartoDB Voyager Light Tiles (Linear/Stripe Aesthetic)
     const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB & OpenStreetMap'
+        attribution: '&copy; CartoDB &amp; OpenStreetMap',
+        keepBuffer: 4,
+        updateWhenIdle: false,
+        updateWhenZooming: true,
     });
 
     // High-Res Satellite View
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri'
+        attribution: 'Tiles &copy; Esri',
+        keepBuffer: 4,
+        updateWhenIdle: false,
+        updateWhenZooming: true,
     });
 
     // Futuristic Dark Mode Tiles
     const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB Dark'
+        attribution: '&copy; CartoDB Dark',
+        keepBuffer: 4,
+        updateWhenIdle: false,
+        updateWhenZooming: true,
     });
 
     // Standard OpenStreetMap
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
+        attribution: '&copy; OpenStreetMap',
+        keepBuffer: 4,
+        updateWhenIdle: false,
+        updateWhenZooming: true,
     });
 
     voyagerLayer.addTo(mainMap.value);
@@ -358,41 +386,53 @@ const deleteLocation = (id) => {
 
 // --- RESIZE OBSERVER & MAP INVALIDATION ---
 let mainMapResizeObserver = null;
+let wheelInvalidateTimer = null;
 
 const handleWindowResize = () => {
-    if (mainMap.value) {
-        mainMap.value.invalidateSize();
-    }
+    invalidateMainMap();
+};
+
+// Fix for mousepad/trackpad zoom: Leaflet tiles desync during wheel zoom
+const handleWheelOnMap = () => {
+    clearTimeout(wheelInvalidateTimer);
+    wheelInvalidateTimer = setTimeout(() => {
+        invalidateMainMap();
+    }, 80);
 };
 
 // --- LIFECYCLE ---
 onMounted(() => {
     initMainMap();
 
-    // Invalidate size after initial DOM render
-    setTimeout(() => {
-        if (mainMap.value) {
-            mainMap.value.invalidateSize();
-        }
-    }, 300);
+    // Multi-stage invalidateSize to ensure map renders correctly after DOM settle
+    [100, 300, 600, 1200].forEach(delay => {
+        setTimeout(() => invalidateMainMap(), delay);
+    });
 
-    // Watch container size changes automatically
+    // Watch container size changes automatically with rAF
     if (window.ResizeObserver && mainMapContainer.value) {
         mainMapResizeObserver = new ResizeObserver(() => {
-            if (mainMap.value) {
-                mainMap.value.invalidateSize();
-            }
+            invalidateMainMap();
         });
         mainMapResizeObserver.observe(mainMapContainer.value);
     }
 
     window.addEventListener('resize', handleWindowResize);
+
+    // Fix mousepad/trackpad scroll zoom tile desync
+    if (mainMapContainer.value) {
+        mainMapContainer.value.addEventListener('wheel', handleWheelOnMap, { passive: true });
+    }
 });
 
 onUnmounted(() => {
     window.removeEventListener('resize', handleWindowResize);
+    clearTimeout(wheelInvalidateTimer);
     if (mainMapResizeObserver) {
         mainMapResizeObserver.disconnect();
+    }
+    if (mainMapContainer.value) {
+        mainMapContainer.value.removeEventListener('wheel', handleWheelOnMap);
     }
     if (mainMap.value) {
         mainMap.value.remove();
