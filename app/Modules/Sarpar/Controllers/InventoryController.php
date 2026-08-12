@@ -90,7 +90,7 @@ class InventoryController extends Controller
             </style>
         </head>
         <body>
-            <h1>📦 Laporan Data Inventaris</h1>
+            <h1>Laporan Data Inventaris</h1>
             <p class="date">Tanggal: ' . date('d F Y H:i') . '</p>
             <table>
                 <tr>';
@@ -150,7 +150,7 @@ class InventoryController extends Controller
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola inventaris.');
         }
 
@@ -229,7 +229,7 @@ class InventoryController extends Controller
 
     public function update(Request $request, Inventory $inventory)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola inventaris.');
         }
 

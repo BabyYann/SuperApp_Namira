@@ -81,7 +81,7 @@ class MaintenanceController extends Controller
             NotificationDispatcher::sendToRoles(
                 ['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan'],
                 $unitId,
-                '🛠️ Laporan Kerusakan Sarpras',
+                'Laporan Kerusakan Sarpras',
                 "{$inventory->name} dilaporkan rusak oleh " . auth()->user()->name . ". Detail: {$validated['issue']}",
                 'sarpar',
                 ['inventory_id' => $inventory->id]
@@ -98,7 +98,7 @@ class MaintenanceController extends Controller
      */
     public function handle(Request $request, MaintenanceLog $log)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 
@@ -135,7 +135,7 @@ class MaintenanceController extends Controller
                 $statusText = $validated['resolved'] ? 'Selesai Diperbaiki' : 'Dalam Perbaikan';
                 NotificationDispatcher::sendToUser(
                     $log->reporter,
-                    '🛠️ Status Laporan Perbaikan',
+                    'Status Laporan Perbaikan',
                     "Laporan perbaikan {$log->inventory->name} saat ini berstatus: {$statusText}.",
                     'sarpar',
                     ['log_id' => $log->id]
@@ -153,7 +153,7 @@ class MaintenanceController extends Controller
      */
     public function cancel(MaintenanceLog $log)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 

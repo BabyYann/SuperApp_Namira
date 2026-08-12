@@ -55,7 +55,7 @@ class RoomController extends Controller
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 
@@ -82,7 +82,7 @@ class RoomController extends Controller
 
     public function update(Request $request, Room $room)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 

@@ -8,7 +8,8 @@ import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { 
     PlusIcon, PencilSquareIcon, TrashIcon, CubeIcon, MagnifyingGlassIcon,
-    FunnelIcon, ExclamationTriangleIcon, EyeIcon, PhotoIcon, ArchiveBoxIcon, ChevronDownIcon
+    FunnelIcon, ExclamationTriangleIcon, EyeIcon, PhotoIcon, ArchiveBoxIcon, ChevronDownIcon,
+    BuildingOfficeIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -640,7 +641,7 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <InputLabel value="Kondisi *" class="text-sm font-bold text-gray-700" />
-                                    <select v-model="form.condition" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50" required>
+                                    <select v-model="form.condition" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50">
                                         <option value="baik">Baik</option>
                                         <option value="rusak_ringan">Rusak Ringan</option>
                                         <option value="rusak_berat">Rusak Berat</option>
@@ -651,13 +652,13 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                     <InputLabel value="Lokasi" class="text-sm font-bold text-gray-700" />
                                     <select v-model="form.classroom_id" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50">
                                         <option value="">-- Pilih Kelas --</option>
-                                        <optgroup label="📚 Kelas">
+                                        <optgroup label="Kelas">
                                             <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id">{{ classroom.name }}</option>
                                         </optgroup>
                                     </select>
                                     <select v-model="form.room_id" class="w-full mt-2 h-12 px-4 text-base border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50">
                                         <option value="">-- Atau Pilih Ruangan --</option>
-                                        <optgroup label="🏢 Ruangan Lain">
+                                        <optgroup label="Ruangan Lain">
                                             <option v-for="room in rooms" :key="room.id" :value="room.id">{{ room.name }}</option>
                                         </optgroup>
                                     </select>

@@ -267,7 +267,9 @@ class UserController extends Controller
         }
 
         return Inertia::render('Yayasan/Users/Edit', [
-            'user' => $user,
+            'user' => array_merge($user->toArray(), [
+                'profile_photo_url' => $user->profile_photo_url,
+            ]),
             'currentUnitId' => $targetUnitId,
             'currentRoles' => $currentRoles,
             'units' => $units,
@@ -305,16 +307,52 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'photo' => 'nullable|image|mimes:jpeg,jpg,png,webp,gif,bmp|max:5120',
             'roles' => 'required_without:role|array|min:1',
             'roles.*' => 'string|exists:roles,name',
             'role' => 'nullable|string|exists:roles,name',
             'unit_id' => 'nullable|exists:units,id',
         ]);
         
-        $user->update([
+        $updateData = [
             'name' => $request->name,
             'email' => $request->email,
-        ]);
+        ];
+
+        if ($request->hasFile('photo')) {
+            if ($user->profile_photo) {
+                \Storage::disk('public')->delete($user->profile_photo);
+            }
+
+            $file = $request->file('photo');
+            $randomName = \Illuminate\Support\Str::random(40) . '.webp';
+            $relativePath = 'profile-photos/' . $randomName;
+            $destinationPath = storage_path('app/public/' . $relativePath);
+
+            if (!file_exists(dirname($destinationPath))) {
+                mkdir(dirname($destinationPath), 0755, true);
+            }
+
+            try {
+                $imageContent = file_get_contents($file->getRealPath());
+                $srcImage = @imagecreatefromstring($imageContent);
+
+                if ($srcImage !== false) {
+                    imagealphablending($srcImage, true);
+                    imagesavealpha($srcImage, true);
+                    imagewebp($srcImage, $destinationPath, 82);
+                    imagedestroy($srcImage);
+                } else {
+                    $relativePath = $file->store('profile-photos', 'public');
+                }
+            } catch (\Throwable $e) {
+                $relativePath = $file->store('profile-photos', 'public');
+            }
+
+            $updateData['profile_photo'] = $relativePath;
+        }
+
+        $user->update($updateData);
 
         $roles = $request->roles ?? ($request->role ? [$request->role] : []);
         $globalRoles = ['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'pengawas_yayasan', 'humas_yayasan'];

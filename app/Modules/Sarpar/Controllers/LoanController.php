@@ -54,6 +54,10 @@ class LoanController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mencatat peminjaman inventaris.');
+        }
+
         $validated = $request->validate([
             'inventory_id' => 'required|exists:sarpar_inventories,id',
             'borrower_id' => 'required|exists:users,id',
@@ -96,7 +100,7 @@ class LoanController extends Controller
                 $dueDateFormatted = \Carbon\Carbon::parse($validated['due_date'])->translatedFormat('d F Y');
                 NotificationDispatcher::sendToUser(
                     $borrower,
-                    '📦 Peminjaman Inventaris Sarpras',
+                    'Peminjaman Inventaris Sarpras',
                     "Anda telah meminjam {$inventory->name} ({$validated['quantity']} unit). Tanggal jatuh tempo pengembalian: {$dueDateFormatted}.",
                     'sarpar',
                     ['inventory_id' => $inventory->id]
@@ -114,7 +118,7 @@ class LoanController extends Controller
      */
     public function return(Request $request, Loan $loan)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses pengembalian peminjaman.');
         }
 
@@ -147,7 +151,7 @@ class LoanController extends Controller
             if ($loan->borrower) {
                 NotificationDispatcher::sendToUser(
                     $loan->borrower,
-                    '✅ Pengembalian Inventaris Sarpras',
+                    'Pengembalian Inventaris Sarpras',
                     "Inventaris {$loan->inventory->name} yang Anda pinjam telah berhasil dikembalikan.",
                     'sarpar',
                     ['inventory_id' => $loan->inventory_id]
@@ -165,7 +169,7 @@ class LoanController extends Controller
      */
     public function markLost(Loan $loan)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses status hilang peminjaman.');
         }
 
