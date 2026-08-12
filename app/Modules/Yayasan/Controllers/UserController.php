@@ -19,7 +19,7 @@ class UserController extends Controller
 
         // Unit Isolation Check
         $currentUser = auth()->user();
-        if (!$currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'])) {
+        if (!$currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])) {
             $unitId = session('active_unit_id');
             $query->where(function ($subQ) use ($unitId) {
                 $subQ->whereExists(function ($q1) use ($unitId) {
@@ -146,7 +146,7 @@ class UserController extends Controller
 
         return Inertia::render('Yayasan/Users/Index', [
             'users' => $users,
-            'units' => auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) ? Unit::all() : Unit::where('id', session('active_unit_id'))->get(),
+            'units' => auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']) ? Unit::all() : Unit::where('id', session('active_unit_id'))->get(),
             'roles' => Role::where('name', '!=', 'super_admin_yayasan')->pluck('name'),
             'filters' => $request->only(['search', 'role', 'unit_id']),
         ]);
@@ -155,7 +155,7 @@ class UserController extends Controller
     public function create()
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
         $units = $isGlobalAdmin 
             ? Unit::all() 
             : Unit::where('id', session('active_unit_id'))->get();
@@ -177,7 +177,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -239,7 +239,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
 
         // Fetch all current roles & team_id
         $roleInfos = \DB::table('model_has_roles')
@@ -281,7 +281,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
 
         $oldUnitId = \DB::table('model_has_roles')
             ->where('model_id', $user->id)
@@ -387,8 +387,12 @@ class UserController extends Controller
              return redirect()->back()->with('error', 'Tidak bisa menghapus Super Admin.');
         }
 
+        if (auth()->id() === $user->id) {
+             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif.');
+        }
+
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
 
         if (!$isGlobalAdmin) {
             $userUnitId = \DB::table('model_has_roles')
@@ -481,7 +485,7 @@ class UserController extends Controller
         }
 
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
 
         if (!$isGlobalAdmin) {
             $userUnitId = \DB::table('model_has_roles')
