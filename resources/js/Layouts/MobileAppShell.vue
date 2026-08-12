@@ -31,7 +31,8 @@ import {
     CheckCircleIcon,
     UserGroupIcon,
     ClockIcon,
-    HeartIcon
+    HeartIcon,
+    TagIcon
 } from '@heroicons/vue/24/outline';
 import { 
     HomeIcon as HomeIconSolid, 
@@ -745,6 +746,17 @@ const isRouteActive = (pattern) => {
                                         <BuildingOfficeIcon class="w-5 h-5" />
                                     </div>
                                     <span class="text-xs font-bold text-slate-800">Ruangan</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('sarpar.categories.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
+                                        <TagIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Kategori</span>
                                 </Link>
                             </div>
                         </div>
