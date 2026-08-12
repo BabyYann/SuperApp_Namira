@@ -82,11 +82,12 @@
             align-content: start;
         }
 
-        /* Compact Sticker Item */
+        /* Compact Sticker Item with Abstract Accent */
         .sticker-card {
             border: 1px solid #cbd5e1;
+            border-left: 3.5px solid #0d9488;
             border-radius: 6px;
-            padding: 4px 6px;
+            padding: 4px 6px 4px 6px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -97,6 +98,29 @@
             page-break-inside: avoid;
         }
 
+        /* Abstract Geometric Corner Wave SVG Accent */
+        .abstract-bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 42px;
+            height: 42px;
+            pointer-events: none;
+            opacity: 0.15;
+            z-index: 1;
+        }
+
+        .abstract-dots {
+            position: absolute;
+            bottom: 2px;
+            right: 42px;
+            width: 24px;
+            height: 12px;
+            pointer-events: none;
+            opacity: 0.08;
+            z-index: 1;
+        }
+
         /* Left QR Section */
         .sticker-qr {
             width: 20mm;
@@ -105,9 +129,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #fafafa;
+            background: #ffffff;
             border-radius: 4px;
             border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            z-index: 2;
         }
 
         .sticker-qr svg {
@@ -123,6 +149,8 @@
             justify-content: space-between;
             height: 20mm;
             overflow: hidden;
+            z-index: 2;
+            padding-right: 4px;
         }
 
         .unit-tag {
@@ -130,10 +158,22 @@
             font-weight: 800;
             color: #0d9488;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.4px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .unit-tag::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background-color: #0d9488;
+            border-radius: 50%;
         }
 
         .item-name {
@@ -141,34 +181,56 @@
             font-weight: 800;
             color: #0f172a;
             line-height: 1.15;
+            text-transform: capitalize;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            margin-top: 1px;
+        }
+
+        .item-location {
+            font-size: 6pt;
+            color: #64748b;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .item-meta {
             font-size: 6.5pt;
-            color: #64748b;
-            font-weight: 600;
+            color: #475569;
+            font-weight: 700;
             line-height: 1.1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .item-code {
             font-family: monospace;
             font-weight: 700;
-            color: #334155;
+            color: #1e293b;
             font-size: 6.5pt;
+            letter-spacing: -0.2px;
         }
 
         .badge-source {
             display: inline-block;
-            padding: 1px 3px;
+            padding: 1px 4px;
             border-radius: 3px;
             font-size: 5.5pt;
             font-weight: 800;
             background: #e0f2fe;
             color: #0369a1;
+            border: 0.5px solid #bae6fd;
+        }
+
+        .badge-source-yys {
+            background: #ccfbf1;
+            color: #0f766e;
+            border: 0.5px solid #99f6e4;
         }
 
         /* Print Media Overrides */
@@ -192,6 +254,14 @@
 
             .sticker-card {
                 border: 1px solid #94a3b8;
+                border-left: 3.5px solid #0d9488 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .abstract-bg, .abstract-dots {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             @page {
@@ -214,17 +284,37 @@
     <div class="sheet">
         @forelse($items as $item)
             <div class="sticker-card">
+                <!-- Abstract Geometric SVG Overlay (Top Right) -->
+                <svg class="abstract-bg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 0 H100 V100 C60 80 40 40 0 0 Z" fill="#0d9488"/>
+                    <circle cx="80" cy="20" r="12" fill="#0f766e"/>
+                </svg>
+
+                <!-- Abstract Dots Pattern Overlay (Bottom Accent) -->
+                <svg class="abstract-dots" viewBox="0 0 50 25" fill="#0d9488" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="5" cy="5" r="2.5"/><circle cx="20" cy="5" r="2.5"/><circle cx="35" cy="5" r="2.5"/>
+                    <circle cx="12.5" cy="18" r="2.5"/><circle cx="27.5" cy="18" r="2.5"/>
+                </svg>
+
+                <!-- Left QR Code -->
                 <div class="sticker-qr">
                     {!! $item->qr_svg !!}
                 </div>
+
+                <!-- Right Information -->
                 <div class="sticker-info">
                     <div>
                         <div class="unit-tag">{{ $item->unit->name ?? $unitName }}</div>
                         <div class="item-name">{{ $item->name }} @if($item->brand) ({{ $item->brand }}) @endif</div>
+                        @if($item->room || $item->classroom)
+                            <div class="item-location">📍 {{ $item->room->name ?? $item->classroom->name }}</div>
+                        @endif
                     </div>
                     <div class="item-meta">
                         <span class="item-code">{{ $item->code }}</span>
-                        <span class="badge-source">{{ $item->funding_source == 'BOS' ? 'BOS' : 'YYS' }}</span>
+                        <span class="badge-source {{ $item->funding_source == 'YYS' ? 'badge-source-yys' : '' }}">
+                            {{ $item->funding_source == 'BOS' ? 'BOS' : 'YYS' }}
+                        </span>
                     </div>
                 </div>
             </div>
