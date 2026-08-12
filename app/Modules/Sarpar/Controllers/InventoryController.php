@@ -40,12 +40,14 @@ class InventoryController extends Controller
         $categories = Category::orderBy('name')->get();
         $rooms = Room::where('unit_id', $unitId)->orderBy('name')->get();
         $classrooms = Classroom::where('unit_id', $unitId)->orderBy('name')->get();
+        $units = Unit::orderBy('name')->get();
 
         return Inertia::render('Sarpar/Inventories/Index', [
             'inventories' => $inventories,
             'categories' => $categories,
             'rooms' => $rooms,
             'classrooms' => $classrooms,
+            'units' => $units,
             'filters' => request()->only(['search', 'category_id', 'funding_source', 'item_type', 'status', 'condition']),
         ]);
     }

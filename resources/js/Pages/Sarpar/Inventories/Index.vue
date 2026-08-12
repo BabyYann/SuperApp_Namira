@@ -9,7 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { 
     PlusIcon, PencilSquareIcon, TrashIcon, CubeIcon, MagnifyingGlassIcon,
     FunnelIcon, ExclamationTriangleIcon, EyeIcon, PhotoIcon, ArchiveBoxIcon, ChevronDownIcon,
-    BuildingOfficeIcon
+    BuildingOfficeIcon, PrinterIcon, ArrowsRightLeftIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -17,6 +17,7 @@ const props = defineProps({
     categories: Array,
     rooms: Array,
     classrooms: Array,
+    units: Array,
     filters: Object,
 });
 
@@ -27,6 +28,58 @@ const itemToDelete = ref(null);
 const showFilters = ref(false);
 const photoPreview = ref(null);
 const showExportMenu = ref(false);
+
+// Transfer Modal State
+const showTransferModal = ref(false);
+const itemToTransfer = ref(null);
+const transferForm = useForm({
+    to_unit_id: '',
+    to_room_id: '',
+    reason: '',
+});
+
+const openTransferModal = (item) => {
+    itemToTransfer.value = item;
+    transferForm.to_unit_id = item.unit_id;
+    transferForm.to_room_id = item.room_id || '';
+    transferForm.reason = '';
+    showTransferModal.value = true;
+};
+
+const submitTransfer = () => {
+    if (!itemToTransfer.value) return;
+    transferForm.post(route('sarpar.inventories.transfer', itemToTransfer.value.id), {
+        onSuccess: () => {
+            showTransferModal.value = false;
+            itemToTransfer.value = null;
+        }
+    });
+};
+
+// Disposal Modal State
+const showDisposalModal = ref(false);
+const itemToDisposal = ref(null);
+const disposalForm = useForm({
+    disposal_type: 'rusak_berat',
+    reason: '',
+});
+
+const openDisposalModal = (item) => {
+    itemToDisposal.value = item;
+    disposalForm.disposal_type = 'rusak_berat';
+    disposalForm.reason = '';
+    showDisposalModal.value = true;
+};
+
+const submitDisposal = () => {
+    if (!itemToDisposal.value) return;
+    disposalForm.post(route('sarpar.inventories.disposal', itemToDisposal.value.id), {
+        onSuccess: () => {
+            showDisposalModal.value = false;
+            itemToDisposal.value = null;
+        }
+    });
+};
 
 const searchQuery = ref(props.filters.search || '');
 const filterCategory = ref(props.filters.category_id || '');
@@ -410,6 +463,12 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                         </div>
                     </div>
 
+                    <!-- Print Stiker Button -->
+                    <a :href="route('sarpar.inventories.print-stickers')" target="_blank" class="px-4 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 flex items-center gap-2 h-[46px] shadow-lg shadow-indigo-600/30">
+                        <PrinterIcon class="w-5 h-5" />
+                        <span>Cetak Stiker QR</span>
+                    </a>
+
                     <button @click="openCreateModal" class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all flex items-center gap-2 active:scale-95 h-[46px]">
                         <PlusIcon class="w-5 h-5" /><span>Tambah Barang</span>
                     </button>
@@ -512,10 +571,12 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                     <td class="p-4 text-sm text-gray-600">{{ item.location_name }}</td>
                                     <td class="p-4"><span :class="['px-2 py-1 text-xs font-bold rounded-lg capitalize', getStatusBadge(item.status)]">{{ item.status }}</span></td>
                                     <td class="p-4">
-                                        <div class="flex justify-end gap-2">
-                                            <Link :href="route('sarpar.inventories.show', item.id)" class="p-2 rounded-xl text-gray-400 hover:text-namira-teal hover:bg-teal-50"><EyeIcon class="w-4 h-4" /></Link>
-                                            <button @click="openEditModal(item)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50"><PencilSquareIcon class="w-4 h-4" /></button>
-                                            <button @click="confirmDelete(item)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50"><TrashIcon class="w-4 h-4" /></button>
+                                        <div class="flex justify-end gap-1.5">
+                                            <a :href="route('sarpar.inventories.print-stickers', { ids: item.id })" target="_blank" title="Cetak Stiker QR" class="p-2 rounded-xl text-indigo-600 hover:bg-indigo-50 transition-colors"><PrinterIcon class="w-4 h-4" /></a>
+                                            <button @click="openTransferModal(item)" title="Mutasi Barang" class="p-2 rounded-xl text-blue-600 hover:bg-blue-50 transition-colors"><ArrowsRightLeftIcon class="w-4 h-4" /></button>
+                                            <Link :href="route('sarpar.inventories.show', item.id)" title="Detail" class="p-2 rounded-xl text-slate-500 hover:text-namira-teal hover:bg-teal-50 transition-colors"><EyeIcon class="w-4 h-4" /></Link>
+                                            <button @click="openEditModal(item)" title="Edit" class="p-2 rounded-xl text-amber-600 hover:bg-amber-50 transition-colors"><PencilSquareIcon class="w-4 h-4" /></button>
+                                            <button @click="openDisposalModal(item)" title="Penghapusan / Afkir" class="p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"><TrashIcon class="w-4 h-4" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -674,6 +735,105 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                             <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-50">
                                 <button type="button" @click="closeModal" class="px-5 py-2.5 text-gray-500 font-bold hover:bg-gray-50 rounded-xl">Batal</button>
                                 <PrimaryButton :disabled="form.processing" class="rounded-xl px-6 shadow-lg shadow-namira-teal/30">{{ isEditing ? 'Simpan' : 'Tambah Barang' }}</PrimaryButton>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- Transfer Modal -->
+        <Teleport to="body">
+            <div v-if="showTransferModal" class="fixed inset-0 z-[100] overflow-y-auto">
+                <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showTransferModal = false"></div>
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div class="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                                    <ArrowsRightLeftIcon class="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">Mutasi / Pemindahan Barang</h3>
+                                    <p class="text-xs text-gray-500">{{ itemToTransfer?.name }} ({{ itemToTransfer?.code }})</p>
+                                </div>
+                            </div>
+                            <button @click="showTransferModal = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
+                        </div>
+
+                        <form @submit.prevent="submitTransfer" class="space-y-4">
+                            <div>
+                                <InputLabel value="Unit Tujuan *" class="text-xs font-bold text-gray-700" />
+                                <select v-model="transferForm.to_unit_id" class="w-full mt-1 h-11 px-3 border-gray-200 rounded-xl text-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option v-for="u in units" :key="u.id" :value="u.id">{{ u.name }}</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <InputLabel value="Ruangan Tujuan (Opsional)" class="text-xs font-bold text-gray-700" />
+                                <select v-model="transferForm.to_room_id" class="w-full mt-1 h-11 px-3 border-gray-200 rounded-xl text-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">-- Pilih Ruangan --</option>
+                                    <option v-for="rm in rooms" :key="rm.id" :value="rm.id">{{ rm.name }}</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <InputLabel value="Alasan Mutasi *" class="text-xs font-bold text-gray-700" />
+                                <textarea v-model="transferForm.reason" rows="3" required placeholder="Jelaskan alasan pemindahan barang ini..." class="w-full mt-1 px-3 py-2 border-gray-200 rounded-xl text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+
+                            <div class="flex justify-end gap-3 pt-2">
+                                <button type="button" @click="showTransferModal = false" class="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl text-sm">Batal</button>
+                                <button type="submit" :disabled="transferForm.processing" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-500/30">
+                                    Proses Mutasi & Generate BA PDF
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- Disposal Modal -->
+        <Teleport to="body">
+            <div v-if="showDisposalModal" class="fixed inset-0 z-[100] overflow-y-auto">
+                <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showDisposalModal = false"></div>
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div class="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                                    <TrashIcon class="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">Penghapusan / Afkir Aset</h3>
+                                    <p class="text-xs text-gray-500">{{ itemToDisposal?.name }} ({{ itemToDisposal?.code }})</p>
+                                </div>
+                            </div>
+                            <button @click="showDisposalModal = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
+                        </div>
+
+                        <form @submit.prevent="submitDisposal" class="space-y-4">
+                            <div>
+                                <InputLabel value="Jenis Penghapusan *" class="text-xs font-bold text-gray-700" />
+                                <select v-model="disposalForm.disposal_type" class="w-full mt-1 h-11 px-3 border-gray-200 rounded-xl text-sm focus:ring-rose-500 focus:border-rose-500">
+                                    <option value="rusak_berat">Rusak Berat (Diapkir)</option>
+                                    <option value="hilang">Hilang</option>
+                                    <option value="dijual">Dijual</option>
+                                    <option value="hibah">Dihibahkan</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <InputLabel value="Alasan / Keterangan *" class="text-xs font-bold text-gray-700" />
+                                <textarea v-model="disposalForm.reason" rows="3" required placeholder="Jelaskan alasan penghapusan aset dari buku inventaris..." class="w-full mt-1 px-3 py-2 border-gray-200 rounded-xl text-sm focus:ring-rose-500 focus:border-rose-500"></textarea>
+                            </div>
+
+                            <div class="flex justify-end gap-3 pt-2">
+                                <button type="button" @click="showDisposalModal = false" class="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl text-sm">Batal</button>
+                                <button type="submit" :disabled="disposalForm.processing" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-rose-500/30">
+                                    Proses Afkir & Generate BA PDF
+                                </button>
                             </div>
                         </form>
                     </div>

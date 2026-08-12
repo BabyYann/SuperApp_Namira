@@ -12,7 +12,14 @@ Route::prefix('sarpar')->name('sarpar.')->middleware(['role:super_admin_yayasan|
     Route::resource('rooms', \App\Modules\Sarpar\Controllers\RoomController::class)->only(['index', 'store', 'update', 'destroy']);
     
     Route::get('inventories/export', [\App\Modules\Sarpar\Controllers\InventoryController::class, 'export'])->name('inventories.export');
+    Route::get('inventories/print-stickers', [\App\Modules\Sarpar\Controllers\StickerController::class, 'printStickers'])->name('inventories.print-stickers');
     Route::resource('inventories', \App\Modules\Sarpar\Controllers\InventoryController::class);
+    
+    // Mutasi & Penghapusan Barang
+    Route::post('inventories/{inventory}/transfer', [\App\Modules\Sarpar\Controllers\AssetActionController::class, 'transfer'])->name('inventories.transfer');
+    Route::post('inventories/{inventory}/disposal', [\App\Modules\Sarpar\Controllers\AssetActionController::class, 'disposal'])->name('inventories.disposal');
+    Route::get('transfers/{transfer}/pdf', [\App\Modules\Sarpar\Controllers\AssetActionController::class, 'transferPdf'])->name('transfers.pdf');
+    Route::get('disposals/{disposal}/pdf', [\App\Modules\Sarpar\Controllers\AssetActionController::class, 'disposalPdf'])->name('disposals.pdf');
     
     Route::post('maintenance/{log}/handle', [\App\Modules\Sarpar\Controllers\MaintenanceController::class, 'handle'])->name('maintenance.handle');
     Route::post('maintenance/{log}/cancel', [\App\Modules\Sarpar\Controllers\MaintenanceController::class, 'cancel'])->name('maintenance.cancel');

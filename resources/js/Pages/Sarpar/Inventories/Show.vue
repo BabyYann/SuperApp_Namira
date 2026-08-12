@@ -7,7 +7,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { 
     ArrowLeftIcon, CubeIcon, WrenchScrewdriverIcon, ClockIcon,
     ExclamationCircleIcon, CheckCircleIcon, TagIcon, MapPinIcon,
-    PhotoIcon, ArchiveBoxIcon, MinusCircleIcon
+    PhotoIcon, ArchiveBoxIcon, MinusCircleIcon, PrinterIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -130,6 +130,10 @@ const getSourceBadge = (source) => source === 'BOS' ? 'bg-purple-100 text-purple
 
                     <!-- Action Buttons -->
                     <div class="pt-4 space-y-2">
+                        <a :href="route('sarpar.inventories.print-stickers', { ids: inventory.id })" target="_blank" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/30">
+                            <PrinterIcon class="w-5 h-5" />
+                            Cetak Stiker QR Kompak
+                        </a>
                         <button v-if="inventory.item_type === 'consumable'" @click="showUsageModal = true" class="w-full px-4 py-3 bg-orange-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/30">
                             <MinusCircleIcon class="w-5 h-5" />
                             Catat Penggunaan
