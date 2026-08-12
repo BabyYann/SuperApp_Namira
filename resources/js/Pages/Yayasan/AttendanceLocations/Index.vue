@@ -255,6 +255,12 @@ const initModalMap = () => {
         form.longitude = e.latlng.lng;
         updateModalMapElements();
     });
+
+    setTimeout(() => {
+        if (modalMap.value) {
+            modalMap.value.invalidateSize();
+        }
+    }, 250);
 };
 
 const updateModalMapElements = () => {
@@ -350,12 +356,44 @@ const deleteLocation = (id) => {
     }
 };
 
+// --- RESIZE OBSERVER & MAP INVALIDATION ---
+let mainMapResizeObserver = null;
+
+const handleWindowResize = () => {
+    if (mainMap.value) {
+        mainMap.value.invalidateSize();
+    }
+};
+
 // --- LIFECYCLE ---
 onMounted(() => {
     initMainMap();
+
+    // Invalidate size after initial DOM render
+    setTimeout(() => {
+        if (mainMap.value) {
+            mainMap.value.invalidateSize();
+        }
+    }, 300);
+
+    // Watch container size changes automatically
+    if (window.ResizeObserver && mainMapContainer.value) {
+        mainMapResizeObserver = new ResizeObserver(() => {
+            if (mainMap.value) {
+                mainMap.value.invalidateSize();
+            }
+        });
+        mainMapResizeObserver.observe(mainMapContainer.value);
+    }
+
+    window.addEventListener('resize', handleWindowResize);
 });
 
 onUnmounted(() => {
+    window.removeEventListener('resize', handleWindowResize);
+    if (mainMapResizeObserver) {
+        mainMapResizeObserver.disconnect();
+    }
     if (mainMap.value) {
         mainMap.value.remove();
         mainMap.value = null;
