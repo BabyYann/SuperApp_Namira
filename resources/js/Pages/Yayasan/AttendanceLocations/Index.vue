@@ -449,18 +449,18 @@ onUnmounted(() => {
             <div class="w-full flex-1 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative group">
                 <div ref="mainMapContainer" class="w-full h-full z-0 cursor-crosshair"></div>
                 
-                <!-- Address Search Overlay Bar (Positioned Top-Left with Max Width) -->
-                <div class="absolute top-3 left-3 w-[calc(100%-120px)] sm:w-80 md:w-96 z-[400] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/80 p-1 flex gap-1.5">
+                <!-- Address Search Overlay Bar (Compact Top-Left Search Bar) -->
+                <div class="absolute top-3 left-3 w-[calc(100%-85px)] max-w-[250px] sm:max-w-[300px] z-[400] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-1 flex gap-1 items-center">
                     <input 
                         v-model="mapSearchQuery" 
                         @keyup.enter="searchLocation"
                         type="text" 
                         placeholder="Cari alamat di peta..." 
-                        class="w-full border-none text-xs font-semibold focus:ring-0 rounded-xl pl-3 bg-transparent"
+                        class="w-full border-none text-xs font-semibold focus:ring-0 rounded-xl pl-2.5 bg-transparent placeholder:text-slate-400 min-w-0"
                     >
-                    <button @click="searchLocation" class="bg-namira-teal text-white px-3 py-1.5 rounded-xl hover:bg-teal-700 transition-colors flex items-center gap-1 text-xs font-bold shrink-0">
+                    <button @click="searchLocation" class="bg-namira-teal text-white px-2.5 py-1.5 rounded-xl hover:bg-teal-700 transition-colors flex items-center gap-1 text-xs font-bold shrink-0">
                         <MagnifyingGlassIcon class="h-3.5 w-3.5" />
-                        <span>Cari</span>
+                        <span class="hidden sm:inline">Cari</span>
                     </button>
                 </div>
             </div>
