@@ -137,9 +137,10 @@ class UserController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'profile_photo_url' => $user->profile_photo_url,
                 'roles' => $roles,
                 'units' => $user->getUnitsAttribute()->pluck('name'),
-                'is_active' => !is_null($user->email_verified_at), // Simple check for now
+                'is_active' => !is_null($user->email_verified_at),
                 'created_at' => $user->created_at->format('d M Y'),
             ];
         });

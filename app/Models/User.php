@@ -110,7 +110,13 @@ class User extends Authenticatable implements CanResetPassword
              return asset('storage/' . $teacher->photo);
         }
 
-        // 3. Fallback to UI Avatars
+        // 3. Check Staff Profile
+        $staff = $this->staff()->first();
+        if ($staff && !empty($staff->photo)) {
+             return asset('storage/' . $staff->photo);
+        }
+
+        // 4. Fallback to UI Avatars
         $name = trim($this->name);
         return 'https://ui-avatars.com/api/?name='.urlencode($name).'&color=7F9CF5&background=EBF4FF';
     }

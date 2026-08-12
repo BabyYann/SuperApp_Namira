@@ -247,7 +247,8 @@ const submitResetPassword = () => {
                     <div v-for="user in users.data" :key="user.id" class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                         <div class="flex items-start justify-between">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-slate-800 text-white font-black text-base flex items-center justify-center shadow-md">
+                                <img v-if="user.profile_photo_url && !user.profile_photo_url.includes('ui-avatars.com')" :src="user.profile_photo_url" class="w-10 h-10 rounded-xl object-cover shadow-md" />
+                                <div v-else class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-slate-800 text-white font-black text-base flex items-center justify-center shadow-md">
                                     {{ user.name.charAt(0).toUpperCase() }}
                                 </div>
                                 <div>
@@ -381,7 +382,8 @@ const submitResetPassword = () => {
                                     <td class="p-6 sticky left-0 bg-white/80 group-hover:bg-teal-50/30 transition-colors z-10 backdrop-blur-sm">
                                         <div class="flex items-center gap-4">
                                             <div class="relative">
-                                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-namira-teal to-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-namira-teal/20">
+                                                <img v-if="user.profile_photo_url && !user.profile_photo_url.includes('ui-avatars.com')" :src="user.profile_photo_url" class="w-12 h-12 rounded-2xl object-cover shadow-md" />
+                                                <div v-else class="w-12 h-12 rounded-2xl bg-gradient-to-br from-namira-teal to-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-namira-teal/20">
                                                     {{ user.name.charAt(0).toUpperCase() }}
                                                 </div>
                                                 <div 
