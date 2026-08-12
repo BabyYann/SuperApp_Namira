@@ -88,7 +88,12 @@ const initMainMap = () => {
         ? [parseFloat(props.locations.data[0].latitude), parseFloat(props.locations.data[0].longitude)] 
         : defaultCenter;
 
-    mainMap.value = L.map(mainMapContainer.value).setView(initialCenter, 16);
+    mainMap.value = L.map(mainMapContainer.value, {
+        zoomControl: false // Custom position to avoid search bar overlap
+    }).setView(initialCenter, 16);
+
+    // Add Zoom Control at bottom-left
+    L.control.zoom({ position: 'bottomleft' }).addTo(mainMap.value);
 
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
@@ -105,7 +110,7 @@ const initMainMap = () => {
         "Satelit (Gedung Asli)": satelliteLayer
     };
 
-    L.control.layers(baseMaps).addTo(mainMap.value);
+    L.control.layers(baseMaps, null, { position: 'topright' }).addTo(mainMap.value);
 
     renderMainLocations();
 };
@@ -444,17 +449,17 @@ onUnmounted(() => {
             <div class="w-full flex-1 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative group">
                 <div ref="mainMapContainer" class="w-full h-full z-0 cursor-crosshair"></div>
                 
-                <!-- Address Search Overlay Bar -->
-                <div class="absolute top-4 left-4 right-16 z-[400] bg-white rounded-2xl shadow-lg border border-slate-200 p-1 flex gap-2">
+                <!-- Address Search Overlay Bar (Positioned Top-Left with Max Width) -->
+                <div class="absolute top-3 left-3 w-[calc(100%-120px)] sm:w-80 md:w-96 z-[400] bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/80 p-1 flex gap-1.5">
                     <input 
                         v-model="mapSearchQuery" 
                         @keyup.enter="searchLocation"
                         type="text" 
-                        placeholder="Cari alamat di peta (misal: Alun-alun Probolinggo)..." 
-                        class="w-full border-none text-xs font-semibold focus:ring-0 rounded-xl pl-3"
+                        placeholder="Cari alamat di peta..." 
+                        class="w-full border-none text-xs font-semibold focus:ring-0 rounded-xl pl-3 bg-transparent"
                     >
-                    <button @click="searchLocation" class="bg-namira-teal text-white px-3.5 py-2 rounded-xl hover:bg-teal-700 transition-colors flex items-center gap-1 text-xs font-bold">
-                        <MagnifyingGlassIcon class="h-4 w-4" />
+                    <button @click="searchLocation" class="bg-namira-teal text-white px-3 py-1.5 rounded-xl hover:bg-teal-700 transition-colors flex items-center gap-1 text-xs font-bold shrink-0">
+                        <MagnifyingGlassIcon class="h-3.5 w-3.5" />
                         <span>Cari</span>
                     </button>
                 </div>
