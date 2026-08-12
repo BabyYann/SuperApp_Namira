@@ -56,9 +56,22 @@ class HolidayController extends Controller
         ]);
     }
 
+    private function canManageCalendar($user): bool
+    {
+        return $user->hasAnyRole([
+            'super_admin_yayasan', 
+            'admin_yayasan', 
+            'admin_unit', 
+            'staff_yayasan', 
+            'staff_unit', 
+            'kepala_sekolah', 
+            'koordinator_kurikulum'
+        ]);
+    }
+
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!$this->canManageCalendar(auth()->user())) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola kalender akademik.');
         }
 
@@ -88,7 +101,7 @@ class HolidayController extends Controller
 
     public function update(Request $request, Holiday $holiday)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!$this->canManageCalendar(auth()->user())) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola kalender akademik.');
         }
 
@@ -122,7 +135,7 @@ class HolidayController extends Controller
 
     public function destroy(Holiday $holiday)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!$this->canManageCalendar(auth()->user())) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk menghapus event kalender.');
         }
 

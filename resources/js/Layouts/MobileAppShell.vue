@@ -523,6 +523,17 @@ const isRouteActive = (pattern) => {
                                     </div>
                                     <span class="text-xs font-bold text-slate-800">Kenaikan Kelas</span>
                                 </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.holidays.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 hover:bg-indigo-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
+                                        <CalendarIcon class="w-5 h-5" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800">Kalender Akademik</span>
+                                </Link>
                             </div>
                         </div>
 
@@ -638,7 +649,7 @@ const isRouteActive = (pattern) => {
                                 <HeartIcon class="w-4 h-4 text-amber-600" />
                                 <span>Daycare & Pengasuhan</span>
                             </p>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-3 gap-3">
                                 <Link 
                                     :href="safeRoute('daycare.children.index')" 
                                     @click="showDrawer = false"
@@ -659,6 +670,17 @@ const isRouteActive = (pattern) => {
                                         <ClockIcon class="w-6 h-6" />
                                     </div>
                                     <span class="text-xs font-extrabold text-slate-800">Presensi & Handover</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.holidays.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center p-3.5 rounded-2xl bg-teal-50/80 border border-teal-200 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                >
+                                    <div class="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-md">
+                                        <CalendarIcon class="w-6 h-6" />
+                                    </div>
+                                    <span class="text-xs font-extrabold text-slate-800">Kalender Kegiatan</span>
                                 </Link>
                             </div>
                         </div>
