@@ -430,8 +430,8 @@ const getPercentageClass = (pct) => {
                     </button>
                 </div>
 
-                <!-- Table Content -->
-                <div v-else class="overflow-x-auto">
+                <!-- Table Content (Desktop View) -->
+                <div v-else class="hidden md:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-100 text-sm text-left">
                         <thead class="bg-slate-50 text-gray-700 uppercase text-xs font-bold border-b border-gray-150">
                             <tr>
@@ -507,6 +507,71 @@ const getPercentageClass = (pct) => {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Card List View (Android / Mobile Native View) -->
+                <div v-if="recapData.length > 0" class="block md:hidden divide-y divide-gray-150">
+                    <div 
+                        v-for="(row, idx) in paginatedRecapData" 
+                        :key="'mobile-' + row.id" 
+                        class="p-4 bg-white hover:bg-slate-50/50 transition-colors space-y-3"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <img v-if="row.photo" :src="row.photo" class="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm" alt="Profile" />
+                                <div v-else class="w-10 h-10 rounded-full bg-slate-100 text-gray-500 font-bold flex items-center justify-center text-sm shadow-xs">
+                                    {{ row.name.charAt(0) }}
+                                </div>
+                                <div>
+                                    <div class="font-extrabold text-gray-900 text-sm leading-snug">{{ row.name }}</div>
+                                    <div class="text-[11px] text-gray-500 font-mono">NIP: {{ row.nip || '-' }}</div>
+                                    <div class="text-[11px] text-teal-700 font-semibold">{{ row.unit_name }} • {{ row.jabatan }}</div>
+                                </div>
+                            </div>
+                            <span :class="['px-2.5 py-1 rounded-full text-xs font-black shrink-0', getPercentageClass(row.percentage)]">
+                                {{ row.percentage }}%
+                            </span>
+                        </div>
+
+                        <!-- Stats Grid inside Mobile Card -->
+                        <div class="grid grid-cols-6 gap-1 bg-slate-50 p-2.5 rounded-2xl border border-gray-150 text-center text-[11px]">
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Hadir</span>
+                                <span class="font-extrabold text-emerald-600 text-xs">{{ row.hadir }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Telat</span>
+                                <span class="font-extrabold text-rose-600 text-xs">{{ row.terlambat }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Izin</span>
+                                <span class="font-semibold text-amber-600 text-xs">{{ row.izin }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Sakit</span>
+                                <span class="font-semibold text-blue-600 text-xs">{{ row.sakit }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Cuti</span>
+                                <span class="font-semibold text-violet-600 text-xs">{{ row.cuti }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Alpha</span>
+                                <span class="font-extrabold text-red-600 text-xs">{{ row.alpha }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Action Button -->
+                        <div class="flex justify-end pt-1">
+                            <button 
+                                @click="openEmployeeDetail(row)"
+                                class="w-full py-2 bg-namira-teal/10 hover:bg-namira-teal/20 text-namira-teal rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                            >
+                                <ChartBarIcon class="w-4 h-4" />
+                                <span>Lihat Detail Kehadiran Bulanan</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Table Footer Pagination Bar -->
