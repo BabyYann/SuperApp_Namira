@@ -84,15 +84,36 @@ const openAddModal = (item = null) => {
         // Edit Mode
         isEditing.value = true;
         editingId.value = item.id;
-        isJointClass.value = false;
-        selectedJointClassrooms.value = [item.classroom_id];
+        
+        const sTime = item.start_time ? item.start_time.substring(0, 5) : '';
+        const eTime = item.end_time ? item.end_time.substring(0, 5) : '';
+        
+        // Find sibling joint schedules sharing the same teacher, subject, day and time
+        const matchedClassrooms = [];
+        const dayItems = getSchedulesForDay(item.day) || [];
+        dayItems.forEach(s => {
+            const itemSTime = s.start_time ? s.start_time.substring(0, 5) : '';
+            const itemETime = s.end_time ? s.end_time.substring(0, 5) : '';
+            if (s.teacher_id === item.teacher_id && s.subject_id === item.subject_id && itemSTime === sTime && itemETime === eTime) {
+                if (s.classroom_id && !matchedClassrooms.includes(s.classroom_id)) {
+                    matchedClassrooms.push(s.classroom_id);
+                }
+            }
+        });
+
+        if (!matchedClassrooms.includes(item.classroom_id)) {
+            matchedClassrooms.push(item.classroom_id);
+        }
+
+        isJointClass.value = matchedClassrooms.length > 1;
+        selectedJointClassrooms.value = matchedClassrooms;
         form.classroom_id = item.classroom_id;
-        form.classroom_ids = [item.classroom_id];
+        form.classroom_ids = matchedClassrooms;
         form.subject_id = item.subject_id;
         form.teacher_id = item.teacher_id;
         form.day = item.day;
-        form.start_time = item.start_time ? item.start_time.substring(0, 5) : '';
-        form.end_time = item.end_time ? item.end_time.substring(0, 5) : '';
+        form.start_time = sTime;
+        form.end_time = eTime;
     } else {
         // Create Mode
         isEditing.value = false;
@@ -126,8 +147,14 @@ const openCloneModal = () => {
 
 const submitSchedule = () => {
     if (isEditing.value && editingId.value) {
-        form.classroom_id = form.classroom_id || props.selectedClassroomId;
-        form.classroom_ids = [];
+        if (isJointClass.value) {
+            form.classroom_ids = selectedJointClassrooms.value;
+            form.classroom_id = null;
+        } else {
+            form.classroom_id = form.classroom_id || props.selectedClassroomId;
+            form.classroom_ids = [form.classroom_id];
+        }
+
         form.put(route('yayasan.schedules.update', editingId.value), {
             preserveScroll: true,
             preserveState: true,
@@ -592,8 +619,8 @@ const activeDayScheduleCount = computed(() => {
                 <h2 class="text-lg font-bold text-gray-900 mb-4">{{ isEditing ? 'Edit Jadwal Pelajaran' : 'Tambah Jadwal Pelajaran' }}</h2>
                 
                 <div class="space-y-4">
-                    <!-- Sesi Kelas Gabungan Toggle (Only on Create Mode) -->
-                    <div v-if="!isEditing" class="p-3.5 bg-teal-50/70 rounded-2xl border border-teal-100/90 flex items-center justify-between">
+                    <!-- Sesi Kelas Gabungan Toggle (Create & Edit Modes) -->
+                    <div class="p-3.5 bg-teal-50/70 rounded-2xl border border-teal-100/90 flex items-center justify-between">
                         <div>
                             <span class="text-xs font-black text-teal-900 block">Sesi Kelas Gabungan (Multi-Class)</span>
                             <span class="text-[11px] text-teal-700 font-medium">Contoh: PJOK / Pramuka 1 guru mengajar beberapa kelas sekaligus</span>
@@ -605,7 +632,7 @@ const activeDayScheduleCount = computed(() => {
                     </div>
 
                     <!-- Multi-Class Checkboxes Grid if Joint Class -->
-                    <div v-if="isJointClass && !isEditing" class="space-y-2">
+                    <div v-if="isJointClass" class="space-y-2">
                         <div class="flex items-center justify-between">
                             <InputLabel value="Centang Kelas yang Digabungkan *" class="text-xs font-extrabold text-slate-700" />
                             <span class="text-[10px] font-black text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-full">{{ selectedJointClassrooms.length }} Kelas Terpilih</span>

@@ -273,7 +273,9 @@ class ScheduleController extends Controller
         }
 
         $request->validate([
-            'classroom_id' => 'required|exists:classrooms,id',
+            'classroom_id' => 'nullable|exists:classrooms,id',
+            'classroom_ids' => 'nullable|array',
+            'classroom_ids.*' => 'exists:classrooms,id',
             'subject_id' => 'required|exists:subjects,id',
             'teacher_id' => 'required|exists:teachers,id',
             'day' => ['required', \Illuminate\Validation\Rule::in(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'])],
@@ -281,44 +283,107 @@ class ScheduleController extends Controller
             'end_time' => 'required|date_format:H:i,H:i:s|after:start_time',
         ]);
 
+        $classroomIds = [];
+        if (!empty($request->classroom_ids) && is_array($request->classroom_ids)) {
+            $classroomIds = array_values(array_unique(array_filter($request->classroom_ids)));
+        } elseif (!empty($request->classroom_id)) {
+            $classroomIds = [(int) $request->classroom_id];
+        } else {
+            $classroomIds = [(int) $schedule->classroom_id];
+        }
+
+        if (empty($classroomIds)) {
+            return redirect()->back()->withErrors(['classroom_id' => 'Pilih minimal satu kelas.']);
+        }
+
         $startTime = substr($request->start_time, 0, 5);
         $endTime = substr($request->end_time, 0, 5);
 
-        $classroom = Classroom::findOrFail($request->classroom_id);
         $subject = Subject::findOrFail($request->subject_id);
         $teacher = Teacher::findOrFail($request->teacher_id);
-        
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            if ($classroom->unit_id !== $unitId || $subject->unit_id !== $unitId || $teacher->unit_id !== $unitId) {
-                abort(403, 'Akses Ditolak: Unit tidak sesuai.');
-            }
-        } else {
-            if ($classroom->unit_id !== $subject->unit_id || $classroom->unit_id !== $teacher->unit_id) {
-                abort(403, 'Akses Ditolak: Unit classroom, subject, dan teacher harus sama.');
+        $classrooms = Classroom::whereIn('id', $classroomIds)->get();
+
+        if ($classrooms->count() !== count($classroomIds)) {
+            return redirect()->back()->withErrors(['classroom_id' => 'Terdapat kelas yang tidak valid.']);
+        }
+
+        foreach ($classrooms as $classroom) {
+            if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+                if ($classroom->unit_id !== $unitId || $subject->unit_id !== $unitId || $teacher->unit_id !== $unitId) {
+                    abort(403, 'Akses Ditolak: Unit tidak sesuai.');
+                }
+            } else {
+                if ($classroom->unit_id !== $subject->unit_id || $classroom->unit_id !== $teacher->unit_id) {
+                    abort(403, 'Akses Ditolak: Unit classroom, subject, dan teacher harus sama.');
+                }
             }
         }
 
-        // Check for Teacher Conflict (Excluding current schedule)
-        if ($this->hasConflict($request->teacher_id, $request->day, $startTime, $endTime, $schedule->id)) {
-             $conflictedClass = $this->getConflictedClass($request->teacher_id, $request->day, $startTime, $endTime, $schedule->id);
+        // Find existing sibling schedule IDs (sharing old teacher, subject, day, time)
+        $oldStartTime = substr($schedule->start_time, 0, 5);
+        $oldEndTime = substr($schedule->end_time, 0, 5);
+        $siblingScheduleIds = ClassSchedule::where('unit_id', $unitId)
+            ->where('teacher_id', $schedule->teacher_id)
+            ->where('subject_id', $schedule->subject_id)
+            ->where('day', $schedule->day)
+            ->where('start_time', 'like', "{$oldStartTime}%")
+            ->where('end_time', 'like', "{$oldEndTime}%")
+            ->pluck('id')
+            ->toArray();
+
+        if (!in_array($schedule->id, $siblingScheduleIds)) {
+            $siblingScheduleIds[] = $schedule->id;
+        }
+
+        // Check for Teacher Conflict (Excluding current sibling schedules and the joint classrooms)
+        if ($this->hasConflict($request->teacher_id, $request->day, $startTime, $endTime, $siblingScheduleIds, $classroomIds)) {
+             $conflictedClass = $this->getConflictedClass($request->teacher_id, $request->day, $startTime, $endTime, $siblingScheduleIds, $classroomIds);
              $className = $conflictedClass ? $conflictedClass->name : 'kelas lain';
              return redirect()->back()->withErrors(['teacher_id' => "Guru ini sedang mengajar di {$className} pada jam tersebut."]);
         }
 
-        // Check for Classroom Conflict (Excluding current schedule)
-        if ($this->hasClassroomConflict($request->classroom_id, $request->day, $startTime, $endTime, $schedule->id, $unitId)) {
-             $conflictedSchedule = $this->getConflictedClassroomSchedule($request->classroom_id, $request->day, $startTime, $endTime, $schedule->id, $unitId);
-             return redirect()->back()->withErrors(['classroom_id' => "Kelas ini sudah memiliki jadwal pelajaran {$conflictedSchedule->subject->name} oleh guru {$conflictedSchedule->teacher->full_name} pada jam tersebut."]);
+        // Check for Classroom Conflict (Excluding current sibling schedules)
+        foreach ($classroomIds as $cid) {
+            if ($this->hasClassroomConflict($cid, $request->day, $startTime, $endTime, $siblingScheduleIds, $unitId)) {
+                 $conflictedSchedule = $this->getConflictedClassroomSchedule($cid, $request->day, $startTime, $endTime, $siblingScheduleIds, $unitId);
+                 $cName = $classrooms->firstWhere('id', $cid)?->name ?? "Kelas";
+                 return redirect()->back()->withErrors(['classroom_id' => "Kelas {$cName} sudah memiliki jadwal pelajaran {$conflictedSchedule->subject->name} oleh guru {$conflictedSchedule->teacher->full_name} pada jam tersebut."]);
+            }
         }
 
-        $schedule->update([
-            'classroom_id' => $request->classroom_id,
-            'subject_id' => $request->subject_id,
-            'teacher_id' => $request->teacher_id,
-            'day' => $request->day,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-        ]);
+        \DB::transaction(function () use ($siblingScheduleIds, $classroomIds, $unitId, $request, $startTime, $endTime, $schedule) {
+            // Delete sibling schedules that were unselected
+            ClassSchedule::whereIn('id', $siblingScheduleIds)
+                ->whereNotIn('classroom_id', $classroomIds)
+                ->delete();
+
+            // Update existing or create for newly added joint classes
+            foreach ($classroomIds as $cid) {
+                $existing = ClassSchedule::whereIn('id', $siblingScheduleIds)
+                    ->where('classroom_id', $cid)
+                    ->first();
+
+                if ($existing) {
+                    $existing->update([
+                        'subject_id' => $request->subject_id,
+                        'teacher_id' => $request->teacher_id,
+                        'day' => $request->day,
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
+                    ]);
+                } else {
+                    ClassSchedule::create([
+                        'unit_id' => $unitId,
+                        'classroom_id' => $cid,
+                        'subject_id' => $request->subject_id,
+                        'teacher_id' => $request->teacher_id,
+                        'day' => $request->day,
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
+                    ]);
+                }
+            }
+        });
 
         return redirect()->back()->with('success', 'Jadwal berhasil diperbarui.');
     }
