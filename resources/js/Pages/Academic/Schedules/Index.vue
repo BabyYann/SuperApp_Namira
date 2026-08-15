@@ -25,14 +25,7 @@ const props = defineProps({
     teachers: Array,
 });
 
-const form = useForm({
-    classroom_id: props.selectedClassroomId || '',
-    subject_id: '',
-    teacher_id: '',
-    day: '',
-    start_time: '',
-    end_time: '',
-});
+
 
 const cloneForm = useForm({
     classroom_id: props.selectedClassroomId || '',
@@ -46,6 +39,18 @@ const showCloneModal = ref(false);
 const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const isEditing = ref(false);
 const editingId = ref(null);
+const isJointClass = ref(false);
+const selectedJointClassrooms = ref([]);
+
+const form = useForm({
+    classroom_id: props.selectedClassroomId || '',
+    classroom_ids: [],
+    subject_id: '',
+    teacher_id: '',
+    day: '',
+    start_time: '',
+    end_time: '',
+});
 
 // Auto-select current day of week for mobile PWA
 const currentDayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon ...
@@ -79,7 +84,10 @@ const openAddModal = (item = null) => {
         // Edit Mode
         isEditing.value = true;
         editingId.value = item.id;
+        isJointClass.value = false;
+        selectedJointClassrooms.value = [item.classroom_id];
         form.classroom_id = item.classroom_id;
+        form.classroom_ids = [item.classroom_id];
         form.subject_id = item.subject_id;
         form.teacher_id = item.teacher_id;
         form.day = item.day;
@@ -89,8 +97,11 @@ const openAddModal = (item = null) => {
         // Create Mode
         isEditing.value = false;
         editingId.value = null;
+        isJointClass.value = false;
+        selectedJointClassrooms.value = props.selectedClassroomId ? [props.selectedClassroomId] : [];
         form.reset('subject_id', 'teacher_id', 'day', 'start_time', 'end_time');
         form.classroom_id = props.selectedClassroomId;
+        form.classroom_ids = props.selectedClassroomId ? [props.selectedClassroomId] : [];
     }
     showAddModal.value = true;
 };
@@ -99,6 +110,7 @@ const closeModal = () => {
     showAddModal.value = false;
     isEditing.value = false;
     editingId.value = null;
+    isJointClass.value = false;
     form.clearErrors();
 };
 
@@ -114,6 +126,8 @@ const openCloneModal = () => {
 
 const submitSchedule = () => {
     if (isEditing.value && editingId.value) {
+        form.classroom_id = form.classroom_id || props.selectedClassroomId;
+        form.classroom_ids = [];
         form.put(route('yayasan.schedules.update', editingId.value), {
             preserveScroll: true,
             preserveState: true,
@@ -125,8 +139,14 @@ const submitSchedule = () => {
             }
         });
     } else {
-        // Force defensive classroom_id
-        if (!form.classroom_id) form.classroom_id = props.selectedClassroomId;
+        if (isJointClass.value) {
+            form.classroom_ids = selectedJointClassrooms.value;
+            form.classroom_id = null;
+        } else {
+            form.classroom_id = props.selectedClassroomId;
+            form.classroom_ids = [props.selectedClassroomId];
+        }
+
         form.post(route('yayasan.schedules.store'), {
             preserveScroll: true,
             preserveState: true,
@@ -572,10 +592,47 @@ const activeDayScheduleCount = computed(() => {
                 <h2 class="text-lg font-bold text-gray-900 mb-4">{{ isEditing ? 'Edit Jadwal Pelajaran' : 'Tambah Jadwal Pelajaran' }}</h2>
                 
                 <div class="space-y-4">
+                    <!-- Sesi Kelas Gabungan Toggle (Only on Create Mode) -->
+                    <div v-if="!isEditing" class="p-3.5 bg-teal-50/70 rounded-2xl border border-teal-100/90 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-black text-teal-900 block">Sesi Kelas Gabungan (Multi-Class)</span>
+                            <span class="text-[11px] text-teal-700 font-medium">Contoh: PJOK / Pramuka 1 guru mengajar beberapa kelas sekaligus</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer ml-3 shrink-0">
+                            <input type="checkbox" v-model="isJointClass" class="sr-only peer">
+                            <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-namira-teal"></div>
+                        </label>
+                    </div>
+
+                    <!-- Multi-Class Checkboxes Grid if Joint Class -->
+                    <div v-if="isJointClass && !isEditing" class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <InputLabel value="Centang Kelas yang Digabungkan *" class="text-xs font-extrabold text-slate-700" />
+                            <span class="text-[10px] font-black text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-full">{{ selectedJointClassrooms.length }} Kelas Terpilih</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2.5 bg-slate-50 rounded-2xl border border-slate-200">
+                            <label 
+                                v-for="classroom in classrooms" 
+                                :key="'joint-' + classroom.id" 
+                                class="flex items-center gap-2 p-2 bg-white rounded-xl border cursor-pointer transition text-xs font-semibold select-none shadow-xs"
+                                :class="selectedJointClassrooms.includes(classroom.id) ? 'border-teal-500 bg-teal-50/40 text-teal-900 ring-1 ring-teal-500/20' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
+                            >
+                                <input 
+                                    type="checkbox" 
+                                    :value="classroom.id" 
+                                    v-model="selectedJointClassrooms" 
+                                    class="rounded border-slate-300 text-namira-teal focus:ring-namira-teal w-4 h-4 cursor-pointer"
+                                >
+                                <span class="truncate">Kelas {{ classroom.name }}</span>
+                            </label>
+                        </div>
+                        <InputError :message="form.errors.classroom_id" class="mt-1" />
+                    </div>
+
                     <!-- Day -->
                      <div>
                         <InputLabel for="day" value="Hari" />
-                        <select id="day" v-model="form.day" class="w-full mt-1 h-12 px-4 border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal text-sm">
+                        <select id="day" v-model="form.day" class="w-full mt-1 h-12 px-4 border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal text-sm font-semibold">
                             <option value="">-- Pilih Hari --</option>
                             <option v-for="day in days" :key="day" :value="day">{{ day }}</option>
                         </select>
