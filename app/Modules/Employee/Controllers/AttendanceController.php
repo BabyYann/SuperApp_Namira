@@ -60,11 +60,11 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'type' => 'required|in:present,business_trip,sick,permit',
-            'latitude' => 'required_if:type,present,business_trip|numeric',
-            'longitude' => 'required_if:type,present,business_trip|numeric',
-            'photo' => 'required_if:type,present,business_trip|nullable|string', // Base64
-            'note' => 'required_if:type,business_trip,sick,permit|nullable|string',
-            'document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // For sick/permit
+            'latitude' => 'nullable|required_if:type,present,business_trip|numeric',
+            'longitude' => 'nullable|required_if:type,present,business_trip|numeric',
+            'photo' => 'nullable|required_if:type,present,business_trip|string', // Base64
+            'note' => 'nullable|required_if:type,business_trip,sick,permit|string',
+            'document' => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:10240', // For sick/permit (up to 10MB)
         ]);
 
         $user = Auth::user();
@@ -73,15 +73,20 @@ class AttendanceController extends Controller
         // Check if already checked in
         $existing = EmployeeAttendance::where('user_id', $user->id)->where('date', $today)->first();
         if ($existing) {
-            return redirect()->back()->with('error', 'Anda sudah melakukan input hari ini.');
+            // Allow overwriting/updating if existing record was just auto-alpha/absent and user is now submitting a legitimate permit/sick/trip
+            if (in_array($existing->status, ['alpha', 'absent']) && in_array($request->type, ['sick', 'permit', 'business_trip'])) {
+                // Proceed to update existing alpha record
+            } else {
+                return redirect()->back()->with('error', 'Anda sudah melakukan input absensi hari ini.');
+            }
         }
 
         $status = $request->type;
         $approvalStatus = 'pending'; // Default for non-present
         $locationId = null;
         $checkInTime = Carbon::now()->toTimeString();
-        $photoPath = null;
-        $permitPath = null;
+        $photoPath = $existing?->check_in_photo;
+        $permitPath = $existing?->permit_file;
         $lateMinutes = 0;
 
         // 1. Handle "Hadir" (WFO)
@@ -108,14 +113,6 @@ class AttendanceController extends Controller
                     
                     if ($now->gt($lateThreshold)) {
                         $status = 'late';
-                        $lateMinutes = $lateThreshold->diffInMinutes($now); // Calculate shortage
-                        // Improving logic: calculate difference from START TIME or THRESHOLD? 
-                        // Usually logic is: Late 1 minute > Threshold -> Late 1 minute relative to Start Time + Tolerance OR Start Time?
-                        // Let's count from Start Time + Tolerance to be fair, or strictly from Start Time?
-                        // User said: "Jika absen > 07.15 -> hitung berapa menit telatnya". 07.15 probably includes tolerance.
-                        // Let's diff from Schedule Start to capture full lateness if they miss the tolerance window. 
-                        // Standard HR practice: If you miss tolerance, you are late from the beginning (07.00).
-                        
                         $lateMinutes = $scheduleStart->diffInMinutes($now); 
                     }
                 }
@@ -126,16 +123,16 @@ class AttendanceController extends Controller
         if ($request->photo) {
             $image = $request->photo;
             if (strpos($image, 'base64') !== false) {
-                 $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
-                 $image = str_replace(' ', '+', $image);
-                 $imageName = 'attendance_' . $user->id . '_' . time() . '.jpg';
-                 
-                 // Ensure directory
-                 if (!file_exists(storage_path('app/public/attendance_photos'))) {
-                     mkdir(storage_path('app/public/attendance_photos'), 0777, true);
-                 }
-                 \Storage::disk('public')->put('attendance_photos/' . $imageName, base64_decode($image));
-                 $photoPath = 'attendance_photos/' . $imageName;
+                $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
+                $image = str_replace(' ', '+', $image);
+                $imageName = 'attendance_' . $user->id . '_' . time() . '.jpg';
+                
+                // Ensure directory
+                if (!file_exists(storage_path('app/public/attendance_photos'))) {
+                    mkdir(storage_path('app/public/attendance_photos'), 0777, true);
+                }
+                \Storage::disk('public')->put('attendance_photos/' . $imageName, base64_decode($image));
+                $photoPath = 'attendance_photos/' . $imageName;
             }
         }
 
@@ -144,7 +141,7 @@ class AttendanceController extends Controller
             $permitPath = $request->file('document')->store('permits', 'public');
         }
 
-        $attendanceRecord = EmployeeAttendance::create([
+        $dataPayload = [
             'user_id' => $user->id,
             'date' => $today,
             'check_in_time' => ($request->type === 'present' || $request->type === 'business_trip') ? $checkInTime : null, 
@@ -157,7 +154,14 @@ class AttendanceController extends Controller
             'attendance_location_id' => $locationId,
             'approval_status' => $approvalStatus,
             'late_minutes' => $lateMinutes,
-        ]);
+        ];
+
+        if ($existing) {
+            $existing->update($dataPayload);
+            $attendanceRecord = $existing;
+        } else {
+            $attendanceRecord = EmployeeAttendance::create($dataPayload);
+        }
 
         // Dispatch In-App Notification to Principals & Admins if pending approval
         if ($approvalStatus === 'pending') {

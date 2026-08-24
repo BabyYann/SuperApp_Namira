@@ -164,7 +164,7 @@
                         <!-- Permit File Upload -->
                         <div v-if="activeTab === 'permit'" class="text-left space-y-3">
                              <div>
-                                 <label class="block text-[11px] md:text-xs font-bold text-slate-500 md:text-gray-400 uppercase tracking-wider mb-1">Upload Bukti (Surat/Foto)</label>
+                                 <label class="block text-[11px] md:text-xs font-bold text-slate-500 md:text-gray-400 uppercase tracking-wider mb-1">Upload Bukti (Surat/Foto) <span class="text-slate-400 font-normal lowercase">(opsional)</span></label>
                                  <input type="file" @change="e => form.document = e.target.files[0]" class="block w-full text-xs md:text-sm text-slate-500 md:text-gray-500
                                     file:mr-3 md:file:mr-4 file:py-2 md:file:py-2.5 file:px-3 md:file:px-4
                                     file:rounded-xl file:border-0
@@ -173,6 +173,12 @@
                                     hover:file:bg-purple-200 md:hover:file:bg-purple-100
                                     transition-all
                                   "/>
+                                  <p v-if="form.document" class="text-xs text-purple-700 font-bold mt-1 truncate">
+                                      📎 {{ form.document.name }}
+                                  </p>
+                                  <p v-if="form.errors.document" class="text-xs text-rose-600 font-bold mt-1">
+                                      {{ form.errors.document }}
+                                  </p>
                              </div>
 
                              <div class="flex gap-4 text-left bg-slate-50 md:bg-gray-50/50 p-3 rounded-2xl border border-slate-200 md:border-white/50">
@@ -219,8 +225,8 @@
 
                         <!-- Permit Button -->
                         <div v-if="activeTab === 'permit'">
-                             <button @click="submitCheckIn(permitType)" :disabled="form.processing || !form.note || !form.document" class="w-full py-3.5 md:py-4 bg-purple-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-purple-600/30 transition-all active:scale-95 md:hover:scale-105 disabled:opacity-50">
-                                {{ form.processing ? 'Mengirim...' : 'Ajukan Izin / Sakit' }}
+                             <button @click="submitCheckIn(permitType)" :disabled="form.processing || !form.note" class="w-full py-3.5 md:py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-purple-600/30 transition-all active:scale-95 md:hover:scale-105 disabled:opacity-50 cursor-pointer">
+                                {{ form.processing ? 'Mengirim...' : 'Ajukan ' + (permitType === 'sick' ? 'Sakit' : 'Izin') }}
                             </button>
                         </div>
 
@@ -404,6 +410,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import Swal from 'sweetalert2';
 import { 
     ClipboardDocumentCheckIcon, CameraIcon, CheckIcon, XMarkIcon, ClockIcon, 
     CheckCircleIcon, XCircleIcon 
@@ -605,26 +612,104 @@ const stopCamera = () => {
 
 const submitCheckIn = (type) => {
     form.type = type;
+
+    // Attach coordinates if available
+    if (coords.value?.latitude && coords.value?.longitude) {
+        form.latitude = coords.value.latitude;
+        form.longitude = coords.value.longitude;
+    } else {
+        form.latitude = null;
+        form.longitude = null;
+    }
     
-    // Validation Logic
+    // Frontend Pre-Validation Logic
     if (type === 'present' && !isWithinRadius.value) {
-        alert("Anda di luar jangkauan."); return;
+        Swal.fire({
+            icon: 'warning',
+            title: 'Di Luar Jangkauan',
+            text: 'Anda berada di luar radius lokasi absensi yang diizinkan.',
+            confirmButtonColor: '#009688',
+        });
+        return;
     }
     if ((type === 'present' || type === 'business_trip') && !form.photo) {
-        alert("Wajib ambil foto."); return;
+        Swal.fire({
+            icon: 'warning',
+            title: 'Foto Wajib',
+            text: 'Silakan ambil foto selfie kehadiran terlebih dahulu.',
+            confirmButtonColor: '#009688',
+        });
+        return;
+    }
+    if ((type === 'permit' || type === 'sick' || type === 'business_trip') && !form.note) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Keterangan Wajib',
+            text: 'Harap tuliskan alasan/keterangan pengajuan Anda.',
+            confirmButtonColor: '#009688',
+        });
+        return;
     }
     
+    const labelType = type === 'sick' ? 'Sakit' : type === 'permit' ? 'Izin' : type === 'business_trip' ? 'Dinas Luar' : 'Hadir';
+
     form.post(route('employee.attendance.check-in'), {
+        preserveScroll: true,
         onSuccess: () => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: type === 'present' ? 'Presensi masuk berhasil dicatat.' : `Pengajuan ${labelType} berhasil dikirim dan menunggu persetujuan.`,
+                confirmButtonColor: '#009688',
+            });
             photoPreview.value = null;
             form.reset();
+        },
+        onError: (errors) => {
+            const errorMsg = Object.values(errors).flat().join('<br>') || 'Gagal mengirim pengajuan. Periksa kembali form isian.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Mengajukan',
+                html: errorMsg,
+                confirmButtonColor: '#009688',
+            });
         }
     });
 };
 
 const submitCheckOut = (attendanceId) => {
-    if (!confirm("Absen Pulang sekarang?")) return;
-    form.put(route('employee.attendance.check-out', attendanceId));
+    Swal.fire({
+        title: 'Absen Pulang?',
+        text: 'Pastikan pekerjaan hari ini sudah selesai.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Pulang',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#009688',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.put(route('employee.attendance.check-out', attendanceId), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sampai Jumpa!',
+                        text: 'Absen pulang berhasil dicatat.',
+                        confirmButtonColor: '#009688',
+                    });
+                },
+                onError: (errors) => {
+                    const errorMsg = Object.values(errors).flat().join('<br>') || 'Gagal melakukan absen pulang.';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        html: errorMsg,
+                        confirmButtonColor: '#009688',
+                    });
+                }
+            });
+        }
+    });
 };
 </script>
 <style scoped>
