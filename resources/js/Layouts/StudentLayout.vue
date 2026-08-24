@@ -27,6 +27,7 @@ import {
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
+import OfflineStatusBanner from '@/Components/OfflineStatusBanner.vue';
 
 const props = defineProps({
     title: String,
@@ -52,6 +53,7 @@ const logout = () => {
 </script>
 
 <template>
+    <OfflineStatusBanner />
     <div class="min-h-screen bg-gray-50 flex flex-col">
         <Head :title="title" />
 

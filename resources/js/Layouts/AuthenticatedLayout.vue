@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import Sidebar from '@/Components/Dashboard/Sidebar.vue';
 import TopBar from '@/Components/Dashboard/TopBar.vue';
+import OfflineStatusBanner from '@/Components/OfflineStatusBanner.vue';
 import { useMediaQuery } from '@vueuse/core';
 import MobileAppShell from '@/Layouts/MobileAppShell.vue';
 import { usePage } from '@inertiajs/vue3';
@@ -332,6 +333,8 @@ onMounted(() => {
 </script>
 
 <template>
+    <OfflineStatusBanner />
+
     <!-- Mobile Layout (Native-Like PWA) -->
     <MobileAppShell v-if="isMobile">
         <slot />

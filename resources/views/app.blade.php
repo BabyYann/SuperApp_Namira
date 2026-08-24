@@ -113,7 +113,10 @@
         </script>
         @endverbatim
 
-        <!-- Fonts -->
+        <!-- Fonts & CDNs DNS Preconnect -->
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+        <link rel="dns-prefetch" href="https://fonts.bunny.net">
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
         

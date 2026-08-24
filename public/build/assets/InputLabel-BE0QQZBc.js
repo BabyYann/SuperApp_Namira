@@ -1,0 +1,1 @@
+import{I as e,b as t,xt as n,z as r}from"./vendor-charts-CN8nGBAa.js";var i={class:`block text-sm font-medium text-gray-700 dark:text-gray-300`},a={key:0},o={key:1},s={__name:`InputLabel`,props:{value:{type:String}},setup(s){return(c,l)=>(e(),t(`label`,i,[s.value?(e(),t(`span`,a,n(s.value),1)):(e(),t(`span`,o,[r(c.$slots,`default`)]))]))}};export{s as t};

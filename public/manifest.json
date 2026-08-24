@@ -1,15 +1,32 @@
 {
-    "name": "Namira School Foundation",
+    "name": "Namira School SuperApp",
     "short_name": "Namira App",
+    "description": "Sistem Informasi Akademik & Yayasan Terpadu Namira School",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
+    "orientation": "portrait-primary",
     "background_color": "#ffffff",
     "theme_color": "#009688",
+    "categories": ["education", "productivity"],
     "icons": [
+        {
+            "src": "/images/namira-foundation-logo.webp",
+            "sizes": "192x192",
+            "type": "image/webp",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/namira-foundation-logo.webp",
+            "sizes": "512x512",
+            "type": "image/webp",
+            "purpose": "any maskable"
+        },
         {
             "src": "/images/logo.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         }
     ]
 }
