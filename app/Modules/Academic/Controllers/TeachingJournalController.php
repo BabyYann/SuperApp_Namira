@@ -337,13 +337,22 @@ class TeachingJournalController extends Controller
                     ];
                 });
 
-            // Fetch Existing TPs grouped by Chapter
-            $chapters = Chapter::with(['learningObjectives' => function($q) {
+            // Fetch Existing TPs grouped by Chapter (Filtered by Classroom Grade Level & Semester)
+            $gradeLevel = (int) filter_var($classroom->level ?? $classroom->name, FILTER_SANITIZE_NUMBER_INT);
+
+            $chaptersQuery = Chapter::with(['learningObjectives' => function($q) {
                 $q->select('id', 'chapter_id', 'code', 'description');
             }])
             ->where('subject_id', $subject->id)
-            ->where('semester', session('active_semester', '1'))
-            ->get();
+            ->where('semester', session('active_semester', '1'));
+
+            if ($gradeLevel > 0) {
+                $chaptersQuery->where(function($q) use ($gradeLevel) {
+                    $q->where('grade_level', $gradeLevel)->orWhereNull('grade_level');
+                });
+            }
+
+            $chapters = $chaptersQuery->get();
         }
 
         return Inertia::render('Academic/Journal/Create', [
@@ -403,14 +412,18 @@ class TeachingJournalController extends Controller
             $newTpIds = [];
             if ($request->has('new_tps')) {
                 foreach ($request->input('new_tps') as $newTp) {
-                    // Find or Create Chapter
+                    // Find or Create Chapter with Classroom Grade Level
+                    $classroomModel = Classroom::find($request->classroom_id);
+                    $targetGradeLevel = (int) filter_var($classroomModel?->level ?? $classroomModel?->name, FILTER_SANITIZE_NUMBER_INT) ?: 1;
+
                     $chapter = Chapter::firstOrCreate(
                         [
                             'subject_id' => $request->subject_id,
                             'title' => $newTp['chapter_title'],
                             'unit_id' => $unitId,
+                            'grade_level' => $targetGradeLevel,
                         ],
-                        ['semester' => '1'] // Default if creating new
+                        ['semester' => session('active_semester', '1')]
                     );
 
                     // Create TP
@@ -551,12 +564,21 @@ class TeachingJournalController extends Controller
             ->orderBy('full_name')
             ->get(['id', 'full_name as name', 'nis']);
 
-        $chapters = Chapter::with(['learningObjectives' => function($q) {
+        $gradeLevel = (int) filter_var($classroom->level ?? $classroom->name, FILTER_SANITIZE_NUMBER_INT);
+
+        $chaptersQuery = Chapter::with(['learningObjectives' => function($q) {
             $q->select('id', 'chapter_id', 'code', 'description');
         }])
         ->where('subject_id', $subject->id)
-        ->where('semester', session('active_semester', '1'))
-        ->get();
+        ->where('semester', session('active_semester', '1'));
+
+        if ($gradeLevel > 0) {
+            $chaptersQuery->where(function($q) use ($gradeLevel) {
+                $q->where('grade_level', $gradeLevel)->orWhereNull('grade_level');
+            });
+        }
+
+        $chapters = $chaptersQuery->get();
 
         return Inertia::render('Academic/Journal/Create', [
             'schedule' => $schedule,
@@ -604,13 +626,17 @@ class TeachingJournalController extends Controller
             $newTpIds = [];
             if ($request->has('new_tps')) {
                 foreach ($request->input('new_tps') as $newTp) {
+                    $classroomModel = $journal->classroom;
+                    $targetGradeLevel = (int) filter_var($classroomModel?->level ?? $classroomModel?->name, FILTER_SANITIZE_NUMBER_INT) ?: 1;
+
                     $chapter = Chapter::firstOrCreate(
                         [
                             'subject_id' => $journal->subject_id,
                             'title' => $newTp['chapter_title'],
                             'unit_id' => $unitId,
+                            'grade_level' => $targetGradeLevel,
                         ],
-                        ['semester' => '1']
+                        ['semester' => session('active_semester', '1')]
                     );
 
                     $tp = $chapter->learningObjectives()->create([
