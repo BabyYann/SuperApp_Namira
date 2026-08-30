@@ -56,7 +56,7 @@ class TeachingJournalController extends Controller
         // Fetch Units for Global Roles
         $units = [];
         if ($isGlobalAdmin) {
-            $units = Unit::where('is_active', true)->orderBy('id')->get(['id', 'name', 'code']);
+            $units = Unit::orderBy('id')->get(['id', 'name', 'code']);
         }
 
         // Active Unit Filter
