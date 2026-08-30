@@ -254,7 +254,23 @@ class TeachingJournalController extends Controller
                 }
             }
 
-            // 2. Create Journal
+            // 2. Process Photo (Supports both File upload and Base64 compressed image)
+            $photoPath = null;
+            if ($request->hasFile('photo')) {
+                $photoPath = $request->file('photo')->store('journal_photos', 'public');
+            } elseif ($request->photo && is_string($request->photo) && str_starts_with($request->photo, 'data:image')) {
+                $image = $request->photo;
+                $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
+                $image = str_replace(' ', '+', $image);
+                $imageName = 'journal_' . ($teacher->id ?? auth()->id()) . '_' . time() . '.jpg';
+                if (!file_exists(storage_path('app/public/journal_photos'))) {
+                    mkdir(storage_path('app/public/journal_photos'), 0777, true);
+                }
+                \Illuminate\Support\Facades\Storage::disk('public')->put('journal_photos/' . $imageName, base64_decode($image));
+                $photoPath = 'journal_photos/' . $imageName;
+            }
+
+            // Create Journal
             $journal = TeachingJournal::create([
                 'unit_id' => $unitId,
                 'teacher_id' => $teacher->id ?? null, // Assuming linked
@@ -266,7 +282,7 @@ class TeachingJournalController extends Controller
                 'end_time' => $request->end_time,
                 'custom_theme' => $request->custom_theme,
                 'notes' => $request->notes,
-                'photo_path' => $request->file('photo') ? $request->file('photo')->store('journal_photos', 'public') : null,
+                'photo_path' => $photoPath,
                 'status' => 'submitted',
             ]);
 
@@ -437,23 +453,35 @@ class TeachingJournalController extends Controller
                 }
             }
 
-            // 2. Update Journal Details
-            $journal->update([
-                'custom_theme' => $request->custom_theme,
-                'notes' => $request->notes,
-                // Photo update logic if needed
-            ]);
-
+            $photoPath = $journal->photo_path;
             if ($request->hasFile('photo')) {
                 // Delete old photo if exists
                 if ($journal->photo_path) {
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($journal->photo_path);
                 }
-                
-                $journal->update([
-                    'photo_path' => $request->file('photo')->store('journal_photos', 'public')
-                ]);
+                $photoPath = $request->file('photo')->store('journal_photos', 'public');
+            } elseif ($request->photo && is_string($request->photo) && str_starts_with($request->photo, 'data:image')) {
+                // Delete old photo if exists
+                if ($journal->photo_path) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($journal->photo_path);
+                }
+                $image = $request->photo;
+                $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
+                $image = str_replace(' ', '+', $image);
+                $imageName = 'journal_' . ($teacher->id ?? auth()->id()) . '_' . time() . '.jpg';
+                if (!file_exists(storage_path('app/public/journal_photos'))) {
+                    mkdir(storage_path('app/public/journal_photos'), 0777, true);
+                }
+                \Illuminate\Support\Facades\Storage::disk('public')->put('journal_photos/' . $imageName, base64_decode($image));
+                $photoPath = 'journal_photos/' . $imageName;
             }
+
+            // 2. Update Journal Details
+            $journal->update([
+                'custom_theme' => $request->custom_theme,
+                'notes' => $request->notes,
+                'photo_path' => $photoPath,
+            ]);
 
             // 3. Sync TPs
             $allTpIds = array_merge($request->input('selected_tps', []), $newTpIds);

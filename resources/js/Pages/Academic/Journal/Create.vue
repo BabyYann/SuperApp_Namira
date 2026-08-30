@@ -2,11 +2,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import { ref, computed, onMounted } from 'vue';
-import { PlusIcon } from '@heroicons/vue/24/outline';
+import { 
+    PlusIcon, CameraIcon, PhotoIcon, XMarkIcon, ArrowPathIcon 
+} from '@heroicons/vue/24/outline';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     schedule: Object,
@@ -19,6 +22,9 @@ const props = defineProps({
 });
 
 const isEditing = computed(() => !!props.journal);
+
+const photoPreview = ref(null);
+const isCompressing = ref(false);
 
 // Form Logic
 const form = useForm({
@@ -40,6 +46,66 @@ const form = useForm({
     photo: null,
     _method: 'POST', // Default
 });
+
+// Canvas-based client-side image compression
+const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 1600;
+
+                if (width > height && width > maxDim) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to compressed DataURL (JPEG quality 0.8)
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                resolve(compressedDataUrl);
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+};
+
+const handlePhotoInput = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedBase64 = await compressImage(file);
+        photoPreview.value = compressedBase64;
+        form.photo = compressedBase64;
+    } catch (err) {
+        console.error('Compress error:', err);
+        form.photo = file;
+        photoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
+    }
+};
+
+const removePhoto = () => {
+    form.photo = null;
+    photoPreview.value = null;
+};
 
 // Initialize for Edit Mode
 onMounted(() => {
@@ -83,12 +149,6 @@ const addNewTp = () => {
     if (!newTpForm.value.code || !newTpForm.value.description || !newTpForm.value.chapter_title) return;
     
     form.new_tps.push({ ...newTpForm.value });
-    
-    // Automatically select it (visual feedback)
-    // We can't really select it in 'selected_tps' because it has no ID yet.
-    // We display it in a separate list.
-    
-    // Reset
     newTpForm.value = { chapter_title: '', code: '', description: '' };
     showAddTpForm.value = false;
 };
@@ -98,15 +158,31 @@ const removeNewTp = (index) => {
 };
 
 const submit = () => {
-    if (isEditing.value) {
-        form.post(route('yayasan.teaching-journal.update', props.journal.id), {
-            forceFormData: true,
-        });
-    } else {
-        form.post(route('yayasan.teaching-journal.store'), {
-            forceFormData: true,
-        });
-    }
+    const endpoint = isEditing.value 
+        ? route('yayasan.teaching-journal.update', props.journal.id) 
+        : route('yayasan.teaching-journal.store');
+
+    form.post(endpoint, {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: isEditing.value ? 'Jurnal mengajar berhasil diperbarui.' : 'Jurnal mengajar berhasil disimpan.',
+                confirmButtonColor: '#009688',
+            });
+        },
+        onError: (errors) => {
+            const errorMsg = Object.values(errors).flat().join('<br>') || 'Terjadi kesalahan saat menyimpan jurnal.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyimpan',
+                html: errorMsg,
+                confirmButtonColor: '#009688',
+            });
+        }
+    });
 };
 
 // Date formatter
@@ -310,31 +386,55 @@ const formatDate = (dateString) => {
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <span class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm">4</span>
-                        Bukti & Catatan
+                        Bukti Dokumentasi & Catatan
                     </h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <InputLabel value="Upload Foto Kegiatan *" />
-                            <div class="mt-2 flex justify-center rounded-2xl border-2 border-dashed border-gray-300 p-6 hover:border-orange-400 transition-colors bg-gray-50">
-                                <div class="text-center">
-                                    <div class="flex text-sm text-gray-600">
-                                        <label for="file-upload" class="relative cursor-pointer rounded-md font-bold text-orange-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-orange-500">
-                                            <span>Upload file</span>
-                                            <input id="file-upload" name="file-upload" type="file" class="sr-only" @input="form.photo = $event.target.files[0]">
-                                        </label>
-                                        <p class="pl-1">atau drag and drop</p>
-                                    </div>
-                                    <p v-if="form.photo" class="text-xs font-bold text-green-600 mt-2">File terpilih: {{ form.photo.name }}</p>
-                                    <p v-else class="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                            <InputLabel value="Foto Dokumentasi Pembelajaran" />
+                            
+                            <!-- Photo Preview if Available -->
+                            <div v-if="photoPreview || (isEditing && journal.photo_path && !photoPreview)" class="mt-2 relative rounded-2xl overflow-hidden border-2 border-teal-500/40 bg-slate-900 shadow-md aspect-video max-h-60 flex items-center justify-center group">
+                                <img :src="photoPreview || ('/storage/' + journal.photo_path)" class="w-full h-full object-cover" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                    <button type="button" @click="removePhoto" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-lg transition active:scale-95 flex items-center gap-1.5">
+                                        <XMarkIcon class="w-4 h-4" /> Hapus / Ganti Foto
+                                    </button>
+                                </div>
+                                <button type="button" @click="removePhoto" class="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition shadow md:hidden">
+                                    <XMarkIcon class="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <!-- Dual Action Upload Buttons if No Photo -->
+                            <div v-else class="mt-2 flex flex-col gap-2">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <!-- Capture with Camera -->
+                                    <label class="flex flex-col items-center justify-center p-4 bg-teal-50 hover:bg-teal-100/80 active:scale-95 border-2 border-dashed border-teal-300 hover:border-teal-500 rounded-2xl cursor-pointer transition text-center group">
+                                        <CameraIcon class="w-8 h-8 text-teal-600 group-hover:scale-110 transition-transform mb-1" />
+                                        <span class="text-xs font-black text-teal-900">Kamera Langsung</span>
+                                        <span class="text-[10px] text-teal-600">Ambil foto kelas</span>
+                                        <input type="file" accept="image/*" capture="environment" class="hidden" @change="handlePhotoInput">
+                                    </label>
+
+                                    <!-- Choose from Gallery -->
+                                    <label class="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-slate-100 active:scale-95 border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-2xl cursor-pointer transition text-center group">
+                                        <PhotoIcon class="w-8 h-8 text-slate-600 group-hover:scale-110 transition-transform mb-1" />
+                                        <span class="text-xs font-black text-slate-800">Pilih dari Galeri</span>
+                                        <span class="text-[10px] text-slate-500">File foto tersimpan</span>
+                                        <input type="file" accept="image/*" class="hidden" @change="handlePhotoInput">
+                                    </label>
+                                </div>
+
+                                <div v-if="isCompressing" class="flex items-center justify-center gap-2 p-2 bg-amber-50 text-amber-800 rounded-xl text-xs font-bold border border-amber-200">
+                                    <ArrowPathIcon class="w-4 h-4 animate-spin text-amber-600" />
+                                    <span>Mengompresi foto otomatis untuk upload cepat...</span>
                                 </div>
                             </div>
-                             <InputError :message="form.errors.photo_path" class="mt-1" />
-                             <!-- Show Existing Photo -->
-                             <div v-if="isEditing && journal.photo_path && !form.photo" class="mt-2 text-xs text-gray-500">
-                                Foto saat ini: <a :href="'/storage/' + journal.photo_path" target="_blank" class="text-orange-600 hover:underline">Lihat Foto</a>
-                             </div>
+
+                            <InputError :message="form.errors.photo_path || form.errors.photo" class="mt-1" />
                         </div>
+
                         <div>
                             <InputLabel value="Catatan Tambahan (Jurnal)" />
                             <textarea v-model="form.notes" rows="4" class="w-full mt-2 px-4 py-3 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-orange-500 text-sm" placeholder="Catatan khusus mengenai kegiatan belajar hari ini..."></textarea>
