@@ -17,26 +17,64 @@ use Illuminate\Support\Carbon;
 
 use App\Models\StudentAttendance;
 use App\Modules\Academic\Models\StudentCheckin;
+use App\Modules\Yayasan\Models\Unit;
+use App\Services\NotificationDispatcher;
+use Illuminate\Support\Facades\Auth;
 
 class TeachingJournalController extends Controller
 {
     public function index(Request $request)
     {
         $user = auth()->user();
-        $teacher = $user->teacher_profile; // Assuming relationship exists
+        $teacher = $user->teacher_profile ?? \App\Modules\Academic\Models\Teacher::where('user_id', $user->id)->first();
+        
+        $hasAdminRole = $user->hasAnyRole([
+            'super_admin_yayasan', 
+            'admin_yayasan', 
+            'pembina_yayasan', 
+            'pengawas_yayasan', 
+            'admin_unit', 
+            'kepala_sekolah'
+        ]);
 
-        // If not a teacher, maybe show empty or redirect (for admin testing, we might need a fallback)
-        if (!$teacher) {
-            // For development/admin testing, maybe fetch all schedules or handle gracefully
-            // return redirect()->route('dashboard')->with('error', 'Anda bukan Guru.');
+        $isGlobalAdmin = $user->hasAnyRole([
+            'super_admin_yayasan', 
+            'admin_yayasan', 
+            'pembina_yayasan', 
+            'pengawas_yayasan'
+        ]);
+
+        // Mode switch (if teacher also has admin role, allow toggling via query param 'view=my' or 'view=monitoring')
+        $viewMode = $request->input('view');
+        if (!$viewMode) {
+            $viewMode = $hasAdminRole ? 'monitoring' : 'my';
         }
 
         $date = $request->input('date', date('Y-m-d'));
-        $dayName = $this->getDayName($date); // Helper to get 'Senin', 'Selasa', etc.
+        $dayName = $this->getDayName($date);
 
-        // Fetch Schedule for Today
+        // Fetch Units for Global Roles
+        $units = [];
+        if ($isGlobalAdmin) {
+            $units = Unit::where('is_active', true)->orderBy('id')->get(['id', 'name', 'code']);
+        }
+
+        // Active Unit Filter
+        $selectedUnitId = $request->input('unit_id', session('active_unit_id'));
+        if ($selectedUnitId === 'all' && !$isGlobalAdmin) {
+            $selectedUnitId = session('active_unit_id');
+        }
+
         $schedules = [];
-        if ($teacher) {
+        $stats = [
+            'total' => 0,
+            'filled' => 0,
+            'unfilled' => 0,
+            'compliance_rate' => 0,
+        ];
+
+        if ($viewMode === 'my' && $teacher) {
+            // Teacher Personal View
             $schedules = ClassSchedule::with(['classroom', 'subject', 'journals' => function($q) use ($date) {
                 $q->whereDate('date', $date);
             }])
@@ -45,22 +83,154 @@ class TeachingJournalController extends Controller
             ->orderBy('start_time')
             ->get()
             ->map(function ($schedule) {
+                $journal = $schedule->journals->first();
                 return [
                     'id' => $schedule->id,
-                    'classroom' => $schedule->classroom->name,
-                    'subject' => $schedule->subject->name,
+                    'classroom' => $schedule->classroom?->name ?? '-',
+                    'subject' => $schedule->subject?->name ?? '-',
                     'start_time' => $schedule->start_time,
                     'end_time' => $schedule->end_time,
-                    'is_filled' => $schedule->journals->isNotEmpty(),
-                    'journal_id' => $schedule->journals->first()?->id,
+                    'is_filled' => $journal !== null,
+                    'journal_id' => $journal?->id,
+                    'photo_path' => $journal?->photo_path,
+                    'notes' => $journal?->notes,
                 ];
             });
+
+            $total = $schedules->count();
+            $filled = $schedules->where('is_filled', true)->count();
+            $stats = [
+                'total' => $total,
+                'filled' => $filled,
+                'unfilled' => $total - $filled,
+                'compliance_rate' => $total > 0 ? round(($filled / $total) * 100) : 0,
+            ];
+        } else {
+            // Executive & Supervisory Monitoring View (Super Admin, Kepsek, Pengawas)
+            $query = ClassSchedule::with([
+                'unit:id,name,code',
+                'classroom:id,name',
+                'subject:id,name',
+                'teacher.user:id,name',
+                'journals' => function($q) use ($date) {
+                    $q->whereDate('date', $date);
+                }
+            ])
+            ->where('day', $dayName);
+
+            // Filter Unit
+            if ($selectedUnitId && $selectedUnitId !== 'all') {
+                $query->where('unit_id', $selectedUnitId);
+            } elseif (!$isGlobalAdmin) {
+                $query->where('unit_id', session('active_unit_id'));
+            }
+
+            // Filter Classroom if provided
+            if ($request->filled('classroom_id')) {
+                $query->where('classroom_id', $request->classroom_id);
+            }
+
+            // Filter Teacher if provided
+            if ($request->filled('teacher_id')) {
+                $query->where('teacher_id', $request->teacher_id);
+            }
+
+            $rawSchedules = $query->orderBy('start_time')->get();
+
+            $schedules = $rawSchedules->map(function ($schedule) {
+                $journal = $schedule->journals->first();
+                return [
+                    'id' => $schedule->id,
+                    'unit_id' => $schedule->unit_id,
+                    'unit_name' => $schedule->unit?->name ?? '-',
+                    'classroom_id' => $schedule->classroom_id,
+                    'classroom' => $schedule->classroom?->name ?? '-',
+                    'subject_id' => $schedule->subject_id,
+                    'subject' => $schedule->subject?->name ?? '-',
+                    'teacher_id' => $schedule->teacher_id,
+                    'teacher_name' => $schedule->teacher?->user?->name ?? $schedule->teacher?->full_name ?? 'Belum Ditugaskan',
+                    'teacher_user_id' => $schedule->teacher?->user_id,
+                    'start_time' => $schedule->start_time,
+                    'end_time' => $schedule->end_time,
+                    'is_filled' => $journal !== null,
+                    'journal_id' => $journal?->id,
+                    'photo_path' => $journal?->photo_path,
+                    'custom_theme' => $journal?->custom_theme,
+                    'notes' => $journal?->notes,
+                    'filled_at' => $journal?->created_at ? Carbon::parse($journal->created_at)->format('H:i') : null,
+                ];
+            });
+
+            // Filter status if requested
+            $statusFilter = $request->input('status');
+            if ($statusFilter === 'filled') {
+                $schedules = $schedules->where('is_filled', true)->values();
+            } elseif ($statusFilter === 'unfilled') {
+                $schedules = $schedules->where('is_filled', false)->values();
+            }
+
+            $total = $rawSchedules->count();
+            $filled = $rawSchedules->filter(fn($s) => $s->journals->isNotEmpty())->count();
+            $stats = [
+                'total' => $total,
+                'filled' => $filled,
+                'unfilled' => $total - $filled,
+                'compliance_rate' => $total > 0 ? round(($filled / $total) * 100) : 0,
+            ];
         }
 
         return Inertia::render('Academic/Journal/Index', [
             'schedules' => $schedules,
             'date' => $date,
+            'stats' => $stats,
+            'viewMode' => $viewMode,
+            'hasAdminRole' => $hasAdminRole,
+            'isGlobalAdmin' => $isGlobalAdmin,
+            'isTeacher' => $teacher !== null,
+            'units' => $units,
+            'selectedUnitId' => $selectedUnitId,
+            'filters' => [
+                'status' => $request->input('status', 'all'),
+                'unit_id' => $selectedUnitId,
+            ],
         ]);
+    }
+
+    public function sendReminder(Request $request)
+    {
+        $request->validate([
+            'schedule_id' => 'required|exists:class_schedules,id',
+            'date' => 'required|date',
+        ]);
+
+        $schedule = ClassSchedule::with(['classroom', 'subject', 'teacher.user'])->findOrFail($request->schedule_id);
+        $teacherUser = $schedule->teacher?->user;
+
+        if (!$teacherUser) {
+            return redirect()->back()->with('error', 'Akun pengguna untuk guru jadwal ini tidak ditemukan.');
+        }
+
+        $timeSlot = substr($schedule->start_time, 0, 5) . ' - ' . substr($schedule->end_time, 0, 5);
+        $subjectName = $schedule->subject?->name ?? 'Mata Pelajaran';
+        $classroomName = $schedule->classroom?->name ?? 'Kelas';
+        $dateFormatted = Carbon::parse($request->date)->locale('id')->isoFormat('dddd, D MMMM Y');
+
+        NotificationDispatcher::sendToUser(
+            $teacherUser,
+            '⏰ Pengingat: Jurnal Belum Diisi',
+            "Halo {$teacherUser->name}, jam mengajar {$subjectName} di {$classroomName} ({$timeSlot} WIB) pada {$dateFormatted} belum diisi. Mohon segera melengkapi jurnal mengajar & presensi kelas.",
+            'academic',
+            [
+                'url' => route('yayasan.teaching-journal.create', [
+                    'schedule_id' => $schedule->id,
+                    'date' => $request->date,
+                ]),
+                'schedule_id' => $schedule->id,
+                'date' => $request->date,
+            ]
+        );
+
+        return redirect()->back()->with('success', "Pengingat berhasil dikirimkan ke HP & akun {$teacherUser->name}.");
     }
 
     private function getDayName($date) {
