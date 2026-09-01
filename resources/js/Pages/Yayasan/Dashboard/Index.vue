@@ -284,34 +284,6 @@ const eventTypeLabels = {
                 </Link>
             </div>
 
-            <!-- LIVE HERO CARD FOR TEACHER -->
-            <div 
-                v-if="!isPengawas && teacherData?.current_schedule" 
-                class="rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 text-white shadow-md border border-teal-800/60"
-            >
-                <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-teal-300 mb-3">
-                    <span class="w-2 h-2 rounded-full bg-teal-400"></span>
-                    <span>Mengajar Sekarang ({{ teacherData.current_schedule.start_time }} - {{ teacherData.current_schedule.end_time }} WIB)</span>
-                </div>
-
-                <h3 class="font-extrabold text-2xl tracking-tight leading-snug mb-1">
-                    {{ teacherData.current_schedule.subject_name }} — Kelas {{ teacherData.current_schedule.classroom_name }}
-                </h3>
-
-                <p class="text-xs text-teal-200/90 font-medium flex items-center gap-1.5 mb-6">
-                    <MapPinIcon class="w-4 h-4 text-teal-300" />
-                    <span>Ruang Kelas {{ teacherData.current_schedule.classroom_name }} • Gedung Utama</span>
-                </p>
-
-                <Link 
-                    :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: teacherData.current_schedule.id })" 
-                    class="w-full py-3.5 px-4 bg-white hover:bg-teal-50 text-slate-900 font-extrabold text-sm rounded-2xl shadow-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 border border-slate-200"
-                >
-                    <PencilSquareIcon class="w-5 h-5 text-teal-700" />
-                    <span>Isi Jurnal & Absensi Kelas Ini</span>
-                </Link>
-            </div>
-
             <!-- ============================================================ -->
             <!-- 📱 APP GRID 5x2 (10 MENU CEPAT KHUSUS PENGAWAS YAYASAN) -->
             <!-- ============================================================ -->
