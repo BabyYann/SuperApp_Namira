@@ -1,7 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { 
     InboxIcon, PaperClipIcon, CameraIcon, CheckCircleIcon, XCircleIcon, 
     ClockIcon, MagnifyingGlassIcon
@@ -12,17 +13,45 @@ import 'dayjs/locale/id';
 dayjs.locale('id');
 
 const props = defineProps({
-    approvals: Array,
+    approvals: [Object, Array],
     pendingCount: Number,
     activeTab: String,
     filters: Object,
 });
 
+const approvalsList = computed(() => {
+    if (Array.isArray(props.approvals)) return props.approvals;
+    if (props.approvals?.data && Array.isArray(props.approvals.data)) return props.approvals.data;
+    return [];
+});
+
 const activeTab = ref(props.activeTab || 'pending');
 const search = ref(props.filters?.search || '');
 
+// Bulk Action Selection
+const selectedIds = ref([]);
+
+const isAllSelected = computed(() => {
+    const list = approvalsList.value;
+    if (!list.length) return false;
+    return list.every(item => selectedIds.value.includes(item.id));
+});
+
+const toggleSelectAll = () => {
+    if (isAllSelected.value) {
+        selectedIds.value = [];
+    } else {
+        selectedIds.value = approvalsList.value.map(item => item.id);
+    }
+};
+
+watch(activeTab, () => {
+    selectedIds.value = [];
+});
+
 const switchTab = (tab) => {
     activeTab.value = tab;
+    selectedIds.value = [];
     router.get(route('yayasan.attendance-approvals.index'), {
         status: tab,
         search: search.value,
@@ -34,6 +63,7 @@ const switchTab = (tab) => {
 };
 
 const handleSearch = () => {
+    selectedIds.value = [];
     router.get(route('yayasan.attendance-approvals.index'), {
         status: activeTab.value,
         search: search.value,
@@ -52,6 +82,11 @@ const form = useForm({
 const rejectModalOpen = ref(false);
 const selectedAttendance = ref(null);
 const rejectionReason = ref('');
+
+// Bulk Rejection Modal State
+const bulkRejectModalOpen = ref(false);
+const bulkRejectionReason = ref('');
+const isBulkProcessing = ref(false);
 
 const approve = (attendance) => {
     if (!confirm(`Setujui pengajuan ${typeLabel(attendance.status)} dari ${attendance.user?.name}?`)) return;
@@ -78,6 +113,55 @@ const submitReject = () => {
     form.put(route('yayasan.attendance-approvals.update', selectedAttendance.value.id), {
         onSuccess: () => {
             rejectModalOpen.value = false;
+        }
+    });
+};
+
+// Bulk Actions Handlers
+const bulkApprove = () => {
+    if (!selectedIds.value.length) return;
+    if (!confirm(`Apakah Anda yakin ingin menyetujui ${selectedIds.value.length} pengajuan absensi yang dipilih sekaligus?`)) return;
+
+    isBulkProcessing.value = true;
+    router.post(route('yayasan.attendance-approvals.bulk-action'), {
+        ids: selectedIds.value,
+        action: 'approve',
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            selectedIds.value = [];
+        },
+        onFinish: () => {
+            isBulkProcessing.value = false;
+        }
+    });
+};
+
+const openBulkRejectModal = () => {
+    if (!selectedIds.value.length) return;
+    bulkRejectionReason.value = '';
+    bulkRejectModalOpen.value = true;
+};
+
+const submitBulkReject = () => {
+    if (!bulkRejectionReason.value.trim()) {
+        alert('Mohon masukkan alasan penolakan massal.');
+        return;
+    }
+
+    isBulkProcessing.value = true;
+    router.post(route('yayasan.attendance-approvals.bulk-action'), {
+        ids: selectedIds.value,
+        action: 'reject',
+        reason: bulkRejectionReason.value,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            bulkRejectModalOpen.value = false;
+            selectedIds.value = [];
+        },
+        onFinish: () => {
+            isBulkProcessing.value = false;
         }
     });
 };
@@ -166,6 +250,51 @@ const formatDate = (dateStr) => {
                 </div>
             </div>
 
+            <!-- Bulk Actions Bar (When items are selected in pending tab) -->
+            <transition 
+                enter-active-class="transition duration-200 ease-out" 
+                enter-from-class="opacity-0 -translate-y-2 scale-98" 
+                enter-to-class="opacity-100 translate-y-0 scale-100" 
+                leave-active-class="transition duration-150 ease-in" 
+                leave-from-class="opacity-100 translate-y-0 scale-100" 
+                leave-to-class="opacity-0 -translate-y-2 scale-98"
+            >
+                <div v-if="activeTab === 'pending' && selectedIds.length > 0" class="bg-slate-900 text-white p-4 rounded-3xl shadow-xl border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 rounded-full bg-namira-teal/20 text-teal-300 font-extrabold text-xs border border-namira-teal/30">
+                            {{ selectedIds.length }} Pengajuan Dipilih
+                        </span>
+                        <span class="text-xs text-slate-300 font-medium hidden sm:inline">
+                            Pilih aksi persetujuan atau penolakan massal untuk data terpilih
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <button 
+                            @click="bulkApprove" 
+                            :disabled="isBulkProcessing"
+                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        >
+                            <CheckCircleIcon class="w-4 h-4" />
+                            <span>Setujui Semua ({{ selectedIds.length }})</span>
+                        </button>
+                        <button 
+                            @click="openBulkRejectModal" 
+                            :disabled="isBulkProcessing"
+                            class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        >
+                            <XCircleIcon class="w-4 h-4" />
+                            <span>Tolak Semua ({{ selectedIds.length }})</span>
+                        </button>
+                        <button 
+                            @click="selectedIds = []" 
+                            class="px-3 py-2 text-slate-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                            Batal
+                        </button>
+                    </div>
+                </div>
+            </transition>
+
             <!-- Content Card -->
             <div class="bg-white rounded-3xl shadow-sm border border-gray-150 overflow-hidden">
                 <div class="p-6">
@@ -173,10 +302,13 @@ const formatDate = (dateStr) => {
                         <h3 class="text-base font-extrabold text-gray-900">
                             {{ activeTab === 'pending' ? 'Daftar Pengajuan Pending' : 'Riwayat Keputusan' }}
                         </h3>
+                        <div v-if="activeTab === 'pending' && approvalsList.length > 0" class="text-xs text-gray-400 font-medium">
+                            Menampilkan {{ approvalsList.length }} data di halaman ini
+                        </div>
                     </div>
 
                     <!-- Empty State -->
-                    <div v-if="approvals.length === 0" class="text-center py-16 text-gray-400 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
+                    <div v-if="approvalsList.length === 0" class="text-center py-16 text-gray-400 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
                         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-sm mb-4">
                             <InboxIcon class="w-8 h-8 text-gray-300" />
                         </div>
@@ -195,6 +327,16 @@ const formatDate = (dateStr) => {
                         <table class="w-full text-xs text-left text-gray-600">
                             <thead class="text-xs text-gray-700 uppercase bg-slate-50 border-b border-gray-150 font-bold">
                                 <tr>
+                                    <!-- Select All Checkbox -->
+                                    <th v-if="activeTab === 'pending'" class="w-12 px-4 py-4 text-center">
+                                        <input 
+                                            type="checkbox" 
+                                            :checked="isAllSelected" 
+                                            @change="toggleSelectAll" 
+                                            class="rounded border-gray-300 text-namira-teal focus:ring-namira-teal/30 cursor-pointer w-4 h-4" 
+                                            title="Pilih Semua Halaman Ini"
+                                        />
+                                    </th>
                                     <th class="px-5 py-4">Nama Pegawai</th>
                                     <th class="px-5 py-4">Tanggal Presensi</th>
                                     <th class="px-5 py-4">Jenis Pengajuan</th>
@@ -205,7 +347,22 @@ const formatDate = (dateStr) => {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 bg-white">
-                                <tr v-for="att in approvals" :key="att.id" class="hover:bg-slate-50/60 transition-colors">
+                                <tr 
+                                    v-for="att in approvalsList" 
+                                    :key="att.id" 
+                                    class="hover:bg-slate-50/60 transition-colors"
+                                    :class="{ 'bg-teal-50/40': selectedIds.includes(att.id) }"
+                                >
+                                    <!-- Row Checkbox -->
+                                    <td v-if="activeTab === 'pending'" class="w-12 px-4 py-4 text-center">
+                                        <input 
+                                            type="checkbox" 
+                                            :value="att.id" 
+                                            v-model="selectedIds" 
+                                            class="rounded border-gray-300 text-namira-teal focus:ring-namira-teal/30 cursor-pointer w-4 h-4" 
+                                        />
+                                    </td>
+
                                     <!-- Employee Info -->
                                     <td class="px-5 py-4">
                                         <div class="flex items-center gap-3">
@@ -296,14 +453,22 @@ const formatDate = (dateStr) => {
                     </div>
 
                     <!-- Mobile Card List (Android / Mobile View) -->
-                    <div v-if="approvals.length > 0" class="block md:hidden space-y-3">
+                    <div v-if="approvalsList.length > 0" class="block md:hidden space-y-3">
                         <div 
-                            v-for="att in approvals" 
+                            v-for="att in approvalsList" 
                             :key="'mobile-' + att.id" 
                             class="p-4 bg-white rounded-2xl border border-gray-200 shadow-sm space-y-3"
+                            :class="{ 'border-namira-teal ring-2 ring-namira-teal/20 bg-teal-50/20': selectedIds.includes(att.id) }"
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex items-center gap-3">
+                                    <input 
+                                        v-if="activeTab === 'pending'" 
+                                        type="checkbox" 
+                                        :value="att.id" 
+                                        v-model="selectedIds" 
+                                        class="rounded border-gray-300 text-namira-teal focus:ring-namira-teal/30 cursor-pointer w-4 h-4 shrink-0" 
+                                    />
                                     <img v-if="att.user?.profile_photo_url" :src="att.user.profile_photo_url" class="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs" />
                                     <div v-else class="w-10 h-10 rounded-full bg-slate-100 text-gray-500 font-bold flex items-center justify-center text-sm">
                                         {{ (att.user?.name || '-').charAt(0) }}
@@ -357,16 +522,21 @@ const formatDate = (dateStr) => {
                             </div>
                         </div>
                     </div>
+
+                    <!-- Pagination Bar -->
+                    <div v-if="approvals?.links && approvals.links.length > 3" class="mt-6 flex justify-center pt-2">
+                        <Pagination :links="approvals.links" />
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Rejection Modal -->
+        <!-- Single Rejection Modal -->
         <div v-if="rejectModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div class="flex items-center justify-between border-b border-gray-100 pb-3">
                     <h3 class="text-base font-extrabold text-gray-900">Konfirmasi Penolakan Pengajuan</h3>
-                    <button @click="rejectModalOpen = false" class="text-gray-400 hover:text-gray-600">✕</button>
+                    <button @click="rejectModalOpen = false" class="text-gray-400 hover:text-gray-600 cursor-pointer">✕</button>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 mb-2">
@@ -380,8 +550,33 @@ const formatDate = (dateStr) => {
                     ></textarea>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
-                    <button @click="rejectModalOpen = false" class="px-4 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-xs font-bold transition-colors">Batal</button>
-                    <button @click="submitReject" class="px-5 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-xs font-bold shadow-xs transition-colors">Konfirmasi Tolak</button>
+                    <button @click="rejectModalOpen = false" class="px-4 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-xs font-bold transition-colors cursor-pointer">Batal</button>
+                    <button @click="submitReject" class="px-5 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer">Konfirmasi Tolak</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Rejection Modal -->
+        <div v-if="bulkRejectModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <h3 class="text-base font-extrabold text-gray-900">Tolak {{ selectedIds.length }} Pengajuan Massal</h3>
+                    <button @click="bulkRejectModalOpen = false" class="text-gray-400 hover:text-gray-600 cursor-pointer">✕</button>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 mb-2">
+                        Mohon masukkan catatan atau alasan penolakan untuk <span class="font-bold text-gray-800">{{ selectedIds.length }} pengajuan terpilih</span>:
+                    </p>
+                    <textarea 
+                        v-model="bulkRejectionReason" 
+                        rows="4" 
+                        placeholder="Tuliskan alasan penolakan massal..."
+                        class="w-full border-gray-200 rounded-2xl shadow-xs text-xs font-semibold focus:border-rose-500 focus:ring focus:ring-rose-500/20"
+                    ></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button @click="bulkRejectModalOpen = false" class="px-4 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-xs font-bold transition-colors cursor-pointer">Batal</button>
+                    <button @click="submitBulkReject" :disabled="isBulkProcessing" class="px-5 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50">Konfirmasi Tolak Massal</button>
                 </div>
             </div>
         </div>
