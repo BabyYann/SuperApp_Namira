@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
+import Pagination from '@/Components/Pagination.vue';
 import { ref, watch } from 'vue';
 import { 
     BriefcaseIcon, SparklesIcon, BuildingOfficeIcon, ClockIcon, 
@@ -211,22 +212,8 @@ const formatDate = (dateStr) => {
                     </div>
 
                     <!-- Pagination -->
-                    <div v-if="vacancies.links && vacancies.links.length > 3" class="flex justify-center pt-8">
-                        <div class="flex items-center gap-1 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
-                            <component
-                                v-for="(link, key) in vacancies.links"
-                                :key="key"
-                                :is="link.url ? 'Link' : 'span'"
-                                :href="link.url"
-                                v-html="link.label"
-                                class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
-                                :class="{
-                                    'bg-namira-teal text-white shadow-xs': link.active,
-                                    'text-slate-600 hover:bg-slate-100': link.url && !link.active,
-                                    'text-slate-300': !link.url
-                                }"
-                            />
-                        </div>
+                    <div v-if="vacancies.links && vacancies.links.length > 3" class="pt-8">
+                        <Pagination :links="vacancies.links" />
                     </div>
                 </div>
             </div>

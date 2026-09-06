@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import Pagination from '@/Components/Pagination.vue';
 import { ref, watch, computed } from 'vue';
 import {
     SparklesIcon, FunnelIcon, MagnifyingGlassIcon, PhotoIcon,
@@ -505,22 +506,8 @@ const formatTime = (timeStr) => {
             </div>
 
             <!-- Pagination Bar -->
-            <div v-if="feedItems.links && feedItems.links.length > 3" class="flex justify-center pt-2 sm:pt-4">
-                <div class="flex items-center gap-1 bg-white p-1.5 sm:p-2 rounded-2xl border border-gray-150 shadow-xs overflow-x-auto max-w-full">
-                    <component
-                        v-for="(link, key) in feedItems.links"
-                        :key="key"
-                        :is="link.url ? 'Link' : 'span'"
-                        :href="link.url"
-                        v-html="link.label"
-                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0"
-                        :class="{
-                            'bg-namira-teal text-white shadow-xs': link.active,
-                            'text-gray-600 hover:bg-gray-100': link.url && !link.active,
-                            'text-gray-300': !link.url
-                        }"
-                    />
-                </div>
+            <div v-if="feedItems.links && feedItems.links.length > 3" class="pt-2 sm:pt-4">
+                <Pagination :links="feedItems.links" />
             </div>
 
         </div>
