@@ -15,14 +15,21 @@ class LoanController extends Controller
 {
     public function index()
     {
-        $unitId = session('active_unit_id');
+        $user = auth()->user();
+        $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : session('active_unit_id');
+        if (!$unitId && $isGlobalAdmin) {
+            $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+        }
 
         $loans = Loan::with(['inventory', 'borrower', 'processedBy'])
             ->whereHas('inventory', fn($q) => $q->where('unit_id', $unitId))
             ->when(request('status'), fn($q, $status) => $q->where('status', $status))
             ->when(request('search'), function ($q, $search) {
-                $q->whereHas('inventory', fn($inv) => $inv->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('borrower', fn($usr) => $usr->where('name', 'like', "%{$search}%"));
+                $q->where(function ($sub) use ($search) {
+                    $sub->whereHas('inventory', fn($inv) => $inv->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('borrower', fn($usr) => $usr->where('name', 'like', "%{$search}%"));
+                });
             })
             ->latest('loan_date')
             ->paginate(30)

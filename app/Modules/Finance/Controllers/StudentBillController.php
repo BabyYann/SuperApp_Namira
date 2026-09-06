@@ -38,10 +38,12 @@ class StudentBillController extends Controller
             }
 
             $bills = $query->when($request->search, function ($query, $search) {
-                    $query->whereHas('student', function ($q) use ($search) {
-                        $q->where('full_name', 'like', "%{$search}%") // changed name to full_name based on Student model
-                          ->orWhere('nis', 'like', "%{$search}%");
-                    })->orWhere('bill_code', 'like', "%{$search}%");
+                    $query->where(function ($nested) use ($search) {
+                        $nested->whereHas('student', function ($q) use ($search) {
+                            $q->where('full_name', 'like', "%{$search}%")
+                              ->orWhere('nis', 'like', "%{$search}%");
+                        })->orWhere('bill_code', 'like', "%{$search}%");
+                    });
                 })
                 ->when($request->status, function ($query, $status) {
                     $query->where('status', $status);

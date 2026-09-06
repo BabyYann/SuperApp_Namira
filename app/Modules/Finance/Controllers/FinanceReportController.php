@@ -20,11 +20,16 @@ class FinanceReportController extends Controller
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 
-        $unitId = session('active_unit_id');
+        $user = auth()->user();
+        $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        $unitId = $isGlobalAdmin ? ($request->input('unit_id') ?: session('active_unit_id')) : session('active_unit_id');
+        if (!$unitId && $isGlobalAdmin) {
+            $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+        }
 
         if ($request->classroom_id) {
             $classroom = Classroom::findOrFail($request->classroom_id);
-            if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan'])) {
+            if (!$isGlobalAdmin) {
                 if ($classroom->unit_id !== $unitId) {
                     abort(403, 'Akses Ditolak: Unit tidak sesuai.');
                 }
@@ -38,7 +43,7 @@ class FinanceReportController extends Controller
                 $q->whereIn('status', ['unpaid', 'partial']);
             })
             ->with(['classroom', 'unit', 'bills' => function ($q) {
-                $q->whereIn('status', ['unpaid', 'partial']);
+                $q->whereIn('status', ['unpaid', 'partial'])->with('financeType');
             }]);
 
         if ($request->classroom_id) {
@@ -53,11 +58,17 @@ class FinanceReportController extends Controller
         $summaryQuery = clone $query;
         $studentCount = $summaryQuery->count();
         
-        $totalArrearsSum = $summaryQuery->get()->sum(function ($student) {
-             return $student->bills->whereIn('status', ['unpaid', 'partial'])->sum(function($b) {
-                  return $b->final_amount - $b->paid_amount;
-             });
-        });
+        $totalArrearsSum = (float) \App\Modules\Finance\Models\StudentBill::whereIn('status', ['unpaid', 'partial'])
+            ->whereHas('student', function ($q) use ($unitId, $request) {
+                $q->where('unit_id', $unitId);
+                if ($request->classroom_id) {
+                    $q->where('classroom_id', $request->classroom_id);
+                }
+                if ($request->search) {
+                    $q->where('full_name', 'like', '%' . $request->search . '%');
+                }
+            })
+            ->sum(\Illuminate\Support\Facades\DB::raw('final_amount - paid_amount'));
 
         $students = $query->paginate(20)
             ->withQueryString()

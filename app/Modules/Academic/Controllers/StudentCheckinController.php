@@ -18,14 +18,26 @@ class StudentCheckinController extends Controller
     /**
      * Halaman QR Scanner untuk Guru Piket
      */
-    public function index()
+    public function index(Request $request)
     {
         $today = Carbon::today();
+        $user = Auth::user();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        $unitId = $isGlobalAdmin ? ($request->unit_id ?: session('active_unit_id')) : session('active_unit_id');
+        if (!$unitId && $user) {
+            $unitId = $user->unit_id ?? $user->teacher_profile?->unit_id ?? $user->staff?->unit_id;
+        }
 
-        // Rekap check-in hari ini
-        $todayCheckins = StudentCheckin::whereDate('checkin_date', $today)
-            ->with(['student.classroom'])
-            ->orderBy('checkin_time', 'asc')
+        // Rekap check-in hari ini (filter per unit jika tersedia)
+        $todayCheckinsQuery = StudentCheckin::whereDate('checkin_date', $today)
+            ->with(['student.classroom']);
+
+        if ($unitId) {
+            $todayCheckinsQuery->whereHas('student', fn($q) => $q->where('unit_id', $unitId));
+        }
+
+        $todayCheckins = $todayCheckinsQuery
+            ->orderBy('checkin_time', 'desc')
             ->get()
             ->map(fn($c) => [
                 'id'            => $c->id,
@@ -44,6 +56,7 @@ class StudentCheckinController extends Controller
             'deadline'      => $deadline,
             'hadir_count'   => $todayCheckins->where('status', 'hadir')->count(),
             'terlambat_count' => $todayCheckins->where('status', 'terlambat')->count(),
+            'unitId'        => $unitId,
         ]);
     }
 

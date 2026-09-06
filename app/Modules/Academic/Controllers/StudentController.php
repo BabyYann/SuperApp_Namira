@@ -13,7 +13,13 @@ class StudentController extends Controller
 {
     public function index()
     {
-        $unitId = session('active_unit_id');
+        $user = auth()->user();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : session('active_unit_id');
+        if (!$unitId && $isGlobalAdmin) {
+            $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+        }
+
         $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
         
         $students = Student::with(['user', 'classroom', 'academicYear'])

@@ -25,17 +25,22 @@ class ClassroomController extends Controller
 
     public function index()
     {
-        $unitId = session('active_unit_id');
+        $user = auth()->user();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : session('active_unit_id');
+        if (!$unitId && $isGlobalAdmin) {
+            $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+        }
 
         // Classrooms are now permanent - no year filtering needed
-        $classrooms = Classroom::with(['homeroomTeacher'])
+        $classrooms = Classroom::with(['homeroomTeacher.user'])
             ->where('unit_id', $unitId)
             ->withCount('students')
             ->orderBy('level')
             ->orderBy('name')
             ->get();
             
-        $teachers = \App\Modules\Academic\Models\Teacher::where('unit_id', $unitId)->get();
+        $teachers = \App\Modules\Academic\Models\Teacher::with('user')->where('unit_id', $unitId)->get();
 
         return Inertia::render('Academic/Classrooms/Index', [
             'classrooms' => $classrooms,
