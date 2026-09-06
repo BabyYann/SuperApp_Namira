@@ -45,10 +45,17 @@ class SettingController extends Controller
             ];
         });
 
-        // Fetch recent 20 activity logs
+        // Fetch recent activity logs with search filter
         $activityLogs = \Spatie\Activitylog\Models\Activity::with('causer')
+            ->when($request->filled('log_search'), function ($q) use ($request) {
+                $search = $request->log_search;
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('description', 'like', "%{$search}%")
+                        ->orWhereHasMorph('causer', [\App\Models\User::class], fn($u) => $u->where('name', 'like', "%{$search}%"));
+                });
+            })
             ->latest()
-            ->take(20)
+            ->take(50)
             ->get()
             ->map(function ($activity) {
                 return [
@@ -66,7 +73,10 @@ class SettingController extends Controller
             'users' => $users,
             'availableRoles' => $availableRoles,
             'activityLogs' => $activityLogs,
-            'filters' => ['search' => $request->search],
+            'filters' => [
+                'search' => $request->search,
+                'log_search' => $request->log_search,
+            ],
         ]);
     }
 

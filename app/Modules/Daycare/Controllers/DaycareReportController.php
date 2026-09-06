@@ -42,6 +42,23 @@ class DaycareReportController extends Controller
         $mealsCount = $logs->whereIn('category', ['meal', 'snack'])->count();
         $milkTotalMl = $logs->where('category', 'milk')->sum('amount_ml');
 
+        $unitName = $student->unit->name ?? 'Namira Daycare';
+        $formattedDate = \Carbon\Carbon::parse($date)->translatedFormat('l, d F Y');
+        $checkinTime = $attendance && $attendance->check_in_time ? substr($attendance->check_in_time, 0, 5) : '-';
+        $checkoutTime = $attendance && $attendance->check_out_time ? substr($attendance->check_out_time, 0, 5) : '-';
+
+        $waMessage = "Assalamu'alaikum Ayah/Bunda dari *{$student->full_name}*,\n\n"
+            . "Berikut ringkasan harian ananda di Daycare pada *{$formattedDate}*:\n"
+            . "🕒 Kehadiran: Datang {$checkinTime} WIB | Pulang {$checkoutTime} WIB\n"
+            . "😴 Tidur Siang: {$totalNapMinutes} menit\n"
+            . "🍼 Konsumsi Susu: {$milkTotalMl} ml\n"
+            . "🍱 Jadwal Makan/Snack: {$mealsCount} kali\n\n"
+            . "Terima kasih atas kepercayaannya.\n-- *{$unitName}*";
+
+        $waLink = !empty($student->parent_phone) 
+            ? \App\Helpers\WhatsAppHelper::generateLink($student->parent_phone, $waMessage) 
+            : null;
+
         return Inertia::render('Daycare/Reports/DailyReport', [
             'student' => $student,
             'date' => $date,
@@ -52,6 +69,7 @@ class DaycareReportController extends Controller
                 'meals_count' => $mealsCount,
                 'milk_total_ml' => $milkTotalMl,
             ],
+            'wa_link' => $waLink,
         ]);
     }
 }

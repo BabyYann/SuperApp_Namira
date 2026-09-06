@@ -36,12 +36,21 @@ class AttendanceController extends Controller
             ->get()
             ->keyBy('date'); // Key by YYYY-MM-DD string
 
-        // Get history (for list view, maybe last 10)
+        // Get history records for the selected month
         $history = EmployeeAttendance::where('user_id', $user->id)
-            ->where('date', '<=', $today->toDateString())
+            ->whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->latest('date')
-            ->take(10)
             ->get();
+
+        // Monthly summary statistics
+        $monthStats = [
+            'present' => $calendarRecords->where('status', 'present')->count(),
+            'late' => $calendarRecords->where('status', 'late')->count(),
+            'permit' => $calendarRecords->where('status', 'permit')->count(),
+            'sick' => $calendarRecords->where('status', 'sick')->count(),
+            'cuti' => $calendarRecords->where('status', 'cuti')->count(),
+            'business_trip' => $calendarRecords->where('status', 'business_trip')->count(),
+        ];
 
         // Get allowed locations
         $locations = AttendanceLocation::all(); 
@@ -50,6 +59,7 @@ class AttendanceController extends Controller
             'todayAttendance' => $todayAttendance,
             'history' => $history,
             'calendarData' => $calendarRecords,
+            'monthStats' => $monthStats,
             'locations' => $locations,
             'currentMonth' => (int)$month,
             'currentYear' => (int)$year,

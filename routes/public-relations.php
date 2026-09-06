@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('public-relations')->name('public-relations.')->middleware(['role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|humas_yayasan|admin_unit|humas_unit|kepala_sekolah'])->group(function () {
+    Route::post('news/bulk-action', [\App\Modules\PublicRelations\Controllers\NewsController::class, 'bulkAction'])->name('news.bulk-action');
     Route::post('news/{news}/approve', [\App\Modules\PublicRelations\Controllers\NewsController::class, 'approve'])->name('news.approve');
     Route::post('news/{news}/reject', [\App\Modules\PublicRelations\Controllers\NewsController::class, 'reject'])->name('news.reject');
     Route::resource('news', \App\Modules\PublicRelations\Controllers\NewsController::class)->except(['show']);

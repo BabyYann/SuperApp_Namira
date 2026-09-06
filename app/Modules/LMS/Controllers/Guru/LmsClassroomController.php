@@ -36,22 +36,41 @@ class LmsClassroomController extends Controller
         return $activeYear ? $activeYear->id : 1;
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $user = auth()->user();
+        $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        $unitId = $isGlobalAdmin ? ($request->unit_id ?: session('active_unit_id')) : session('active_unit_id');
+
         $teacherId = $this->getTeacherId();
         $academicYearId = $this->getActiveAcademicYearId();
 
-        $query = LmsClassroom::with(['classroom', 'subject', 'teacher'])
+        $query = LmsClassroom::with(['classroom.unit', 'subject', 'teacher.user'])
             ->where('academic_year_id', $academicYearId);
 
         if ($teacherId) {
             $query->where('teacher_id', $teacherId);
         }
 
-        $classrooms = $query->get();
+        if ($unitId) {
+            $query->whereHas('classroom', fn($q) => $q->where('unit_id', $unitId));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('classroom', fn($c) => $c->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('subject', fn($s) => $s->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('teacher.user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $classrooms = $query->paginate(24)->withQueryString();
 
         return Inertia::render('LMS/Guru/Classroom/Index', [
-            'classrooms' => $classrooms
+            'classrooms' => $classrooms,
+            'filters' => $request->only(['search', 'unit_id']),
+            'units' => $isGlobalAdmin ? \App\Modules\Yayasan\Models\Unit::all() : [],
         ]);
     }
 

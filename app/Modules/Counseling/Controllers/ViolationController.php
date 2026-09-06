@@ -150,20 +150,46 @@ class ViolationController extends Controller
             );
         }
 
+        // Calculate accumulated points & check warning thresholds
+        $totalPoints = Violation::where('student_id', $request->student_id)->sum('points');
+        $warningLevel = null;
+        if ($totalPoints >= 100) {
+            $warningLevel = 'Surat Peringatan 3 (SP-3 / Pemanggilan Orang Tua)';
+        } elseif ($totalPoints >= 75) {
+            $warningLevel = 'Surat Peringatan 2 (SP-2)';
+        } elseif ($totalPoints >= 50) {
+            $warningLevel = 'Surat Peringatan 1 (SP-1)';
+        } elseif ($totalPoints >= 30) {
+            $warningLevel = 'Peringatan Lisan / Pembinaan Khusus BK';
+        }
+
+        if ($warningLevel && $student) {
+            \App\Services\NotificationDispatcher::sendToRoles(
+                ['wali_kelas', 'bk', 'admin_unit', 'kepala_sekolah'],
+                $violation->unit_id,
+                '🚨 Ambang Batas Pelanggaran Terlampaui',
+                "Siswa {$student->full_name} ({$student->classroom->name}) telah mencapai {$totalPoints} akumulasi poin pelanggaran. Status: {$warningLevel}.",
+                'counseling',
+                ['student_id' => $student->id, 'total_points' => $totalPoints]
+            );
+        }
+
         // Automated WhatsApp Notification to parents
         try {
-            $student = Student::with(['unit', 'classroom'])->find($request->student_id);
             if ($student && !empty($student->parent_phone)) {
                 $dateFormatted = \Carbon\Carbon::parse($request->date)->translatedFormat('d F Y');
                 $unitName = $student->unit->name ?? 'Namira School';
                 
+                $warningNote = $warningLevel ? "\n⚠️ *Status Kedisiplinan*: Akumulasi mencapai *{$totalPoints} poin* ({$warningLevel}).\n" : "";
+
                 $message = "📋 *Pemberitahuan Pelanggaran Siswa*\n\n"
                     . "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: {$student->classroom->name}).\n\n"
                     . "Kami menginformasikan bahwa putra/putri Anda tercatat melakukan pelanggaran berikut:\n"
                     . "• *Pelanggaran*: {$category->name}\n"
                     . "• *Tanggal*: {$dateFormatted}\n"
-                    . "• *Poin*: {$category->default_points} poin\n"
-                    . (!empty($request->description) ? "• *Keterangan*: {$request->description}\n" : "") . "\n"
+                    . "• *Poin Pelanggaran*: {$category->default_points} poin\n"
+                    . (!empty($request->description) ? "• *Keterangan*: {$request->description}\n" : "")
+                    . $warningNote . "\n"
                     . "Mohon perhatian dan kerja samanya untuk membimbing ananda agar lebih disiplin.\n\n"
                     . "Terima kasih.\n-- *{$unitName}*";
 
@@ -173,7 +199,11 @@ class ViolationController extends Controller
             \Log::error("Failed to send automated WA violation notification: " . $e->getMessage());
         }
 
-        return redirect()->route('counseling.violations.index')->with('success', 'Pelanggaran berhasil dicatat.');
+        $successMsg = $warningLevel 
+            ? "Pelanggaran berhasil dicatat. Peringatan: Total poin mencapai {$totalPoints} ({$warningLevel})." 
+            : 'Pelanggaran berhasil dicatat.';
+
+        return redirect()->route('counseling.violations.index')->with('success', $successMsg);
     }
 
     public function destroy(Violation $violation)

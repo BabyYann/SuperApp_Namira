@@ -42,6 +42,7 @@ const applyFilters = () => {
         unit_id: selectedUnit.value,
         category: selectedCategory.value,
         date: selectedDate.value,
+        page: 1,
     }, { preserveState: true, replace: true });
 };
 

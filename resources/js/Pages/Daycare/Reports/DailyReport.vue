@@ -11,6 +11,7 @@ const props = defineProps({
     attendance: Object,
     logs: Array,
     summary: Object,
+    wa_link: String,
 });
 
 const formattedDate = new Date(props.date).toLocaleDateString('id-ID', {
@@ -19,6 +20,10 @@ const formattedDate = new Date(props.date).toLocaleDateString('id-ID', {
     month: 'long',
     year: 'numeric'
 });
+
+const printReport = () => {
+    window.print();
+};
 </script>
 
 <template>
@@ -43,6 +48,25 @@ const formattedDate = new Date(props.date).toLocaleDateString('id-ID', {
                         <CalendarIcon class="w-4 h-4" />
                         <span>{{ formattedDate }}</span>
                     </p>
+                </div>
+
+                <!-- Action Buttons: WhatsApp & Print -->
+                <div class="flex items-center justify-center gap-2.5 pt-2 flex-wrap">
+                    <a
+                        v-if="wa_link"
+                        :href="wa_link"
+                        target="_blank"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                    >
+                        <span>💬 Bagikan ke WhatsApp Ortu</span>
+                    </a>
+                    <button
+                        type="button"
+                        @click="printReport"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                        <span>🖨️ Cetak Laporan</span>
+                    </button>
                 </div>
             </div>
 

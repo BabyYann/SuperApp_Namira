@@ -19,37 +19,99 @@ use Illuminate\Support\Facades\Auth;
 
 class TransactionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_admin_keuangan', 'finance'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki akses untuk melihat data transaksi.');
         }
 
-        $query = Transaction::with(['student', 'financeAccount']);
         $user = auth()->user();
+        $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        $unitId = $isGlobalAdmin ? ($request->unit_id ?: session('active_unit_id')) : session('active_unit_id');
+
+        $query = Transaction::with(['student.classroom', 'student.unit', 'financeAccount']);
         
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            $unitId = session('active_unit_id');
+        if ($unitId) {
             $query->whereHas('student', function ($q) use ($unitId) {
                 $q->where('unit_id', $unitId);
             });
         }
 
-        $transactions = $query->latest()->paginate(20);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('transaction_code', 'like', "%{$search}%")
+                  ->orWhere('notes', 'like', "%{$search}%")
+                  ->orWhereHas('student', function ($sq) use ($search) {
+                      $sq->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('nis', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('payment_method')) {
+            $query->where('payment_method', $request->payment_method);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('transaction_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('transaction_date', '<=', $request->end_date);
+        }
+
+        $transactions = $query->latest('transaction_date')->paginate(20)->withQueryString();
 
         return Inertia::render('Finance/Transactions/Index', [
-            'transactions' => $transactions
+            'transactions' => $transactions,
+            'filters' => $request->only(['search', 'payment_method', 'start_date', 'end_date', 'unit_id']),
+            'units' => $isGlobalAdmin ? \App\Modules\Yayasan\Models\Unit::all() : [],
         ]);
     }
 
-    public function create()
+    public function store(Request $request)
     {
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_admin_keuangan', 'finance'])) {
-            abort(403, 'Access Denied');
+            abort(403, 'Akses Ditolak');
         }
 
-        // For Manual Input (Cash/Transfer Manual)
-        // ... (To be implemented later if needed)
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'amount' => 'required|numeric|min:1000',
+            'payment_method' => 'required|in:cash,transfer',
+            'transaction_date' => 'required|date',
+            'notes' => 'nullable|string|max:255',
+            'bill_id' => 'nullable|exists:student_bills,id',
+        ]);
+
+        DB::transaction(function () use ($validated) {
+            $code = 'TRX/' . date('Y/m/') . strtoupper(Str::random(6));
+            Transaction::create([
+                'student_id' => $validated['student_id'],
+                'user_id' => auth()->id(),
+                'transaction_code' => $code,
+                'amount' => $validated['amount'],
+                'payment_method' => $validated['payment_method'],
+                'source' => 'manual_cashier',
+                'notes' => $validated['notes'] ?? 'Pembayaran Manual',
+                'transaction_date' => $validated['transaction_date'],
+                'allocated_amount' => $validated['amount'],
+            ]);
+
+            if (!empty($validated['bill_id'])) {
+                $bill = StudentBill::find($validated['bill_id']);
+                if ($bill) {
+                    $newPaid = $bill->paid_amount + $validated['amount'];
+                    $status = $newPaid >= $bill->final_amount ? 'paid' : 'partial';
+                    $bill->update([
+                        'paid_amount' => min($newPaid, $bill->final_amount),
+                        'status' => $status,
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', 'Transaksi pembayaran berhasil dicatat.');
     }
 
     public function import()

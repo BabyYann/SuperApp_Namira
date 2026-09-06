@@ -6,7 +6,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { 
     MagnifyingGlassIcon, PlusIcon, ArrowPathIcon, CheckCircleIcon,
-    XCircleIcon, ClockIcon
+    XCircleIcon, ClockIcon, BellAlertIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -74,6 +74,12 @@ const submitReturn = () => {
 const markLost = (loan) => {
     if (confirm('Tandai barang sebagai hilang? Tindakan ini tidak dapat dibatalkan.')) {
         router.post(route('sarpar.loans.lost', loan.id));
+    }
+};
+
+const sendReminder = (loan) => {
+    if (confirm(`Kirim pengingat pengembalian ke ${loan.borrower?.name || 'peminjam'} via Notifikasi & WhatsApp?`)) {
+        router.post(route('sarpar.loans.reminder', loan.id));
     }
 };
 
@@ -205,7 +211,11 @@ const getStatusLabel = (status) => {
                         </div>
 
                         <!-- Touch Actions Footer -->
-                        <div v-if="loan.status === 'borrowed' || loan.status === 'overdue'" class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                        <div v-if="loan.status === 'borrowed' || loan.status === 'overdue'" class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 flex-wrap">
+                            <button @click="sendReminder(loan)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition flex items-center gap-1" title="Kirim Pengingat">
+                                <BellAlertIcon class="w-3.5 h-3.5 text-amber-600" />
+                                <span>Ingatkan</span>
+                            </button>
                             <button @click="openReturnModal(loan)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1">
                                 <ArrowPathIcon class="w-3.5 h-3.5" />
                                 <span>Kembalikan</span>
@@ -282,6 +292,10 @@ const getStatusLabel = (status) => {
                                     </td>
                                     <td class="p-4">
                                         <div class="flex justify-end gap-2">
+                                            <button v-if="loan.status === 'borrowed' || loan.status === 'overdue'" @click="sendReminder(loan)" class="px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-bold rounded-lg flex items-center gap-1 border border-amber-200 transition" title="Kirim Pengingat Notifikasi & WhatsApp">
+                                                <BellAlertIcon class="w-3 h-3 text-amber-600" />
+                                                Ingatkan
+                                            </button>
                                             <button v-if="loan.status === 'borrowed' || loan.status === 'overdue'" @click="openReturnModal(loan)" class="px-3 py-1.5 bg-green-500 text-white text-xs font-bold rounded-lg hover:bg-green-600 flex items-center gap-1">
                                                 <ArrowPathIcon class="w-3 h-3" />
                                                 Kembalikan

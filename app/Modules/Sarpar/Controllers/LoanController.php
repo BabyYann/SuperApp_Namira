@@ -22,6 +22,11 @@ class LoanController extends Controller
             $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
         }
 
+        // Auto-flag overdue loans
+        Loan::where('status', 'borrowed')
+            ->whereDate('due_date', '<', now()->toDateString())
+            ->update(['status' => 'overdue']);
+
         $loans = Loan::with(['inventory', 'borrower', 'processedBy'])
             ->whereHas('inventory', fn($q) => $q->where('unit_id', $unitId))
             ->when(request('status'), fn($q, $status) => $q->where('status', $status))
@@ -196,5 +201,43 @@ class LoanController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengubah status.');
         }
+    }
+
+    /**
+     * Send overdue or loan return reminder via Notification & WhatsApp
+     */
+    public function sendReminder(Loan $loan)
+    {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengirim pengingat peminjaman.');
+        }
+
+        $borrower = $loan->borrower;
+        if (!$borrower) {
+            return redirect()->back()->with('error', 'Data peminjam tidak ditemukan.');
+        }
+
+        $inventoryName = $loan->inventory?->name ?? 'Inventaris';
+        $dueDate = \Carbon\Carbon::parse($loan->due_date)->translatedFormat('d F Y');
+        $isOverdue = $loan->status === 'overdue' || \Carbon\Carbon::parse($loan->due_date)->isPast();
+
+        $subject = $isOverdue ? 'Peringatan Jatuh Tempo Inventaris' : 'Pengingat Pengembalian Inventaris';
+        $message = "Halo {$borrower->name}, mengingatkan bahwa peminjaman barang \"{$inventoryName}\" (" . $loan->quantity . " unit) " . 
+            ($isOverdue ? "telah TERLAMBAT dan melewati batas jatuh tempo ({$dueDate})." : "akan jatuh tempo pada ({$dueDate}).") . 
+            " Mohon segera melakukan konfirmasi dan pengembalian barang ke bagian Sarpras. Terima kasih.";
+
+        NotificationDispatcher::sendToUser(
+            $borrower,
+            $subject,
+            $message,
+            'sarpar',
+            ['loan_id' => $loan->id, 'inventory_id' => $loan->inventory_id]
+        );
+
+        if (!empty($borrower->phone)) {
+            \App\Helpers\WhatsAppHelper::send($borrower->phone, $message);
+        }
+
+        return redirect()->back()->with('success', "Pengingat berhasil dikirimkan kepada {$borrower->name}.");
     }
 }

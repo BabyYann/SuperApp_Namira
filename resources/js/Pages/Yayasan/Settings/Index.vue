@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -12,7 +12,7 @@ import {
     AcademicCapIcon, BanknotesIcon, UserGroupIcon,
     ChatBubbleLeftRightIcon, BuildingOffice2Icon, IdentificationIcon,
     CheckCircleIcon, SwatchIcon, AtSymbolIcon, MapPinIcon, ArrowUpTrayIcon,
-    ClipboardDocumentListIcon, ClockIcon
+    ClipboardDocumentListIcon, ClockIcon, ArrowTopRightOnSquareIcon
 } from '@heroicons/vue/24/outline';
 import Swal from 'sweetalert2';
 import axios from 'axios';
@@ -25,8 +25,9 @@ const props = defineProps({
     filters: Object,
 });
 
-const activeTab = ref('identity');
+const activeTab = ref(props.filters?.log_search ? 'logs' : 'identity');
 const searchQuery = ref(props.filters?.search || '');
+const logSearchQuery = ref(props.filters?.log_search || '');
 const isLoadingSearch = ref(false);
 
 const form = useForm({
@@ -72,9 +73,20 @@ watch(searchQuery, (value) => {
     if (value.length < 3 && value.length > 0) return;
     isLoadingSearch.value = true;
     searchTimeout = setTimeout(() => {
-        router.get(route('yayasan.settings.index'), { search: value }, {
+        router.get(route('yayasan.settings.index'), { search: value, log_search: logSearchQuery.value || undefined }, {
             preserveState: true, replace: true, preserveScroll: true,
             onFinish: () => isLoadingSearch.value = false
+        });
+    }, 500);
+});
+
+// Debounced Log Search
+let logSearchTimeout;
+watch(logSearchQuery, (value) => {
+    clearTimeout(logSearchTimeout);
+    logSearchTimeout = setTimeout(() => {
+        router.get(route('yayasan.settings.index'), { search: searchQuery.value || undefined, log_search: value || undefined }, {
+            preserveState: true, replace: true, preserveScroll: true
         });
     }, 500);
 });
@@ -793,15 +805,30 @@ watch(qStatusFilter, () => {
             <!-- ================================= -->
             <div v-show="activeTab === 'logs'">
                 <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
-                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
                             <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
                                 <ClipboardDocumentListIcon class="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 class="font-bold text-gray-900">Riwayat Aktivitas</h3>
-                                <p class="text-sm text-gray-500">20 aktivitas terakhir yang dilakukan oleh admin</p>
+                                <h3 class="font-bold text-gray-900">Riwayat Audit Aktivitas</h3>
+                                <p class="text-sm text-gray-500">Log aktivitas terbaru dari seluruh aksi administrator</p>
                             </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                            <div class="relative min-w-[240px]">
+                                <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                                <input
+                                    v-model="logSearchQuery"
+                                    type="text"
+                                    placeholder="Cari aksi atau nama user..."
+                                    class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                                />
+                            </div>
+                            <Link :href="route('yayasan.activity-logs.feed')" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200 transition">
+                                <ArrowTopRightOnSquareIcon class="w-4 h-4" />
+                                <span>Buka Feed Lengkap</span>
+                            </Link>
                         </div>
                     </div>
                     

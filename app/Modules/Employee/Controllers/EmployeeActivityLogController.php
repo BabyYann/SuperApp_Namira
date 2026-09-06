@@ -32,12 +32,13 @@ class EmployeeActivityLogController extends Controller
             'categories' => $todayActivities->groupBy('category')->map->count(),
         ];
 
-        // Historical recent logs
+        // Historical recent logs with pagination
         $historyLogs = EmployeeActivityLog::where('user_id', $user->id)
             ->latest('activity_date')
+            ->latest('activity_time')
             ->latest('id')
-            ->take(20)
-            ->get();
+            ->paginate(15, ['*'], 'history_page')
+            ->withQueryString();
 
         return Inertia::render('Employee/ActivityLogs/Index', [
             'todayActivities' => $todayActivities,

@@ -244,6 +244,68 @@ class NewsController extends Controller
         return redirect()->route('public-relations.news.index')->with('success', $msg);
     }
 
+    public function bulkAction(Request $request)
+    {
+        $user = auth()->user();
+        if (!$this->isApprover($user)) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk verifikasi berita massal.');
+        }
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'exists:news,id',
+            'action' => 'required|in:approve,reject',
+            'rejection_note' => 'nullable|string|max:500|required_if:action,reject',
+        ]);
+
+        $newsItems = News::whereIn('id', $validated['ids'])->get();
+        $count = 0;
+
+        foreach ($newsItems as $news) {
+            if ($validated['action'] === 'approve') {
+                $news->status = 'published';
+                $news->rejection_note = null;
+                $news->approved_by = $user->id;
+                $news->approved_at = now();
+                if (!$news->published_at) {
+                    $news->published_at = now();
+                }
+                $news->save();
+
+                if ($news->author) {
+                    \App\Services\NotificationDispatcher::sendToUser(
+                        $news->author,
+                        '📢 Berita Berhasil Diterbitkan',
+                        "Berita Anda \"{$news->title}\" telah disetujui dan diterbitkan.",
+                        'public_relations',
+                        ['news_id' => $news->id]
+                    );
+                }
+                $count++;
+            } else {
+                $news->status = 'rejected';
+                $news->rejection_note = $validated['rejection_note'];
+                $news->approved_by = $user->id;
+                $news->approved_at = now();
+                $news->save();
+
+                if ($news->author) {
+                    \App\Services\NotificationDispatcher::sendToUser(
+                        $news->author,
+                        '⚠️ Pengajuan Berita Perlu Revisi',
+                        "Berita \"{$news->title}\" perlu revisi. Catatan: {$news->rejection_note}",
+                        'public_relations',
+                        ['news_id' => $news->id]
+                    );
+                }
+                $count++;
+            }
+        }
+
+        $actionWord = $validated['action'] === 'approve' ? 'disetujui & diterbitkan' : 'ditolak untuk revisi';
+        return redirect()->back()->with('success', "Sebanyak {$count} berita berhasil {$actionWord}.");
+    }
+
     public function approve(News $news)
     {
         $user = auth()->user();

@@ -11,9 +11,11 @@ import {
     MagnifyingGlassIcon, ArrowPathIcon
 } from '@heroicons/vue/24/outline';
 
+import Pagination from '@/Components/Pagination.vue';
+
 const props = defineProps({
     todayActivities: Array,
-    historyLogs: Array,
+    historyLogs: [Array, Object],
     stats: Object,
     selectedDate: String,
     categories: Object,
@@ -153,7 +155,8 @@ const filteredTodayActivities = computed(() => {
 
 const filteredHistoryLogs = computed(() => {
     if (!props.historyLogs) return [];
-    return props.historyLogs.filter(item => {
+    const list = Array.isArray(props.historyLogs) ? props.historyLogs : (props.historyLogs?.data || []);
+    return list.filter(item => {
         const matchesSearch = !searchQuery.value || item.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || (item.description && item.description.toLowerCase().includes(searchQuery.value.toLowerCase()));
         const matchesCategory = !filterCategory.value || item.category === filterCategory.value;
         return matchesSearch && matchesCategory;
@@ -486,6 +489,11 @@ const categoryBadgeClass = (catKey) => {
                                 <TrashIcon class="w-4 h-4" />
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Pagination for History Logs -->
+                    <div v-if="historyLogs?.links && historyLogs.links.length > 3" class="pt-3 flex justify-center">
+                        <Pagination :links="historyLogs.links" />
                     </div>
                 </div>
 

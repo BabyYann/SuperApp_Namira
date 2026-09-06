@@ -252,20 +252,24 @@ graph TD
 ```
 
 ### ✅ Checklist Tahapan Implementasi:
-* [x] **Fase 1 (Critical Security & Performance - COMPLETED 6 Sep 2026)**:
+* [x] **Fase 1 (Critical Security & Performance - COMPLETED)**:
   - [x] Patch `StudentBillController.php` & `LoanController.php` (SQL grouping operator precedence).
   - [x] Optimasi `FinanceReportController.php` (DB raw sum & eager load N+1).
   - [x] Tambahkan fallback unit untuk role yayasan di `StudentController`, `ClassroomController`, `InventoryController`.
   - [x] Filter `unit_id` di `StudentCheckinController` (scanner QR gerbang).
-* [ ] **Fase 2 (Giat & Absensi UX)**:
-  - Implementasi paginasi dan filter tanggal di `EmployeeActivityLogController`.
-  - Perbaiki navigasi halaman pada `Feed.vue` (reset page to 1).
-  - Tambahkan tab riwayat lengkap di absensi pegawai.
-* [ ] **Fase 3 (Finance Completion)**:
-  - Selesaikan fitur entri transaksi manual/kasir di `TransactionController`.
-* [ ] **Fase 4 (Enhancements)**:
-  - Ekspor PDF & WA Report untuk Daycare.
-  - Bulk action di modul Humas dan halaman Audit Trail mandiri.
+* [x] **Fase 2 (Giat & Absensi UX - COMPLETED)**:
+  - [x] Implementasi paginasi dan filter tanggal di `EmployeeActivityLogController` & `ActivityLogs/Index.vue`.
+  - [x] Perbaiki navigasi halaman pada `Feed.vue` (reset page to 1 saat search/filter).
+  - [x] Tambahkan tab & recap riwayat kehadiran bulanan di `AttendanceController`.
+  - [x] Filter unit & pagination kelas virtual di `LmsClassroomController` & `LMS/Guru/Classroom/Index.vue`.
+* [x] **Fase 3 (Finance Completion - COMPLETED)**:
+  - [x] Selesaikan fitur entri transaksi manual/kasir di `TransactionController` (`store()` cashier & filter toolbar) dan `Transactions/Index.vue`.
+* [x] **Fase 4 (Enhancements - COMPLETED)**:
+  - [x] Ekspor Cetak Harian & Tombol WhatsApp Orang Tua untuk Daycare di `DaycareReportController` & `DailyReport.vue`.
+  - [x] Bulk action publish/reject berita di modul Humas (`NewsController` & `routes/public-relations.php`).
+  - [x] Otomasi Peringatan SP 1, SP 2, SP 3 via Notifikasi & WhatsApp di `ViolationController`.
+  - [x] Auto-flag status terlambat (overdue) & action kirim pengingat pengembalian aset Sarpras via WA & Notifikasi di `LoanController` & `Loans/Index.vue`.
+  - [x] Filter pencarian audit trail & shortcut link ke feed lengkap aktivitas di `SettingController` & `Settings/Index.vue`.
 
 ---
 *Dokumen ini disusun sebagai panduan standar kualitas dan stabilitas sistem SuperApp Yayasan Namira.*

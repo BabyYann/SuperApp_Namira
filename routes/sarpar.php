@@ -27,6 +27,7 @@ Route::prefix('sarpar')->name('sarpar.')->middleware(['role:super_admin_yayasan|
     
     Route::post('loans/{loan}/return', [\App\Modules\Sarpar\Controllers\LoanController::class, 'return'])->name('loans.return');
     Route::post('loans/{loan}/lost', [\App\Modules\Sarpar\Controllers\LoanController::class, 'markLost'])->name('loans.lost');
+    Route::post('loans/{loan}/reminder', [\App\Modules\Sarpar\Controllers\LoanController::class, 'sendReminder'])->name('loans.reminder');
     Route::resource('loans', \App\Modules\Sarpar\Controllers\LoanController::class)->only(['index', 'store']);
 
     Route::post('usage', [\App\Modules\Sarpar\Controllers\UsageLogController::class, 'store'])->name('usage.store');
