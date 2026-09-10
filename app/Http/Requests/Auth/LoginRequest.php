@@ -69,7 +69,8 @@ class LoginRequest extends FormRequest
 
         $email = $this->getEmailFromLogin();
 
-        if (!$email || !Auth::attempt(['email' => $email, 'password' => $this->input('password')], $this->boolean('remember'))) {
+        // Always set remember = true for persistent session
+        if (!$email || !Auth::attempt(['email' => $email, 'password' => $this->input('password')], true)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

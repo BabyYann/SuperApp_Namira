@@ -1,5 +1,4 @@
 <script setup>
-import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -27,7 +26,7 @@ defineProps({
 const form = useForm({
     login: '',
     password: '',
-    remember: false,
+    remember: true,
 });
 
 const isNisMode = computed(() => /^\d+$/.test(form.login));
@@ -129,15 +128,9 @@ const submit = () => {
                     <InputError class="mt-1.5 text-xs text-rose-600" :message="form.errors.password" />
                 </div>
 
-                <!-- INGAT SAYA & LUPA KATA SANDI -->
-                <div class="flex items-center justify-between pt-1">
-                    <label class="flex items-center cursor-pointer group select-none">
-                        <Checkbox name="remember" v-model:checked="form.remember" class="rounded border-slate-300 bg-white text-[#00695c] focus:ring-[#00695c]" />
-                        <span class="ms-2 text-xs font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">Ingat Saya</span>
-                    </label>
-
+                <!-- LUPA KATA SANDI -->
+                <div v-if="canResetPassword" class="flex justify-end pt-1">
                     <Link
-                        v-if="canResetPassword"
                         :href="route('password.request')"
                         class="text-xs font-bold text-[#00695c] hover:text-teal-700 transition-colors"
                     >

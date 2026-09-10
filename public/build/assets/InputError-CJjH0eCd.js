@@ -1,1 +1,0 @@
-import{G as e,I as t,_ as n,b as r,xt as i}from"./vendor-charts-CN8nGBAa.js";import{d as a}from"./app-DC1X8sCV.js";var o={class:`text-sm text-red-600 dark:text-red-400`},s={__name:`InputError`,props:{message:{type:String}},setup(s){return(c,l)=>e((t(),r(`div`,null,[n(`p`,o,i(s.message),1)],512)),[[a,s.message]])}};export{s as t};
