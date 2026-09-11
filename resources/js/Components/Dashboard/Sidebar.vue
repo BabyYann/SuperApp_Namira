@@ -552,6 +552,21 @@ const filteredMenuGroups = computed(() => {
         if (isFeatureEnabled('feature_counseling')) adminGroups.push(counselingMenu);
         adminGroups.push(humasMenu);
 
+        if (isTeacher) {
+            adminGroups.push({
+                title: 'LMS (E-Learning)',
+                key: 'lms_teacher',
+                items: [
+                    { 
+                        label: 'Kelas Virtual LMS', 
+                        route: 'lms.teacher.classrooms.index', 
+                        active: 'lms.teacher.classrooms.*',
+                        icon: ComputerDesktopIcon 
+                    },
+                ]
+            });
+        }
+
         return adminGroups;
     }
 

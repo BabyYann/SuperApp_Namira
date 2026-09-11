@@ -33,6 +33,15 @@ class AttendanceDataController extends Controller
         // Force unit restriction for non-global admins
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan'])) {
             $unitId = session('active_unit_id');
+            if (!$unitId) {
+                $unitId = \DB::table('model_has_roles')
+                    ->where('model_id', auth()->id())
+                    ->whereNotNull('team_id')
+                    ->value('team_id')
+                    ?? \App\Modules\Academic\Models\Teacher::where('user_id', auth()->id())->value('unit_id')
+                    ?? \App\Modules\Employee\Models\Staff::where('user_id', auth()->id())->value('unit_id')
+                    ?? \App\Modules\Yayasan\Models\Unit::where('principal_id', auth()->id())->value('id');
+            }
         }
 
         $start = Carbon::createFromDate($year, $month, 1)->startOfMonth();
@@ -64,7 +73,7 @@ class AttendanceDataController extends Controller
         // 1. Resolve employee user IDs for the specified unit or global
         $employeeRoleNames = [
             'teacher', 'staff', 'admin_unit', 'staff_unit',
-            'wali_kelas', 'bk', 'guru', 'finance',
+            'wali_kelas', 'bk', 'guru', 'finance', 'kepala_sekolah',
             'koordinator_kurikulum', 'koordinator_sarpar', 'koordinator_keuangan', 'koordinator_tahfidz'
         ];
 
@@ -196,7 +205,7 @@ class AttendanceDataController extends Controller
 
     public function index(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengakses data absensi karyawan.');
         }
 
@@ -252,7 +261,7 @@ class AttendanceDataController extends Controller
 
     public function export(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengekspor data absensi.');
         }
 
@@ -372,7 +381,7 @@ class AttendanceDataController extends Controller
 
     public function exportPdf(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengekspor PDF absensi.');
         }
 
@@ -451,7 +460,7 @@ class AttendanceDataController extends Controller
 
     public function employeeHistory(Request $request, User $user)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit', 'kepala_sekolah'])) {
             return response()->json(['error' => 'Akses Ditolak'], 403);
         }
 
@@ -516,7 +525,7 @@ class AttendanceDataController extends Controller
 
     public function exportIndividualPdf(Request $request, User $user)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_yayasan', 'staff_unit', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak.');
         }
 
