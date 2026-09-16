@@ -6,12 +6,12 @@ import {
     ClockIcon, 
     CalendarDaysIcon, 
     ArrowDownTrayIcon,
-    DocumentTextIcon,
-    PhoneIcon,
+    CheckBadgeIcon,
+    ExclamationTriangleIcon,
     CreditCardIcon,
     ArrowRightOnRectangleIcon,
-    ExclamationTriangleIcon,
-    SparklesIcon
+    UserIcon,
+    MapPinIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -30,7 +30,7 @@ const handleUploadProof = (e) => {
         uploadForm.post(route('spmb.applicant.upload-proof', props.applicant.id), {
             preserveScroll: true,
             onSuccess: () => {
-                alert('Bukti pembayaran daftar ulang berhasil diunggah.');
+                alert('Bukti transfer daftar ulang berhasil diunggah.');
             }
         });
     }
@@ -43,29 +43,30 @@ const formatRupiah = (amount) => {
 </script>
 
 <template>
-    <Head title="Dashboard Pendaftar SPMB - SD Namira" />
+    <Head title="Portal Calon Siswa - SPMB SD Namira" />
 
-    <div class="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col justify-between selection:bg-[#fbbf24] selection:text-[#064e3b]">
-        <!-- Top App Bar -->
-        <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-30 backdrop-blur-md">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+    <div class="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900">
+        
+        <!-- Top Institutional App Bar -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-900/80 border border-emerald-500/40 flex items-center justify-center text-[#fbbf24]">
-                        <AcademicCapIcon class="w-6 h-6" />
+                    <div class="w-9 h-9 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-bold">
+                        <AcademicCapIcon class="w-5 h-5 text-amber-300" />
                     </div>
                     <div>
-                        <span class="text-xs text-emerald-400 font-bold tracking-wider uppercase block">Portal SPMB Online</span>
-                        <h1 class="text-sm sm:text-base font-extrabold text-white leading-tight">SD IT NAMIRA</h1>
+                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Portal Calon Siswa SPMB</span>
+                        <h1 class="text-xs sm:text-sm font-black text-slate-900 leading-tight">SD IT NAMIRA KOTA PROBOLINGGO</h1>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3">
                     <a 
-                        :href="`https://wa.me/${setting?.contact_whatsapp || '6282332922521'}?text=Halo%20Panitia%20SPMB,%20saya%20orang%20tua%20dari%20${applicant.full_name}%20(Reg:%20${applicant.registration_number})`"
+                        :href="`https://wa.me/${setting?.contact_whatsapp || '6282332922521'}?text=Assalamu'alaikum%20Panitia%20SPMB,%20saya%20orang%20tua%20dari%20${applicant.full_name}%20(Reg:%20${applicant.registration_number})`"
                         target="_blank"
-                        class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-semibold hover:bg-emerald-900/80 transition"
+                        class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition border border-emerald-200"
                     >
-                        <PhoneIcon class="w-4 h-4 text-emerald-400" />
+                        <PhoneIcon class="w-3.5 h-3.5 text-emerald-700" />
                         <span>Bantuan Panitia</span>
                     </a>
 
@@ -73,370 +74,364 @@ const formatRupiah = (amount) => {
                         :href="route('logout')" 
                         method="post" 
                         as="button"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950/50 hover:text-rose-300 border border-slate-700 text-slate-300 text-xs font-semibold transition"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 border border-slate-200 text-slate-700 text-xs font-bold transition"
                     >
-                        <ArrowRightOnRectangleIcon class="w-4 h-4" />
+                        <ArrowRightOnRectangleIcon class="w-3.5 h-3.5" />
                         <span>Keluar</span>
                     </Link>
                 </div>
             </div>
         </header>
 
-        <!-- Main Dashboard Content -->
-        <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 flex-1 space-y-8">
+        <!-- Main Portal Container -->
+        <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 flex-1 space-y-6">
             
-            <!-- Hero Applicant Card -->
-            <div class="bg-gradient-to-r from-emerald-950/90 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-                <div class="absolute -top-12 -right-12 w-64 h-64 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
+            <!-- Applicant Profile Card -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-7 shadow-xs">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                     <div class="flex items-start sm:items-center gap-4">
-                        <!-- Foto Anak -->
-                        <div class="w-16 h-20 sm:w-20 sm:h-24 rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 shadow-md">
-                            <img v-if="applicant.photo_url" :src="applicant.photo_url" class="w-full h-full object-cover" alt="Foto Anak">
-                            <div v-else class="w-full h-full flex items-center justify-center text-slate-500 text-xs">Foto</div>
+                        <!-- Pas Foto 3x4 -->
+                        <div class="w-16 h-20 sm:w-20 sm:h-24 rounded-xl bg-slate-100 border border-slate-300 overflow-hidden shrink-0 shadow-xs">
+                            <img v-if="applicant.photo_url" :src="applicant.photo_url" class="w-full h-full object-cover" alt="Pas Foto">
+                            <div v-else class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">3x4</div>
                         </div>
 
                         <div>
-                            <div class="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold mb-1.5 border border-emerald-500/30">
-                                <span>No. Registrasi: {{ applicant.registration_number }}</span>
+                            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold mb-1">
+                                <span class="font-mono">{{ applicant.registration_number }}</span>
                             </div>
-                            <h2 class="text-xl sm:text-2xl font-black text-white">
+                            <h2 class="text-xl sm:text-2xl font-black text-slate-900">
                                 {{ applicant.full_name }}
                             </h2>
-                            <p class="text-xs sm:text-sm text-slate-300 mt-1">
-                                Asal: <span class="text-emerald-300 font-semibold">{{ applicant.previous_school || '-' }}</span> 
+                            <p class="text-xs text-slate-600 mt-1">
+                                Asal Sekolah: <strong>{{ applicant.previous_school || '-' }}</strong> 
                                 ({{ applicant.category === 'internal_tk' ? 'Alumni TK Namira' : 'Pendaftar Umum' }})
+                            </p>
+                            <p class="text-[11px] text-slate-500 mt-0.5">
+                                Orang Tua: {{ applicant.father_name || applicant.mother_name }} | No. WA: {{ applicant.parent_phone }}
                             </p>
                         </div>
                     </div>
 
-                    <!-- Status Pill -->
-                    <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 text-right min-w-[200px]">
-                        <span class="text-[11px] text-slate-400 block font-medium">Status Pendaftaran Saat Ini:</span>
-                        <span class="text-sm font-bold text-emerald-400 block mt-0.5">
+                    <!-- Status Highlight -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left sm:text-right shrink-0 min-w-[220px]">
+                        <span class="text-[11px] font-semibold text-slate-500 block uppercase">Status Pendaftaran:</span>
+                        <strong class="text-sm font-extrabold text-emerald-700 block mt-0.5">
                             {{ applicant.status_label }}
-                        </span>
+                        </strong>
+                        <span class="text-[10px] text-slate-400 block mt-1">Jalur Inden TA {{ setting?.academic_year || '2026/2027' }}</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Progress Tracker Stages -->
-            <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-                <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
-                    <ClockIcon class="w-4 h-4 text-[#fbbf24]" />
-                    <span>Tahapan Proses Penerimaan Murid Baru</span>
+            <!-- Milestone Progress Tracker -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-5 flex items-center gap-2">
+                    <ClockIcon class="w-4 h-4 text-emerald-700" />
+                    <span>Perjalanan Pendaftaran Peserta Didik Baru</span>
                 </h3>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 text-center">
                     
-                    <!-- 1. Formulir -->
-                    <div class="p-3 rounded-2xl border bg-emerald-950/40 border-emerald-500/60 text-emerald-300 text-xs">
-                        <CheckCircleIcon class="w-6 h-6 text-emerald-400 mx-auto mb-1.5" />
-                        <span class="font-bold block">1. Form & Berkas</span>
-                        <span class="text-[10px] text-emerald-400/80 block mt-0.5">Selesai</span>
+                    <!-- 1. Form & Berkas -->
+                    <div class="p-3 rounded-xl border bg-emerald-50 border-emerald-300 text-emerald-900 text-xs">
+                        <CheckCircleIcon class="w-5 h-5 text-emerald-700 mx-auto mb-1" />
+                        <strong class="block text-[11px]">1. Formulir</strong>
+                        <span class="text-[10px] text-emerald-700 font-semibold block mt-0.5">Selesai</span>
                     </div>
 
-                    <!-- 2. Verifikasi QRIS -->
+                    <!-- 2. QRIS -->
                     <div 
-                        class="p-3 rounded-2xl border text-xs transition"
+                        class="p-3 rounded-xl border text-xs transition"
                         :class="applicant.registration_payment_verified_at 
-                            ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-300' 
-                            : 'bg-slate-800/40 border-slate-700 text-slate-400'"
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                            : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <CheckCircleIcon v-if="applicant.registration_payment_verified_at" class="w-6 h-6 text-emerald-400 mx-auto mb-1.5" />
-                        <ClockIcon v-else class="w-6 h-6 text-amber-400 mx-auto mb-1.5" />
-                        <span class="font-bold block">2. Bayar QRIS</span>
-                        <span class="text-[10px] block mt-0.5" :class="applicant.registration_payment_verified_at ? 'text-emerald-400/80' : 'text-amber-400'">
+                        <CheckCircleIcon v-if="applicant.registration_payment_verified_at" class="w-5 h-5 text-emerald-700 mx-auto mb-1" />
+                        <ClockIcon v-else class="w-5 h-5 text-amber-600 mx-auto mb-1" />
+                        <strong class="block text-[11px]">2. Cek QRIS</strong>
+                        <span class="text-[10px] font-semibold block mt-0.5" :class="applicant.registration_payment_verified_at ? 'text-emerald-700' : 'text-amber-600'">
                             {{ applicant.registration_payment_verified_at ? 'Terverifikasi' : 'Menunggu Cek' }}
                         </span>
                     </div>
 
-                    <!-- 3. Jadwal Observasi & Psikotes -->
+                    <!-- 3. Jadwal Seleksi -->
                     <div 
-                        class="p-3 rounded-2xl border text-xs transition"
+                        class="p-3 rounded-xl border text-xs transition"
                         :class="applicant.observation_date 
-                            ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-300' 
-                            : 'bg-slate-800/40 border-slate-700 text-slate-400'"
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                            : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <CheckCircleIcon v-if="applicant.observation_date" class="w-6 h-6 text-emerald-400 mx-auto mb-1.5" />
-                        <CalendarDaysIcon v-else class="w-6 h-6 text-slate-500 mx-auto mb-1.5" />
-                        <span class="font-bold block">3. Jadwal Seleksi</span>
-                        <span class="text-[10px] block mt-0.5" :class="applicant.observation_date ? 'text-emerald-400/80' : 'text-slate-500'">
-                            {{ applicant.observation_date ? 'Diterbitkan' : 'Belum Terbit' }}
+                        <CheckCircleIcon v-if="applicant.observation_date" class="w-5 h-5 text-emerald-700 mx-auto mb-1" />
+                        <CalendarDaysIcon v-else class="w-5 h-5 text-slate-400 mx-auto mb-1" />
+                        <strong class="block text-[11px]">3. Jadwal Tes</strong>
+                        <span class="text-[10px] font-semibold block mt-0.5" :class="applicant.observation_date ? 'text-emerald-700' : 'text-slate-400'">
+                            {{ applicant.observation_date ? 'Diterbitkan' : 'Belum' }}
                         </span>
                     </div>
 
-                    <!-- 4. Hasil Seleksi -->
+                    <!-- 4. Pengumuman -->
                     <div 
-                        class="p-3 rounded-2xl border text-xs transition"
+                        class="p-3 rounded-xl border text-xs transition"
                         :class="applicant.evaluation_result 
-                            ? (applicant.evaluation_result === 'accepted' ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-300' : 'bg-rose-950/40 border-rose-500/60 text-rose-300')
-                            : 'bg-slate-800/40 border-slate-700 text-slate-400'"
+                            ? (applicant.evaluation_result === 'accepted' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900') 
+                            : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <SparklesIcon class="w-6 h-6 mx-auto mb-1.5" :class="applicant.evaluation_result === 'accepted' ? 'text-amber-400' : 'text-slate-500'" />
-                        <span class="font-bold block">4. Pengumuman</span>
-                        <span class="text-[10px] block mt-0.5 font-semibold">
-                            {{ applicant.evaluation_result ? (applicant.evaluation_result === 'accepted' ? 'Diterima' : 'Cadangan/Belum') : 'Menunggu Pleno' }}
+                        <CheckBadgeIcon class="w-5 h-5 mx-auto mb-1" :class="applicant.evaluation_result === 'accepted' ? 'text-emerald-700' : 'text-slate-400'" />
+                        <strong class="block text-[11px]">4. Keputusan</strong>
+                        <span class="text-[10px] font-semibold block mt-0.5">
+                            {{ applicant.evaluation_result ? (applicant.evaluation_result === 'accepted' ? 'Diterima' : 'Cadangan/Belum') : 'Menunggu' }}
                         </span>
                     </div>
 
-                    <!-- 5. Daftar Ulang 60% -->
+                    <!-- 5. Termin 60% -->
                     <div 
-                        class="p-3 rounded-2xl border text-xs transition"
+                        class="p-3 rounded-xl border text-xs transition"
                         :class="['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)
-                            ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-300' 
-                            : 'bg-slate-800/40 border-slate-700 text-slate-400'"
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                            : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <CreditCardIcon class="w-6 h-6 mx-auto mb-1.5" :class="['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-400' : 'text-slate-500'" />
-                        <span class="font-bold block">5. Termin 60%</span>
-                        <span class="text-[10px] block mt-0.5">
-                            {{ ['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Sudah Bayar' : 'Belum' }}
+                        <CreditCardIcon class="w-5 h-5 mx-auto mb-1" :class="['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-700' : 'text-slate-400'" />
+                        <strong class="block text-[11px]">5. Termin 60%</strong>
+                        <span class="text-[10px] font-semibold block mt-0.5">
+                            {{ ['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Lunas 60%' : 'Menunggu' }}
                         </span>
                     </div>
 
-                    <!-- 6. Pelunasan 100% -->
+                    <!-- 6. Lunas 100% -->
                     <div 
-                        class="p-3 rounded-2xl border text-xs transition"
+                        class="p-3 rounded-xl border text-xs transition"
                         :class="['fully_paid', 'enrolled'].includes(applicant.status)
-                            ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-300' 
-                            : 'bg-slate-800/40 border-slate-700 text-slate-400'"
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                            : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <CheckCircleIcon class="w-6 h-6 mx-auto mb-1.5" :class="['fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-400' : 'text-slate-500'" />
-                        <span class="font-bold block">6. Lunas 100%</span>
-                        <span class="text-[10px] block mt-0.5">
+                        <CheckCircleIcon class="w-5 h-5 mx-auto mb-1" :class="['fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-700' : 'text-slate-400'" />
+                        <strong class="block text-[11px]">6. Lunas 100%</strong>
+                        <span class="text-[10px] font-semibold block mt-0.5">
                             {{ ['fully_paid', 'enrolled'].includes(applicant.status) ? 'Lunas Tuntas' : 'Menunggu' }}
                         </span>
                     </div>
 
-                    <!-- 7. Siswa Resmi -->
+                    <!-- 7. Siswa Aktif -->
                     <div 
-                        class="p-3 rounded-2xl border text-xs transition col-span-2 sm:col-span-1"
+                        class="p-3 rounded-xl border text-xs transition col-span-2 sm:col-span-1"
                         :class="applicant.status === 'enrolled'
-                            ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-300' 
-                            : 'bg-slate-800/40 border-slate-700 text-slate-400'"
+                            ? 'bg-emerald-100 border-emerald-400 text-emerald-900 font-bold' 
+                            : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <AcademicCapIcon class="w-6 h-6 mx-auto mb-1.5" :class="applicant.status === 'enrolled' ? 'text-[#fbbf24]' : 'text-slate-500'" />
-                        <span class="font-bold block">7. Siswa Aktif</span>
-                        <span class="text-[10px] block mt-0.5">
+                        <AcademicCapIcon class="w-5 h-5 mx-auto mb-1" :class="applicant.status === 'enrolled' ? 'text-emerald-800' : 'text-slate-400'" />
+                        <strong class="block text-[11px]">7. Siswa Aktif</strong>
+                        <span class="text-[10px] font-semibold block mt-0.5">
                             {{ applicant.status === 'enrolled' ? 'Resmi Siswa' : 'Tahap Akhir' }}
                         </span>
                     </div>
+
                 </div>
             </div>
 
-            <!-- Documents & Download Center -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- 1. Kartu Tanda Peserta -->
-                <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-xl">
+            <!-- Documents Download Center -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                
+                <!-- 1. Kartu Peserta -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between shadow-xs">
                     <div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-900/40 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-3">
                             <DocumentTextIcon class="w-5 h-5" />
                         </div>
-                        <h4 class="font-bold text-white text-base">Kartu Peserta SPMB</h4>
-                        <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                            Wajib dicetak dan dibawa calon siswa saat mengikuti observasi dan psikotes di sekolah.
+                        <h4 class="font-extrabold text-sm text-slate-900">Kartu Tanda Peserta SPMB</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                            Cetak dan bawa kartu ini saat hadir untuk observasi dan psikotes di SD Namira.
                         </p>
                     </div>
 
-                    <div class="mt-6 pt-2">
+                    <div class="mt-5 pt-3 border-t border-slate-100">
                         <a 
                             :href="route('spmb.applicant.print-card', applicant.id)" 
                             target="_blank"
-                            class="w-full inline-flex items-center justify-center gap-2 bg-[#064e3b] hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition border border-emerald-500/30"
+                            class="w-full inline-flex items-center justify-center gap-2 bg-[#064e3b] hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-xl text-xs transition"
                         >
-                            <ArrowDownTrayIcon class="w-4 h-4 text-[#fbbf24]" />
+                            <ArrowDownTrayIcon class="w-3.5 h-3.5 text-amber-300" />
                             <span>Unduh Kartu Peserta (PDF)</span>
                         </a>
                     </div>
                 </div>
 
-                <!-- 2. Surat Keputusan Kelulusan -->
-                <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-xl">
+                <!-- 2. Surat Keputusan Diterima -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between shadow-xs">
                     <div>
-                        <div class="w-10 h-10 rounded-xl bg-amber-900/40 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4">
-                            <SparklesIcon class="w-5 h-5" />
+                        <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold mb-3">
+                            <CheckBadgeIcon class="w-5 h-5" />
                         </div>
-                        <h4 class="font-bold text-white text-base">Surat Keterangan Diterima</h4>
-                        <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                            Surat Keputusan resmi berkop Yayasan Namira yang menerangkan ananda diterima.
+                        <h4 class="font-extrabold text-sm text-slate-900">Surat Keterangan Diterima</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                            Surat keputusan resmi berkop sekolah bagi ananda yang dinyatakan lulus seleksi.
                         </p>
                     </div>
 
-                    <div class="mt-6 pt-2">
+                    <div class="mt-5 pt-3 border-t border-slate-100">
                         <a 
                             v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)"
                             :href="route('spmb.applicant.print-skl', applicant.id)" 
                             target="_blank"
-                            class="w-full inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow"
+                            class="w-full inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition"
                         >
-                            <ArrowDownTrayIcon class="w-4 h-4 text-white" />
+                            <ArrowDownTrayIcon class="w-3.5 h-3.5 text-white" />
                             <span>Unduh Surat Diterima (PDF)</span>
                         </a>
                         <button 
                             v-else 
                             disabled 
-                            class="w-full inline-flex items-center justify-center gap-2 bg-slate-800 text-slate-500 font-semibold py-2.5 px-4 rounded-xl text-xs cursor-not-allowed"
+                            class="w-full inline-flex items-center justify-center gap-1 bg-slate-100 text-slate-400 font-bold py-2 px-3 rounded-xl text-xs cursor-not-allowed"
                         >
                             <span>Belum Tersedia</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- 3. Rapor Hasil Evaluasi / Psikotes -->
-                <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-xl">
+                <!-- 3. Rapor Hasil Observasi -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between shadow-xs">
                     <div>
-                        <div class="w-10 h-10 rounded-xl bg-blue-900/40 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4">
+                        <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold mb-3">
                             <AcademicCapIcon class="w-5 h-5" />
                         </div>
-                        <h4 class="font-bold text-white text-base">Hasil Observasi & Psikotes</h4>
-                        <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                            Rangkuman perkembangan anak dan catatan kesiapan belajar dari tim guru & psikolog.
+                        <h4 class="font-extrabold text-sm text-slate-900">Hasil Observasi & Psikotes</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                            Rangkuman evaluasi kesiapan belajar anak dari tim psikolog & guru penguji.
                         </p>
                     </div>
 
-                    <div class="mt-6 pt-2">
+                    <div class="mt-5 pt-3 border-t border-slate-100">
                         <a 
                             v-if="applicant.evaluation_document_url"
                             :href="applicant.evaluation_document_url" 
                             target="_blank"
-                            class="w-full inline-flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-600 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition"
+                            class="w-full inline-flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-3 rounded-xl text-xs transition"
                         >
-                            <ArrowDownTrayIcon class="w-4 h-4 text-white" />
-                            <span>Lihat Hasil Evaluasi (PDF)</span>
+                            <ArrowDownTrayIcon class="w-3.5 h-3.5 text-white" />
+                            <span>Buka Dokumen Hasil (PDF)</span>
                         </a>
-                        <div v-else class="text-center py-2 text-xs text-slate-500">
-                            {{ applicant.evaluation_notes ? applicant.evaluation_notes : 'Hasil tes belum diunggah' }}
+                        <div v-else class="text-center py-1 text-xs text-slate-400 italic">
+                            {{ applicant.evaluation_notes ? applicant.evaluation_notes : 'Dokumen belum diunggah' }}
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <!-- Two Offline Schedule Cards -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-                <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
-                    <CalendarDaysIcon class="w-4 h-4 text-[#fbbf24]" />
-                    <span>Jadwal Agenda Seleksi Offline di SD Namira</span>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-4 flex items-center gap-2">
+                    <CalendarDaysIcon class="w-4 h-4 text-emerald-700" />
+                    <span>Jadwal Kegiatan Seleksi Tatap Muka di Sekolah</span>
                 </h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Agenda 1: Observasi Dasar -->
-                    <div class="p-5 rounded-2xl bg-slate-800/50 border border-slate-700 border-l-4 border-l-emerald-500 space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Agenda 1 -->
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 border-l-4 border-l-emerald-600 text-xs space-y-2">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">Agenda 1: Observasi Dasar</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 text-[10px] font-semibold">Tatap Muka</span>
+                            <strong class="text-emerald-900 font-bold">1. Agenda Observasi Dasar</strong>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Offline</span>
                         </div>
-                        <div class="space-y-1.5 text-xs text-slate-300">
-                            <div class="flex items-center justify-between py-1 border-b border-slate-700/60">
-                                <span class="text-slate-400">Hari, Tanggal:</span>
-                                <strong class="text-white">{{ applicant.observation_date || 'Menunggu Konfirmasi' }}</strong>
-                            </div>
-                            <div class="flex items-center justify-between py-1 border-b border-slate-700/60">
-                                <span class="text-slate-400">Waktu Pelaksanaan:</span>
-                                <strong class="text-white">{{ applicant.observation_time || 'Akan diinfokan via WA' }}</strong>
-                            </div>
-                            <div class="flex items-center justify-between py-1">
-                                <span class="text-slate-400">Ruangan / Tempat:</span>
-                                <strong class="text-white">{{ applicant.observation_location || 'Gedung SD Namira' }}</strong>
-                            </div>
+                        <div class="space-y-1 text-slate-600 pt-1">
+                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.observation_date || 'Menunggu Penetapan' }}</strong></div>
+                            <div>Waktu: <strong class="text-slate-900">{{ applicant.observation_time || 'Akan diinfokan via WA' }}</strong></div>
+                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.observation_location || 'Gedung SD IT Namira' }}</strong></div>
                         </div>
                     </div>
 
-                    <!-- Agenda 2: Psikotes -->
-                    <div class="p-5 rounded-2xl bg-slate-800/50 border border-slate-700 border-l-4 border-l-amber-500 space-y-3">
+                    <!-- Agenda 2 -->
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 border-l-4 border-l-amber-600 text-xs space-y-2">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wide">Agenda 2: Psikotes Calon Siswa</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 text-[10px] font-semibold">Tatap Muka</span>
+                            <strong class="text-amber-900 font-bold">2. Agenda Psikotes Calon Siswa</strong>
+                            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">Offline</span>
                         </div>
-                        <div class="space-y-1.5 text-xs text-slate-300">
-                            <div class="flex items-center justify-between py-1 border-b border-slate-700/60">
-                                <span class="text-slate-400">Hari, Tanggal:</span>
-                                <strong class="text-white">{{ applicant.psychotest_date || 'Menunggu Konfirmasi' }}</strong>
-                            </div>
-                            <div class="flex items-center justify-between py-1 border-b border-slate-700/60">
-                                <span class="text-slate-400">Waktu Pelaksanaan:</span>
-                                <strong class="text-white">{{ applicant.psychotest_time || 'Akan diinfokan via WA' }}</strong>
-                            </div>
-                            <div class="flex items-center justify-between py-1">
-                                <span class="text-slate-400">Ruangan / Tempat:</span>
-                                <strong class="text-white">{{ applicant.psychotest_location || 'Gedung SD Namira' }}</strong>
-                            </div>
+                        <div class="space-y-1 text-slate-600 pt-1">
+                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.psychotest_date || 'Menunggu Penetapan' }}</strong></div>
+                            <div>Waktu: <strong class="text-slate-900">{{ applicant.psychotest_time || 'Akan diinfokan via WA' }}</strong></div>
+                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.psychotest_location || 'Gedung SD IT Namira' }}</strong></div>
                         </div>
                     </div>
                 </div>
 
-                <div v-if="applicant.schedule_notes" class="mt-4 p-3.5 rounded-xl bg-slate-800/70 border border-slate-700 text-xs text-slate-300">
-                    <strong class="text-[#fbbf24]">Catatan Panitia:</strong> {{ applicant.schedule_notes }}
+                <div v-if="applicant.schedule_notes" class="mt-4 p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900">
+                    <strong>Catatan Panitia:</strong> {{ applicant.schedule_notes }}
                 </div>
             </div>
 
             <!-- Virtual Account & Re-registration Section -->
-            <div v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)" class="bg-slate-900/80 border border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <div v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)" class="bg-white border-2 border-emerald-600/70 rounded-2xl p-6 sm:p-7 shadow-sm space-y-5">
                 <div class="flex items-center gap-3">
-                    <CreditCardIcon class="w-6 h-6 text-[#fbbf24]" />
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center">
+                        <CreditCardIcon class="w-6 h-6" />
+                    </div>
                     <div>
-                        <h3 class="text-base font-bold text-white">Informasi Daftar Ulang & Virtual Account (VA) Bank Jatim</h3>
-                        <p class="text-xs text-slate-400">Selamat! Ananda dinyatakan lolos. Silakan lakukan pembayaran daftar ulang sesuai ketentuan di bawah ini.</p>
+                        <h3 class="text-base font-extrabold text-slate-900">Ketentuan Daftar Ulang (Virtual Account Bank Jatim)</h3>
+                        <p class="text-xs text-slate-500">Selamat! Ananda dinyatakan diterima. Silakan selesaikan pembayaran daftar ulang.</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- VA Detail Box -->
-                    <div class="p-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 space-y-3">
-                        <span class="text-xs font-bold text-emerald-400 block uppercase">Nomor Virtual Account Bank Jatim:</span>
-                        <div class="text-2xl sm:text-3xl font-black text-white tracking-wider">
-                            {{ applicant.virtual_account_number || 'Akan segera diterbitkan oleh bagian Keuangan' }}
+                    
+                    <!-- Banking Receipt Card -->
+                    <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                        <span class="text-[11px] font-bold text-slate-500 block uppercase">Nomor Virtual Account (VA) Bank Jatim:</span>
+                        <div class="text-xl sm:text-2xl font-black text-emerald-800 font-mono tracking-wider">
+                            {{ applicant.virtual_account_number || 'Sedang Diterbitkan oleh Keuangan' }}
                         </div>
 
-                        <div class="space-y-1 pt-3 border-t border-emerald-500/20 text-xs text-slate-300">
+                        <div class="space-y-1.5 pt-3 border-t border-slate-200 text-xs text-slate-600">
                             <div class="flex justify-between">
-                                <span class="text-slate-400">Total Biaya Masuk:</span>
-                                <strong class="text-white">{{ formatRupiah(applicant.total_admission_fee) }}</strong>
+                                <span>Total Biaya Masuk:</span>
+                                <strong class="text-slate-900">{{ formatRupiah(applicant.total_admission_fee) }}</strong>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-slate-400">Termin 1 (Minimal 60%):</span>
-                                <strong class="text-amber-400">{{ formatRupiah(applicant.min_down_payment) }}</strong>
+                                <span>Termin 1 (Minimal 60%):</span>
+                                <strong class="text-amber-700">{{ formatRupiah(applicant.min_down_payment) }}</strong>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-slate-400">Total Sudah Dibayar:</span>
-                                <strong class="text-emerald-400">{{ formatRupiah(applicant.paid_admission_amount) }}</strong>
+                                <span>Total Sudah Masuk:</span>
+                                <strong class="text-emerald-700">{{ formatRupiah(applicant.paid_admission_amount) }}</strong>
                             </div>
-                            <div v-if="applicant.down_payment_deadline" class="flex justify-between text-rose-400">
-                                <span>Batas Waktu Termin 1:</span>
+                            <div v-if="applicant.down_payment_deadline" class="flex justify-between text-rose-600">
+                                <span>Batas Bayar Termin 1:</span>
                                 <strong>{{ applicant.down_payment_deadline }}</strong>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Upload Form for Re-registration Proof -->
-                    <div class="p-6 rounded-2xl bg-slate-800/40 border border-slate-700 flex flex-col justify-between">
+                    <!-- Upload Proof Box -->
+                    <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
                         <div>
-                            <span class="text-xs font-bold text-white block">Konfirmasi Pembayaran Daftar Ulang</span>
-                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-                                Setelah melakukan transfer ke nomor VA di samping, silakan unggah bukti transfer di bawah ini agar diverifikasi oleh panitia keuangan.
+                            <span class="text-xs font-bold text-slate-800 block">Konfirmasi Bukti Transfer VA</span>
+                            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                Setelah transfer ke nomor Virtual Account di samping, silakan unggah bukti transfer agar panitia memvalidasi pelunasan.
                             </p>
                         </div>
 
                         <div class="mt-4">
-                            <div v-if="applicant.re_registration_payment_proof" class="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-xs text-emerald-300 font-semibold mb-3">
-                                ✓ Bukti transfer telah terkirim dan sedang diverifikasi oleh panitia.
+                            <div v-if="applicant.re_registration_payment_proof" class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold mb-3">
+                                ✓ Bukti pembayaran sudah terkirim ke panitia.
                             </div>
 
-                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-emerald-700 border border-emerald-500/40 text-xs font-bold text-white transition">
-                                <DocumentTextIcon class="w-4 h-4 text-[#fbbf24]" />
+                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-xs font-bold transition">
+                                <DocumentTextIcon class="w-4 h-4 text-amber-300" />
                                 <span>Unggah Bukti Transfer Daftar Ulang</span>
                                 <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="handleUploadProof">
                             </label>
                         </div>
                     </div>
+
                 </div>
             </div>
 
         </main>
 
         <!-- Footer -->
-        <footer class="py-6 text-center text-xs text-slate-500 border-t border-slate-900">
-            <p>&copy; {{ new Date().getFullYear() }} Yayasan Namira Probolinggo. Layanan Bantuan: {{ setting?.contact_whatsapp || '082332922521' }}</p>
+        <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+            <div class="max-w-6xl mx-auto px-4">
+                <p>&copy; {{ new Date().getFullYear() }} Yayasan Namira Kota Probolinggo. Bantuan SPMB: {{ setting?.contact_whatsapp || '082332922521' }}</p>
+            </div>
         </footer>
+
     </div>
 </template>

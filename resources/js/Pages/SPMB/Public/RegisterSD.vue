@@ -9,12 +9,11 @@ import {
     CameraIcon,
     DocumentTextIcon,
     QrCodeIcon,
-    InformationCircleIcon,
-    SparklesIcon,
     PhoneIcon,
     LockClosedIcon,
     UserIcon,
-    HomeIcon
+    HomeIcon,
+    InformationCircleIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -189,215 +188,233 @@ const formattedFee = computed(() => {
 </script>
 
 <template>
-    <Head title="Formulir Pendaftaran SPMB Inden - SD Namira" />
+    <Head title="Formulir Pendaftaran Siswa Baru - SD IT Namira" />
 
-    <div class="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col justify-between selection:bg-[#fbbf24] selection:text-[#064e3b]">
-        <!-- Top Navigation -->
-        <header class="max-w-5xl mx-auto w-full px-4 sm:px-6 py-5 flex items-center justify-between border-b border-slate-800">
-            <Link :href="route('spmb.index')" class="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-emerald-400 hover:text-emerald-300 transition">
-                <ArrowLeftIcon class="w-4 h-4" />
-                <span>Pilih Unit Lain</span>
-            </Link>
+    <div class="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900">
+        
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+                <Link :href="route('spmb.index')" class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-emerald-700 transition">
+                    <ArrowLeftIcon class="w-4 h-4" />
+                    <span>Kembali ke Pilihan Unit</span>
+                </Link>
 
-            <div class="text-right">
-                <span class="text-xs text-slate-400 block">Jalur Inden TA {{ setting?.academic_year || '2026/2027' }}</span>
-                <span class="text-sm font-bold text-white block">SD IT NAMIRA</span>
+                <div class="text-right">
+                    <span class="text-[11px] text-slate-500 font-medium block">Pendaftaran Siswa Baru</span>
+                    <strong class="text-xs font-bold text-emerald-900 block">SD IT NAMIRA</strong>
+                </div>
             </div>
         </header>
 
-        <!-- Form Wizard Container -->
+        <!-- Main Form Container -->
         <main class="max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 flex-1">
             
-            <!-- Wizard Title & Subtitle -->
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-3">
-                    <SparklesIcon class="w-3.5 h-3.5 text-amber-400" />
-                    <span>Penerimaan Murid Baru SD Namira</span>
+            <!-- Page Title Card -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 mb-6 shadow-xs">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 block">Jalur Inden TA {{ setting?.academic_year || '2026/2027' }}</span>
+                        <h1 class="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">Formulir Registrasi Calon Siswa Baru</h1>
+                        <p class="text-xs text-slate-500 mt-1">Lengkapi data diri calon siswa, data orang tua, unggah berkas, dan konfirmasi pembayaran.</p>
+                    </div>
+
+                    <div class="bg-emerald-50 border border-emerald-200/80 rounded-xl px-4 py-2 text-right shrink-0">
+                        <span class="text-[10px] uppercase font-bold text-emerald-800 block">Biaya Formulir</span>
+                        <span class="text-base font-black text-emerald-700 block">{{ formattedFee }}</span>
+                    </div>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-white">
-                    Formulir Registrasi Siswa Baru
-                </h1>
-                <p class="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto mt-2">
-                    Lengkapi biodata, unggah berkas, dan konfirmasi pembayaran formulir. Akun login Anda akan dibuat otomatis setelah pengiriman.
-                </p>
             </div>
 
-            <!-- Stepper Indicators -->
-            <div class="grid grid-cols-3 gap-2 sm:gap-4 max-w-2xl mx-auto mb-8">
-                <!-- Step 1 Indicator -->
-                <div 
-                    class="flex items-center gap-2.5 p-3 rounded-2xl border transition text-xs font-semibold"
-                    :class="currentStep === 1 
-                        ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300' 
-                        : (currentStep > 1 ? 'bg-slate-900 border-emerald-800 text-emerald-400' : 'bg-slate-900/50 border-slate-800 text-slate-500')"
-                >
-                    <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0" :class="currentStep >= 1 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'">
-                        <CheckCircleIcon v-if="currentStep > 1" class="w-4 h-4" />
-                        <span v-else>1</span>
+            <!-- Stepper Progress Bar -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 mb-6 shadow-xs">
+                <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                    
+                    <!-- Step 1 -->
+                    <div 
+                        class="flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-bold transition"
+                        :class="currentStep === 1 
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-900' 
+                            : (currentStep > 1 ? 'bg-slate-50 border-slate-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-400')"
+                    >
+                        <div 
+                            class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px]"
+                            :class="currentStep >= 1 ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-500'"
+                        >
+                            <CheckCircleIcon v-if="currentStep > 1" class="w-4 h-4" />
+                            <span v-else>1</span>
+                        </div>
+                        <span class="truncate">Biodata Lengkap</span>
                     </div>
-                    <span class="truncate">Biodata</span>
-                </div>
 
-                <!-- Step 2 Indicator -->
-                <div 
-                    class="flex items-center gap-2.5 p-3 rounded-2xl border transition text-xs font-semibold"
-                    :class="currentStep === 2 
-                        ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300' 
-                        : (currentStep > 2 ? 'bg-slate-900 border-emerald-800 text-emerald-400' : 'bg-slate-900/50 border-slate-800 text-slate-500')"
-                >
-                    <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0" :class="currentStep >= 2 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'">
-                        <CheckCircleIcon v-if="currentStep > 2" class="w-4 h-4" />
-                        <span v-else>2</span>
+                    <!-- Step 2 -->
+                    <div 
+                        class="flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-bold transition"
+                        :class="currentStep === 2 
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-900' 
+                            : (currentStep > 2 ? 'bg-slate-50 border-slate-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-400')"
+                    >
+                        <div 
+                            class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px]"
+                            :class="currentStep >= 2 ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-500'"
+                        >
+                            <CheckCircleIcon v-if="currentStep > 2" class="w-4 h-4" />
+                            <span v-else>2</span>
+                        </div>
+                        <span class="truncate">Unggah Berkas</span>
                     </div>
-                    <span class="truncate">Upload Berkas</span>
-                </div>
 
-                <!-- Step 3 Indicator -->
-                <div 
-                    class="flex items-center gap-2.5 p-3 rounded-2xl border transition text-xs font-semibold"
-                    :class="currentStep === 3 
-                        ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300' 
-                        : 'bg-slate-900/50 border-slate-800 text-slate-500'"
-                >
-                    <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0" :class="currentStep === 3 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'">
-                        <span>3</span>
+                    <!-- Step 3 -->
+                    <div 
+                        class="flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-bold transition"
+                        :class="currentStep === 3 
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-900' 
+                            : 'bg-white border-slate-200 text-slate-400'"
+                    >
+                        <div 
+                            class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px]"
+                            :class="currentStep === 3 ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-500'"
+                        >
+                            <span>3</span>
+                        </div>
+                        <span class="truncate">QRIS & Bukti</span>
                     </div>
-                    <span class="truncate">QRIS & Bukti</span>
+
                 </div>
             </div>
 
             <!-- Form Content Box -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
                 
                 <!-- ================= STEP 1: BIODATA ================= -->
                 <div v-show="currentStep === 1" class="space-y-6">
                     
                     <!-- Section A: Calon Siswa -->
                     <div>
-                        <div class="flex items-center gap-2 pb-3 mb-4 border-b border-slate-800 text-emerald-400 font-bold text-sm">
-                            <UserIcon class="w-4 h-4" />
-                            <span>A. IDENTITAS CALON SISWA</span>
-                        </div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-800 pb-2 mb-4 border-b border-slate-100 flex items-center gap-2">
+                            <UserIcon class="w-4 h-4 text-emerald-700" />
+                            <span>A. Data Calon Peserta Didik</span>
+                        </h3>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                             <div class="sm:col-span-2">
-                                <label class="block font-medium text-slate-300 mb-1">Kategori Asal Calon Siswa <span class="text-rose-500">*</span></label>
-                                <div class="grid grid-cols-2 gap-3">
+                                <label class="block font-semibold text-slate-700 mb-1">Kategori Asal Calon Siswa <span class="text-rose-600">*</span></label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <label 
-                                        class="flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition"
-                                        :class="form.category === 'internal_tk' ? 'bg-emerald-900/40 border-emerald-500 text-emerald-300' : 'bg-slate-800/40 border-slate-700 text-slate-400'"
+                                        class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition text-xs"
+                                        :class="form.category === 'internal_tk' ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'"
                                     >
-                                        <input type="radio" v-model="form.category" value="internal_tk" class="text-emerald-600 focus:ring-emerald-500">
-                                        <span class="font-semibold">Alumni TK Namira (Internal)</span>
+                                        <input type="radio" v-model="form.category" value="internal_tk" class="text-emerald-700 focus:ring-emerald-600">
+                                        <span>Alumni TK / KB Namira (Internal)</span>
                                     </label>
                                     <label 
-                                        class="flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition"
-                                        :class="form.category === 'eksternal_umum' ? 'bg-emerald-900/40 border-emerald-500 text-emerald-300' : 'bg-slate-800/40 border-slate-700 text-slate-400'"
+                                        class="flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition text-xs"
+                                        :class="form.category === 'eksternal_umum' ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'"
                                     >
-                                        <input type="radio" v-model="form.category" value="eksternal_umum" class="text-emerald-600 focus:ring-emerald-500">
-                                        <span class="font-semibold">Luar TK Namira (Umum)</span>
+                                        <input type="radio" v-model="form.category" value="eksternal_umum" class="text-emerald-700 focus:ring-emerald-600">
+                                        <span>Luar TK Namira (Pendaftar Umum)</span>
                                     </label>
                                 </div>
                             </div>
 
                             <div class="sm:col-span-2">
-                                <label class="block font-medium text-slate-300 mb-1">Nama Lengkap Anak <span class="text-rose-500">*</span></label>
-                                <input v-model="form.full_name" type="text" placeholder="Sesuai Akta Kelahiran" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap Anak <span class="text-rose-600">*</span></label>
+                                <input v-model="form.full_name" type="text" placeholder="Sesuai dengan Akta Kelahiran" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 text-xs">
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Nama Panggilan</label>
-                                <input v-model="form.nickname" type="text" placeholder="Contoh: Zaki" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Panggilan</label>
+                                <input v-model="form.nickname" type="text" placeholder="Contoh: Zaki" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs">
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Jenis Kelamin <span class="text-rose-500">*</span></label>
-                                <select v-model="form.gender" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Jenis Kelamin <span class="text-rose-600">*</span></label>
+                                <select v-model="form.gender" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:border-emerald-600 text-xs">
                                     <option value="L">Laki-laki</option>
                                     <option value="P">Perempuan</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Tempat Lahir <span class="text-rose-500">*</span></label>
-                                <input v-model="form.birth_place" type="text" placeholder="Kota Kelahiran" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Tempat Lahir <span class="text-rose-600">*</span></label>
+                                <input v-model="form.birth_place" type="text" placeholder="Kota Kelahiran" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs">
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Tanggal Lahir <span class="text-rose-500">*</span></label>
-                                <input v-model="form.birth_date" type="date" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Tanggal Lahir <span class="text-rose-600">*</span></label>
+                                <input v-model="form.birth_date" type="date" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:border-emerald-600 text-xs">
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">NIK Anak (16 Digit)</label>
-                                <input v-model="form.nik" type="text" maxlength="16" placeholder="Lihat di Kartu Keluarga" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">NIK Anak (16 Digit)</label>
+                                <input v-model="form.nik" type="text" maxlength="16" placeholder="Lihat di Kartu Keluarga" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs font-mono">
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Asal Sekolah TK / RA</label>
-                                <input v-model="form.previous_school" type="text" placeholder="Contoh: TK Namira / TK Dharma Wanita" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Asal Sekolah TK / RA</label>
+                                <input v-model="form.previous_school" type="text" placeholder="Contoh: TK Namira / TK Dharma Wanita" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs">
                             </div>
                         </div>
                     </div>
 
                     <!-- Section B: Orang Tua & Akses Akun -->
                     <div>
-                        <div class="flex items-center gap-2 pb-3 mb-4 border-b border-slate-800 text-emerald-400 font-bold text-sm">
-                            <LockClosedIcon class="w-4 h-4" />
-                            <span>B. DATA ORANG TUA & AKUN LOGIN DASHBOARD</span>
-                        </div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-800 pb-2 mb-4 border-b border-slate-100 flex items-center gap-2">
+                            <HomeIcon class="w-4 h-4 text-emerald-700" />
+                            <span>B. Data Orang Tua & Akun Login</span>
+                        </h3>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Nama Lengkap Ayah <span class="text-rose-500">*</span></label>
-                                <input v-model="form.father_name" type="text" placeholder="Nama Ayah" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap Ayah <span class="text-rose-600">*</span></label>
+                                <input v-model="form.father_name" type="text" placeholder="Nama Ayah Kandung" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs">
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Pekerjaan Ayah</label>
-                                <input v-model="form.father_job" type="text" placeholder="PNS / Wiraswasta / Karyawan" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Pekerjaan Ayah</label>
+                                <input v-model="form.father_job" type="text" placeholder="PNS / Swasta / Wiraswasta" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs">
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Nama Lengkap Ibu <span class="text-rose-500">*</span></label>
-                                <input v-model="form.mother_name" type="text" placeholder="Nama Ibu" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap Ibu <span class="text-rose-600">*</span></label>
+                                <input v-model="form.mother_name" type="text" placeholder="Nama Ibu Kandung" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs">
                             </div>
 
                             <div>
-                                <label class="block font-medium text-slate-300 mb-1">Pekerjaan Ibu</label>
-                                <input v-model="form.mother_job" type="text" placeholder="Ibu Rumah Tangga / PNS / dll" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                <label class="block font-semibold text-slate-700 mb-1">Pekerjaan Ibu</label>
+                                <input v-model="form.mother_job" type="text" placeholder="Ibu Rumah Tangga / PNS / dll" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs">
                             </div>
 
-                            <!-- Akun Login: No WA & Password -->
-                            <div class="sm:col-span-2 p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 space-y-4">
-                                <div class="flex items-center gap-2 text-emerald-300 font-bold">
-                                    <PhoneIcon class="w-4 h-4" />
-                                    <span>Akun Login Dashboard Calon Siswa</span>
+                            <!-- Akun Login Box -->
+                            <div class="sm:col-span-2 p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-3">
+                                <div class="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                                    <PhoneIcon class="w-4 h-4 text-emerald-700" />
+                                    <span>Akun Login Pemantauan Pendaftaran</span>
                                 </div>
-                                <p class="text-[11px] text-slate-300">
-                                    Nomor WhatsApp ini akan menjadi identitas login Anda untuk memantau status, melihat jadwal observasi/psikotes, dan mengunduh kartu peserta.
+                                <p class="text-[11px] text-emerald-800 leading-relaxed">
+                                    Nomor WhatsApp ini digunakan sebagai username login Anda untuk melihat pengumuman, jadwal observasi/psikotes, dan mengunduh kartu tanda peserta.
                                 </p>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                                     <div>
-                                        <label class="block font-medium text-slate-300 mb-1">No. WhatsApp Aktif <span class="text-rose-500">*</span></label>
-                                        <input v-model="form.parent_phone" type="tel" placeholder="Contoh: 082332922521" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:border-emerald-500">
+                                        <label class="block font-semibold text-slate-700 mb-1">No. WhatsApp Aktif <span class="text-rose-600">*</span></label>
+                                        <input v-model="form.parent_phone" type="tel" placeholder="082332922521" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:border-emerald-600 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block font-medium text-slate-300 mb-1">Kata Sandi Akun <span class="text-rose-500">*</span></label>
-                                        <input v-model="form.password" type="password" placeholder="Minimal 6 karakter" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:border-emerald-500">
+                                        <label class="block font-semibold text-slate-700 mb-1">Kata Sandi Akun <span class="text-rose-600">*</span></label>
+                                        <input v-model="form.password" type="password" placeholder="Minimal 6 karakter" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:border-emerald-600">
                                     </div>
                                     <div>
-                                        <label class="block font-medium text-slate-300 mb-1">Konfirmasi Kata Sandi <span class="text-rose-500">*</span></label>
-                                        <input v-model="form.password_confirmation" type="password" placeholder="Ulangi kata sandi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:border-emerald-500">
+                                        <label class="block font-semibold text-slate-700 mb-1">Ulangi Kata Sandi <span class="text-rose-600">*</span></label>
+                                        <input v-model="form.password_confirmation" type="password" placeholder="Konfirmasi sandi" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900 text-xs focus:border-emerald-600">
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Alamat -->
+                            <!-- Alamat Lengkap -->
                             <div class="sm:col-span-2">
-                                <label class="block font-medium text-slate-300 mb-1">Alamat Tempat Tinggal Lengkap <span class="text-rose-500">*</span></label>
-                                <textarea v-model="form.address" rows="2" placeholder="Nama Jalan, No. Rumah, RT/RW, Dusun" class="w-full bg-slate-800/70 border border-slate-700 rounded-xl px-3.5 py-2 text-white placeholder-slate-500 focus:border-emerald-500"></textarea>
+                                <label class="block font-semibold text-slate-700 mb-1">Alamat Domisili Lengkap <span class="text-rose-600">*</span></label>
+                                <textarea v-model="form.address" rows="2" placeholder="Nama Jalan, RT/RW, Kelurahan, Kecamatan, Kota" class="w-full bg-slate-50/50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-600 text-xs"></textarea>
                             </div>
                         </div>
                     </div>
@@ -405,109 +422,118 @@ const formattedFee = computed(() => {
 
                 <!-- ================= STEP 2: UPLOAD BERKAS ================= -->
                 <div v-show="currentStep === 2" class="space-y-6">
-                    <div class="flex items-center gap-2 pb-3 mb-2 border-b border-slate-800 text-emerald-400 font-bold text-sm">
-                        <DocumentTextIcon class="w-4 h-4" />
-                        <span>UNGGAH DOKUMEN PERSYARATAN</span>
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-800 pb-2 mb-2 border-b border-slate-100 flex items-center gap-2">
+                            <DocumentTextIcon class="w-4 h-4 text-emerald-700" />
+                            <span>Unggah Dokumen Persyaratan Pendaftaran</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Pastikan foto atau dokumen yang diunggah terbaca dengan jelas. Format yang didukung: JPG, PNG, atau PDF (Maksimal 5MB per dokumen).
+                        </p>
                     </div>
 
-                    <p class="text-xs text-slate-400 leading-relaxed">
-                        Pastikan dokumen yang diunggah terbaca jelas. Format yang didukung: JPG, PNG, atau PDF (Maksimal 5MB per file).
-                    </p>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        
                         <!-- 1. Pas Foto Latar Merah -->
-                        <div class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 flex flex-col justify-between">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
                             <div>
-                                <span class="text-xs font-bold text-white block">1. Pas Foto Anak (Latar Merah) <span class="text-rose-500">*</span></span>
-                                <span class="text-[11px] text-slate-400 block mt-0.5">Wajib berlatar belakang merah, ukuran 3x4 formal rapi.</span>
+                                <span class="text-xs font-bold text-slate-800 block">1. Pas Foto Anak (Latar Belakang Merah) <span class="text-rose-600">*</span></span>
+                                <span class="text-[11px] text-slate-500 block mt-0.5">Ukuran foto 3x4 rapi, pakaian sopan / seragam TK.</span>
                             </div>
 
                             <div class="mt-4 flex items-center gap-4">
-                                <div class="w-20 h-24 rounded-xl border border-dashed border-slate-600 bg-slate-900 flex items-center justify-center overflow-hidden shrink-0">
+                                <div class="w-20 h-24 rounded-xl border border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden shrink-0">
                                     <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover">
-                                    <CameraIcon v-else class="w-7 h-7 text-slate-600" />
+                                    <CameraIcon v-else class="w-7 h-7 text-slate-400" />
                                 </div>
-                                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white transition">
-                                    <span>Pilih Foto</span>
+                                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-700 transition">
+                                    <span>Pilih File Foto</span>
                                     <input type="file" accept="image/*" class="hidden" @change="onPhotoChange">
                                 </label>
                             </div>
                         </div>
 
                         <!-- 2. Kartu Keluarga -->
-                        <div class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 flex flex-col justify-between">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
                             <div>
-                                <span class="text-xs font-bold text-white block">2. Kartu Keluarga (KK) <span class="text-rose-500">*</span></span>
-                                <span class="text-[11px] text-slate-400 block mt-0.5">Foto atau scan lembar Kartu Keluarga asli/legalisir.</span>
+                                <span class="text-xs font-bold text-slate-800 block">2. Kartu Keluarga (KK) <span class="text-rose-600">*</span></span>
+                                <span class="text-[11px] text-slate-500 block mt-0.5">Foto atau scan lembar Kartu Keluarga asli.</span>
                             </div>
 
                             <div class="mt-4">
-                                <div v-if="fileNames.family_card" class="text-xs text-emerald-400 font-semibold mb-2 truncate">
+                                <div v-if="fileNames.family_card" class="text-xs text-emerald-700 font-bold mb-2 truncate">
                                     ✓ {{ fileNames.family_card }}
                                 </div>
-                                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white transition">
-                                    <span>Unggah KK</span>
+                                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-700 transition">
+                                    <span>Pilih File KK</span>
                                     <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="onFileChange($event, 'family_card')">
                                 </label>
                             </div>
                         </div>
 
                         <!-- 3. Akta Kelahiran -->
-                        <div class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 flex flex-col justify-between">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
                             <div>
-                                <span class="text-xs font-bold text-white block">3. Akta Kelahiran <span class="text-rose-500">*</span></span>
-                                <span class="text-[11px] text-slate-400 block mt-0.5">Foto atau scan Akta Kelahiran anak yang jelas.</span>
+                                <span class="text-xs font-bold text-slate-800 block">3. Akta Kelahiran Anak <span class="text-rose-600">*</span></span>
+                                <span class="text-[11px] text-slate-500 block mt-0.5">Foto atau scan Akta Kelahiran asli yang jelas.</span>
                             </div>
 
                             <div class="mt-4">
-                                <div v-if="fileNames.birth_cert" class="text-xs text-emerald-400 font-semibold mb-2 truncate">
+                                <div v-if="fileNames.birth_cert" class="text-xs text-emerald-700 font-bold mb-2 truncate">
                                     ✓ {{ fileNames.birth_cert }}
                                 </div>
-                                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white transition">
-                                    <span>Unggah Akta Lahir</span>
+                                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-700 transition">
+                                    <span>Pilih File Akta</span>
                                     <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="onFileChange($event, 'birth_cert')">
                                 </label>
                             </div>
                         </div>
 
                         <!-- 4. KTP Orang Tua -->
-                        <div class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 flex flex-col justify-between">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
                             <div>
-                                <span class="text-xs font-bold text-white block">4. KTP Orang Tua (Ayah / Ibu) <span class="text-rose-500">*</span></span>
-                                <span class="text-[11px] text-slate-400 block mt-0.5">Foto atau scan KTP Ayah atau Ibu yang masih berlaku.</span>
+                                <span class="text-xs font-bold text-slate-800 block">4. KTP Orang Tua (Ayah / Ibu) <span class="text-rose-600">*</span></span>
+                                <span class="text-[11px] text-slate-500 block mt-0.5">Foto atau scan KTP Ayah atau Ibu yang masih berlaku.</span>
                             </div>
 
                             <div class="mt-4">
-                                <div v-if="fileNames.parent_id_card" class="text-xs text-emerald-400 font-semibold mb-2 truncate">
+                                <div v-if="fileNames.parent_id_card" class="text-xs text-emerald-700 font-bold mb-2 truncate">
                                     ✓ {{ fileNames.parent_id_card }}
                                 </div>
-                                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white transition">
-                                    <span>Unggah KTP</span>
+                                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-700 transition">
+                                    <span>Pilih File KTP</span>
                                     <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="onFileChange($event, 'parent_id_card')">
                                 </label>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
                 <!-- ================= STEP 3: QRIS & BUKTI BAYAR ================= -->
                 <div v-show="currentStep === 3" class="space-y-6">
-                    <div class="flex items-center gap-2 pb-3 mb-2 border-b border-slate-800 text-emerald-400 font-bold text-sm">
-                        <QrCodeIcon class="w-4 h-4" />
-                        <span>BIAYA PENDAFTARAN & PEMBAYARAN QRIS</span>
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-800 pb-2 mb-2 border-b border-slate-100 flex items-center gap-2">
+                            <QrCodeIcon class="w-4 h-4 text-emerald-700" />
+                            <span>Pembayaran Biaya Formulir Pendaftaran</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Biaya registrasi formulir sebesar <strong>{{ formattedFee }}</strong> dibayarkan menggunakan kode QRIS statis resmi Bank Jatim di bawah ini.
+                        </p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                        <!-- QRIS Code Card -->
-                        <div class="p-6 rounded-3xl bg-white text-slate-900 text-center shadow-xl">
-                            <div class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold mb-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                        
+                        <!-- QRIS Presentation Card -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
+                            <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider mb-3">
                                 QRIS STATIS BANK JATIM
-                            </div>
-                            <h3 class="font-bold text-base text-slate-900">SD IT NAMIRA PROBOLINGGO</h3>
-                            <p class="text-xs text-slate-500 mb-4">NMID: ID1020021188998</p>
+                            </span>
+                            <h4 class="font-extrabold text-sm text-slate-900">SD IT NAMIRA PROBOLINGGO</h4>
+                            <p class="text-[11px] text-slate-500 mb-4">NMID: ID1020021188998</p>
 
-                            <!-- QRIS Image / Placeholder -->
-                            <div class="w-56 h-56 mx-auto bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center p-2 mb-4">
+                            <!-- QRIS Image Box -->
+                            <div class="w-56 h-56 mx-auto bg-white rounded-xl border border-slate-300 flex items-center justify-center p-2 mb-4 shadow-inner">
                                 <img 
                                     v-if="setting?.qris_image_url" 
                                     :src="setting.qris_image_url" 
@@ -516,58 +542,61 @@ const formattedFee = computed(() => {
                                 >
                                 <div v-else class="text-center p-4">
                                     <QrCodeIcon class="w-16 h-16 text-slate-400 mx-auto mb-2" />
-                                    <span class="text-[11px] text-slate-500 font-semibold block">Scan via BCA, Mandiri, BRI, GoPay, OVO, Dana, ShopeePay</span>
+                                    <span class="text-[11px] text-slate-500 font-semibold block">Scan via BCA, Mandiri, BRI, Bank Jatim, GoPay, Dana, OVO</span>
                                 </div>
                             </div>
 
-                            <div class="text-xs font-bold text-slate-700">
-                                Nominal Pembayaran: <span class="text-emerald-700 text-base">{{ formattedFee }}</span>
+                            <div class="text-xs font-semibold text-slate-700">
+                                Nominal Transfer: <span class="text-emerald-700 font-black text-sm">{{ formattedFee }}</span>
                             </div>
                         </div>
 
-                        <!-- Instruksi & Upload Bukti -->
+                        <!-- Guide & Upload Form -->
                         <div class="space-y-4">
-                            <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-xs text-slate-300 space-y-2">
-                                <strong class="text-emerald-300 block font-semibold">Cara Pembayaran QRIS:</strong>
-                                <ol class="list-decimal pl-4 space-y-1 text-slate-300">
-                                    <li>Buka aplikasi Mobile Banking (BCA, Mandiri, BNI, BRI, Bank Jatim) atau E-Wallet apa saja.</li>
+                            <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 space-y-2">
+                                <strong class="text-amber-950 font-bold block">Petunjuk Pembayaran:</strong>
+                                <ol class="list-decimal pl-4 space-y-1 text-slate-700 text-xs">
+                                    <li>Buka aplikasi Mobile Banking atau E-Wallet apa saja di ponsel Anda.</li>
                                     <li>Pilih menu <strong>Scan QR / QRIS</strong>.</li>
-                                    <li>Arahkan kamera ke kode QRIS di samping atau transfer tepat sebesar <strong>{{ formattedFee }}</strong>.</li>
-                                    <li>Simpan tangkapan layar (screenshot) / resi bukti pembayaran.</li>
+                                    <li>Arahkan kamera ke kode QRIS di samping.</li>
+                                    <li>Pastikan nama merchant tertera <strong>SD IT NAMIRA</strong>.</li>
+                                    <li>Masukkan nominal tepat <strong>{{ formattedFee }}</strong> lalu selesaikan pembayaran.</li>
+                                    <li>Simpan tangkapan layar (screenshot) bukti transfer sukses.</li>
                                 </ol>
                             </div>
 
-                            <!-- Upload Form -->
-                            <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700">
-                                <label class="block text-xs font-bold text-white mb-1">
-                                    Unggah Bukti Transfer / Screenshot QRIS <span class="text-rose-500">*</span>
+                            <!-- Upload Proof -->
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                <label class="block text-xs font-bold text-slate-800">
+                                    Unggah Bukti Transfer / Screenshot QRIS <span class="text-rose-600">*</span>
                                 </label>
-                                <span class="text-[11px] text-slate-400 block mb-3">Format: JPG, PNG, atau PDF (Maksimal 5MB)</span>
+                                <span class="text-[11px] text-slate-500 block">Format: JPG, PNG, atau PDF (Maksimal 5MB)</span>
 
-                                <div v-if="fileNames.registration_payment_proof" class="text-xs text-emerald-400 font-bold mb-3 truncate">
+                                <div v-if="fileNames.registration_payment_proof" class="text-xs text-emerald-700 font-bold py-1 truncate">
                                     ✓ {{ fileNames.registration_payment_proof }}
                                 </div>
 
-                                <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-emerald-700 border border-emerald-500/40 text-xs font-bold text-white transition">
-                                    <DocumentTextIcon class="w-4 h-4 text-[#fbbf24]" />
+                                <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-xs font-bold transition shadow-xs">
+                                    <DocumentTextIcon class="w-4 h-4 text-amber-300" />
                                     <span>Pilih File Bukti Pembayaran</span>
                                     <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="onFileChange($event, 'registration_payment_proof')">
                                 </label>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
-                <!-- Navigation Buttons -->
-                <div class="flex items-center justify-between pt-6 mt-8 border-t border-slate-800">
+                <!-- Footer Navigation Buttons -->
+                <div class="flex items-center justify-between pt-6 mt-8 border-t border-slate-200">
                     <button 
                         v-if="currentStep > 1"
                         type="button" 
                         @click="prevStep"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition border border-slate-700"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition border border-slate-200"
                     >
                         <ArrowLeftIcon class="w-4 h-4" />
-                        <span>Sebelumnya</span>
+                        <span>Kembali</span>
                     </button>
                     <div v-else></div>
 
@@ -575,10 +604,10 @@ const formattedFee = computed(() => {
                         v-if="currentStep < 3"
                         type="button" 
                         @click="nextStep"
-                        class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#064e3b] hover:bg-emerald-700 text-white text-xs font-bold transition shadow-lg shadow-emerald-950/60 border border-emerald-500/30"
+                        class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-xs font-bold transition shadow-xs"
                     >
                         <span>Lanjut ke Langkah {{ currentStep + 1 }}</span>
-                        <ArrowRightIcon class="w-4 h-4 text-[#fbbf24]" />
+                        <ArrowRightIcon class="w-4 h-4 text-amber-300" />
                     </button>
 
                     <button 
@@ -586,9 +615,9 @@ const formattedFee = computed(() => {
                         type="button" 
                         @click="submitForm"
                         :disabled="form.processing"
-                        class="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm font-extrabold transition shadow-xl shadow-emerald-950/80 border border-emerald-400/40 disabled:opacity-50"
+                        class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
                     >
-                        <CheckCircleIcon class="w-5 h-5 text-[#fbbf24]" />
+                        <CheckCircleIcon class="w-4 h-4 text-amber-300" />
                         <span>{{ form.processing ? 'Mengirim Data...' : 'Kirim Pendaftaran & Buat Akun' }}</span>
                     </button>
                 </div>
@@ -597,8 +626,11 @@ const formattedFee = computed(() => {
         </main>
 
         <!-- Footer -->
-        <footer class="py-6 text-center text-xs text-slate-500 border-t border-slate-900">
-            <p>&copy; {{ new Date().getFullYear() }} Panitia SPMB SD Namira. Seluruh data pendaftaran dijaga kerahasiaannya.</p>
+        <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+            <div class="max-w-4xl mx-auto px-4">
+                <p>&copy; {{ new Date().getFullYear() }} Panitia SPMB SD IT Namira. Seluruh data pendaftaran dijaga kerahasiaannya.</p>
+            </div>
         </footer>
+
     </div>
 </template>

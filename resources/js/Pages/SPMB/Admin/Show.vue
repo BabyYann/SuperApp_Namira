@@ -14,7 +14,7 @@ import {
     AcademicCapIcon,
     ChatBubbleLeftRightIcon,
     ExclamationTriangleIcon,
-    SparklesIcon,
+    ClipboardDocumentCheckIcon,
     PhotoIcon
 } from '@heroicons/vue/24/outline';
 
@@ -200,9 +200,9 @@ const formatRupiah = (amount) => {
                     <!-- 3. Tombol Evaluasi / Hasil -->
                     <button 
                         @click="showEvaluationModal = true"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold shadow-xs transition"
                     >
-                        <SparklesIcon class="w-4 h-4" />
+                        <ClipboardDocumentCheckIcon class="w-4 h-4" />
                         <span>Input Hasil Evaluasi</span>
                     </button>
 
@@ -210,7 +210,7 @@ const formatRupiah = (amount) => {
                     <button 
                         v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)"
                         @click="showVaModal = true"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold shadow-xs transition"
                     >
                         <CreditCardIcon class="w-4 h-4" />
                         <span>Nomor VA Bank Jatim</span>
@@ -220,7 +220,7 @@ const formatRupiah = (amount) => {
                     <button 
                         v-if="['accepted', 'partial_paid'].includes(applicant.status)"
                         @click="showPaymentModal = true"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow-xs transition"
                     >
                         <CreditCardIcon class="w-4 h-4" />
                         <span>Verifikasi Daftar Ulang</span>
@@ -230,7 +230,7 @@ const formatRupiah = (amount) => {
                     <button 
                         v-if="['accepted', 'partial_paid', 'fully_paid'].includes(applicant.status) && applicant.status !== 'enrolled'"
                         @click="enrollStudent"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-extrabold shadow-lg"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-xs font-bold shadow-xs transition"
                     >
                         <AcademicCapIcon class="w-4 h-4 text-[#fbbf24]" />
                         <span>Pindahkan ke Data Siswa Aktif</span>

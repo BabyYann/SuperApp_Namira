@@ -13,7 +13,6 @@ import {
     EyeIcon,
     ArrowDownTrayIcon,
     UserGroupIcon,
-    SparklesIcon,
     ChatBubbleLeftRightIcon
 } from '@heroicons/vue/24/outline';
 
