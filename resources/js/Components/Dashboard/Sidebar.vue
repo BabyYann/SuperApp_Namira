@@ -25,6 +25,8 @@ const expandedGroups = ref({
     'employee': true,
     'counseling': true,
     'sarpar': true,
+    'spmb': true,
+    'spmb_panitia': true,
 });
 
 // Menu Structure
@@ -497,6 +499,26 @@ const filteredMenuGroups = computed(() => {
         ]
     };
 
+    // SPMB Menu
+    const spmbMenu = {
+        title: 'SPMB (Penerimaan Siswa)',
+        key: 'spmb',
+        items: [
+            { 
+                label: 'Data Pendaftar Inden', 
+                route: 'spmb.admin.index', 
+                active: 'spmb.admin.*',
+                icon: UserGroupIcon 
+            },
+            { 
+                label: 'Pengaturan & Panitia', 
+                route: 'spmb.admin.settings', 
+                active: 'spmb.admin.settings',
+                icon: Cog6ToothIcon 
+            },
+        ]
+    };
+
     if (hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
         humasMenu.items.push({ 
             label: 'Hero Banner Slider', 
@@ -509,7 +531,7 @@ const filteredMenuGroups = computed(() => {
     // If Admin/Yayasan, show everything + Personal Employee Menu + Counseling + Sarpar
     if (page.props.auth.user.email === 'admin@namira.school' || 
         hasRole('admin') || 
-        hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'admin_unit', 'kepala_sekolah'])) {
+        hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
         
         const isGlobalAdmin = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
         const isFinanceStaff = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'finance', 'staff_admin_keuangan']);
@@ -551,6 +573,7 @@ const filteredMenuGroups = computed(() => {
         adminGroups.push(commonEmployeeMenu);
         if (isFeatureEnabled('feature_counseling')) adminGroups.push(counselingMenu);
         adminGroups.push(humasMenu);
+        adminGroups.push(spmbMenu);
 
         if (isTeacher) {
             adminGroups.push({

@@ -295,14 +295,6 @@ Route::get('/karir', [\App\Http\Controllers\PublicCareerController::class, 'inde
 Route::get('/karir/{vacancy:slug}', [\App\Http\Controllers\PublicCareerController::class, 'show'])->name('careers.show');
 Route::post('/karir/{vacancy:slug}/lamar', [\App\Http\Controllers\PublicCareerController::class, 'apply'])->name('careers.apply');
 
-Route::get('/ppdb', function () {
-    return Inertia::render('Public/PpdbComingSoon');
-})->name('ppdb.index');
-
-Route::get('/spmb', function () {
-    return redirect()->route('ppdb.index');
-})->name('spmb.index');
-
 Route::get('/sitemap.xml', function () {
     $baseUrl = config('app.url', 'https://namiraschool.com');
     

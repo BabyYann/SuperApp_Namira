@@ -35,12 +35,27 @@ class LoginRequest extends FormRequest
 
     /**
      * Get the email from login input.
-     * If input is numeric (NIS), lookup student and get user email.
-     * Otherwise, treat as email.
+     * Supports Email, WhatsApp Phone number, or Student NIS.
      */
     protected function getEmailFromLogin(): ?string
     {
-        $login = $this->input('login');
+        $login = trim($this->input('login'));
+
+        // If it starts with + or 08 or 62, or looks like phone number:
+        $cleanPhone = preg_replace('/[^0-9]/', '', $login);
+        if (strlen($cleanPhone) >= 9 && (str_starts_with($cleanPhone, '08') || str_starts_with($cleanPhone, '628'))) {
+            $normalizedPhone = str_starts_with($cleanPhone, '62') ? ('0' . substr($cleanPhone, 2)) : $cleanPhone;
+            
+            $user = \App\Models\User::where('phone', $cleanPhone)
+                ->orWhere('phone', $normalizedPhone)
+                ->orWhere('email', "{$cleanPhone}@spmb.namiraschool.com")
+                ->orWhere('email', "{$normalizedPhone}@spmb.namiraschool.com")
+                ->first();
+
+            if ($user) {
+                return $user->email;
+            }
+        }
 
         // If it looks like a NIS (numeric), find the student
         if (is_numeric($login)) {
@@ -49,8 +64,13 @@ class LoginRequest extends FormRequest
             if ($student && $student->user) {
                 return $student->user->email;
             }
+
+            // Also check if any user has this exact phone
+            $userByPhone = \App\Models\User::where('phone', $login)->first();
+            if ($userByPhone) {
+                return $userByPhone->email;
+            }
             
-            // NIS not found, return the input anyway (will fail auth)
             return null;
         }
 

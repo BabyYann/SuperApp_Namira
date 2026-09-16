@@ -45,5 +45,13 @@ Route::get('/dashboard', function () {
         return redirect()->route('yayasan.dashboard');
     }
 
+    $isSpmbApplicant = \DB::table('spmb_applicants')
+        ->where('user_id', $user->id)
+        ->exists();
+
+    if ($isSpmbApplicant) {
+        return redirect()->route('spmb.applicant.dashboard');
+    }
+
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

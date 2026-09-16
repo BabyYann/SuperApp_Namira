@@ -11,7 +11,8 @@ import {
     LockClosedIcon, 
     EyeIcon, 
     EyeSlashIcon, 
-    IdentificationIcon
+    IdentificationIcon,
+    PhoneIcon
 } from '@heroicons/vue/24/outline';
 
 defineProps({
@@ -29,7 +30,8 @@ const form = useForm({
     remember: true,
 });
 
-const isNisMode = computed(() => /^\d+$/.test(form.login));
+const isPhoneMode = computed(() => /^(\+?62|08)\d+$/.test(form.login.trim()));
+const isNisMode = computed(() => /^\d{4,8}$/.test(form.login.trim()) && !isPhoneMode.value);
 
 const showPassword = ref(false);
 
@@ -76,14 +78,18 @@ const submit = () => {
                 <!-- EMAIL / NIS FIELD -->
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <InputLabel for="login" value="Email" class="text-xs font-bold text-slate-700" />
-                        <span v-if="isNisMode" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
+                        <InputLabel for="login" value="Email / No. WhatsApp / NIS" class="text-xs font-bold text-slate-700" />
+                        <span v-if="isPhoneMode" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Mode No. WhatsApp Ortu
+                        </span>
+                        <span v-else-if="isNisMode" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
                             Mode NIS Siswa
                         </span>
                     </div>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                            <IdentificationIcon v-if="isNisMode" class="w-5 h-5 text-teal-600" />
+                            <PhoneIcon v-if="isPhoneMode" class="w-5 h-5 text-emerald-600" />
+                            <IdentificationIcon v-else-if="isNisMode" class="w-5 h-5 text-teal-600" />
                             <EnvelopeIcon v-else class="w-5 h-5" />
                         </div>
                         <input
@@ -94,7 +100,7 @@ const submit = () => {
                             required
                             autofocus
                             autocomplete="username"
-                            placeholder="nama@email.com"
+                            placeholder="Email / 08xxx / NIS Siswa"
                         />
                     </div>
                     <InputError class="mt-1.5 text-xs text-rose-600" :message="form.errors.login" />
