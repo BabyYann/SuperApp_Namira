@@ -56,7 +56,7 @@ const formatRupiah = (amount) => {
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Portal Calon Siswa SPMB</span>
-                        <h1 class="text-xs sm:text-sm font-black text-slate-900 leading-tight">SD IT NAMIRA KOTA PROBOLINGGO</h1>
+                        <h1 class="text-xs sm:text-sm font-black text-slate-900 leading-tight">SD NAMIRA KOTA PROBOLINGGO</h1>
                     </div>
                 </div>
 
@@ -335,7 +335,7 @@ const formatRupiah = (amount) => {
                         <div class="space-y-1 text-slate-600 pt-1">
                             <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.observation_date || 'Menunggu Penetapan' }}</strong></div>
                             <div>Waktu: <strong class="text-slate-900">{{ applicant.observation_time || 'Akan diinfokan via WA' }}</strong></div>
-                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.observation_location || 'Gedung SD IT Namira' }}</strong></div>
+                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.observation_location || 'Gedung SD Namira' }}</strong></div>
                         </div>
                     </div>
 
@@ -348,7 +348,7 @@ const formatRupiah = (amount) => {
                         <div class="space-y-1 text-slate-600 pt-1">
                             <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.psychotest_date || 'Menunggu Penetapan' }}</strong></div>
                             <div>Waktu: <strong class="text-slate-900">{{ applicant.psychotest_time || 'Akan diinfokan via WA' }}</strong></div>
-                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.psychotest_location || 'Gedung SD IT Namira' }}</strong></div>
+                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.psychotest_location || 'Gedung SD Namira' }}</strong></div>
                         </div>
                     </div>
                 </div>

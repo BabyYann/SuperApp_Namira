@@ -118,7 +118,7 @@
     <!-- Kop Surat -->
     <div class="header">
         <h1>YAYASAN NAMIRA KOTA PROBOLINGGO</h1>
-        <h2>SD ISLAM TERPADU NAMIRA</h2>
+        <h2>SEKOLAH DASAR NAMIRA (SD NAMIRA)</h2>
         <p>Jl. Mahakam No. 1, Kec. Kedopok, Kota Probolinggo - Jawa Timur | Email: sd@namiraschool.com | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</p>
     </div>
 

@@ -73,7 +73,7 @@ const steps = [
 
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight mb-4 text-white">
                     Penerimaan Peserta Didik Baru <br class="hidden sm:inline"/>
-                    <span class="text-amber-300">Sekolah Islam Terpadu Namira</span>
+                    <span class="text-amber-300">Sekolah Islam Namira</span>
                 </h1>
 
                 <p class="text-sm sm:text-base text-emerald-100/90 max-w-2xl mx-auto leading-relaxed mb-8">
@@ -101,7 +101,7 @@ const steps = [
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20 pb-16 flex-1">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
-                <!-- 1. SD IT NAMIRA (PRIMARY FEATURED UNIT) -->
+                <!-- 1. SD NAMIRA (PRIMARY FEATURED UNIT) -->
                 <div class="bg-white rounded-2xl border-2 border-emerald-600/80 shadow-lg p-6 sm:p-7 flex flex-col justify-between hover:shadow-xl transition relative">
                     <div class="absolute -top-3 right-6 px-3 py-0.5 bg-emerald-700 text-white text-[11px] font-bold rounded-full uppercase tracking-wider shadow-sm">
                         Jalur Inden Dibuka
@@ -113,9 +113,9 @@ const steps = [
                         </div>
 
                         <span class="text-xs font-bold text-emerald-700 uppercase tracking-wide">Jenjang Dasar</span>
-                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">SD IT Namira</h2>
+                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">SD Namira</h2>
                         <p class="text-xs text-slate-600 mt-2 leading-relaxed">
-                            Sekolah Dasar Islam Terpadu berstandar keunggulan akademik, tahfidz Al-Qur'an, dan pembentukan adab islami mandiri.
+                            Sekolah Dasar Islam berstandar keunggulan akademik, tahfidz Al-Qur'an, dan pembentukan adab islami mandiri.
                         </p>
 
                         <div class="mt-5 space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
@@ -186,7 +186,7 @@ const steps = [
                     </div>
                 </div>
 
-                <!-- 3. SMP IT NAMIRA (DIRECT LINK EKSTERNAL) -->
+                <!-- 3. SMP NAMIRA (DIRECT LINK EKSTERNAL) -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition">
                     <div>
                         <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 mb-4">
@@ -194,9 +194,9 @@ const steps = [
                         </div>
 
                         <span class="text-xs font-bold text-blue-700 uppercase tracking-wide">Sekolah Menengah</span>
-                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">SMP IT Namira</h2>
+                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">SMP Namira</h2>
                         <p class="text-xs text-slate-600 mt-2 leading-relaxed">
-                            Sekolah Menengah Pertama Islam Terpadu berwawasan global, penguasaan bilingual, budaya riset, dan program tahfidz intensif.
+                            Sekolah Menengah Pertama Islam berwawasan global, penguasaan bilingual, budaya riset, dan program tahfidz intensif.
                         </p>
 
                         <div class="mt-5 space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">

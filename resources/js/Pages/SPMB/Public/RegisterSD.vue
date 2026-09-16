@@ -188,7 +188,7 @@ const formattedFee = computed(() => {
 </script>
 
 <template>
-    <Head title="Formulir Pendaftaran Siswa Baru - SD IT Namira" />
+    <Head title="Formulir Pendaftaran Siswa Baru - SD Namira" />
 
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900">
         
@@ -202,7 +202,7 @@ const formattedFee = computed(() => {
 
                 <div class="text-right">
                     <span class="text-[11px] text-slate-500 font-medium block">Pendaftaran Siswa Baru</span>
-                    <strong class="text-xs font-bold text-emerald-900 block">SD IT NAMIRA</strong>
+                    <strong class="text-xs font-bold text-emerald-900 block">SD NAMIRA</strong>
                 </div>
             </div>
         </header>
@@ -529,7 +529,7 @@ const formattedFee = computed(() => {
                             <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider mb-3">
                                 QRIS STATIS BANK JATIM
                             </span>
-                            <h4 class="font-extrabold text-sm text-slate-900">SD IT NAMIRA PROBOLINGGO</h4>
+                            <h4 class="font-extrabold text-sm text-slate-900">SD NAMIRA PROBOLINGGO</h4>
                             <p class="text-[11px] text-slate-500 mb-4">NMID: ID1020021188998</p>
 
                             <!-- QRIS Image Box -->
@@ -559,7 +559,7 @@ const formattedFee = computed(() => {
                                     <li>Buka aplikasi Mobile Banking atau E-Wallet apa saja di ponsel Anda.</li>
                                     <li>Pilih menu <strong>Scan QR / QRIS</strong>.</li>
                                     <li>Arahkan kamera ke kode QRIS di samping.</li>
-                                    <li>Pastikan nama merchant tertera <strong>SD IT NAMIRA</strong>.</li>
+                                    <li>Pastikan nama merchant tertera <strong>SD NAMIRA</strong>.</li>
                                     <li>Masukkan nominal tepat <strong>{{ formattedFee }}</strong> lalu selesaikan pembayaran.</li>
                                     <li>Simpan tangkapan layar (screenshot) bukti transfer sukses.</li>
                                 </ol>
@@ -628,7 +628,7 @@ const formattedFee = computed(() => {
         <!-- Footer -->
         <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
             <div class="max-w-4xl mx-auto px-4">
-                <p>&copy; {{ new Date().getFullYear() }} Panitia SPMB SD IT Namira. Seluruh data pendaftaran dijaga kerahasiaannya.</p>
+                <p>&copy; {{ new Date().getFullYear() }} Panitia SPMB SD Namira. Seluruh data pendaftaran dijaga kerahasiaannya.</p>
             </div>
         </footer>
 
