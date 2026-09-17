@@ -12,13 +12,15 @@ import {
     DocumentCheckIcon,
     CreditCardIcon,
     SunIcon,
-    ChatBubbleLeftRightIcon
+    ChatBubbleLeftRightIcon,
+    LockClosedIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     units: Array,
     sdUnit: Object,
     sdSetting: Object,
+    isLockedForPublic: Boolean,
 });
 
 const steps = [
@@ -35,6 +37,12 @@ const steps = [
 
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900">
         
+        <!-- Admin Notice Banner (When locked for public) -->
+        <div v-if="isLockedForPublic" class="bg-amber-500 text-slate-950 font-extrabold px-4 py-2 text-center text-xs border-b border-amber-600 flex items-center justify-center gap-2">
+            <LockClosedIcon class="w-4 h-4 text-slate-950 shrink-0" />
+            <span>MODE PRATINJAU ADMINISTRATOR: Halaman pendaftaran ini saat ini sedang DIKUNCI untuk akses publik/umum.</span>
+        </div>
+
         <!-- Top Institutional Header -->
         <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">

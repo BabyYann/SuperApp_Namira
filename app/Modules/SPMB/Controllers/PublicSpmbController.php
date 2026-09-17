@@ -15,21 +15,49 @@ use Inertia\Inertia;
 class PublicSpmbController extends Controller
 {
     /**
+     * Determine if SPMB public portal is locked for the current request.
+     */
+    protected function isLocked(): bool
+    {
+        // If an authorized admin/panitia wants to preview the live portal while logged in, allow them
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'panitia_spmb', 'kepala_sekolah'])) {
+                if (request()->has('locked_view')) {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Display public landing / portal for choosing unit.
      */
     public function index()
     {
-        $units = Unit::select('id', 'name')->get();
         $sdUnit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->first();
         $sdSetting = null;
         if ($sdUnit) {
             $sdSetting = SpmbSetting::where('unit_id', $sdUnit->id)->first();
         }
 
+        if ($this->isLocked()) {
+            return Inertia::render('SPMB/Public/Locked', [
+                'contactWhatsapp' => $sdSetting->contact_whatsapp ?? '082332922521',
+                'academicYear' => $sdSetting->academic_year ?? '2026/2027',
+            ]);
+        }
+
+        $units = Unit::select('id', 'name')->get();
+
         return Inertia::render('SPMB/Public/Index', [
             'units' => $units,
             'sdUnit' => $sdUnit,
             'sdSetting' => $sdSetting,
+            'isLockedForPublic' => true,
         ]);
     }
 
@@ -38,6 +66,10 @@ class PublicSpmbController extends Controller
      */
     public function registerSD()
     {
+        if ($this->isLocked()) {
+            return redirect()->route('spmb.index');
+        }
+
         $unit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->firstOrFail();
         $setting = SpmbSetting::firstOrCreate(
             ['unit_id' => $unit->id],
@@ -50,7 +82,7 @@ class PublicSpmbController extends Controller
                 'bank_account_number' => '0291008899',
                 'bank_account_holder' => 'YAYASAN NAMIRA PROBOLINGGO',
                 'min_down_payment_percentage' => 60,
-                'is_active' => true,
+                'is_active' => false,
                 'contact_whatsapp' => '082332922521',
             ]
         );
@@ -61,6 +93,7 @@ class PublicSpmbController extends Controller
             'unit' => $unit,
             'setting' => $setting,
             'totalApplicants' => $totalApplicants,
+            'isLockedForPublic' => true,
         ]);
     }
 
@@ -69,6 +102,10 @@ class PublicSpmbController extends Controller
      */
     public function storeSD(Request $request, SpmbService $spmbService)
     {
+        if ($this->isLocked()) {
+            return redirect()->route('spmb.index')->with('error', 'Layanan pendaftaran online saat ini sedang ditutup sementara untuk penyesuaian sistem.');
+        }
+
         $unit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->firstOrFail();
 
         // 1. Validate input
