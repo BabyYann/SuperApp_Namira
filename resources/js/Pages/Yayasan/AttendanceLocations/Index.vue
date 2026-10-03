@@ -117,45 +117,49 @@ const initMainMap = () => {
     // Zoom Control at bottom-left
     L.control.zoom({ position: 'bottomleft' }).addTo(mainMap.value);
 
-    // Sleek CartoDB Voyager Light Tiles (Linear/Stripe Aesthetic)
-    const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB &amp; OpenStreetMap',
+    // Standard OpenStreetMap (Free, reliable, no API key required)
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+        maxZoom: 19,
         keepBuffer: 4,
         updateWhenIdle: false,
         updateWhenZooming: true,
     });
 
-    // High-Res Satellite View
+    // High-Res Satellite View (Esri World Imagery)
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri',
+        maxZoom: 19,
         keepBuffer: 4,
         updateWhenIdle: false,
         updateWhenZooming: true,
     });
 
-    // Futuristic Dark Mode Tiles
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB Dark',
+    // Esri World Street Map
+    const streetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 19,
         keepBuffer: 4,
         updateWhenIdle: false,
         updateWhenZooming: true,
     });
 
-    // Standard OpenStreetMap
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
+    // Esri World Topo Map
+    const topoLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 19,
         keepBuffer: 4,
         updateWhenIdle: false,
         updateWhenZooming: true,
     });
 
-    voyagerLayer.addTo(mainMap.value);
+    osmLayer.addTo(mainMap.value);
 
     const baseMaps = {
-        "✨ Modern Voyager": voyagerLayer,
-        "🛰️ Satelit High-Res": satelliteLayer,
-        "🌙 Cyber Dark": darkLayer,
-        "🗺️ Peta Jalan Standard": osmLayer
+        "🗺️ OpenStreetMap (Standar)": osmLayer,
+        "🛰️ Satelit High-Res (Esri)": satelliteLayer,
+        "🏢 Peta Jalan (Esri Street)": streetLayer,
+        "⛰️ Topografi (Esri Topo)": topoLayer
     };
 
     L.control.layers(baseMaps, null, { position: 'topright' }).addTo(mainMap.value);
@@ -270,11 +274,22 @@ const initModalMap = () => {
     }
 
     const coords = [form.latitude, form.longitude];
-    modalMap.value = L.map(modalMapContainer.value, { zoomControl: false }).setView(coords, 17);
+    modalMap.value = L.map(modalMapContainer.value, { zoomControl: true }).setView(coords, 17);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CartoDB'
+    const osmModal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+        maxZoom: 19
     }).addTo(modalMap.value);
+
+    const satModal = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 19
+    });
+
+    L.control.layers({
+        "🗺️ Peta Jalan (OSM)": osmModal,
+        "🛰️ Satelit (Esri)": satModal
+    }, null, { position: 'topright' }).addTo(modalMap.value);
 
     updateModalMapElements();
 
