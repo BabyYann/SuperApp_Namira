@@ -260,8 +260,18 @@ const switchUnit = (unitId) => {
     });
 };
 
-const toggleGroup = (key) => {
-    expandedGroups.value[key] = !expandedGroups.value[key];
+const isGroupExpanded = (group) => {
+    if (!group) return true;
+    // Always keep group expanded if one of its items is currently active
+    if (group.items?.some(item => isActive(item.active))) {
+        return true;
+    }
+    return expandedGroups.value[group.key] !== false;
+};
+
+const toggleGroup = (key, group) => {
+    const isExpanded = isGroupExpanded(group);
+    expandedGroups.value[key] = !isExpanded;
 };
 
 const isActive = (routeName) => {
@@ -566,14 +576,15 @@ const filteredMenuGroups = computed(() => {
             return true;
         });
 
+        // SPMB (Penerimaan Siswa) placed prominently after academic/finance
+        adminGroups.push(spmbMenu);
+
         if (isSuperAdmin || page.props.session?.is_daycare || page.props.session?.features?.daycare === true) {
             adminGroups.push(daycareMenu);
         }
         if (isFeatureEnabled('feature_sarpar')) adminGroups.push(sarparMenu);
-        adminGroups.push(commonEmployeeMenu);
         if (isFeatureEnabled('feature_counseling')) adminGroups.push(counselingMenu);
         adminGroups.push(humasMenu);
-        adminGroups.push(spmbMenu);
 
         if (isTeacher) {
             adminGroups.push({
@@ -877,6 +888,11 @@ const filteredMenuGroups = computed(() => {
         });
     }
 
+    // G. PANITIA SPMB (Jika guru / pegawai ditugaskan sebagai Panitia SPMB)
+    if (hasRole('panitia_spmb')) {
+        groups.push(spmbMenu);
+    }
+
     // Add Common Menu for All Employees (including logic flow)
     // Add Common Menu for All Employees (excluding students)
     if (!hasRole('siswa') && !hasRole('student')) {
@@ -918,6 +934,7 @@ const filteredMenuGroups = computed(() => {
             <div class="relative">
                 <button 
                     @click="showUnitMenu = !showUnitMenu" 
+                    :title="$page.props.session?.active_unit_name"
                     class="w-full bg-white/60 border border-white/60 shadow-sm rounded-xl flex items-center transition-all duration-200 hover:bg-white hover:shadow-md group backdrop-blur-sm"
                     :class="{'p-2 pr-3': isSidebarOpen, 'p-2 justify-center': !isSidebarOpen}"
                 >
@@ -946,6 +963,7 @@ const filteredMenuGroups = computed(() => {
                             v-for="unit in $page.props.session?.available_units || []" 
                             :key="unit.id"
                             @click="switchUnit(unit.id)"
+                            :title="unit.name"
                             class="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-between group gap-2"
                             :class="unit.id === $page.props.session?.active_unit_id ? 'bg-teal-50 text-teal-700 font-bold' : 'text-slate-600 hover:bg-white/50'"
                         >
@@ -967,6 +985,7 @@ const filteredMenuGroups = computed(() => {
                 <!-- Dashboard -->
                  <Link
                     :href="hasRole('siswa') || hasRole('student') ? route('student.dashboard') : route('yayasan.dashboard')"
+                    :title="!isSidebarOpen ? 'Dashboard' : undefined"
                     class="flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 group relative"
                     :class="[
                         isActive('yayasan.dashboard') 
@@ -980,23 +999,32 @@ const filteredMenuGroups = computed(() => {
                 </Link>
 
                 <!-- Groups -->
-                <div v-for="group in filteredMenuGroups" :key="group.key" class="space-y-2">
-                    <!-- Group Header -->
-                    <div 
-                        class="flex items-center px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400/80"
-                        :class="[isSidebarOpen ? 'justify-between' : 'justify-center px-0']"
+                <div v-for="group in filteredMenuGroups" :key="group.key" class="space-y-1.5">
+                    <!-- Group Header (Accordion Toggle) -->
+                    <button 
+                        type="button"
+                        @click="isSidebarOpen && toggleGroup(group.key, group)"
+                        class="w-full flex items-center px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400/90 hover:text-slate-700 transition-colors rounded-lg group select-none"
+                        :class="[isSidebarOpen ? 'justify-between cursor-pointer hover:bg-slate-100/50' : 'justify-center px-0 cursor-default']"
+                        :title="!isSidebarOpen ? group.title : undefined"
                     >
                         <span :class="{'hidden': !isSidebarOpen}">{{ group.title }}</span>
                         <div v-if="!isSidebarOpen" class="w-4 h-px bg-slate-200"></div>
-                    </div>
+                        <ChevronDownIcon 
+                            v-if="isSidebarOpen" 
+                            class="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-transform duration-200"
+                            :class="{'rotate-180': isGroupExpanded(group)}"
+                        />
+                    </button>
 
-                    <!-- Group Items -->
-                    <div class="space-y-1">
+                    <!-- Group Items (Collapsible with smooth view) -->
+                    <div v-show="!isSidebarOpen || isGroupExpanded(group)" class="space-y-1 transition-all duration-200">
                         <Link 
                             v-for="item in group.items" 
                             :key="item.route"
                             :href="resolveRoute(item.route)"
-                             class="flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 group relative"
+                            :title="!isSidebarOpen ? item.label : undefined"
+                            class="flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 group relative"
                             :class="[
                                 isActive(item.active) 
                                     ? 'bg-white shadow-sm text-teal-700 ring-1 ring-slate-900/5' 
