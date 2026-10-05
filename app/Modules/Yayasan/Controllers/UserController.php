@@ -276,6 +276,7 @@ class UserController extends Controller
             'units' => $units,
             'roles' => $rolesQuery->pluck('name'),
             'isGlobalAdmin' => $isGlobalAdmin,
+            'linkedProfiles' => $this->linkedProfiles($user),
         ]);
     }
 
@@ -407,6 +408,34 @@ class UserController extends Controller
 
         $user->delete();
         return redirect()->back()->with('success', 'User berhasil dihapus.');
+    }
+
+    /**
+     * Semua profil (guru/staff/siswa) yang terhubung ke akun ini, beserta unitnya.
+     * Dipakai halaman Edit User untuk memberi peringatan bila satu akun dipakai
+     * oleh lebih dari satu orang / unit (lihat command users:split-shared-accounts).
+     */
+    private function linkedProfiles(User $user): array
+    {
+        $map = fn ($type) => fn ($row) => [
+            'type' => $type,
+            'id' => $row->id,
+            'name' => $row->full_name,
+            'unit_id' => $row->unit_id,
+            'unit_name' => $row->unit_name,
+        ];
+
+        $query = fn ($table) => \DB::table($table)
+            ->leftJoin('units', 'units.id', '=', "{$table}.unit_id")
+            ->where("{$table}.user_id", $user->id)
+            ->get(["{$table}.id", "{$table}.full_name", "{$table}.unit_id", 'units.name as unit_name']);
+
+        return collect()
+            ->merge($query('teachers')->map($map('guru')))
+            ->merge($query('staff')->map($map('staff')))
+            ->merge($query('students')->map($map('siswa')))
+            ->values()
+            ->all();
     }
 
     /**

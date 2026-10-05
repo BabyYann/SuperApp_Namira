@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import { UserIcon, LockClosedIcon, ChevronUpDownIcon, KeyIcon, CameraIcon } from '@heroicons/vue/24/outline';
+import { UserIcon, LockClosedIcon, ChevronUpDownIcon, KeyIcon, CameraIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -16,12 +16,30 @@ const props = defineProps({
     units: Array,
     roles: Array,
     isGlobalAdmin: Boolean,
+    linkedProfiles: { type: Array, default: () => [] },
 });
 
 const page = usePage();
 
 const isGlobalAdminUser = computed(() => {
     return props.isGlobalAdmin && (page.props.auth.user?.roles || []).some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'].includes(r));
+});
+
+// Satu akun seharusnya = satu orang. Peringatkan bila akun terhubung ke
+// beberapa profil berbeda (mis. guru TK + siswa SMP) atau ke unit lain.
+const normalizeName = (n) => (n || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const sharedAccountWarning = computed(() => {
+    const profiles = props.linkedProfiles || [];
+    if (!profiles.length) return null;
+
+    const distinctPeople = new Set(profiles.map(p => normalizeName(p.name))).size;
+    const studentCount = profiles.filter(p => p.type === 'siswa').length;
+    const hasEmployee = profiles.some(p => p.type !== 'siswa');
+    const otherUnit = form.unit_id ? profiles.some(p => p.unit_id && p.unit_id !== Number(form.unit_id)) : false;
+
+    if (distinctPeople > 1 || studentCount > 1 || (hasEmployee && studentCount > 0)) return 'shared';
+    if (otherUnit) return 'other-unit';
+    return null;
 });
 
 const photoPreview = ref(null);
@@ -154,6 +172,42 @@ const submitResetPassword = () => {
                                     </div>
                                 </div>
                                 <InputError :message="form.errors.unit_id" class="mt-2" />
+                            </div>
+
+                            <!-- Linked profiles / shared-account warning -->
+                            <div v-if="linkedProfiles.length"
+                                 class="rounded-2xl border p-4"
+                                 :class="sharedAccountWarning === 'shared' ? 'border-red-200 bg-red-50/70' : (sharedAccountWarning ? 'border-amber-200 bg-amber-50/70' : 'border-gray-200 bg-white/60')">
+                                <div class="flex items-start gap-3">
+                                    <ExclamationTriangleIcon v-if="sharedAccountWarning" class="w-5 h-5 shrink-0 mt-0.5"
+                                        :class="sharedAccountWarning === 'shared' ? 'text-red-600' : 'text-amber-600'" />
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-semibold"
+                                           :class="sharedAccountWarning === 'shared' ? 'text-red-800' : (sharedAccountWarning ? 'text-amber-800' : 'text-gray-700')">
+                                            <template v-if="sharedAccountWarning === 'shared'">Akun ini terhubung ke lebih dari satu orang</template>
+                                            <template v-else-if="sharedAccountWarning === 'other-unit'">Ada profil di unit lain</template>
+                                            <template v-else>Profil yang terhubung</template>
+                                        </p>
+                                        <p v-if="sharedAccountWarning === 'shared'" class="text-xs text-red-700 mt-1">
+                                            Satu akun seharusnya hanya untuk satu orang. Mengubah unit di sini tidak memindahkan data siswa,
+                                            jadi badge unit lain akan tetap muncul. Pisahkan akunnya dengan command
+                                            <code class="px-1 py-0.5 rounded bg-red-100 font-mono">php artisan users:split-shared-accounts --email={{ user.email }}</code>.
+                                        </p>
+                                        <p v-else-if="sharedAccountWarning === 'other-unit'" class="text-xs text-amber-700 mt-1">
+                                            Profil berikut berada di unit yang berbeda dengan Unit Penugasan yang dipilih.
+                                        </p>
+                                        <ul class="mt-3 space-y-1.5">
+                                            <li v-for="p in linkedProfiles" :key="p.type + p.id" class="flex flex-wrap items-center gap-2 text-xs">
+                                                <span class="px-2 py-0.5 rounded-md font-semibold uppercase tracking-wide"
+                                                      :class="p.type === 'siswa' ? 'bg-emerald-100 text-emerald-700' : (p.type === 'guru' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700')">
+                                                    {{ p.type }}
+                                                </span>
+                                                <span class="font-medium text-gray-800">{{ p.name || '-' }}</span>
+                                                <span class="text-gray-500">· {{ p.unit_name || 'Tanpa unit' }}</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
 
                             <div>

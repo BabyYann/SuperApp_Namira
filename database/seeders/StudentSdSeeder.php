@@ -3097,14 +3097,7 @@ class StudentSdSeeder extends Seeder
 
             $password = $nis ? $nis : ($nisn ? $nisn : 'siswa123');
 
-            $user = User::where('email', $email)->first();
-            if (!$user) {
-                $user = User::create([
-                    'name' => $name,
-                    'email' => $email,
-                    'password' => Hash::make($password),
-                ]);
-            }
+            $user = \App\Support\SeederUserResolver::resolve($name, $email, $password, $unitId);
 
             if ($roleId) {
                 DB::table('model_has_roles')->updateOrInsert([
