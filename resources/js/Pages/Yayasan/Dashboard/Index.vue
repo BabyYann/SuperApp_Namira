@@ -45,7 +45,8 @@ import {
     HeartIcon,
     Squares2X2Icon,
     CalendarIcon,
-    BookOpenIcon
+    BookOpenIcon,
+    PaperAirplaneIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -89,6 +90,31 @@ const userInitials = computed(() => {
     const parts = name.trim().split(' ');
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
     return name.substring(0, 2).toUpperCase();
+});
+
+const todayGregorian = computed(() => {
+    try {
+        return new Intl.DateTimeFormat('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        }).format(new Date());
+    } catch (e) {
+        return '';
+    }
+});
+
+const todayHijri = computed(() => {
+    try {
+        return new Intl.DateTimeFormat('id-ID-u-ca-islamic-umalqura', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        }).format(new Date());
+    } catch (e) {
+        return '';
+    }
 });
 
 const safeRoute = (name, params = {}, fallback = '#') => {
@@ -190,104 +216,123 @@ const eventTypeLabels = {
                 </div>
             </div>
 
-            <!-- 1. STANDARD HERO CARD FOR TEACHER & STAFF (Floating Portrait Pop-Out) -->
-            <div v-else class="relative pt-5">
-
+            <!-- 1. STANDARD HERO CARD FOR TEACHER & STAFF (Mockup Style: Organic Teal Gradient with Date Badge & Presensi Button) -->
+            <div v-else class="relative pt-2">
                 <!-- Main Gradient Card Body -->
-                <div class="relative overflow-visible rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-5 sm:p-6 border border-teal-800/60 shadow-xl min-h-[155px] flex flex-col justify-center">
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#00897b] via-[#00796b] to-[#004d40] p-4 sm:p-5 border border-teal-600/40 shadow-xl">
+                    <!-- Background Glow & Waves Accents -->
+                    <div class="absolute -right-8 -bottom-8 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute -left-8 -top-8 w-44 h-44 bg-emerald-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
-                    <!-- Background Glow Accent -->
-                    <div class="absolute -left-6 -bottom-6 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="relative z-10 flex items-center justify-between gap-2.5">
+                        <!-- Left: Avatar + Greeting & Name -->
+                        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                            <!-- Avatar Squircle -->
+                            <div class="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg bg-teal-900/60 shrink-0 flex items-center justify-center">
+                                <img
+                                    v-if="user?.profile_photo_url"
+                                    :src="user.profile_photo_url"
+                                    :alt="user?.name"
+                                    class="w-full h-full object-cover object-top"
+                                />
+                                <div v-else class="w-full h-full bg-gradient-to-br from-teal-400 to-teal-800 flex items-center justify-center font-black text-2xl text-white">
+                                    {{ userInitials }}
+                                </div>
+                            </div>
 
-                    <!-- Right Text Info (65% width to prevent name clipping) -->
-                    <div class="z-20 w-[65%] ml-auto pl-2 my-0.5 text-left">
-                        <p class="text-xs font-bold text-slate-300">Selamat Datang,</p>
-                        <h3 class="font-black text-xl sm:text-2xl text-white tracking-tight leading-snug mt-0.5 drop-shadow-sm">
-                            {{ user?.name }}
-                        </h3>
-                        <p class="text-xs font-bold text-teal-300 mt-1 truncate">
-                            {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Pegawai Yayasan')) }}
-                        </p>
-                    </div>
-
-                    <!-- Action Button -->
-                    <div class="pt-2.5 z-20 w-[65%] ml-auto pl-2">
-                        <Link
-                            :href="safeRoute('attendance.index')"
-                            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white hover:bg-teal-50 text-slate-950 font-extrabold text-xs rounded-full shadow-md transition-all active:scale-95 border border-slate-200"
-                        >
-                            <span v-if="userData?.attendance_status?.checked_in" class="flex items-center gap-1.5 text-emerald-800 font-extrabold">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span>Masuk {{ userData.attendance_status.time }} WIB</span>
-                            </span>
-                            <span v-else class="flex items-center gap-1">
-                                <span>Status Presensi</span>
-                                <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
-                            </span>
-                        </Link>
-                    </div>
-
-                    <!-- 🌟 KONDISI 1: ADA FOTO → Portrait Melayang Keluar Atas Card (Ukuran Pas & Proporsional) -->
-                    <div
-                        v-if="user?.profile_photo_url"
-                        class="absolute left-2.5 bottom-0 h-[110%] w-[32%] flex items-end justify-center pointer-events-none z-30"
-                    >
-                        <div class="w-full max-w-[96px] h-[100%] rounded-t-3xl rounded-b-2xl overflow-hidden ring-4 ring-white/20 shadow-2xl drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]">
-                            <img
-                                :src="user.profile_photo_url"
-                                :alt="user?.name"
-                                class="w-full h-full object-cover object-top"
-                            />
+                            <!-- Greeting Text Info -->
+                            <div class="min-w-0 flex-1 text-left">
+                                <p class="text-xs font-medium text-teal-100/90 leading-tight">Selamat Datang,</p>
+                                <h3 class="font-black text-base sm:text-xl text-white tracking-tight leading-snug truncate mt-0.5 drop-shadow-sm">
+                                    {{ user?.name }}
+                                </h3>
+                                <p class="text-xs font-bold text-teal-300 truncate mt-0.5">
+                                    {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Pegawai Yayasan')) }}
+                                </p>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- 🌟 KONDISI 2: TIDAK ADA FOTO → Circle dengan Inisial (tetap di dalam card) -->
-                    <div
-                        v-else
-                        class="absolute left-2 bottom-0 h-[105%] w-[33%] flex items-end justify-center pointer-events-none z-10"
-                    >
-                        <div class="w-24 h-24 mb-2 rounded-full bg-gradient-to-br from-teal-400 via-teal-600 to-slate-800 flex items-center justify-center ring-4 ring-white/20 shadow-2xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                            <span class="text-3xl font-black text-white tracking-tight select-none" style="text-shadow: 0 2px 8px rgba(0,0,0,0.4)">
-                                {{ userInitials }}
-                            </span>
+                        <!-- Right: Date Badge & Action Button -->
+                        <div class="flex flex-col items-end justify-center gap-2 shrink-0">
+                            <!-- Date Badge (Gregorian & Hijri) -->
+                            <div class="bg-white/95 text-slate-800 rounded-2xl py-1.5 px-2.5 sm:px-3 shadow-xs flex items-center gap-1.5 border border-white/50 backdrop-blur-xs">
+                                <CalendarDaysIcon class="w-4 h-4 text-teal-600 shrink-0" />
+                                <div class="text-left leading-tight">
+                                    <p class="font-black text-[10px] sm:text-[11px] text-slate-800 whitespace-nowrap">{{ todayGregorian }}</p>
+                                    <p class="text-[8px] sm:text-[9px] font-semibold text-slate-500 whitespace-nowrap">{{ todayHijri }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Action Button -->
+                            <Link
+                                :href="safeRoute('attendance.index')"
+                                class="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-white hover:bg-teal-50 text-slate-900 font-extrabold text-xs rounded-full shadow-md transition-all active:scale-95 border border-slate-100 w-full"
+                            >
+                                <span v-if="userData?.attendance_status?.checked_in" class="flex items-center gap-1 text-emerald-800 font-extrabold text-xs">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>Sudah Absen</span>
+                                </span>
+                                <span v-else class="text-xs font-extrabold">Status Presensi</span>
+                                <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5] text-slate-400 shrink-0" />
+                            </Link>
                         </div>
                     </div>
                 </div>
 
-                <!-- 🌟 3 MENU CEPAT PRESENSI: WFO, IZIN, DINAS LUAR (Hanya Tampil Jika Belum Absen Hari Ini) -->
-                <div v-if="!userData?.attendance_status?.checked_in" class="grid grid-cols-3 gap-2 mt-2.5">
-                    <!-- 1. WFO (Hadir) -->
-                    <Link 
-                        :href="safeRoute('attendance.index', { tab: 'present' })"
-                        class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-2xl py-2 px-2 shadow-sm shadow-emerald-700/20 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all border border-emerald-400/30 text-center"
-                    >
-                        <div class="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center">
-                            <BuildingOffice2Icon class="w-4 h-4 text-white stroke-[2.2]" />
-                        </div>
-                        <span class="text-[11px] font-extrabold tracking-tight">WFO (Hadir)</span>
-                    </Link>
+                <!-- 🌟 3 MENU CEPAT PRESENSI: WFO, IZIN, DINAS LUAR (Dalam White Container Card Sesuai Mockup) -->
+                <div v-if="!userData?.attendance_status?.checked_in" class="bg-white rounded-3xl p-2 sm:p-2.5 border border-slate-200/80 shadow-xs mt-3">
+                    <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
+                        <!-- 1. WFO (Hadir) -->
+                        <Link 
+                            :href="safeRoute('attendance.index', { tab: 'present' })"
+                            class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-2xl p-2 sm:p-2.5 flex items-center justify-between gap-1 shadow-xs shadow-emerald-700/20 active:scale-95 transition-all border border-emerald-400/30 text-left"
+                        >
+                            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                                    <BuildingOffice2Icon class="w-4 h-4 text-white stroke-[2.2]" />
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-black text-xs text-white leading-tight">WFO</p>
+                                    <p class="text-[9px] font-medium text-emerald-100 truncate">Hadir di sekolah</p>
+                                </div>
+                            </div>
+                            <ChevronRightIcon class="w-3.5 h-3.5 text-white/80 shrink-0 ml-auto" />
+                        </Link>
 
-                    <!-- 2. Izin / Sakit -->
-                    <Link 
-                        :href="safeRoute('attendance.index', { tab: 'permit' })"
-                        class="bg-white hover:bg-purple-50 text-purple-900 rounded-2xl py-2 px-2 shadow-2xs border border-purple-200/80 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-center"
-                    >
-                        <div class="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
-                            <ClipboardDocumentCheckIcon class="w-4 h-4 stroke-[2.2]" />
-                        </div>
-                        <span class="text-[11px] font-extrabold tracking-tight">Izin / Sakit</span>
-                    </Link>
+                        <!-- 2. Izin / Sakit -->
+                        <Link 
+                            :href="safeRoute('attendance.index', { tab: 'permit' })"
+                            class="bg-pink-50/50 hover:bg-pink-50 text-slate-800 rounded-2xl p-2 sm:p-2.5 flex items-center justify-between gap-1 border border-pink-100 active:scale-95 transition-all text-left"
+                        >
+                            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+                                    <ClipboardDocumentCheckIcon class="w-4 h-4 stroke-[2.2]" />
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-black text-xs text-slate-800 leading-tight truncate">Izin / Sakit</p>
+                                    <p class="text-[9px] font-medium text-slate-400 truncate">Ajukan izin</p>
+                                </div>
+                            </div>
+                            <ChevronRightIcon class="w-3.5 h-3.5 text-slate-400 shrink-0 ml-auto" />
+                        </Link>
 
-                    <!-- 3. Dinas Luar -->
-                    <Link 
-                        :href="safeRoute('attendance.index', { tab: 'business_trip' })"
-                        class="bg-white hover:bg-blue-50 text-blue-900 rounded-2xl py-2 px-2 shadow-2xs border border-blue-200/80 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-center"
-                    >
-                        <div class="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
-                            <GlobeAltIcon class="w-4 h-4 stroke-[2.2]" />
-                        </div>
-                        <span class="text-[11px] font-extrabold tracking-tight">Dinas Luar</span>
-                    </Link>
+                        <!-- 3. Dinas Luar -->
+                        <Link 
+                            :href="safeRoute('attendance.index', { tab: 'business_trip' })"
+                            class="bg-blue-50/50 hover:bg-blue-50 text-slate-800 rounded-2xl p-2 sm:p-2.5 flex items-center justify-between gap-1 border border-blue-100 active:scale-95 transition-all text-left"
+                        >
+                            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                                    <PaperAirplaneIcon class="w-4 h-4 stroke-[2.2]" />
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-black text-xs text-slate-800 leading-tight truncate">Dinas Luar</p>
+                                    <p class="text-[9px] font-medium text-slate-400 truncate">Tugas luar sekolah</p>
+                                </div>
+                            </div>
+                            <ChevronRightIcon class="w-3.5 h-3.5 text-slate-400 shrink-0 ml-auto" />
+                        </Link>
+                    </div>
                 </div>
             </div>
 
@@ -527,7 +572,7 @@ const eventTypeLabels = {
                         :href="safeRoute('yayasan.teaching-journal.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-500/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <PencilSquareIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Jurnal Guru</span>
@@ -562,7 +607,7 @@ const eventTypeLabels = {
                         :href="safeRoute('yayasan.student-checkin.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center shadow-md shadow-cyan-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-700 to-cyan-600 text-white flex items-center justify-center shadow-md shadow-teal-700/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <QrCodeIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Scan QR</span>
@@ -573,7 +618,7 @@ const eventTypeLabels = {
                         :href="safeRoute('public-relations.events.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-fuchsia-600 text-white flex items-center justify-center shadow-md shadow-violet-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-md shadow-orange-500/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <CalendarIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Agenda</span>
@@ -585,7 +630,7 @@ const eventTypeLabels = {
                         :href="safeRoute('yayasan.students.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-cyan-500 text-white flex items-center justify-center shadow-md shadow-sky-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-600 text-white flex items-center justify-center shadow-md shadow-sky-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <AcademicCapIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Data Siswa</span>
@@ -597,7 +642,7 @@ const eventTypeLabels = {
                         :href="safeRoute('counseling.sessions.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-purple-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-600 text-white flex items-center justify-center shadow-md shadow-rose-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <ChatBubbleLeftRightIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Konseling</span>
