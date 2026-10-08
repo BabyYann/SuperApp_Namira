@@ -149,10 +149,14 @@ class UnitController extends Controller
             'checked_in' => true,
             'time' => substr($employeeAttendance->check_in_time ?? $employeeAttendance->clock_in ?? '07:05:00', 0, 5),
             'status' => $employeeAttendance->status ?? 'Tepat Waktu',
+            'checked_out' => !empty($employeeAttendance->check_out_time),
+            'check_out_time' => $employeeAttendance->check_out_time ? substr($employeeAttendance->check_out_time, 0, 5) : null,
         ] : [
             'checked_in' => false,
             'time' => null,
             'status' => 'Belum Absen',
+            'checked_out' => false,
+            'check_out_time' => null,
         ];
 
         // Determine human-readable Role Title
