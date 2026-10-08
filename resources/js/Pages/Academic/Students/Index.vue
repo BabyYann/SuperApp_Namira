@@ -11,7 +11,9 @@ import {
     MagnifyingGlassIcon, FunnelIcon, ArrowPathIcon, ArrowUpTrayIcon, 
     PlusIcon, UserIcon, EnvelopeIcon, EyeIcon, PencilSquareIcon, 
     TrashIcon, CameraIcon, ExclamationTriangleIcon, CheckCircleIcon,
-    DocumentTextIcon, ArrowPathRoundedSquareIcon
+    DocumentTextIcon, ArrowPathRoundedSquareIcon,
+    ChatBubbleLeftRightIcon, ArrowLeftIcon, AcademicCapIcon,
+    SparklesIcon, BuildingOffice2Icon, XMarkIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -20,13 +22,34 @@ const props = defineProps({
     academicYears: Array,
     activeYear: Object,
     filters: Object,
+    canManage: {
+        type: Boolean,
+        default: false,
+    },
+    isTeacher: {
+        type: Boolean,
+        default: false,
+    },
+    isHomeroom: {
+        type: Boolean,
+        default: false,
+    },
+    homeroomClass: Object,
+    activeScope: {
+        type: String,
+        default: 'all',
+    },
+    activeUnit: Object,
+    totalUnitStudents: Number,
 });
 
 // State
 const searchQuery = ref(props.filters?.search || '');
 const genderFilter = ref(props.filters?.gender || '');
 const classFilter = ref(props.filters?.classroom_id || '');
-const showFilter = ref(!!(props.filters?.gender || props.filters?.classroom_id));
+const yearFilter = ref(props.filters?.academic_year_id || '');
+const activeScope = ref(props.activeScope || (props.isHomeroom ? 'homeroom' : 'all'));
+const showFilter = ref(!!(props.filters?.gender || props.filters?.academic_year_id));
 
 const showModal = ref(false);
 const showImportModal = ref(false);
@@ -37,7 +60,6 @@ const showDeleteConfirm = ref(false);
 const itemToDelete = ref(null);
 const photoPreview = ref(null);
 const isLoading = ref(false);
-const yearFilter = ref(props.filters?.academic_year_id || '');
 
 const form = useForm({
     id: null,
@@ -73,6 +95,19 @@ const excelImportForm = useForm({
 
 const deleteForm = useForm({});
 
+// Format WA link
+const formatWhatsappLink = (phone, studentName) => {
+    if (!phone) return '#';
+    let clean = String(phone).replace(/[^0-9]/g, '');
+    if (clean.startsWith('0')) {
+        clean = '62' + clean.slice(1);
+    } else if (!clean.startsWith('62')) {
+        clean = '62' + clean;
+    }
+    const text = encodeURIComponent(`Assalamu'alaikum Warahmatullahi Wabarakatuh, Yth. Orang Tua/Wali dari ananda ${studentName}.`);
+    return `https://wa.me/${clean}?text=${text}`;
+};
+
 // Debounce Utility
 const debounce = (func, wait) => {
     let timeout;
@@ -89,8 +124,9 @@ const performSearch = debounce(() => {
         { 
             search: searchQuery.value, 
             gender: genderFilter.value,
-            classroom_id: classFilter.value,
-            academic_year_id: yearFilter.value
+            classroom_id: activeScope.value === 'homeroom' && props.homeroomClass ? props.homeroomClass.id : classFilter.value,
+            academic_year_id: yearFilter.value,
+            scope: activeScope.value,
         }, 
         { 
             preserveState: true, 
@@ -104,8 +140,35 @@ watch([searchQuery, genderFilter, classFilter, yearFilter], () => {
     performSearch();
 });
 
-const toggleFilter = () => {
-    showFilter.value = !showFilter.value;
+const switchScope = (scope) => {
+    if (activeScope.value === scope) return;
+    activeScope.value = scope;
+    if (scope === 'homeroom' && props.homeroomClass) {
+        classFilter.value = props.homeroomClass.id;
+    } else {
+        classFilter.value = '';
+    }
+    performSearch();
+};
+
+const setGenderFilter = (gender) => {
+    if (genderFilter.value === gender) {
+        genderFilter.value = '';
+    } else {
+        genderFilter.value = gender;
+    }
+};
+
+const setClassFilter = (classId) => {
+    if (classFilter.value === classId) {
+        classFilter.value = '';
+    } else {
+        classFilter.value = classId;
+    }
+};
+
+const clearSearch = () => {
+    searchQuery.value = '';
 };
 
 const resetFilter = () => {
@@ -113,7 +176,21 @@ const resetFilter = () => {
     classFilter.value = '';
     yearFilter.value = '';
     searchQuery.value = '';
+    if (props.isHomeroom) {
+        activeScope.value = 'homeroom';
+    } else {
+        activeScope.value = 'all';
+    }
 };
+
+const hasActiveFilters = computed(() => {
+    return Boolean(
+        searchQuery.value || 
+        genderFilter.value || 
+        (activeScope.value === 'all' && classFilter.value) || 
+        yearFilter.value
+    );
+});
 
 // Modal Methods
 const openCreateModal = () => {
@@ -262,183 +339,305 @@ const submitExcelImport = () => {
                 </div>
         </template>
 
-        <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
+        <div class="py-3 md:py-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
 
-            <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
-            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
-                <!-- Header Card Gradient -->
-                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
-                    <div class="flex items-center justify-between mb-3">
+            <!-- 📱 NATIVE MOBILE VIEW (block md:hidden) -->
+            <div class="block md:hidden -mx-4 -mt-3 space-y-3.5 pb-8">
+                <!-- 1. Top Bar & Header Navigation -->
+                <div class="bg-white px-4 pt-3 pb-3 border-b border-slate-100 flex items-center justify-between shadow-2xs">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <Link 
+                            :href="route('yayasan.dashboard')" 
+                            class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all active:scale-95 shrink-0"
+                            title="Kembali ke Dashboard"
+                        >
+                            <ArrowLeftIcon class="w-5 h-5 stroke-[2.2]" />
+                        </Link>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <h1 class="text-base font-black text-slate-900 leading-tight">Data Siswa</h1>
+                                <span v-if="activeUnit" class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-black border border-teal-200/60 uppercase">
+                                    {{ activeUnit.code || activeUnit.name }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] font-semibold text-slate-400 mt-0.5">
+                                Menampilkan <strong class="text-teal-700 font-extrabold">{{ students.total || 0 }}</strong> Siswa
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Add Button: STRICTLY GUARDED by canManage! -->
+                    <button 
+                        v-if="canManage"
+                        @click="openCreateModal"
+                        class="px-3 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1 active:scale-95 transition-all shrink-0"
+                    >
+                        <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                        <span>Tambah</span>
+                    </button>
+                </div>
+
+                <!-- 2. Walas Scope Switcher: Prioritas Kelas Bimbingan vs Semua Siswa Unit -->
+                <div v-if="isHomeroom && homeroomClass" class="px-4">
+                    <div class="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/70 shadow-2xs">
+                        <!-- Tab 1: Kelas Saya (Homeroom) -->
+                        <button
+                            @click="switchScope('homeroom')"
+                            type="button"
+                            class="flex-1 py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-w-0 active:scale-95"
+                            :class="activeScope === 'homeroom' 
+                                ? 'bg-white text-teal-900 shadow-sm border border-slate-200/50' 
+                                : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            <SparklesIcon class="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            <span class="truncate">Kelas Saya ({{ homeroomClass.name }})</span>
+                            <span 
+                                class="px-1.5 py-0.5 rounded-full text-[10px] font-black shrink-0 leading-none"
+                                :class="activeScope === 'homeroom' ? 'bg-teal-50 text-teal-700 border border-teal-200/50' : 'bg-slate-200 text-slate-600'"
+                            >
+                                {{ homeroomClass.student_count }}
+                            </span>
+                        </button>
+
+                        <!-- Tab 2: Semua Siswa di Unit -->
+                        <button
+                            @click="switchScope('all')"
+                            type="button"
+                            class="flex-1 py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-w-0 active:scale-95"
+                            :class="activeScope === 'all' 
+                                ? 'bg-white text-teal-900 shadow-sm border border-slate-200/50' 
+                                : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            <BuildingOffice2Icon class="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                            <span class="truncate">Semua Siswa</span>
+                            <span 
+                                class="px-1.5 py-0.5 rounded-full text-[10px] font-black shrink-0 leading-none"
+                                :class="activeScope === 'all' ? 'bg-teal-50 text-teal-700 border border-teal-200/50' : 'bg-slate-200 text-slate-600'"
+                            >
+                                {{ totalUnitStudents }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Search & Horizontal Quick Chip Filter Bar -->
+                <div class="px-4 space-y-2.5">
+                    <!-- Real-Time Search Bar with Clear Button -->
+                    <div class="relative">
+                        <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
+                        <ArrowPathIcon v-else class="w-4 h-4 absolute left-3.5 top-3.5 animate-spin text-teal-600 pointer-events-none" />
+                        
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Cari nama atau NIS siswa..."
+                            class="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-teal-500 focus:border-teal-500 shadow-2xs placeholder:text-slate-400 placeholder:font-normal"
+                        />
+
+                        <button 
+                            v-if="searchQuery" 
+                            @click="clearSearch"
+                            type="button"
+                            class="absolute right-2.5 top-2.5 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                            title="Hapus pencarian"
+                        >
+                            <XMarkIcon class="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                    </div>
+
+                    <!-- Horizontal Scrollable Filter Chips -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs">
+                        <!-- Gender: Semua -->
+                        <button 
+                            @click="setGenderFilter('')"
+                            type="button"
+                            class="px-3 py-1.5 rounded-full font-bold text-xs shrink-0 transition-all border"
+                            :class="!genderFilter 
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-2xs' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                        >
+                            Semua Gender
+                        </button>
+
+                        <!-- Gender: Putra -->
+                        <button 
+                            @click="setGenderFilter('L')"
+                            type="button"
+                            class="px-3 py-1.5 rounded-full font-bold text-xs shrink-0 transition-all border flex items-center gap-1"
+                            :class="genderFilter === 'L' 
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                        >
+                            <span>👦 Laki-laki</span>
+                        </button>
+
+                        <!-- Gender: Putri -->
+                        <button 
+                            @click="setGenderFilter('P')"
+                            type="button"
+                            class="px-3 py-1.5 rounded-full font-bold text-xs shrink-0 transition-all border flex items-center gap-1"
+                            :class="genderFilter === 'P' 
+                                ? 'bg-pink-600 text-white border-pink-600 shadow-2xs' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                        >
+                            <span>👧 Perempuan</span>
+                        </button>
+
+                        <!-- Divider if in all scope and classes available -->
+                        <div v-if="activeScope === 'all' && classrooms.length > 0" class="h-4 w-px bg-slate-200 shrink-0 mx-0.5"></div>
+
+                        <!-- Classroom Chips (Visible in 'all' scope) -->
+                        <template v-if="activeScope === 'all'">
+                            <button 
+                                v-for="cls in classrooms" 
+                                :key="cls.id"
+                                @click="setClassFilter(cls.id)"
+                                type="button"
+                                class="px-3 py-1.5 rounded-full font-bold text-xs shrink-0 transition-all border"
+                                :class="classFilter === cls.id 
+                                    ? 'bg-teal-700 text-white border-teal-700 shadow-2xs' 
+                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                            >
+                                Kelas {{ cls.name }}
+                            </button>
+                        </template>
+
+                        <!-- Reset Filter Button (if active) -->
+                        <button 
+                            v-if="hasActiveFilters"
+                            @click="resetFilter"
+                            type="button"
+                            class="px-2.5 py-1.5 text-rose-600 font-extrabold text-[11px] shrink-0 hover:underline ml-1"
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. Student Mobile Touch Cards List -->
+                <div class="px-4 space-y-3 pt-1">
+                    <!-- Empty State -->
+                    <div v-if="students.data.length === 0" class="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-xs space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center mx-auto">
+                            <UserIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
                         <div>
-                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Data Master</p>
-                            <h1 class="text-xl font-black leading-tight">Database Siswa</h1>
+                            <p class="font-extrabold text-sm text-slate-800">Tidak ada data siswa</p>
+                            <p class="text-xs text-slate-400 mt-0.5">
+                                {{ searchQuery ? 'Tidak ada siswa yang cocok dengan kata kunci pencarian.' : 'Data siswa belum tersedia pada filter ini.' }}
+                            </p>
                         </div>
                         <button 
-                            @click="openCreateModal"
-                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                            v-if="hasActiveFilters"
+                            @click="resetFilter"
+                            type="button"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition active:scale-95"
                         >
-                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                            <span>Tambah Siswa</span>
+                            <span>Reset Filter</span>
                         </button>
                     </div>
 
-                    <!-- Quick Stats -->
-                    <div class="grid grid-cols-3 gap-2 mt-4 text-center">
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
-                            <p class="text-xl font-black text-white leading-none">{{ students.total || 0 }}</p>
-                            <p class="text-[9px] text-teal-200 font-bold mt-1 uppercase">Total Siswa</p>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
-                            <p class="text-xl font-black text-blue-300 leading-none">
-                                {{ students.data.filter(s => s.gender === 'L').length }}
-                            </p>
-                            <p class="text-[9px] text-blue-200 font-bold mt-1 uppercase">Laki-Laki</p>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-2.5 py-2">
-                            <p class="text-xl font-black text-pink-300 leading-none">
-                                {{ students.data.filter(s => s.gender === 'P').length }}
-                            </p>
-                            <p class="text-[9px] text-pink-200 font-bold mt-1 uppercase">Perempuan</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Search & Action Toolbar -->
-                <div class="px-4 space-y-3">
-                    <div class="flex items-center gap-2">
-                        <div class="relative flex-1">
-                            <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
-                            <ArrowPathIcon v-else class="w-4 h-4 absolute left-3 top-3.5 animate-spin text-teal-600" />
-                            <input
-                                v-model="searchQuery"
-                                type="text"
-                                placeholder="Cari nama atau NIS..."
-                                class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-teal-500 focus:border-teal-500 shadow-sm"
-                            />
-                        </div>
-                        <button
-                            @click="toggleFilter"
-                            class="p-2.5 rounded-xl border text-slate-700 bg-white shadow-sm active:scale-95 transition"
-                            :class="showFilter ? 'border-teal-500 text-teal-700 bg-teal-50/50' : 'border-slate-200'"
-                        >
-                            <FunnelIcon class="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    <!-- Quick Import Buttons Row -->
-                    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                        <button @click="openVaImportModal" class="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-xl font-extrabold shrink-0 flex items-center gap-1.5">
-                            <ArrowPathRoundedSquareIcon class="w-4 h-4" />
-                            <span>Update VA</span>
-                        </button>
-                        <button @click="openImportModal" class="px-3 py-1.5 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-extrabold shrink-0 flex items-center gap-1.5">
-                            <ArrowUpTrayIcon class="w-4 h-4" />
-                            <span>Import CSV</span>
-                        </button>
-                        <button @click="openExcelImportModal" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl font-extrabold shrink-0 flex items-center gap-1.5">
-                            <ArrowUpTrayIcon class="w-4 h-4" />
-                            <span>Import Excel</span>
-                        </button>
-                    </div>
-
-                    <!-- Collapsible Filter -->
-                    <div v-if="showFilter" class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-3 animate-fade-in-down text-xs">
-                        <div>
-                            <label class="block font-bold text-slate-500 text-[10px] uppercase mb-1">Tahun Akademik</label>
-                            <select v-model="yearFilter" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
-                                <option value="">Semua Tahun</option>
-                                <option v-for="year in academicYears" :key="year.id" :value="year.id">
-                                    {{ year.name }} {{ year.is_active ? '(Aktif)' : '' }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block font-bold text-slate-500 text-[10px] uppercase mb-1">Gender</label>
-                                <select v-model="genderFilter" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
-                                    <option value="">Semua</option>
-                                    <option value="L">Laki-laki</option>
-                                    <option value="P">Perempuan</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-500 text-[10px] uppercase mb-1">Kelas</label>
-                                <select v-model="classFilter" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
-                                    <option value="">Semua Kelas</option>
-                                    <option v-for="cls in classrooms" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button @click="resetFilter" class="text-[11px] font-bold text-red-600 hover:underline block ml-auto">
-                            Reset Filter
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Student Mobile Touch Cards -->
-                <div class="px-4 space-y-3">
-                    <div v-if="students.data.length === 0" class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-sm">
-                        <UserIcon class="w-10 h-10 mx-auto text-teal-300 mb-2" />
-                        <p class="font-extrabold text-sm text-slate-800">Belum ada data siswa</p>
-                        <p class="text-xs text-slate-400 mt-1">Data siswa masih kosong atau tidak ditemukan.</p>
-                    </div>
-
+                    <!-- Student Cards -->
                     <div
                         v-for="student in students.data"
                         :key="student.id"
-                        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3 relative overflow-hidden"
+                        class="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-xs space-y-3 relative overflow-hidden transition-all hover:border-teal-200"
                     >
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-full bg-slate-100 flex-shrink-0 overflow-hidden border-2 border-white shadow-sm">
-                                    <img v-if="student.photo" :src="`/storage/${student.photo}`" class="w-full h-full object-cover">
-                                    <div v-else class="w-full h-full flex items-center justify-center text-xs font-black text-slate-400 bg-slate-100">
-                                        {{ student.full_name?.substring(0,2).toUpperCase() }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 class="font-extrabold text-slate-900 text-sm leading-tight">{{ student.full_name }}</h3>
-                                    <p class="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                                        <EnvelopeIcon class="w-3 h-3 text-slate-400" />
-                                        {{ student.user?.email || 'Belum ada email' }}
-                                    </p>
+                        <!-- Top Row: Avatar + Name + Class & Gender Badges -->
+                        <div class="flex items-start gap-3">
+                            <!-- Avatar Squircle with soft ring -->
+                            <div class="relative w-12 h-12 rounded-2xl bg-slate-100 flex-shrink-0 overflow-hidden ring-2 ring-slate-100 shadow-2xs">
+                                <img v-if="student.photo" :src="`/storage/${student.photo}`" :alt="student.full_name" class="w-full h-full object-cover">
+                                <div v-else class="w-full h-full flex items-center justify-center text-xs font-black text-slate-500 bg-gradient-to-br from-slate-100 to-slate-200">
+                                    {{ student.full_name?.substring(0, 2).toUpperCase() }}
                                 </div>
                             </div>
-                            <span class="px-2 py-0.5 text-[9px] font-black uppercase rounded-full border shrink-0"
-                                  :class="student.gender === 'L' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-pink-50 text-pink-700 border-pink-100'">
-                                {{ student.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
+
+                            <!-- Name, NIS & Classroom Pill -->
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between gap-1 mb-0.5">
+                                    <h3 class="font-black text-slate-900 text-sm leading-tight truncate">
+                                        {{ student.full_name }}
+                                    </h3>
+                                    <!-- Gender Chip -->
+                                    <span 
+                                        class="px-2 py-0.5 text-[9px] font-black uppercase rounded-full shrink-0 border"
+                                        :class="student.gender === 'L' ? 'bg-sky-50 text-sky-700 border-sky-200/70' : 'bg-pink-50 text-pink-700 border-pink-200/70'"
+                                    >
+                                        {{ student.gender === 'L' ? 'L' : 'P' }}
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-extrabold border border-teal-200/60">
+                                        {{ student.classroom?.name || 'Belum Masuk Kelas' }}
+                                    </span>
+                                    <span class="text-[11px] font-mono font-semibold text-slate-400">
+                                        NIS: <strong class="text-slate-600">{{ student.nis || '-' }}</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parent / Guardian Row with Direct WhatsApp Action -->
+                        <div class="bg-slate-50/80 rounded-xl p-2.5 border border-slate-100 flex items-center justify-between gap-2">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Wali Murid</p>
+                                <p class="text-xs font-bold text-slate-700 truncate mt-0.5">
+                                    {{ student.parent_name || student.guardian_name || 'Belum diisi' }}
+                                </p>
+                            </div>
+
+                            <!-- Quick WhatsApp Pill if phone exists -->
+                            <a
+                                v-if="student.parent_phone || student.guardian_phone"
+                                :href="formatWhatsappLink(student.parent_phone || student.guardian_phone, student.full_name)"
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-extrabold shadow-xs active:scale-95 transition-all shrink-0"
+                                title="Hubungi Orang Tua / Wali via WhatsApp"
+                            >
+                                <ChatBubbleLeftRightIcon class="w-3.5 h-3.5 stroke-[2.2]" />
+                                <span>Hubungi Ortu</span>
+                            </a>
+                            <span v-else class="text-[10px] text-slate-400 font-medium italic shrink-0">
+                                No HP Kosong
                             </span>
                         </div>
 
-                        <!-- Details Row: NIS/NISN & Classroom -->
-                        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
-                            <div>
-                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">NIS / NISN</span>
-                                <span class="font-bold text-slate-800 text-[11px]">{{ student.nis || '-' }} / {{ student.nisn || '-' }}</span>
-                            </div>
-                            <div>
-                                <span class="text-[9px] font-extrabold text-slate-400 uppercase block">Kelas</span>
-                                <span class="font-bold text-slate-800 text-[11px]">{{ student.classroom?.name || 'Belum Ada' }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Footer Actions -->
+                        <!-- Card Footer Actions: Detail Link (Primary) + Admin Edit/Delete (Only if canManage) -->
                         <div class="pt-1 flex items-center justify-between border-t border-slate-100">
-                            <span v-if="student.va_number" class="text-[10px] font-mono font-bold text-slate-500">
-                                VA: {{ student.va_number }}
+                            <span v-if="student.va_number" class="text-[10px] font-mono text-slate-400">
+                                VA: <strong class="text-slate-600">{{ student.va_number }}</strong>
                             </span>
-                            <span v-else class="text-[10px] text-slate-400 italic">No VA</span>
+                            <span v-else class="text-[10px] text-slate-300 italic">No VA</span>
 
                             <div class="flex items-center gap-1.5">
-                                <Link :href="route('yayasan.students.show', student.id)" class="p-2 rounded-xl text-teal-600 bg-teal-50 hover:bg-teal-100 transition" title="Detail">
-                                    <EyeIcon class="w-4 h-4" />
+                                <!-- Detail button (Everyone can access) -->
+                                <Link 
+                                    :href="route('yayasan.students.show', student.id)" 
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-teal-700 bg-teal-50 hover:bg-teal-100 text-xs font-extrabold transition-colors active:scale-95"
+                                >
+                                    <EyeIcon class="w-3.5 h-3.5 stroke-[2.2]" />
+                                    <span>Detail Profil</span>
                                 </Link>
-                                <button @click="openEditModal(student)" class="p-2 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-100 transition" title="Edit">
-                                    <PencilSquareIcon class="w-4 h-4" />
-                                </button>
-                                <button @click="confirmDelete(student)" class="p-2 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 transition" title="Hapus">
-                                    <TrashIcon class="w-4 h-4" />
-                                </button>
+
+                                <!-- Edit & Delete buttons: STRICTLY GUARDED by canManage! -->
+                                <template v-if="canManage">
+                                    <button 
+                                        @click="openEditModal(student)" 
+                                        class="p-1.5 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-100 transition active:scale-95" 
+                                        title="Edit Siswa"
+                                    >
+                                        <PencilSquareIcon class="w-4 h-4 stroke-[2]" />
+                                    </button>
+                                    <button 
+                                        @click="confirmDelete(student)" 
+                                        class="p-1.5 rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 transition active:scale-95" 
+                                        title="Hapus Siswa"
+                                    >
+                                        <TrashIcon class="w-4 h-4 stroke-[2]" />
+                                    </button>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -451,6 +650,38 @@ const submitExcelImport = () => {
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
             <div class="hidden md:block space-y-6">
+                <!-- Walas Scope Switcher (Desktop) -->
+                <div v-if="isHomeroom && homeroomClass" class="bg-white/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/60 shadow-xs flex items-center gap-2 max-w-md">
+                    <button
+                        @click="switchScope('homeroom')"
+                        type="button"
+                        class="flex-1 py-2 px-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2"
+                        :class="activeScope === 'homeroom' 
+                            ? 'bg-teal-700 text-white shadow-xs' 
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'"
+                    >
+                        <SparklesIcon class="w-4 h-4 text-amber-300" />
+                        <span>Kelas Saya ({{ homeroomClass.name }})</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/20 text-white">
+                            {{ homeroomClass.student_count }}
+                        </span>
+                    </button>
+                    <button
+                        @click="switchScope('all')"
+                        type="button"
+                        class="flex-1 py-2 px-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2"
+                        :class="activeScope === 'all' 
+                            ? 'bg-teal-700 text-white shadow-xs' 
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'"
+                    >
+                        <BuildingOffice2Icon class="w-4 h-4 text-teal-300" />
+                        <span>Semua Siswa</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/20 text-white">
+                            {{ totalUnitStudents }}
+                        </span>
+                    </button>
+                </div>
+
                 <!-- Toolbar -->
                 <div class="flex flex-col md:flex-row items-center gap-4">
                     <!-- Search Bar -->
@@ -473,32 +704,35 @@ const submitExcelImport = () => {
                         <span class="hidden md:inline">Filter</span>
                     </button>
 
-                    <!-- Import VA Button -->
-                    <button @click="openVaImportModal" class="px-4 py-2.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-2xl text-sm font-bold hover:bg-blue-100 transition-all flex items-center gap-2 active:scale-95 h-[46px]" title="Update VA Massal">
-                        <ArrowPathRoundedSquareIcon class="w-5 h-5" />
-                        <span class="hidden md:inline">Update VA</span>
-                    </button>
+                    <!-- Import & Management Buttons (Only for canManage) -->
+                    <template v-if="canManage">
+                        <!-- Import VA Button -->
+                        <button @click="openVaImportModal" class="px-4 py-2.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-2xl text-sm font-bold hover:bg-blue-100 transition-all flex items-center gap-2 active:scale-95 h-[46px]" title="Update VA Massal">
+                            <ArrowPathRoundedSquareIcon class="w-5 h-5" />
+                            <span class="hidden md:inline">Update VA</span>
+                        </button>
 
-                    <!-- Import CSV Button -->
-                    <button @click="openImportModal" class="px-4 py-2.5 bg-gray-50 text-gray-600 border border-gray-200 rounded-2xl text-sm font-bold hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95 h-[46px]" title="Import CSV">
-                        <ArrowUpTrayIcon class="w-5 h-5" />
-                        <span class="hidden md:inline">CSV</span>
-                    </button>
+                        <!-- Import CSV Button -->
+                        <button @click="openImportModal" class="px-4 py-2.5 bg-gray-50 text-gray-600 border border-gray-200 rounded-2xl text-sm font-bold hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95 h-[46px]" title="Import CSV">
+                            <ArrowUpTrayIcon class="w-5 h-5" />
+                            <span class="hidden md:inline">CSV</span>
+                        </button>
 
-                    <!-- Import Excel Button -->
-                    <button @click="openExcelImportModal" class="px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl text-sm font-bold hover:bg-emerald-100 transition-all flex items-center gap-2 active:scale-95 h-[46px]" title="Import dari Excel">
-                        <ArrowUpTrayIcon class="w-5 h-5" />
-                        <span class="hidden md:inline">Excel</span>
-                    </button>
+                        <!-- Import Excel Button -->
+                        <button @click="openExcelImportModal" class="px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl text-sm font-bold hover:bg-emerald-100 transition-all flex items-center gap-2 active:scale-95 h-[46px]" title="Import dari Excel">
+                            <ArrowUpTrayIcon class="w-5 h-5" />
+                            <span class="hidden md:inline">Excel</span>
+                        </button>
 
-                    <!-- Add Button -->
-                    <button 
-                        @click="openCreateModal"
-                        class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
-                    >
-                        <PlusIcon class="w-5 h-5" />
-                        <span>Tambah Siswa</span>
-                    </button>
+                        <!-- Add Button -->
+                        <button 
+                            @click="openCreateModal"
+                            class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 h-[46px]"
+                        >
+                            <PlusIcon class="w-5 h-5" />
+                            <span>Tambah Siswa</span>
+                        </button>
+                    </template>
                 </div>
                 
                 <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex flex-wrap items-center gap-4 animate-fade-in-down">
@@ -600,12 +834,14 @@ const submitExcelImport = () => {
                                             <Link :href="route('yayasan.students.show', student.id)" class="p-2 rounded-xl text-gray-400 hover:text-namira-teal hover:bg-teal-50 transition-colors border border-transparent hover:border-teal-100" title="Lihat Detail">
                                                 <EyeIcon class="w-4 h-4" />
                                             </Link>
-                                            <button @click="openEditModal(student)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-100" title="Edit Data">
-                                                <PencilSquareIcon class="w-4 h-4" />
-                                            </button>
-                                            <button @click="confirmDelete(student)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100" title="Hapus Siswa">
-                                                <TrashIcon class="w-4 h-4" />
-                                            </button>
+                                            <template v-if="canManage">
+                                                <button @click="openEditModal(student)" class="p-2 rounded-xl text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-100" title="Edit Data">
+                                                    <PencilSquareIcon class="w-4 h-4" />
+                                                </button>
+                                                <button @click="confirmDelete(student)" class="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100" title="Hapus Siswa">
+                                                    <TrashIcon class="w-4 h-4" />
+                                                </button>
+                                            </template>
                                         </div>
                                     </td>
                                 </tr>
@@ -893,3 +1129,13 @@ const submitExcelImport = () => {
         </Teleport>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+</style>

@@ -11,18 +11,65 @@ use Inertia\Inertia;
 
 class StudentController extends Controller
 {
+    private function authorizeStudentManagement()
+    {
+        $user = auth()->user();
+        if (!$user || !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_unit', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk menambah, mengubah, atau menghapus data siswa.');
+        }
+    }
+
     public function index()
     {
         $user = auth()->user();
         $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
-        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : session('active_unit_id');
-        if (!$unitId && $isGlobalAdmin) {
-            $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+        $canManage = $isGlobalAdmin || ($user && $user->hasAnyRole(['admin_unit', 'staff_unit', 'kepala_sekolah']));
+        
+        // Teacher Profile
+        $teacherProfile = $user ? ($user->teacher_profile ?? \App\Modules\Academic\Models\Teacher::where('user_id', $user->id)->first()) : null;
+
+        // Strict Unit Scoping
+        if ($isGlobalAdmin) {
+            $unitId = request('unit_id') ?: session('active_unit_id');
+            if (!$unitId) {
+                $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+            }
+        } else {
+            // Strictly enforce unit belonging to teacher or current session
+            $unitId = $teacherProfile?->unit_id ?: session('active_unit_id');
         }
 
+        $activeUnit = \App\Modules\Yayasan\Models\Unit::find($unitId);
         $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
-        
-        $students = Student::with(['user', 'classroom', 'academicYear'])
+
+        // Check if user is homeroom teacher (Walas) in this unit
+        $homeroomClass = null;
+        if ($teacherProfile) {
+            $homeroomClass = \App\Modules\Academic\Models\Classroom::where('homeroom_teacher_id', $teacherProfile->id)
+                ->where('unit_id', $unitId)
+                ->first();
+        }
+
+        // Determine active scope:
+        // Default for Walas is 'homeroom' (prioritizing their own class)
+        $requestedScope = request('scope');
+        $requestedClassroomId = request('classroom_id');
+
+        if ($homeroomClass) {
+            if (!$requestedScope && !$requestedClassroomId && !request()->has('search')) {
+                $activeScope = 'homeroom';
+            } elseif ($requestedScope === 'all') {
+                $activeScope = 'all';
+            } elseif ($requestedClassroomId) {
+                $activeScope = ($requestedClassroomId == $homeroomClass->id) ? 'homeroom' : 'all';
+            } else {
+                $activeScope = $requestedScope ?: 'homeroom';
+            }
+        } else {
+            $activeScope = 'all';
+        }
+
+        $studentsQuery = Student::with(['user', 'classroom', 'academicYear'])
             ->where('unit_id', $unitId)
             ->when(request('search'), function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -34,17 +81,22 @@ class StudentController extends Controller
             ->when(request('gender'), function ($query, $gender) {
                 $query->where('gender', $gender);
             })
-            ->when(request('classroom_id'), function ($query, $classId) {
-                $query->where('classroom_id', $classId);
-            })
             ->when(request('academic_year_id'), function ($query, $yearId) {
                 $query->where('academic_year_id', $yearId);
-            })
-            ->latest()
+            });
+
+        // Apply classroom scoping
+        if ($activeScope === 'homeroom' && $homeroomClass) {
+            $studentsQuery->where('classroom_id', $homeroomClass->id);
+        } elseif ($requestedClassroomId) {
+            $studentsQuery->where('classroom_id', $requestedClassroomId);
+        }
+
+        $students = $studentsQuery->latest()
             ->paginate(30)
             ->withQueryString();
 
-        // Classrooms are now permanent - no year filter needed
+        // Classrooms in this unit
         $classrooms = \App\Modules\Academic\Models\Classroom::where('unit_id', $unitId)
              ->orderBy('level')
              ->orderBy('name')
@@ -52,17 +104,44 @@ class StudentController extends Controller
         
         $academicYears = \App\Modules\Yayasan\Models\AcademicYear::orderBy('id', 'desc')->get();
 
+        $homeroomStudentsCount = $homeroomClass ? Student::where('classroom_id', $homeroomClass->id)->count() : 0;
+        $totalUnitStudentsCount = Student::where('unit_id', $unitId)->count();
+
         return Inertia::render('Academic/Students/Index', [
             'students' => $students,
             'classrooms' => $classrooms,
             'academicYears' => $academicYears,
             'activeYear' => $activeYear,
-            'filters' => request()->only(['search', 'gender', 'classroom_id', 'academic_year_id']),
+            'canManage' => $canManage,
+            'isTeacher' => (bool)$teacherProfile,
+            'isHomeroom' => (bool)$homeroomClass,
+            'homeroomClass' => $homeroomClass ? [
+                'id' => $homeroomClass->id,
+                'name' => $homeroomClass->name,
+                'level' => $homeroomClass->level,
+                'student_count' => $homeroomStudentsCount,
+            ] : null,
+            'activeScope' => $activeScope,
+            'activeUnit' => $activeUnit ? [
+                'id' => $activeUnit->id,
+                'name' => $activeUnit->name,
+                'code' => $activeUnit->code,
+            ] : null,
+            'totalUnitStudents' => $totalUnitStudentsCount,
+            'filters' => [
+                'search' => request('search', ''),
+                'gender' => request('gender', ''),
+                'classroom_id' => $activeScope === 'homeroom' ? ($homeroomClass?->id ?? '') : ($requestedClassroomId ?: ''),
+                'academic_year_id' => request('academic_year_id', ''),
+                'scope' => $activeScope,
+            ],
         ]);
     }
 
     public function import(Request $request)
     {
+        $this->authorizeStudentManagement();
+
         $request->validate([
             'file' => 'required|file|mimes:csv,txt|max:2048',
         ]);
@@ -130,6 +209,8 @@ class StudentController extends Controller
 
     public function importVa(Request $request)
     {
+        $this->authorizeStudentManagement();
+
         $request->validate([
             'file' => 'required|file|mimes:csv,txt|max:2048',
         ]);
@@ -214,6 +295,8 @@ class StudentController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizeStudentManagement();
+
         $unitId = session('active_unit_id') ?? \App\Modules\Yayasan\Models\Unit::first()->id;
 
         $validated = $request->validate([
@@ -316,7 +399,13 @@ class StudentController extends Controller
 
     public function update(Request $request, Student $student)
     {
-        if ($student->unit_id != session('active_unit_id')) abort(403);
+        $this->authorizeStudentManagement();
+
+        $user = auth()->user();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
+        if (!$isGlobalAdmin && $student->unit_id != session('active_unit_id')) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki izin untuk mengedit siswa di unit lain.');
+        }
 
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
@@ -364,7 +453,13 @@ class StudentController extends Controller
 
     public function destroy(Student $student)
     {
-        if ($student->unit_id != session('active_unit_id')) abort(403);
+        $this->authorizeStudentManagement();
+
+        $user = auth()->user();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
+        if (!$isGlobalAdmin && $student->unit_id != session('active_unit_id')) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus siswa di unit lain.');
+        }
 
         if ($student->photo) {
             \Storage::disk('public')->delete($student->photo);
@@ -381,6 +476,8 @@ class StudentController extends Controller
      */
     public function bulkUpdateYear(Request $request)
     {
+        $this->authorizeStudentManagement();
+
         $request->validate([
             'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'exists:students,id',
@@ -401,6 +498,8 @@ class StudentController extends Controller
      */
     public function importExcel(Request $request)
     {
+        $this->authorizeStudentManagement();
+
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls|max:5120',
             'classroom_id' => 'nullable|exists:classrooms,id',
