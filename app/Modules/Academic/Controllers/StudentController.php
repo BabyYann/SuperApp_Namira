@@ -260,10 +260,12 @@ class StudentController extends Controller
 
     public function show(Student $student)
     {
-        if (
-            !auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])
-            && $student->unit_id != session('active_unit_id')
-        ) {
+        $user = auth()->user();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        $teacherProfile = $user ? ($user->teacher_profile ?? \App\Modules\Academic\Models\Teacher::where('user_id', $user->id)->first()) : null;
+        $userUnitId = $teacherProfile?->unit_id ?: session('active_unit_id');
+
+        if (!$isGlobalAdmin && $userUnitId && $student->unit_id != $userUnitId) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki akses untuk data siswa di unit lain.');
         }
 

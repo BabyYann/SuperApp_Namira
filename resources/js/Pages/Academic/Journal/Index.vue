@@ -15,7 +15,10 @@ import {
     EyeIcon,
     AcademicCapIcon,
     ClockIcon,
-    XMarkIcon
+    XMarkIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    CalendarDaysIcon
 } from '@heroicons/vue/24/outline';
 import Swal from 'sweetalert2';
 
@@ -79,6 +82,21 @@ const filteredSchedules = computed(() => {
     }
     return list;
 });
+
+const todayDateString = new Date().toISOString().split('T')[0];
+
+const goToToday = () => {
+    selectedDate.value = todayDateString;
+};
+
+const changeDateByDays = (days) => {
+    const cur = new Date(selectedDate.value);
+    cur.setDate(cur.getDate() + days);
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, '0');
+    const d = String(cur.getDate()).padStart(2, '0');
+    selectedDate.value = `${y}-${m}-${d}`;
+};
 
 const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -314,12 +332,26 @@ const sendReminder = (schedule) => {
                 </div>
 
                 <!-- C. EMPTY STATE -->
-                <div v-if="filteredSchedules.length === 0" class="text-center py-12 md:py-16 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-6">
-                    <div class="bg-slate-50 p-5 rounded-full mb-3">
-                        <CalendarIcon class="w-12 h-12 text-slate-400" />
+                <div v-if="filteredSchedules.length === 0" class="text-center py-10 sm:py-14 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                    <!-- 3D Calendar Illustration -->
+                    <div class="relative mb-3 flex items-center justify-center">
+                        <img 
+                            src="/images/empty_calendar_3d.png" 
+                            alt="Tidak Ada Jadwal KBM" 
+                            class="w-40 h-40 sm:w-48 sm:h-48 object-contain drop-shadow-xl select-none pointer-events-none"
+                        />
                     </div>
-                    <h3 class="text-base md:text-lg font-extrabold text-slate-900 mb-1">Tidak Ada Jadwal KBM</h3>
-                    <p class="text-xs text-slate-500 max-w-sm">Tidak ditemukan jadwal pembelajaran yang sesuai filter pada tanggal ini.</p>
+                    <h3 class="text-base sm:text-lg font-black text-slate-900 mb-1">Tidak Ada Jadwal KBM</h3>
+                    <p class="text-xs text-slate-500 max-w-sm mb-4">Tidak ditemukan jadwal pembelajaran yang sesuai filter pada tanggal ini.</p>
+                    <button
+                        v-if="selectedDate !== todayDateString"
+                        @click="goToToday"
+                        type="button"
+                        class="px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-2xl text-xs font-black border border-teal-200/60 shadow-xs transition active:scale-95 flex items-center gap-1.5"
+                    >
+                        <CalendarDaysIcon class="w-4 h-4 text-teal-600" />
+                        <span>Kembali ke Hari Ini</span>
+                    </button>
                 </div>
 
                 <!-- D. LIVE KBM MONITORING CARDS GRID (Responsive) -->
@@ -427,34 +459,87 @@ const sendReminder = (schedule) => {
             <!-- ======================================================== -->
             <template v-else>
                 <!-- Desktop & Mobile Toolbar -->
-                <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex-wrap gap-3">
-                    <div class="flex items-center gap-2">
-                        <input 
-                            type="date" 
-                            v-model="selectedDate" 
-                            class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-teal-500 focus:border-teal-500"
+                <div class="bg-white p-4 sm:p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <!-- Quick Prev Day Button -->
+                        <button 
+                            @click="changeDateByDays(-1)" 
+                            type="button" 
+                            class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
+                            title="Hari Sebelumnya"
                         >
-                        <span class="text-xs font-extrabold text-teal-800 bg-teal-50 px-3 py-2 rounded-2xl border border-teal-100">
-                            📅 {{ formatDate(date) }}
+                            <ChevronLeftIcon class="w-4 h-4 stroke-[2.5]" />
+                        </button>
+
+                        <!-- Date Picker Input -->
+                        <div class="relative">
+                            <input 
+                                type="date" 
+                                v-model="selectedDate" 
+                                class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-slate-800 focus:ring-teal-500 focus:border-teal-500 shadow-2xs"
+                            >
+                        </div>
+
+                        <!-- Quick Next Day Button -->
+                        <button 
+                            @click="changeDateByDays(1)" 
+                            type="button" 
+                            class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
+                            title="Hari Berikutnya"
+                        >
+                            <ChevronRightIcon class="w-4 h-4 stroke-[2.5]" />
+                        </button>
+
+                        <!-- Date Badge Pill -->
+                        <span class="text-xs font-black text-teal-800 bg-teal-50 px-3.5 py-2 rounded-2xl border border-teal-100 flex items-center gap-1.5 shadow-2xs">
+                            <span>📅</span>
+                            <span>{{ formatDate(date) }}</span>
                         </span>
                     </div>
 
+                    <!-- Right Action: Rekap Bulan Ini -->
                     <a 
                         :href="route('yayasan.teaching-journal.export', { month: new Date(date).getMonth() + 1, year: new Date(date).getFullYear() })" 
-                        class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
+                        class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95 self-stretch sm:self-auto"
                     >
                         <ArrowDownTrayIcon class="w-4 h-4" />
                         <span>Rekap Bulan Ini</span>
                     </a>
                 </div>
 
-                <!-- Empty State -->
-                <div v-if="schedules.length === 0" class="text-center py-12 md:py-16 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center p-6">
-                    <div class="bg-slate-50 p-5 rounded-full mb-3">
-                        <CalendarIcon class="w-12 h-12 text-slate-400" />
+                <!-- Empty State with 3D Calendar Asset -->
+                <div v-if="schedules.length === 0" class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-10 text-center flex flex-col items-center justify-center relative overflow-hidden">
+                    <!-- Soft Ambient Glow -->
+                    <div class="absolute -top-16 -right-16 w-56 h-56 bg-teal-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <!-- 3D Calendar Illustration -->
+                    <div class="relative mb-3 flex items-center justify-center">
+                        <img 
+                            src="/images/empty_calendar_3d.png" 
+                            alt="Libur Mengajar" 
+                            class="w-44 h-44 sm:w-56 sm:h-56 object-contain drop-shadow-xl select-none pointer-events-none transition-transform duration-500 hover:scale-105"
+                        />
                     </div>
-                    <h3 class="text-base md:text-lg font-extrabold text-slate-900 mb-1">Libur Mengajar? 🎉</h3>
-                    <p class="text-xs text-slate-500 max-w-sm">Tidak ada jadwal mengajar pada tanggal ini. Silakan pilih tanggal lain di atas.</p>
+
+                    <h3 class="text-lg sm:text-xl font-black text-slate-900 mb-1 tracking-tight">
+                        Libur Mengajar? 🎉
+                    </h3>
+                    <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed mb-6 font-medium">
+                        Tidak ada jadwal mengajar pada tanggal ini. Silakan pilih tanggal lain di atas untuk memeriksa agenda KBM.
+                    </p>
+
+                    <div class="flex items-center gap-2.5 flex-wrap justify-center">
+                        <button
+                            v-if="selectedDate !== todayDateString"
+                            @click="goToToday"
+                            type="button"
+                            class="px-4 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-2xl text-xs font-black border border-teal-200/60 shadow-xs transition active:scale-95 flex items-center gap-1.5"
+                        >
+                            <CalendarDaysIcon class="w-4 h-4 text-teal-600" />
+                            <span>Cek Hari Ini</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Teacher Schedule Cards -->
@@ -463,26 +548,32 @@ const sendReminder = (schedule) => {
                         v-for="item in schedules" 
                         :key="'teach-'+item.id"
                         class="bg-white rounded-3xl p-5 border shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden"
-                        :class="item.is_filled ? 'border-emerald-100' : 'border-slate-200'"
+                        :class="item.is_filled ? 'border-emerald-100 hover:border-emerald-200' : 'border-slate-200 hover:border-teal-200'"
                     >
-                        <div class="absolute top-0 left-0 right-0 h-1.5" :class="item.is_filled ? 'bg-emerald-500' : 'bg-slate-900'"></div>
+                        <div class="absolute top-0 left-0 right-0 h-1.5" :class="item.is_filled ? 'bg-emerald-500' : 'bg-gradient-to-r from-teal-600 to-emerald-600'"></div>
 
                         <div>
                             <div class="flex items-center justify-between mb-3 pt-1">
-                                <span class="px-2.5 py-1 bg-slate-100 rounded-xl text-xs font-black text-slate-700">
+                                <span class="px-2.5 py-1 bg-slate-100 rounded-xl text-xs font-black text-slate-700 flex items-center gap-1.5">
+                                    <ClockIcon class="w-3.5 h-3.5 text-slate-500" />
                                     {{ item.start_time.substring(0, 5) }} - {{ item.end_time.substring(0, 5) }} WIB
                                 </span>
                                 <span 
-                                    class="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border"
+                                    class="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border flex items-center gap-1"
                                     :class="item.is_filled ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'"
                                 >
-                                    {{ item.is_filled ? '🟢 SUDAH DIISI' : '🔴 BELUM DIISI' }}
+                                    <span class="w-1.5 h-1.5 rounded-full" :class="item.is_filled ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'"></span>
+                                    {{ item.is_filled ? 'SUDAH DIISI' : 'BELUM DIISI' }}
                                 </span>
                             </div>
 
                             <div class="mb-4">
-                                <h4 class="font-extrabold text-base text-slate-900 leading-snug">{{ item.subject }}</h4>
-                                <p class="text-xs font-bold text-teal-700 mt-0.5">{{ item.classroom }}</p>
+                                <h4 class="font-black text-base text-slate-900 leading-snug">{{ item.subject }}</h4>
+                                <div class="mt-1 flex items-center gap-1.5">
+                                    <span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[11px] font-black border border-teal-200/60">
+                                        {{ item.classroom }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -490,14 +581,14 @@ const sendReminder = (schedule) => {
                             <Link 
                                 v-if="!item.is_filled"
                                 :href="route('yayasan.teaching-journal.create', { schedule_id: item.id, date: date })" 
-                                class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-2xl shadow-md text-center block transition-all active:scale-95"
+                                class="w-full py-3 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-600 hover:to-emerald-600 text-white font-black text-xs rounded-2xl shadow-md shadow-teal-700/20 text-center block transition-all active:scale-95"
                             >
                                 Isi Jurnal Mengajar
                             </Link>
                             <Link 
                                 v-else 
-                                :href="route('yayasan.teaching-journal.show', item.journal_id)"
-                                class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-2xl border border-slate-200 text-center block transition-all active:scale-95"
+                                :href="route('yayasan.teaching-journal.show', item.journal_id)" 
+                                class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs rounded-2xl border border-slate-200 text-center block transition-all active:scale-95"
                             >
                                 Lihat Laporan Jurnal
                             </Link>
