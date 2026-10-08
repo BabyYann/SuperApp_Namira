@@ -425,7 +425,16 @@ const props = defineProps({
     currentYear: Number,
 });
 
-const activeTab = ref('present'); // present, business_trip, permit
+const getInitialTab = () => {
+    if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (['present', 'business_trip', 'permit'].includes(tab)) return tab;
+    }
+    return 'present';
+};
+
+const activeTab = ref(getInitialTab()); // present, business_trip, permit
 const permitType = ref('permit'); // permit, sick
 const selectedDayData = ref(null);
 

@@ -191,30 +191,30 @@ const eventTypeLabels = {
             </div>
 
             <!-- 1. STANDARD HERO CARD FOR TEACHER & STAFF (Floating Portrait Pop-Out) -->
-            <div v-else class="relative pt-6">
+            <div v-else class="relative pt-5">
 
                 <!-- Main Gradient Card Body -->
-                <div class="relative overflow-visible rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 border border-teal-800/60 shadow-xl min-h-[160px] flex flex-col justify-center">
+                <div class="relative overflow-visible rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-5 sm:p-6 border border-teal-800/60 shadow-xl min-h-[155px] flex flex-col justify-center">
 
                     <!-- Background Glow Accent -->
                     <div class="absolute -left-6 -bottom-6 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                    <!-- Right Text Info (58% width on right side) -->
-                    <div class="z-20 w-[58%] ml-auto pl-1 my-0.5 text-left">
-                        <p class="text-xs font-bold text-slate-400">Selamat Datang,</p>
-                        <h3 class="font-black text-2xl text-white tracking-tight leading-tight mt-1 drop-shadow-sm truncate">
+                    <!-- Right Text Info (65% width to prevent name clipping) -->
+                    <div class="z-20 w-[65%] ml-auto pl-2 my-0.5 text-left">
+                        <p class="text-xs font-bold text-slate-300">Selamat Datang,</p>
+                        <h3 class="font-black text-xl sm:text-2xl text-white tracking-tight leading-snug mt-0.5 drop-shadow-sm">
                             {{ user?.name }}
                         </h3>
-                        <p class="text-xs font-bold text-teal-400 mt-1 truncate">
+                        <p class="text-xs font-bold text-teal-300 mt-1 truncate">
                             {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Pegawai Yayasan')) }}
                         </p>
                     </div>
 
                     <!-- Action Button -->
-                    <div class="pt-3 z-20 w-[58%] ml-auto pl-1">
+                    <div class="pt-2.5 z-20 w-[65%] ml-auto pl-2">
                         <Link
                             :href="safeRoute('attendance.index')"
-                            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-teal-50 text-slate-950 font-extrabold text-xs rounded-full shadow-md transition-all active:scale-95 border border-slate-200"
+                            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white hover:bg-teal-50 text-slate-950 font-extrabold text-xs rounded-full shadow-md transition-all active:scale-95 border border-slate-200"
                         >
                             <span v-if="userData?.attendance_status?.checked_in" class="flex items-center gap-1.5 text-emerald-800 font-extrabold">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -227,12 +227,12 @@ const eventTypeLabels = {
                         </Link>
                     </div>
 
-                    <!-- 🌟 KONDISI 1: ADA FOTO → Portrait Melayang Keluar Atas Card (Pop-Out Header) -->
+                    <!-- 🌟 KONDISI 1: ADA FOTO → Portrait Melayang Keluar Atas Card (Ukuran Pas & Proporsional) -->
                     <div
                         v-if="user?.profile_photo_url"
-                        class="absolute left-3 bottom-0 h-[122%] w-[38%] flex items-end justify-center pointer-events-none z-30"
+                        class="absolute left-2.5 bottom-0 h-[110%] w-[32%] flex items-end justify-center pointer-events-none z-30"
                     >
-                        <div class="w-full max-w-[115px] h-[100%] rounded-t-3xl rounded-b-2xl overflow-hidden ring-4 ring-white/20 shadow-2xl drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]">
+                        <div class="w-full max-w-[96px] h-[100%] rounded-t-3xl rounded-b-2xl overflow-hidden ring-4 ring-white/20 shadow-2xl drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]">
                             <img
                                 :src="user.profile_photo_url"
                                 :alt="user?.name"
@@ -244,14 +244,50 @@ const eventTypeLabels = {
                     <!-- 🌟 KONDISI 2: TIDAK ADA FOTO → Circle dengan Inisial (tetap di dalam card) -->
                     <div
                         v-else
-                        class="absolute left-2 bottom-0 h-[115%] w-[40%] flex items-end justify-center pointer-events-none z-10"
+                        class="absolute left-2 bottom-0 h-[105%] w-[33%] flex items-end justify-center pointer-events-none z-10"
                     >
-                        <div class="w-28 h-28 mb-2 rounded-full bg-gradient-to-br from-teal-400 via-teal-600 to-slate-800 flex items-center justify-center ring-4 ring-white/20 shadow-2xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                            <span class="text-4xl font-black text-white tracking-tight select-none" style="text-shadow: 0 2px 8px rgba(0,0,0,0.4)">
+                        <div class="w-24 h-24 mb-2 rounded-full bg-gradient-to-br from-teal-400 via-teal-600 to-slate-800 flex items-center justify-center ring-4 ring-white/20 shadow-2xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                            <span class="text-3xl font-black text-white tracking-tight select-none" style="text-shadow: 0 2px 8px rgba(0,0,0,0.4)">
                                 {{ userInitials }}
                             </span>
                         </div>
                     </div>
+                </div>
+
+                <!-- 🌟 3 MENU CEPAT PRESENSI: WFO, IZIN, DINAS LUAR (Tampil Jika Belum Absen Hari Ini) -->
+                <div v-if="!userData?.attendance_status?.checked_in" class="grid grid-cols-3 gap-2 mt-2.5">
+                    <!-- 1. WFO (Hadir) -->
+                    <Link 
+                        :href="safeRoute('attendance.index', { tab: 'present' })"
+                        class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-2xl py-2 px-2 shadow-sm shadow-emerald-700/20 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all border border-emerald-400/30 text-center"
+                    >
+                        <div class="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center">
+                            <BuildingOffice2Icon class="w-4 h-4 text-white stroke-[2.2]" />
+                        </div>
+                        <span class="text-[11px] font-extrabold tracking-tight">WFO (Hadir)</span>
+                    </Link>
+
+                    <!-- 2. Izin / Sakit -->
+                    <Link 
+                        :href="safeRoute('attendance.index', { tab: 'permit' })"
+                        class="bg-white hover:bg-purple-50 text-purple-900 rounded-2xl py-2 px-2 shadow-2xs border border-purple-200/80 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-center"
+                    >
+                        <div class="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                            <ClipboardDocumentCheckIcon class="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <span class="text-[11px] font-extrabold tracking-tight">Izin / Sakit</span>
+                    </Link>
+
+                    <!-- 3. Dinas Luar -->
+                    <Link 
+                        :href="safeRoute('attendance.index', { tab: 'business_trip' })"
+                        class="bg-white hover:bg-blue-50 text-blue-900 rounded-2xl py-2 px-2 shadow-2xs border border-blue-200/80 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-center"
+                    >
+                        <div class="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                            <GlobeAltIcon class="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <span class="text-[11px] font-extrabold tracking-tight">Dinas Luar</span>
+                    </Link>
                 </div>
             </div>
 
@@ -347,121 +383,123 @@ const eventTypeLabels = {
                 </div>
             </div>
 
-            <!-- 4. MODUL MENGAJAR GURU (Jika Guru / Teacher Data Tersedia) -->
-            <template v-else-if="isTeacher || teacherData">
-                <!-- A. Live Mengajar Sekarang (Jika ada sesi aktif saat ini) -->
-                <div 
-                    v-if="teacherData?.current_schedule" 
-                    class="rounded-2xl bg-gradient-to-r from-teal-800 to-emerald-800 p-4 text-white shadow-sm border border-teal-600/50 relative overflow-hidden"
-                >
-                    <div class="flex items-center justify-between gap-2 mb-2">
-                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-white/20 text-teal-100 backdrop-blur-xs">
-                            <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
-                            <span>Mengajar Sekarang</span>
-                        </span>
-                        <span class="text-[11px] font-bold text-teal-200">
-                            {{ teacherData.current_schedule.start_time }} - {{ teacherData.current_schedule.end_time }} WIB
-                        </span>
-                    </div>
-
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <h4 class="font-extrabold text-base text-white tracking-tight leading-tight truncate">
-                                {{ teacherData.current_schedule.subject_name }}
-                            </h4>
-                            <p class="text-xs text-teal-100/90 font-semibold mt-1 flex items-center gap-1">
-                                <MapPinIcon class="w-3.5 h-3.5 text-teal-300 shrink-0" />
-                                <span class="truncate">Kelas {{ teacherData.current_schedule.classroom_name }}</span>
-                            </p>
-                        </div>
-
-                        <Link 
-                            :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: teacherData.current_schedule.id })" 
-                            class="shrink-0 py-2 px-3.5 bg-white hover:bg-teal-50 text-teal-900 font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 active:scale-95 transition-all"
+            <!-- 4. MODUL MENGAJAR GURU (Unified Smart Widget: Ringkas, Terpadu & Bebas Redundansi) -->
+            <div 
+                v-else-if="isTeacher || teacherData"
+                class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs space-y-2.5"
+            >
+                <!-- Header Widget -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                        <ClockIcon class="w-4 h-4 text-teal-700" />
+                        <h4 class="font-extrabold text-xs text-slate-800">Jadwal & Jurnal Mengajar</h4>
+                        <span 
+                            v-if="teacherData?.schedules && teacherData.schedules.length > 0"
+                            class="text-[10px] font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100"
                         >
-                            <PencilSquareIcon class="w-4 h-4 text-teal-700" />
-                            <span>Isi Jurnal</span>
-                        </Link>
+                            {{ teacherData.schedules.length }} Sesi
+                        </span>
                     </div>
+                    <Link 
+                        :href="safeRoute('yayasan.schedules.index')"
+                        class="text-[11px] font-bold text-teal-700 hover:underline flex items-center gap-0.5"
+                    >
+                        <span>Semua</span>
+                        <ChevronRightIcon class="w-3.5 h-3.5" />
+                    </Link>
                 </div>
 
-                <!-- B. Jadwal Hari Ini (Horizontal Scrollable Timeline) -->
+                <!-- A. Sesi Aktif Saat Ini (Highlight Banner Ringkas + Tombol Cepat Isi Jurnal) -->
                 <div 
-                    v-if="teacherData?.schedules && teacherData.schedules.length > 0"
-                    class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs space-y-2.5"
+                    v-if="teacherData?.current_schedule"
+                    class="rounded-xl bg-gradient-to-r from-teal-800 to-emerald-900 p-3 text-white shadow-xs border border-teal-700/60 flex items-center justify-between gap-3"
                 >
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-1.5">
-                            <ClockIcon class="w-4 h-4 text-teal-700" />
-                            <h4 class="font-extrabold text-xs text-slate-800">Jadwal Mengajar Hari Ini</h4>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
-                                {{ teacherData.schedules.length }} Sesi
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 mb-0.5">
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-400 text-slate-950">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping"></span>
+                                Mengajar
                             </span>
-                            <Link 
-                                :href="safeRoute('yayasan.schedules.index')"
-                                class="text-[11px] font-bold text-teal-700 hover:underline"
-                            >
-                                Semua →
-                            </Link>
+                            <span class="text-[11px] font-bold text-teal-200">
+                                {{ teacherData.current_schedule.start_time }} - {{ teacherData.current_schedule.end_time }} WIB
+                            </span>
                         </div>
+                        <h4 class="font-extrabold text-sm text-white tracking-tight leading-snug truncate">
+                            {{ teacherData.current_schedule.subject_name }}
+                        </h4>
+                        <p class="text-[11px] text-teal-200 font-medium flex items-center gap-1 truncate mt-0.5">
+                            <MapPinIcon class="w-3 h-3 text-teal-300 shrink-0" />
+                            <span>Kelas {{ teacherData.current_schedule.classroom_name }}</span>
+                        </p>
                     </div>
 
-                    <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
-                        <div 
-                            v-for="s in teacherData.schedules" 
-                            :key="s.id"
-                            class="shrink-0 rounded-xl p-2.5 border transition-all text-left min-w-[140px] max-w-[160px]"
-                            :class="teacherData.current_schedule?.id === s.id 
-                                ? 'bg-teal-50/80 border-teal-300 ring-1 ring-teal-400' 
-                                : 'bg-slate-50 border-slate-200/80 hover:bg-white'"
-                        >
-                            <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-1">
-                                <span>{{ s.start_time }} - {{ s.end_time }}</span>
-                            </div>
-                            <p class="font-extrabold text-xs text-slate-800 truncate" :title="s.subject_name">
-                                {{ s.subject_name }}
-                            </p>
-                            <div class="flex items-center justify-between mt-1 text-[10px]">
-                                <span class="font-bold text-teal-800 bg-white px-1.5 py-0.5 rounded border border-slate-200 truncate">
-                                    Kelas {{ s.classroom_name }}
-                                </span>
-                                <Link 
-                                    :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: s.id })"
-                                    class="text-teal-700 font-extrabold hover:underline"
-                                >
-                                    Jurnal →
-                                </Link>
-                            </div>
+                    <Link 
+                        :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: teacherData.current_schedule.id })" 
+                        class="shrink-0 py-2 px-3 bg-white hover:bg-teal-50 text-teal-900 font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 active:scale-95 transition-all"
+                    >
+                        <PencilSquareIcon class="w-4 h-4 text-teal-700" />
+                        <span>Isi Jurnal</span>
+                    </Link>
+                </div>
+
+                <!-- B. Timeline Sesi Hari Ini (Horizontal Compact Pills) -->
+                <div 
+                    v-if="teacherData?.schedules && teacherData.schedules.length > 0"
+                    class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1"
+                >
+                    <div 
+                        v-for="s in teacherData.schedules" 
+                        :key="s.id"
+                        class="shrink-0 rounded-xl p-2 border transition-all text-left min-w-[135px] max-w-[155px]"
+                        :class="teacherData.current_schedule?.id === s.id 
+                            ? 'bg-teal-50/90 border-teal-300 ring-1 ring-teal-400 shadow-2xs' 
+                            : 'bg-slate-50/80 border-slate-200/80 hover:bg-white'"
+                    >
+                        <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-0.5">
+                            <span>{{ s.start_time }} - {{ s.end_time }}</span>
+                            <span v-if="teacherData.current_schedule?.id === s.id" class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                        </div>
+                        <p class="font-extrabold text-xs text-slate-800 truncate" :title="s.subject_name">
+                            {{ s.subject_name }}
+                        </p>
+                        <div class="flex items-center justify-between mt-1 text-[10px]">
+                            <span class="font-bold text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200/70 truncate text-[9px]">
+                                Kelas {{ s.classroom_name }}
+                            </span>
+                            <Link 
+                                :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: s.id })"
+                                class="text-teal-700 font-extrabold hover:underline"
+                            >
+                                Jurnal →
+                            </Link>
                         </div>
                     </div>
                 </div>
 
                 <!-- C. Notice jika tidak ada jadwal mengajar hari ini -->
                 <div 
-                    v-else-if="!teacherData?.current_schedule" 
-                    class="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-xs flex items-center justify-between gap-2"
+                    v-else
+                    class="p-2.5 rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-between gap-2"
                 >
                     <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
                             <CalendarDaysIcon class="w-4 h-4" />
                         </div>
                         <div class="min-w-0">
-                            <p class="text-xs font-bold text-slate-700 truncate">Tidak ada jam mengajar hari ini</p>
-                            <p class="text-[10px] text-slate-400 truncate">Cek agenda & persiapan materi</p>
+                            <p class="text-xs font-bold text-slate-700 truncate">Tidak ada jadwal mengajar hari ini</p>
+                            <p class="text-[10px] text-slate-400 truncate">Gunakan waktu untuk persiapan materi / administrasi</p>
                         </div>
                     </div>
                     <Link 
                         :href="safeRoute('yayasan.schedules.index')" 
-                        class="shrink-0 text-[11px] font-extrabold text-teal-700 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200/60"
+                        class="shrink-0 text-[11px] font-extrabold text-teal-700 hover:underline"
                     >
-                        Jadwal Saya →
+                        Cek Jadwal →
                     </Link>
                 </div>
-            </template>
+            </div>
 
-            <!-- 5. PINTASAN MENU CEPAT (Modern 4-Column App Launcher Grid) -->
+            <!-- 5. PINTASAN MENU CEPAT (Luxury SuperApp 4-Column Grid) -->
             <div v-if="!isPengawas" class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs space-y-3">
                 <div class="flex items-center justify-between px-0.5">
                     <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
@@ -477,115 +515,138 @@ const eventTypeLabels = {
                         :href="safeRoute('attendance.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 border border-teal-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <FingerPrintIcon class="w-6 h-6 stroke-[2]" />
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white flex items-center justify-center shadow-md shadow-teal-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <FingerPrintIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Presensi</span>
                     </Link>
 
-                    <!-- 2. Jurnal Mapel (Guru) -->
+                    <!-- 2. Jurnal Guru -->
                     <Link 
                         v-if="isTeacher || hasRole('teacher')"
                         :href="safeRoute('yayasan.teaching-journal.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <PencilSquareIcon class="w-6 h-6 stroke-[2]" />
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <PencilSquareIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Jurnal Guru</span>
                     </Link>
 
-                    <!-- 3. Absensi Siswa (Wali Kelas) -->
+                    <!-- 3. Absensi Siswa (Wali Kelas / Guru) -->
                     <Link 
-                        v-if="hasRole('wali_kelas') || teacherData?.homeroom_class"
+                        v-if="isTeacher || hasRole(['teacher', 'wali_kelas']) || teacherData?.homeroom_class"
                         :href="safeRoute('yayasan.student-attendance.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <ClipboardDocumentCheckIcon class="w-6 h-6 stroke-[2]" />
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <ClipboardDocumentCheckIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
-                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Absen Kelas</span>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Absen Siswa</span>
                     </Link>
 
-                    <!-- 4. Scan Gerbang -->
-                    <Link 
-                        :href="safeRoute('yayasan.student-checkin.index')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
-                    >
-                        <div class="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <QrCodeIcon class="w-6 h-6 stroke-[2]" />
-                        </div>
-                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Scan QR</span>
-                    </Link>
-
-                    <!-- 5. Jadwal Mengajar (Guru) -->
+                    <!-- 4. Jadwal Mengajar -->
                     <Link 
                         v-if="isTeacher || hasRole('teacher')"
                         :href="safeRoute('yayasan.schedules.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <CalendarDaysIcon class="w-6 h-6 stroke-[2]" />
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <CalendarDaysIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Jadwal</span>
                     </Link>
 
-                    <!-- 6. Persetujuan Absen (Kepsek / Admin) -->
+                    <!-- 5. Scan QR Gerbang -->
+                    <Link 
+                        :href="safeRoute('yayasan.student-checkin.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center shadow-md shadow-cyan-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <QrCodeIcon class="w-6 h-6 stroke-[2.2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Scan QR</span>
+                    </Link>
+
+                    <!-- 6. Agenda & Kalender Event -->
+                    <Link 
+                        :href="safeRoute('public-relations.events.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-fuchsia-600 text-white flex items-center justify-center shadow-md shadow-violet-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <CalendarIcon class="w-6 h-6 stroke-[2.2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Agenda</span>
+                    </Link>
+
+                    <!-- 7. Data Siswa -->
+                    <Link 
+                        v-if="isTeacher || hasRole(['teacher', 'wali_kelas', 'admin_unit', 'kepala_sekolah'])"
+                        :href="safeRoute('yayasan.students.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-cyan-500 text-white flex items-center justify-center shadow-md shadow-sky-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <AcademicCapIcon class="w-6 h-6 stroke-[2.2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Data Siswa</span>
+                    </Link>
+
+                    <!-- 8. Konseling BK -->
+                    <Link 
+                        v-if="isTeacher || hasRole(['bk', 'counseling', 'wali_kelas', 'teacher'])"
+                        :href="safeRoute('counseling.sessions.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-purple-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <ChatBubbleLeftRightIcon class="w-6 h-6 stroke-[2.2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Konseling</span>
+                    </Link>
+
+                    <!-- 9. Persetujuan Absen (Kepsek / Admin) -->
                     <Link 
                         v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])"
                         :href="safeRoute('attendance-approvals.index', {}, safeRoute('yayasan.attendance-approvals.index'))"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 border border-amber-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <CheckCircleIcon class="w-6 h-6 stroke-[2]" />
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shadow-amber-500/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <CheckCircleIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">ACC Izin</span>
                     </Link>
 
-                    <!-- 7. Konseling BK -->
-                    <Link 
-                        v-if="hasRole(['bk', 'counseling', 'wali_kelas'])"
-                        :href="safeRoute('counseling.sessions.index')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
-                    >
-                        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <ChatBubbleLeftRightIcon class="w-6 h-6 stroke-[2]" />
-                        </div>
-                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Konseling</span>
-                    </Link>
-
-                    <!-- 8. Berita Humas -->
-                    <Link 
-                        v-if="hasRole('humas_unit')"
-                        :href="safeRoute('public-relations.news.index')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
-                    >
-                        <div class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 border border-sky-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <NewspaperIcon class="w-6 h-6 stroke-[2]" />
-                        </div>
-                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Berita</span>
-                    </Link>
-
-                    <!-- 9. Sarpras (Sarpar / Admin) -->
+                    <!-- 10. Sarpras (Pemeliharaan / Fasilitas) -->
                     <Link 
                         v-if="hasRole(['koordinator_sarpar', 'admin_unit'])"
                         :href="safeRoute('sarpar.maintenance.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 border border-rose-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <WrenchScrewdriverIcon class="w-6 h-6 stroke-[2]" />
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-500 text-white flex items-center justify-center shadow-md shadow-rose-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <WrenchScrewdriverIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Sarpras</span>
                     </Link>
 
-                    <!-- 10. Keuangan Unit (Finance) -->
+                    <!-- 11. Berita Humas -->
+                    <Link 
+                        v-if="hasRole(['humas_unit', 'admin_unit'])"
+                        :href="safeRoute('public-relations.news.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-900 text-white flex items-center justify-center shadow-md shadow-slate-700/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <NewspaperIcon class="w-6 h-6 stroke-[2.2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Berita</span>
+                    </Link>
+
+                    <!-- 12. Keuangan Unit (Finance) -->
                     <Link 
                         v-if="hasRole('finance')"
                         :href="safeRoute('finance.dashboard')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <BanknotesIcon class="w-6 h-6 stroke-[2]" />
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-700 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-700/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <BanknotesIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Keuangan</span>
                     </Link>
