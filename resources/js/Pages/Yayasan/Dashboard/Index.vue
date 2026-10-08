@@ -117,6 +117,56 @@ const todayHijri = computed(() => {
     }
 });
 
+const todaySchedules = computed(() => props.teacherData?.schedules || []);
+
+const nowTimeStr = computed(() => {
+    return liveTime.value || '07:00';
+});
+
+const activeSchedule = computed(() => {
+    if (props.teacherData?.current_schedule) return props.teacherData.current_schedule;
+    if (!todaySchedules.value.length) return null;
+    
+    const now = nowTimeStr.value;
+    const ongoingOrUpcoming = todaySchedules.value.find(s => s.end_time >= now);
+    return ongoingOrUpcoming || todaySchedules.value[0];
+});
+
+const isCurrentlyTeaching = computed(() => {
+    if (!activeSchedule.value) return false;
+    const now = nowTimeStr.value;
+    return now >= activeSchedule.value.start_time && now <= activeSchedule.value.end_time;
+});
+
+const activeScheduleDuration = computed(() => {
+    if (!activeSchedule.value?.start_time || !activeSchedule.value?.end_time) return '';
+    try {
+        const [sh, sm] = activeSchedule.value.start_time.split(':').map(Number);
+        const [eh, em] = activeSchedule.value.end_time.split(':').map(Number);
+        const diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
+        if (diffMinutes <= 0) return '';
+        const hours = Math.floor(diffMinutes / 60);
+        const mins = diffMinutes % 60;
+        if (hours > 0 && mins > 0) return `± ${hours} jam ${mins} menit`;
+        if (hours > 0) return `± ${hours} jam`;
+        return `± ${mins} menit`;
+    } catch (e) {
+        return '';
+    }
+});
+
+const nextSchedule = computed(() => {
+    if (!activeSchedule.value) return null;
+    return todaySchedules.value.find(s => s.id !== activeSchedule.value.id && s.start_time >= activeSchedule.value.end_time);
+});
+
+const completedSchedule = computed(() => {
+    if (!activeSchedule.value) return null;
+    const now = nowTimeStr.value;
+    const completed = todaySchedules.value.filter(s => s.id !== activeSchedule.value.id && s.end_time <= now);
+    return completed.length ? completed[completed.length - 1] : null;
+});
+
 const safeRoute = (name, params = {}, fallback = '#') => {
     try {
         if (typeof route === 'function') {
@@ -432,111 +482,195 @@ const eventTypeLabels = {
                 </div>
             </div>
 
-            <!-- 4. MODUL MENGAJAR GURU (Unified Smart Widget: Ringkas, Terpadu & Bebas Redundansi) -->
+            <!-- 4. MODUL MENGAJAR GURU (Unified Smart Widget: Sesuai Mockup Referensi + Background Gambar Kelas Aktif + Anti-Sesak Pintasan Cepat) -->
             <div 
                 v-else-if="isTeacher || teacherData"
-                class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs space-y-2.5"
+                class="bg-white rounded-3xl p-3.5 sm:p-4 border border-slate-200/80 shadow-xs space-y-3"
             >
-                <!-- Header Widget -->
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1.5">
-                        <ClockIcon class="w-4 h-4 text-teal-700" />
-                        <h4 class="font-extrabold text-xs text-slate-800">Jadwal & Jurnal Mengajar</h4>
+                <!-- Header Widget: Jadwal & Jurnal Mengajar -->
+                <div class="flex items-center justify-between px-0.5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                            <ClockIcon class="w-3.5 h-3.5 stroke-[2.2]" />
+                        </div>
+                        <h4 class="font-extrabold text-sm sm:text-base text-slate-800 tracking-tight">Jadwal & Jurnal Mengajar</h4>
                         <span 
-                            v-if="teacherData?.schedules && teacherData.schedules.length > 0"
-                            class="text-[10px] font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100"
+                            v-if="todaySchedules.length > 0"
+                            class="text-[10px] sm:text-[11px] font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100"
                         >
-                            {{ teacherData.schedules.length }} Sesi
+                            {{ todaySchedules.length }} Sesi
                         </span>
                     </div>
                     <Link 
                         :href="safeRoute('yayasan.schedules.index')"
-                        class="text-[11px] font-bold text-teal-700 hover:underline flex items-center gap-0.5"
+                        class="text-xs font-extrabold text-teal-700 hover:text-teal-800 flex items-center gap-0.5 active:scale-95 transition-all"
                     >
                         <span>Semua</span>
-                        <ChevronRightIcon class="w-3.5 h-3.5" />
+                        <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
                     </Link>
                 </div>
 
-                <!-- A. Sesi Aktif Saat Ini (Highlight Banner Ringkas + Tombol Cepat Isi Jurnal) -->
+                <!-- A. Sesi Aktif Saat Ini / Highlight Card (Menggunakan Gambar Kedua Sebagai Background) -->
                 <div 
-                    v-if="teacherData?.current_schedule"
-                    class="rounded-xl bg-gradient-to-r from-teal-800 to-emerald-900 p-3 text-white shadow-xs border border-teal-700/60 flex items-center justify-between gap-3"
+                    v-if="activeSchedule"
+                    class="relative overflow-hidden rounded-2xl p-3.5 sm:p-4 border border-teal-700/40 shadow-sm min-h-[145px] flex flex-col justify-between"
                 >
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1.5 mb-0.5">
-                            <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-400 text-slate-950">
-                                <span class="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping"></span>
-                                Mengajar
-                            </span>
-                            <span class="text-[11px] font-bold text-teal-200">
-                                {{ teacherData.current_schedule.start_time }} - {{ teacherData.current_schedule.end_time }} WIB
-                            </span>
-                        </div>
-                        <h4 class="font-extrabold text-sm text-white tracking-tight leading-snug truncate">
-                            {{ teacherData.current_schedule.subject_name }}
-                        </h4>
-                        <p class="text-[11px] text-teal-200 font-medium flex items-center gap-1 truncate mt-0.5">
-                            <MapPinIcon class="w-3 h-3 text-teal-300 shrink-0" />
-                            <span>Kelas {{ teacherData.current_schedule.classroom_name }}</span>
-                        </p>
-                    </div>
+                    <!-- Classroom Background Image (WebP with JPG fallback) -->
+                    <picture class="absolute inset-0 w-full h-full pointer-events-none select-none">
+                        <source srcset="/images/active_lesson_bg.webp" type="image/webp">
+                        <img 
+                            src="/images/active_lesson_bg.jpg" 
+                            alt="Active Lesson Illustration" 
+                            class="w-full h-full object-cover object-right"
+                        />
+                    </picture>
 
-                    <Link 
-                        :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: teacherData.current_schedule.id })" 
-                        class="shrink-0 py-2 px-3 bg-white hover:bg-teal-50 text-teal-900 font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 active:scale-95 transition-all"
-                    >
-                        <PencilSquareIcon class="w-4 h-4 text-teal-700" />
-                        <span>Isi Jurnal</span>
-                    </Link>
-                </div>
+                    <!-- Gradient Contrast Overlay: Strong teal on left for text readability, clear on right to showcase classroom illustration -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#004d40]/95 via-[#00695c]/85 to-[#004d40]/25 pointer-events-none"></div>
 
-                <!-- B. Timeline Sesi Hari Ini (Horizontal Compact Pills) -->
-                <div 
-                    v-if="teacherData?.schedules && teacherData.schedules.length > 0"
-                    class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1"
-                >
-                    <div 
-                        v-for="s in teacherData.schedules" 
-                        :key="s.id"
-                        class="shrink-0 rounded-xl p-2 border transition-all text-left min-w-[135px] max-w-[155px]"
-                        :class="teacherData.current_schedule?.id === s.id 
-                            ? 'bg-teal-50/90 border-teal-300 ring-1 ring-teal-400 shadow-2xs' 
-                            : 'bg-slate-50/80 border-slate-200/80 hover:bg-white'"
-                    >
-                        <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-0.5">
-                            <span>{{ s.start_time }} - {{ s.end_time }}</span>
-                            <span v-if="teacherData.current_schedule?.id === s.id" class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                    <!-- Inner Content (Z-10) -->
+                    <div class="relative z-10 flex flex-col justify-between gap-3 h-full">
+                        <!-- Top Row: Status Badge & Time -->
+                        <div class="flex items-center justify-between gap-2">
+                            <!-- Status Badge -->
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 backdrop-blur-xs">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" :class="isCurrentlyTeaching ? 'animate-ping' : ''"></span>
+                                <span>{{ isCurrentlyTeaching ? 'Sedang Mengajar' : 'Sesi Aktif' }}</span>
+                            </div>
+
+                            <!-- Time & Duration Info -->
+                            <div class="text-right leading-tight">
+                                <p class="text-xs sm:text-sm font-black text-white whitespace-nowrap drop-shadow-xs">
+                                    {{ activeSchedule.start_time }} – {{ activeSchedule.end_time }}
+                                </p>
+                                <p v-if="activeScheduleDuration" class="text-[10px] font-semibold text-teal-200/90 whitespace-nowrap mt-0.5 flex items-center justify-end gap-1">
+                                    <ClockIcon class="w-3 h-3 stroke-[2]" />
+                                    <span>{{ activeScheduleDuration }}</span>
+                                </p>
+                            </div>
                         </div>
-                        <p class="font-extrabold text-xs text-slate-800 truncate" :title="s.subject_name">
-                            {{ s.subject_name }}
-                        </p>
-                        <div class="flex items-center justify-between mt-1 text-[10px]">
-                            <span class="font-bold text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200/70 truncate text-[9px]">
-                                Kelas {{ s.classroom_name }}
-                            </span>
+
+                        <!-- Main Row: Book Icon + Subject + Location & Button Isi Jurnal -->
+                        <div class="flex items-end justify-between gap-3 pt-1">
+                            <!-- Left: Subject Details -->
+                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shrink-0 shadow-inner border border-white/20">
+                                    <BookOpenIcon class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2]" />
+                                </div>
+                                <div class="min-w-0 flex-1 text-left">
+                                    <h4 class="font-black text-sm sm:text-base text-white tracking-tight leading-snug drop-shadow-xs truncate">
+                                        {{ activeSchedule.subject_name }}
+                                    </h4>
+                                    <p class="text-xs font-semibold text-teal-100 flex items-center gap-1 mt-0.5 truncate">
+                                        <UsersIcon class="w-3.5 h-3.5 shrink-0 text-teal-300 stroke-[2]" />
+                                        <span>Kelas {{ activeSchedule.classroom_name }}</span>
+                                    </p>
+                                    <p class="text-[11px] font-medium text-teal-200/90 flex items-center gap-1 mt-0.5 truncate">
+                                        <MapPinIcon class="w-3 h-3 shrink-0 text-teal-300 stroke-[2]" />
+                                        <span>Ruang Kelas</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Right: Button Isi Jurnal (White Pill) -->
                             <Link 
-                                :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: s.id })"
-                                class="text-teal-700 font-extrabold hover:underline"
+                                :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: activeSchedule.id })" 
+                                class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-teal-50 text-slate-800 font-extrabold text-xs rounded-full shadow-md active:scale-95 transition-all border border-slate-100"
                             >
-                                Jurnal →
+                                <template v-if="activeSchedule.has_journal">
+                                    <CheckCircleIcon class="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                                    <span class="text-emerald-700">Jurnal Terisi</span>
+                                </template>
+                                <template v-else>
+                                    <PencilSquareIcon class="w-3.5 h-3.5 text-teal-700 stroke-[2.2]" />
+                                    <span>Isi Jurnal</span>
+                                    <ChevronRightIcon class="w-3 h-3 stroke-[2.5] text-slate-400" />
+                                </template>
                             </Link>
                         </div>
                     </div>
                 </div>
 
-                <!-- C. Notice jika tidak ada jadwal mengajar hari ini -->
+                <!-- B. SESI BERIKUTNYA (Compact Single-Row Preview: Anti-Mengganggu Pintasan Cepat!) -->
+                <div v-if="nextSchedule" class="space-y-1.5">
+                    <div class="flex items-center justify-between px-0.5">
+                        <span class="text-xs font-bold text-slate-500">Sesi Berikutnya</span>
+                        <Link 
+                            :href="safeRoute('yayasan.schedules.index')" 
+                            class="text-xs font-bold text-teal-700 hover:underline flex items-center gap-0.5"
+                        >
+                            <span>Lihat Semua</span>
+                            <ChevronRightIcon class="w-3 h-3 stroke-[2.5]" />
+                        </Link>
+                    </div>
+
+                    <!-- Next Schedule Item -->
+                    <div class="bg-white hover:bg-slate-50/80 rounded-2xl p-2.5 border border-slate-100 shadow-2xs flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="text-right leading-tight pr-3 border-r border-teal-200/80 shrink-0">
+                                <p class="font-extrabold text-xs text-slate-800">{{ nextSchedule.start_time }}</p>
+                                <p class="font-semibold text-[11px] text-slate-500 mt-0.5">{{ nextSchedule.end_time }}</p>
+                            </div>
+                            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                <BookOpenIcon class="w-4 h-4 stroke-[2]" />
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-extrabold text-xs text-slate-800 truncate">{{ nextSchedule.subject_name }}</p>
+                                <p class="text-[11px] font-medium text-slate-500 truncate mt-0.5">
+                                    <span>Kelas {{ nextSchedule.classroom_name }}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <Link 
+                            :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: nextSchedule.id })"
+                            class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 hover:bg-blue-100 transition-all active:scale-95"
+                        >
+                            <ChevronRightIcon class="w-4 h-4 stroke-[2.5]" />
+                        </Link>
+                    </div>
+                </div>
+
+                <!-- C. SESI SELESAI (Hanya Tampil Maksimal 1 Sesi Selesai Terakhir agar Ringkas) -->
+                <div v-if="completedSchedule" class="space-y-1.5">
+                    <div class="flex items-center justify-between px-0.5">
+                        <span class="text-xs font-bold text-slate-400">Selesai</span>
+                    </div>
+
+                    <!-- Completed Schedule Item -->
+                    <div class="bg-slate-50/60 rounded-2xl p-2.5 border border-slate-100 flex items-center justify-between gap-3 opacity-80">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="text-right leading-tight pr-3 border-r border-slate-200 shrink-0">
+                                <p class="font-bold text-xs text-slate-500">{{ completedSchedule.start_time }}</p>
+                                <p class="font-medium text-[11px] text-slate-400 mt-0.5">{{ completedSchedule.end_time }}</p>
+                            </div>
+                            <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
+                                <BookOpenIcon class="w-4 h-4 stroke-[2]" />
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-bold text-xs text-slate-600 truncate">{{ completedSchedule.subject_name }}</p>
+                                <p class="text-[11px] font-medium text-slate-400 truncate mt-0.5">
+                                    <span>Kelas {{ completedSchedule.classroom_name }}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="w-7 h-7 rounded-full bg-slate-100 text-emerald-600 flex items-center justify-center shrink-0">
+                            <CheckCircleIcon class="w-4 h-4 stroke-[2.5]" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- D. Notice jika tidak ada jadwal mengajar hari ini sama sekali -->
                 <div 
-                    v-else
-                    class="p-2.5 rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-between gap-2"
+                    v-if="todaySchedules.length === 0"
+                    class="p-3 rounded-2xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-between gap-2"
                 >
-                    <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
-                            <CalendarDaysIcon class="w-4 h-4" />
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                            <CalendarDaysIcon class="w-4 h-4 stroke-[2]" />
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs font-bold text-slate-700 truncate">Tidak ada jadwal mengajar hari ini</p>
-                            <p class="text-[10px] text-slate-400 truncate">Gunakan waktu untuk persiapan materi / administrasi</p>
+                            <p class="text-[10px] text-slate-400 truncate">Gunakan waktu untuk persiapan materi & administrasi</p>
                         </div>
                     </div>
                     <Link 

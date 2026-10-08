@@ -116,6 +116,11 @@ class UnitController extends Controller
                 ->whereDate('date', today())
                 ->first();
 
+            $todayJournals = \App\Modules\Academic\Models\TeachingJournal::where('teacher_id', $teacher->id)
+                ->whereDate('date', today())
+                ->pluck('class_schedule_id')
+                ->toArray();
+
             $teacherData = [
                 'teacher_id' => $teacher->id,
                 'title' => $teacher->title ?? 'Guru Pengajar',
@@ -128,6 +133,7 @@ class UnitController extends Controller
                     'classroom_name' => $currentSchedule->classroom->name ?? 'Kelas',
                     'start_time' => substr($currentSchedule->start_time, 0, 5),
                     'end_time' => substr($currentSchedule->end_time, 0, 5),
+                    'has_journal' => in_array($currentSchedule->id, $todayJournals),
                 ] : null,
                 'schedules' => $schedules->map(fn($s) => [
                     'id' => $s->id,
@@ -135,6 +141,7 @@ class UnitController extends Controller
                     'classroom_name' => $s->classroom->name ?? 'Kelas',
                     'start_time' => substr($s->start_time, 0, 5),
                     'end_time' => substr($s->end_time, 0, 5),
+                    'has_journal' => in_array($s->id, $todayJournals),
                 ]),
                 'homeroom_stats' => $homeroomStats,
             ];
