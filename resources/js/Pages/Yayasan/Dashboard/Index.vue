@@ -254,28 +254,17 @@ const eventTypeLabels = {
                     </div>
                 </div>
 
-                <!-- 🌟 3 MENU CEPAT PRESENSI: WFO, IZIN, DINAS LUAR (Selalu Tampil & Adaptif) -->
-                <div class="grid grid-cols-3 gap-2 mt-2.5">
-                    <!-- 1. WFO (Hadir / Pulang) -->
+                <!-- 🌟 3 MENU CEPAT PRESENSI: WFO, IZIN, DINAS LUAR (Hanya Tampil Jika Belum Absen Hari Ini) -->
+                <div v-if="!userData?.attendance_status?.checked_in" class="grid grid-cols-3 gap-2 mt-2.5">
+                    <!-- 1. WFO (Hadir) -->
                     <Link 
                         :href="safeRoute('attendance.index', { tab: 'present' })"
-                        class="rounded-2xl py-2 px-2 shadow-xs flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-center"
-                        :class="!userData?.attendance_status?.checked_in 
-                            ? 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white shadow-emerald-700/20 border border-emerald-400/30' 
-                            : (!userData?.attendance_status?.checked_out 
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-orange-600/20 border border-amber-300/30' 
-                                : 'bg-gradient-to-r from-teal-800 to-slate-800 text-teal-100 border border-teal-700/50')"
+                        class="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-2xl py-2 px-2 shadow-sm shadow-emerald-700/20 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all border border-emerald-400/30 text-center"
                     >
                         <div class="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center">
-                            <ArrowRightOnRectangleIcon v-if="userData?.attendance_status?.checked_in && !userData?.attendance_status?.checked_out" class="w-4 h-4 text-white stroke-[2.2]" />
-                            <CheckCircleIcon v-else-if="userData?.attendance_status?.checked_out" class="w-4 h-4 text-white stroke-[2.2]" />
-                            <BuildingOffice2Icon v-else class="w-4 h-4 text-white stroke-[2.2]" />
+                            <BuildingOffice2Icon class="w-4 h-4 text-white stroke-[2.2]" />
                         </div>
-                        <span class="text-[11px] font-extrabold tracking-tight">
-                            {{ !userData?.attendance_status?.checked_in 
-                                ? 'WFO (Hadir)' 
-                                : (!userData?.attendance_status?.checked_out ? 'Absen Pulang' : 'Sudah Pulang') }}
-                        </span>
+                        <span class="text-[11px] font-extrabold tracking-tight">WFO (Hadir)</span>
                     </Link>
 
                     <!-- 2. Izin / Sakit -->
