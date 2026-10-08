@@ -234,36 +234,8 @@ const eventTypeLabels = {
                     <div class="absolute inset-0 bg-gradient-to-r from-[#004d40]/95 via-[#00695c]/85 to-[#004d40]/25 pointer-events-none"></div>
 
                     <!-- Inner Content (Z-10) -->
-                    <div class="relative z-10 flex flex-col justify-between gap-3 sm:gap-4 h-full">
-                        <!-- TOP ROW: Date Badge (Left) & Status Presensi Pill (Right) -->
-                        <div class="flex items-center justify-between gap-2">
-                            <!-- 1. Date Card: Clean White Badge with Calendar Icon & 2-Line Date -->
-                            <div class="inline-flex items-center gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-2xl bg-white/95 backdrop-blur-xs text-slate-800 shadow-xs border border-white/80 shrink-0">
-                                <CalendarDaysIcon class="w-4 h-4 text-teal-700 stroke-[2] shrink-0" />
-                                <div class="leading-none text-left min-w-0">
-                                    <p class="font-black text-[10px] sm:text-[11px] text-slate-800 whitespace-nowrap">{{ todayGregorian }}</p>
-                                    <p class="font-semibold text-[8px] sm:text-[9px] text-slate-400 whitespace-nowrap mt-0.5">{{ todayHijri }}</p>
-                                </div>
-                            </div>
-
-                            <!-- 2. Status Presensi Pill Button -->
-                            <Link
-                                :href="safeRoute('attendance.index')"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-[11px] sm:text-xs rounded-full shadow-xs border border-white/80 transition-all active:scale-95 shrink-0"
-                            >
-                                <template v-if="userData?.attendance_status?.checked_in">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                                    <span class="text-emerald-800 font-black whitespace-nowrap">Masuk {{ userData.attendance_status.time }}</span>
-                                    <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5] text-emerald-600 shrink-0" />
-                                </template>
-                                <template v-else>
-                                    <span class="whitespace-nowrap">Status Presensi</span>
-                                    <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5] text-slate-400 shrink-0" />
-                                </template>
-                            </Link>
-                        </div>
-
-                        <!-- BOTTOM ROW: Large Teacher Avatar & Greeting/Name (100% Full Width Available - Anti-Clipping!) -->
+                    <div class="relative z-10 flex flex-col justify-between gap-3.5 sm:gap-4 h-full">
+                        <!-- TOP ROW: Large Teacher Avatar & Greeting/Name (100% Full Width Available - Anti-Clipping!) -->
                         <div class="flex items-center gap-3.5 sm:gap-4">
                             <!-- Large Avatar Squircle (w-16 h-16 sm:w-20 sm:h-20) -->
                             <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl overflow-hidden ring-2 ring-white/40 shadow-lg shrink-0 bg-teal-950/60 flex items-center justify-center">
@@ -288,6 +260,34 @@ const eventTypeLabels = {
                                     {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Guru Pengajar')) }}
                                 </p>
                             </div>
+                        </div>
+
+                        <!-- BOTTOM ROW: Date Badge (Left) & Status Presensi Pill (Right) -->
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
+                            <!-- 1. Date Card: Clean White Badge with Calendar Icon & 2-Line Date -->
+                            <div class="inline-flex items-center gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-2xl bg-white/95 backdrop-blur-xs text-slate-800 shadow-xs border border-white/80 shrink-0">
+                                <CalendarDaysIcon class="w-4 h-4 text-teal-700 stroke-[2] shrink-0" />
+                                <div class="leading-none text-left min-w-0">
+                                    <p class="font-black text-[10px] sm:text-[11px] text-slate-800 whitespace-nowrap">{{ todayGregorian }}</p>
+                                    <p class="font-semibold text-[8px] sm:text-[9px] text-slate-400 whitespace-nowrap mt-0.5">{{ todayHijri }}</p>
+                                </div>
+                            </div>
+
+                            <!-- 2. Status Presensi Pill Button -->
+                            <Link
+                                :href="safeRoute('attendance.index')"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-[11px] sm:text-xs rounded-full shadow-xs border border-white/80 transition-all active:scale-95 shrink-0"
+                            >
+                                <template v-if="userData?.attendance_status?.checked_in">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                                    <span class="text-emerald-800 font-black whitespace-nowrap">Masuk {{ userData.attendance_status.time }}</span>
+                                    <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5] text-emerald-600 shrink-0" />
+                                </template>
+                                <template v-else>
+                                    <span class="whitespace-nowrap">Status Presensi</span>
+                                    <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5] text-slate-400 shrink-0" />
+                                </template>
+                            </Link>
                         </div>
                     </div>
                 </div>
