@@ -46,7 +46,11 @@ import {
     Squares2X2Icon,
     CalendarIcon,
     BookOpenIcon,
-    PaperAirplaneIcon
+    PaperAirplaneIcon,
+    ComputerDesktopIcon,
+    BeakerIcon,
+    CalculatorIcon,
+    PaintBrushIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -166,6 +170,258 @@ const completedSchedule = computed(() => {
     const completed = todaySchedules.value.filter(s => s.id !== activeSchedule.value.id && s.end_time <= now);
     return completed.length ? completed[completed.length - 1] : null;
 });
+
+// ============================================================
+// 🎨 SMART SUBJECT BANNER MATCHING SYSTEM (14 Banners Pack)
+// ============================================================
+const subjectBanners = [
+    // 1. Komputer, Informatika & Teknologi (namira_banner_mixed_02)
+    {
+        keywords: ['komputer', 'informatika', 'tik', 'coding', 'pemrograman', 'it', 'teknologi', 'multimedia', 'software', 'hardware', 'jaringan'],
+        file: 'namira_banner_mixed_02',
+        borderClass: 'border-blue-700/40',
+        overlayClass: 'bg-gradient-to-r from-[#071946]/95 via-[#1e3a8a]/85 to-[#071946]/25',
+        badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-400/30',
+        badgeDotClass: 'bg-blue-400',
+        iconBgClass: 'bg-blue-600/30 border-blue-400/30 text-white',
+        textAccent: 'text-blue-200/90',
+        subtextAccent: 'text-blue-100',
+        btnIconColor: 'text-blue-700',
+        iconType: 'computer',
+        previewBadgeClass: 'bg-blue-50 text-blue-600',
+    },
+    // 2. Sains & IPA (namira_banner_mixed_08)
+    {
+        keywords: ['ipa', 'sains', 'fisika', 'kimia', 'biologi', 'laboratorium', 'praktikum', 'eksperimen', 'science'],
+        file: 'namira_banner_mixed_08',
+        borderClass: 'border-emerald-700/40',
+        overlayClass: 'bg-gradient-to-r from-[#022c22]/95 via-[#064e3b]/85 to-[#022c22]/25',
+        badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
+        badgeDotClass: 'bg-emerald-400',
+        iconBgClass: 'bg-emerald-600/30 border-emerald-400/30 text-white',
+        textAccent: 'text-emerald-200/90',
+        subtextAccent: 'text-emerald-100',
+        btnIconColor: 'text-emerald-700',
+        iconType: 'beaker',
+        previewBadgeClass: 'bg-emerald-50 text-emerald-600',
+    },
+    // 3. Matematika & Statistika (namira_banner_mixed_04)
+    {
+        keywords: ['matematika', 'mtk', 'math', 'statistika', 'ekonomi', 'akuntansi', 'berhitung', 'aljabar', 'geometri', 'kalkulus'],
+        file: 'namira_banner_mixed_04',
+        borderClass: 'border-purple-700/40',
+        overlayClass: 'bg-gradient-to-r from-[#240e54]/95 via-[#4c1d95]/85 to-[#240e54]/25',
+        badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-400/30',
+        badgeDotClass: 'bg-purple-400',
+        iconBgClass: 'bg-purple-600/30 border-purple-400/30 text-white',
+        textAccent: 'text-purple-200/90',
+        subtextAccent: 'text-purple-100',
+        btnIconColor: 'text-purple-700',
+        iconType: 'calculator',
+        previewBadgeClass: 'bg-purple-50 text-purple-600',
+    },
+    // 4. Pendidikan Agama Islam / PAI / Fiqih / Arab (namira_banner_mixed_09)
+    {
+        keywords: ['pai', 'pendidikan agama', 'islam', 'fiqih', 'fikih', 'aqidah', 'akhlak', 'ski', 'sejarah kebudayaan islam', 'al-qur\'an', 'qur\'an', 'quran', 'hadits', 'hadis', 'arab', 'tahfidz', 'tahsin', 'tajwid'],
+        file: 'namira_banner_mixed_09',
+        borderClass: 'border-teal-700/40',
+        overlayClass: 'bg-gradient-to-r from-[#042f2e]/95 via-[#115e59]/85 to-[#042f2e]/25',
+        badgeClass: 'bg-teal-500/20 text-teal-300 border-teal-400/30',
+        badgeDotClass: 'bg-teal-400',
+        iconBgClass: 'bg-teal-600/30 border-teal-400/30 text-white',
+        textAccent: 'text-teal-200/90',
+        subtextAccent: 'text-teal-100',
+        btnIconColor: 'text-teal-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-teal-50 text-teal-700',
+    },
+    // 5. Bahasa & Literasi (namira_banner_mixed_03)
+    {
+        keywords: ['bahasa indonesia', 'indonesia', 'bahasa inggris', 'inggris', 'english', 'literasi', 'baca', 'membaca', 'perpustakaan', 'novel', 'sastra', 'puisi', 'menulis'],
+        file: 'namira_banner_mixed_03',
+        borderClass: 'border-amber-800/40',
+        overlayClass: 'bg-gradient-to-r from-[#3f1906]/95 via-[#78350f]/85 to-[#3f1906]/25',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+        badgeDotClass: 'bg-amber-400',
+        iconBgClass: 'bg-amber-600/30 border-amber-400/30 text-white',
+        textAccent: 'text-amber-200/90',
+        subtextAccent: 'text-amber-100',
+        btnIconColor: 'text-amber-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-amber-50 text-amber-700',
+    },
+    // 6. Seni Budaya & Keterampilan (namira_banner_mixed_10)
+    {
+        keywords: ['seni', 'budaya', 'sbdp', 'seni rupa', 'seni musik', 'seni tari', 'gambar', 'menggambar', 'desain', 'kriya', 'lukis'],
+        file: 'namira_banner_mixed_10',
+        borderClass: 'border-cyan-800/40',
+        overlayClass: 'bg-gradient-to-r from-[#083344]/95 via-[#0e7490]/85 to-[#083344]/25',
+        badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30',
+        badgeDotClass: 'bg-cyan-400',
+        iconBgClass: 'bg-cyan-600/30 border-cyan-400/30 text-white',
+        textAccent: 'text-cyan-200/90',
+        subtextAccent: 'text-cyan-100',
+        btnIconColor: 'text-cyan-700',
+        iconType: 'paint',
+        previewBadgeClass: 'bg-cyan-50 text-cyan-700',
+    },
+    // 7. Bimbingan Konseling & E-Learning (namira_banner_mixed_11)
+    {
+        keywords: ['bk', 'konseling', 'bimbingan', 'literasi digital', 'e-learning', 'psikologi', 'pengembangan diri'],
+        file: 'namira_banner_mixed_11',
+        borderClass: 'border-purple-800/40',
+        overlayClass: 'bg-gradient-to-r from-[#300a52]/95 via-[#581c87]/85 to-[#300a52]/25',
+        badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-400/30',
+        badgeDotClass: 'bg-purple-400',
+        iconBgClass: 'bg-purple-600/30 border-purple-400/30 text-white',
+        textAccent: 'text-purple-200/90',
+        subtextAccent: 'text-purple-100',
+        btnIconColor: 'text-purple-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-purple-50 text-purple-600',
+    },
+    // 8. Prakarya, PKWU & Kerja Kelompok (namira_banner_mixed_12)
+    {
+        keywords: ['prakarya', 'pkwu', 'kewirausahaan', 'proyek', 'kelompok', 'diskusi', 'keterampilan hidup', 'sosiologi'],
+        file: 'namira_banner_mixed_12',
+        borderClass: 'border-orange-800/40',
+        overlayClass: 'bg-gradient-to-r from-[#3d1306]/95 via-[#7c2d12]/85 to-[#3d1306]/25',
+        badgeClass: 'bg-orange-500/20 text-orange-300 border-orange-400/30',
+        badgeDotClass: 'bg-orange-400',
+        iconBgClass: 'bg-orange-600/30 border-orange-400/30 text-white',
+        textAccent: 'text-orange-200/90',
+        subtextAccent: 'text-orange-100',
+        btnIconColor: 'text-orange-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-orange-50 text-orange-700',
+    },
+    // 9. Ilmu Pengetahuan Sosial & Geografi (namira_banner_mixed_07)
+    {
+        keywords: ['ips', 'geografi', 'sejarah', 'alam', 'lingkungan', 'bumi', 'antropologi'],
+        file: 'namira_banner_mixed_07',
+        borderClass: 'border-orange-900/40',
+        overlayClass: 'bg-gradient-to-r from-[#3d1306]/95 via-[#9a3412]/85 to-[#3d1306]/25',
+        badgeClass: 'bg-orange-500/20 text-orange-300 border-orange-400/30',
+        badgeDotClass: 'bg-orange-400',
+        iconBgClass: 'bg-orange-600/30 border-orange-400/30 text-white',
+        textAccent: 'text-orange-200/90',
+        subtextAccent: 'text-orange-100',
+        btnIconColor: 'text-orange-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-amber-50 text-amber-700',
+    },
+    // 10. PPKn & Tematik Kelas (namira_banner_mixed_06)
+    {
+        keywords: ['pkn', 'pancasila', 'pendidikan pancasila', 'kewarganegaraan', 'tematik', 'tema', 'guru kelas', 'wali kelas'],
+        file: 'namira_banner_mixed_06',
+        borderClass: 'border-sky-800/40',
+        overlayClass: 'bg-gradient-to-r from-[#062438]/95 via-[#0369a1]/85 to-[#062438]/25',
+        badgeClass: 'bg-sky-500/20 text-sky-300 border-sky-400/30',
+        badgeDotClass: 'bg-sky-400',
+        iconBgClass: 'bg-sky-600/30 border-sky-400/30 text-white',
+        textAccent: 'text-sky-200/90',
+        subtextAccent: 'text-sky-100',
+        btnIconColor: 'text-sky-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-sky-50 text-sky-600',
+    },
+    // 11. P5, Ekskul & Belajar Mandiri (namira_banner_mixed_13)
+    {
+        keywords: ['p5', 'profil pelajar', 'ekskul', 'ekstrakurikuler', 'studi', 'bimbingan belajar'],
+        file: 'namira_banner_mixed_13',
+        borderClass: 'border-blue-900/40',
+        overlayClass: 'bg-gradient-to-r from-[#0b162f]/95 via-[#1e3a8a]/85 to-[#0b162f]/25',
+        badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-400/30',
+        badgeDotClass: 'bg-blue-400',
+        iconBgClass: 'bg-blue-600/30 border-blue-400/30 text-white',
+        textAccent: 'text-blue-200/90',
+        subtextAccent: 'text-blue-100',
+        btnIconColor: 'text-blue-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-blue-50 text-blue-600',
+    },
+    // 12. Diniyah & Kajian Malam (namira_banner_mixed_14)
+    {
+        keywords: ['diniyah', 'kajian', 'malam', 'pesantren malam', 'asrama', 'halaqah'],
+        file: 'namira_banner_mixed_14',
+        borderClass: 'border-indigo-950/40',
+        overlayClass: 'bg-gradient-to-r from-[#030712]/95 via-[#1e1b4b]/85 to-[#030712]/25',
+        badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30',
+        badgeDotClass: 'bg-indigo-400',
+        iconBgClass: 'bg-indigo-600/30 border-indigo-400/30 text-white',
+        textAccent: 'text-indigo-200/90',
+        subtextAccent: 'text-indigo-100',
+        btnIconColor: 'text-indigo-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-indigo-50 text-indigo-600',
+    },
+    // 13. Kampus Sekolah & Olahraga (namira_banner_mixed_05)
+    {
+        keywords: ['olahraga', 'pjok', 'penjaskes', 'upacara', 'lapangan', 'pembiasaan', 'senam'],
+        file: 'namira_banner_mixed_05',
+        borderClass: 'border-emerald-800/40',
+        overlayClass: 'bg-gradient-to-r from-[#043327]/95 via-[#047857]/85 to-[#043327]/25',
+        badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
+        badgeDotClass: 'bg-emerald-400',
+        iconBgClass: 'bg-emerald-600/30 border-emerald-400/30 text-white',
+        textAccent: 'text-emerald-200/90',
+        subtextAccent: 'text-emerald-100',
+        btnIconColor: 'text-emerald-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-emerald-50 text-emerald-600',
+    },
+    // 14. Default Pembelajaran Namira (namira_banner_mixed_01)
+    {
+        keywords: [],
+        file: 'namira_banner_mixed_01',
+        borderClass: 'border-teal-700/40',
+        overlayClass: 'bg-gradient-to-r from-[#004d40]/95 via-[#00695c]/85 to-[#004d40]/25',
+        badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
+        badgeDotClass: 'bg-emerald-400',
+        iconBgClass: 'bg-emerald-600/30 border-emerald-400/30 text-white',
+        textAccent: 'text-teal-200/90',
+        subtextAccent: 'text-teal-100',
+        btnIconColor: 'text-teal-700',
+        iconType: 'book',
+        previewBadgeClass: 'bg-teal-50 text-teal-700',
+    }
+];
+
+const getSubjectBanner = (subjectName) => {
+    if (!subjectName) return subjectBanners[subjectBanners.length - 1];
+    const nameLower = subjectName.toLowerCase();
+    for (const item of subjectBanners) {
+        if (item.keywords.some(kw => nameLower.includes(kw))) {
+            return item;
+        }
+    }
+    // Fallback hash selector among good general banners: 01, 06, 10, 05
+    const hash = nameLower.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const fallbacks = [
+        subjectBanners.find(b => b.file === 'namira_banner_mixed_01'),
+        subjectBanners.find(b => b.file === 'namira_banner_mixed_06'),
+        subjectBanners.find(b => b.file === 'namira_banner_mixed_10'),
+        subjectBanners.find(b => b.file === 'namira_banner_mixed_05'),
+    ].filter(Boolean);
+    return fallbacks[hash % fallbacks.length] || subjectBanners[subjectBanners.length - 1];
+};
+
+const activeScheduleBanner = computed(() => {
+    const config = getSubjectBanner(activeSchedule.value?.subject_name);
+    return {
+        ...config,
+        webp: `/images/banners/subjects/${config.file}.webp`,
+        png: `/images/banners/subjects/${config.file}.png`,
+    };
+});
+
+const getScheduleIconType = (subjectName) => {
+    return getSubjectBanner(subjectName)?.iconType || 'book';
+};
+
+const getScheduleIconStyle = (subjectName) => {
+    return getSubjectBanner(subjectName)?.previewBadgeClass || 'bg-blue-50 text-blue-600';
+};
 
 const safeRoute = (name, params = {}, fallback = '#') => {
     try {
@@ -510,31 +766,38 @@ const eventTypeLabels = {
                     </Link>
                 </div>
 
-                <!-- A. Sesi Aktif Saat Ini / Highlight Card (Menggunakan Gambar Kedua Sebagai Background) -->
+                <!-- A. Sesi Aktif Saat Ini / Highlight Card (Smart Dynamic Banner Sesuai Mapel) -->
                 <div 
                     v-if="activeSchedule"
-                    class="relative overflow-hidden rounded-2xl p-3.5 sm:p-4 border border-teal-700/40 shadow-sm min-h-[145px] flex flex-col justify-between"
+                    class="relative overflow-hidden rounded-2xl p-3.5 sm:p-4 shadow-sm min-h-[145px] flex flex-col justify-between transition-colors duration-300"
+                    :class="activeScheduleBanner.borderClass"
                 >
-                    <!-- Classroom Background Image (WebP with JPG fallback) -->
+                    <!-- Classroom Background Image (WebP with PNG fallback) -->
                     <picture class="absolute inset-0 w-full h-full pointer-events-none select-none">
-                        <source srcset="/images/active_lesson_bg.webp" type="image/webp">
+                        <source :srcset="activeScheduleBanner.webp" type="image/webp">
                         <img 
-                            src="/images/active_lesson_bg.jpg" 
-                            alt="Active Lesson Illustration" 
+                            :src="activeScheduleBanner.png" 
+                            :alt="activeSchedule.subject_name || 'Active Lesson Illustration'" 
                             class="w-full h-full object-cover object-right"
                         />
                     </picture>
 
-                    <!-- Gradient Contrast Overlay: Strong teal on left for text readability, clear on right to showcase classroom illustration -->
-                    <div class="absolute inset-0 bg-gradient-to-r from-[#004d40]/95 via-[#00695c]/85 to-[#004d40]/25 pointer-events-none"></div>
+                    <!-- Gradient Contrast Overlay: Matches subject theme palette, strong on left for crisp readability, transparent on right to showcase illustration -->
+                    <div 
+                        class="absolute inset-0 pointer-events-none transition-all duration-300"
+                        :class="activeScheduleBanner.overlayClass"
+                    ></div>
 
                     <!-- Inner Content (Z-10) -->
                     <div class="relative z-10 flex flex-col justify-between gap-3 h-full">
                         <!-- Top Row: Status Badge & Time -->
                         <div class="flex items-center justify-between gap-2">
                             <!-- Status Badge -->
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 backdrop-blur-xs">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" :class="isCurrentlyTeaching ? 'animate-ping' : ''"></span>
+                            <div 
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-xs transition-colors"
+                                :class="activeScheduleBanner.badgeClass"
+                            >
+                                <span class="w-1.5 h-1.5 rounded-full" :class="[activeScheduleBanner.badgeDotClass, isCurrentlyTeaching ? 'animate-ping' : '']"></span>
                                 <span>{{ isCurrentlyTeaching ? 'Sedang Mengajar' : 'Sesi Aktif' }}</span>
                             </div>
 
@@ -543,30 +806,37 @@ const eventTypeLabels = {
                                 <p class="text-xs sm:text-sm font-black text-white whitespace-nowrap drop-shadow-xs">
                                     {{ activeSchedule.start_time }} – {{ activeSchedule.end_time }}
                                 </p>
-                                <p v-if="activeScheduleDuration" class="text-[10px] font-semibold text-teal-200/90 whitespace-nowrap mt-0.5 flex items-center justify-end gap-1">
+                                <p v-if="activeScheduleDuration" class="text-[10px] font-semibold whitespace-nowrap mt-0.5 flex items-center justify-end gap-1" :class="activeScheduleBanner.textAccent">
                                     <ClockIcon class="w-3 h-3 stroke-[2]" />
                                     <span>{{ activeScheduleDuration }}</span>
                                 </p>
                             </div>
                         </div>
 
-                        <!-- Main Row: Book Icon + Subject + Location & Button Isi Jurnal -->
+                        <!-- Main Row: Dynamic Subject Icon + Subject + Location & Button Isi Jurnal -->
                         <div class="flex items-end justify-between gap-3 pt-1">
                             <!-- Left: Subject Details -->
                             <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shrink-0 shadow-inner border border-white/20">
-                                    <BookOpenIcon class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2]" />
+                                <div 
+                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl backdrop-blur-xs flex items-center justify-center shrink-0 shadow-inner border transition-colors"
+                                    :class="activeScheduleBanner.iconBgClass"
+                                >
+                                    <ComputerDesktopIcon v-if="activeScheduleBanner.iconType === 'computer'" class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2]" />
+                                    <BeakerIcon v-else-if="activeScheduleBanner.iconType === 'beaker'" class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2]" />
+                                    <CalculatorIcon v-else-if="activeScheduleBanner.iconType === 'calculator'" class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2]" />
+                                    <PaintBrushIcon v-else-if="activeScheduleBanner.iconType === 'paint'" class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2]" />
+                                    <BookOpenIcon v-else class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2]" />
                                 </div>
                                 <div class="min-w-0 flex-1 text-left">
-                                    <h4 class="font-black text-sm sm:text-base text-white tracking-tight leading-snug drop-shadow-xs truncate">
+                                    <h4 class="font-black text-sm sm:text-base text-white tracking-tight leading-snug drop-shadow-xs line-clamp-2 break-words">
                                         {{ activeSchedule.subject_name }}
                                     </h4>
-                                    <p class="text-xs font-semibold text-teal-100 flex items-center gap-1 mt-0.5 truncate">
-                                        <UsersIcon class="w-3.5 h-3.5 shrink-0 text-teal-300 stroke-[2]" />
+                                    <p class="text-xs font-semibold flex items-center gap-1 mt-0.5 truncate" :class="activeScheduleBanner.subtextAccent">
+                                        <UsersIcon class="w-3.5 h-3.5 shrink-0 stroke-[2] opacity-80" />
                                         <span>Kelas {{ activeSchedule.classroom_name }}</span>
                                     </p>
-                                    <p class="text-[11px] font-medium text-teal-200/90 flex items-center gap-1 mt-0.5 truncate">
-                                        <MapPinIcon class="w-3 h-3 shrink-0 text-teal-300 stroke-[2]" />
+                                    <p class="text-[11px] font-medium flex items-center gap-1 mt-0.5 truncate" :class="activeScheduleBanner.textAccent">
+                                        <MapPinIcon class="w-3 h-3 stroke-[2] opacity-80" />
                                         <span>Ruang Kelas</span>
                                     </p>
                                 </div>
@@ -575,14 +845,14 @@ const eventTypeLabels = {
                             <!-- Right: Button Isi Jurnal (White Pill) -->
                             <Link 
                                 :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: activeSchedule.id })" 
-                                class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-teal-50 text-slate-800 font-extrabold text-xs rounded-full shadow-md active:scale-95 transition-all border border-slate-100"
+                                class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-xs rounded-full shadow-md active:scale-95 transition-all border border-slate-100"
                             >
                                 <template v-if="activeSchedule.has_journal">
                                     <CheckCircleIcon class="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
                                     <span class="text-emerald-700">Jurnal Terisi</span>
                                 </template>
                                 <template v-else>
-                                    <PencilSquareIcon class="w-3.5 h-3.5 text-teal-700 stroke-[2.2]" />
+                                    <PencilSquareIcon class="w-3.5 h-3.5 stroke-[2.2]" :class="activeScheduleBanner.btnIconColor" />
                                     <span>Isi Jurnal</span>
                                     <ChevronRightIcon class="w-3 h-3 stroke-[2.5] text-slate-400" />
                                 </template>
@@ -611,8 +881,12 @@ const eventTypeLabels = {
                                 <p class="font-extrabold text-xs text-slate-800">{{ nextSchedule.start_time }}</p>
                                 <p class="font-semibold text-[11px] text-slate-500 mt-0.5">{{ nextSchedule.end_time }}</p>
                             </div>
-                            <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                                <BookOpenIcon class="w-4 h-4 stroke-[2]" />
+                            <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" :class="getScheduleIconStyle(nextSchedule.subject_name)">
+                                <ComputerDesktopIcon v-if="getScheduleIconType(nextSchedule.subject_name) === 'computer'" class="w-4 h-4 stroke-[2]" />
+                                <BeakerIcon v-else-if="getScheduleIconType(nextSchedule.subject_name) === 'beaker'" class="w-4 h-4 stroke-[2]" />
+                                <CalculatorIcon v-else-if="getScheduleIconType(nextSchedule.subject_name) === 'calculator'" class="w-4 h-4 stroke-[2]" />
+                                <PaintBrushIcon v-else-if="getScheduleIconType(nextSchedule.subject_name) === 'paint'" class="w-4 h-4 stroke-[2]" />
+                                <BookOpenIcon v-else class="w-4 h-4 stroke-[2]" />
                             </div>
                             <div class="min-w-0 flex-1">
                                 <p class="font-extrabold text-xs text-slate-800 truncate">{{ nextSchedule.subject_name }}</p>
@@ -623,7 +897,7 @@ const eventTypeLabels = {
                         </div>
                         <Link 
                             :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: nextSchedule.id })"
-                            class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 hover:bg-blue-100 transition-all active:scale-95"
+                            class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 hover:bg-teal-50 hover:text-teal-700 transition-all active:scale-95"
                         >
                             <ChevronRightIcon class="w-4 h-4 stroke-[2.5]" />
                         </Link>
@@ -644,7 +918,11 @@ const eventTypeLabels = {
                                 <p class="font-medium text-[11px] text-slate-400 mt-0.5">{{ completedSchedule.end_time }}</p>
                             </div>
                             <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
-                                <BookOpenIcon class="w-4 h-4 stroke-[2]" />
+                                <ComputerDesktopIcon v-if="getScheduleIconType(completedSchedule.subject_name) === 'computer'" class="w-4 h-4 stroke-[2]" />
+                                <BeakerIcon v-else-if="getScheduleIconType(completedSchedule.subject_name) === 'beaker'" class="w-4 h-4 stroke-[2]" />
+                                <CalculatorIcon v-else-if="getScheduleIconType(completedSchedule.subject_name) === 'calculator'" class="w-4 h-4 stroke-[2]" />
+                                <PaintBrushIcon v-else-if="getScheduleIconType(completedSchedule.subject_name) === 'paint'" class="w-4 h-4 stroke-[2]" />
+                                <BookOpenIcon v-else class="w-4 h-4 stroke-[2]" />
                             </div>
                             <div class="min-w-0 flex-1">
                                 <p class="font-bold text-xs text-slate-600 truncate">{{ completedSchedule.subject_name }}</p>
