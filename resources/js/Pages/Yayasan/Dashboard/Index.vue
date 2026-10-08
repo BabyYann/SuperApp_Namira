@@ -190,66 +190,68 @@ const eventTypeLabels = {
                 </div>
             </div>
 
-            <!-- 1. COMPACT PROFILE & ATTENDANCE CARD (Guru & Pegawai Non-Pengawas) -->
-            <div 
-                v-else 
-                class="rounded-2xl bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 p-4 text-white shadow-sm border border-teal-800/40 relative overflow-hidden"
-            >
-                <div class="absolute -right-8 -bottom-8 w-28 h-28 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <!-- 1. STANDARD HERO CARD FOR TEACHER & STAFF (Floating Portrait Pop-Out) -->
+            <div v-else class="relative pt-6">
 
-                <!-- Baris 1: Foto Profil Mini, Salam & Role -->
-                <div class="flex items-center gap-3 relative z-10">
-                    <div class="relative shrink-0">
-                        <div class="w-11 h-11 rounded-full overflow-hidden ring-2 ring-teal-400/40 shadow-xs bg-teal-800 flex items-center justify-center">
-                            <img v-if="user?.profile_photo_url" :src="user.profile_photo_url" :alt="user?.name" class="w-full h-full object-cover">
-                            <span v-else class="text-sm font-black text-white">{{ userInitials }}</span>
-                        </div>
-                        <span 
-                            class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-slate-900" 
-                            :class="userData?.attendance_status?.checked_in ? 'bg-emerald-400' : 'bg-amber-400'"
-                        ></span>
-                    </div>
+                <!-- Main Gradient Card Body -->
+                <div class="relative overflow-visible rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 border border-teal-800/60 shadow-xl min-h-[160px] flex flex-col justify-center">
 
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-teal-300 truncate">
-                                {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Pegawai Yayasan')) }}
-                            </span>
-                        </div>
-                        <h3 class="font-extrabold text-base text-white tracking-tight leading-snug truncate">
+                    <!-- Background Glow Accent -->
+                    <div class="absolute -left-6 -bottom-6 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <!-- Right Text Info (58% width on right side) -->
+                    <div class="z-20 w-[58%] ml-auto pl-1 my-0.5 text-left">
+                        <p class="text-xs font-bold text-slate-400">Selamat Datang,</p>
+                        <h3 class="font-black text-2xl text-white tracking-tight leading-tight mt-1 drop-shadow-sm truncate">
                             {{ user?.name }}
                         </h3>
-                        <p class="text-[11px] text-slate-400 font-medium truncate mt-0.5">
-                            {{ userData?.today_date }}
+                        <p class="text-xs font-bold text-teal-400 mt-1 truncate">
+                            {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Pegawai Yayasan')) }}
                         </p>
                     </div>
-                </div>
 
-                <!-- Baris 2: Integrated Compact Attendance Status Bar (Nol Redundansi) -->
-                <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 relative z-10">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0">
-                            <FingerPrintIcon class="w-4 h-4 stroke-[2.2]" />
-                        </div>
-                        <div class="text-xs truncate">
-                            <template v-if="userData?.attendance_status?.checked_in">
-                                <span class="text-slate-300 font-medium">Presensi: </span>
-                                <span class="font-black text-emerald-400">{{ userData.attendance_status.time }} WIB</span>
-                                <span class="text-[10px] text-emerald-300/80 ml-1 font-semibold">({{ userData.attendance_status.status }})</span>
-                            </template>
-                            <template v-else>
-                                <span class="text-amber-300 font-black">Belum Presensi Masuk Hari Ini</span>
-                            </template>
+                    <!-- Action Button -->
+                    <div class="pt-3 z-20 w-[58%] ml-auto pl-1">
+                        <Link
+                            :href="safeRoute('attendance.index')"
+                            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-teal-50 text-slate-950 font-extrabold text-xs rounded-full shadow-md transition-all active:scale-95 border border-slate-200"
+                        >
+                            <span v-if="userData?.attendance_status?.checked_in" class="flex items-center gap-1.5 text-emerald-800 font-extrabold">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span>Masuk {{ userData.attendance_status.time }} WIB</span>
+                            </span>
+                            <span v-else class="flex items-center gap-1">
+                                <span>Status Presensi</span>
+                                <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                            </span>
+                        </Link>
+                    </div>
+
+                    <!-- 🌟 KONDISI 1: ADA FOTO → Portrait Melayang Keluar Atas Card (Pop-Out Header) -->
+                    <div
+                        v-if="user?.profile_photo_url"
+                        class="absolute left-3 bottom-0 h-[122%] w-[38%] flex items-end justify-center pointer-events-none z-30"
+                    >
+                        <div class="w-full max-w-[115px] h-[100%] rounded-t-3xl rounded-b-2xl overflow-hidden ring-4 ring-white/20 shadow-2xl drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]">
+                            <img
+                                :src="user.profile_photo_url"
+                                :alt="user?.name"
+                                class="w-full h-full object-cover object-top"
+                            />
                         </div>
                     </div>
 
-                    <Link 
-                        :href="safeRoute('attendance.index')"
-                        class="shrink-0 text-[11px] font-extrabold px-3 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-200 border border-teal-400/30 transition-all active:scale-95 flex items-center gap-1"
+                    <!-- 🌟 KONDISI 2: TIDAK ADA FOTO → Circle dengan Inisial (tetap di dalam card) -->
+                    <div
+                        v-else
+                        class="absolute left-2 bottom-0 h-[115%] w-[40%] flex items-end justify-center pointer-events-none z-10"
                     >
-                        <span>{{ userData?.attendance_status?.checked_in ? 'Detail' : 'Absen Masuk' }}</span>
-                        <ChevronRightIcon class="w-3 h-3 stroke-[2.5]" />
-                    </Link>
+                        <div class="w-28 h-28 mb-2 rounded-full bg-gradient-to-br from-teal-400 via-teal-600 to-slate-800 flex items-center justify-center ring-4 ring-white/20 shadow-2xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                            <span class="text-4xl font-black text-white tracking-tight select-none" style="text-shadow: 0 2px 8px rgba(0,0,0,0.4)">
+                                {{ userInitials }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
