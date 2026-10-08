@@ -40,7 +40,12 @@ import {
     FingerPrintIcon,
     NewspaperIcon,
     GlobeAltIcon,
-    BanknotesIcon
+    BanknotesIcon,
+    ShieldCheckIcon,
+    HeartIcon,
+    Squares2X2Icon,
+    CalendarIcon,
+    BookOpenIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -63,6 +68,7 @@ const hasRole = (roles) => {
     return roles.some(role => userRoles.value.includes(role));
 };
 
+const isGlobalAdmin = computed(() => userRoles.value.some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'].includes(r)));
 const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
 
 const isDaycare = computed(() => {
@@ -135,158 +141,119 @@ const eventTypeLabels = {
         <!-- ============================================================ -->
         <!-- 📱 NATIVE MOBILE HOME VIEW (Role-Aware for Teacher & Non-Teacher) -->
         <!-- ============================================================ -->
-        <div class="block md:hidden space-y-6 pb-6">
+        <!-- ============================================================ -->
+        <!-- 📱 NATIVE MOBILE HOME VIEW (Role-Aware for Teacher & Non-Teacher) -->
+        <!-- ============================================================ -->
+        <div class="block md:hidden space-y-3.5 pb-6">
 
-            <!-- ============================================================ -->
-            <!-- 📱 EXECUTIVE HERO CARD FOR PENGAWAS YAYASAN -->
-            <!-- ============================================================ -->
+            <!-- 1. EXECUTIVE HERO CARD FOR PENGAWAS YAYASAN -->
             <div 
                 v-if="isPengawas"
-                class="rounded-3xl bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#0f172a] p-5 text-white shadow-xl border border-blue-900/60 relative overflow-hidden"
+                class="rounded-2xl bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#0f172a] p-4 text-white shadow-sm border border-blue-900/60 relative overflow-hidden"
             >
-                <!-- Background Accent Glow -->
                 <div class="absolute -right-10 -top-10 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
                 <!-- Top Row: Avatar + Info -->
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center ring-2 ring-white/30 shadow-md shrink-0 overflow-hidden">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center ring-2 ring-white/30 shadow-xs shrink-0 overflow-hidden">
                         <img v-if="user?.profile_photo_url" :src="user.profile_photo_url" :alt="user?.name" class="w-full h-full object-cover">
-                        <span v-else class="text-base font-black text-white tracking-tight">{{ userInitials }}</span>
+                        <span v-else class="text-sm font-black text-white tracking-tight">{{ userInitials }}</span>
                     </div>
 
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-1.5 mb-0.5">
-                            <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-1">
-                                <ShieldCheckIcon class="w-3.5 h-3.5 text-blue-300" />
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-1">
+                                <ShieldCheckIcon class="w-3 h-3 text-blue-300" />
                                 <span>Pengawas Yayasan</span>
                             </span>
                         </div>
-                        <h3 class="font-extrabold text-base text-white tracking-tight leading-tight truncate">
+                        <h3 class="font-extrabold text-sm text-white tracking-tight leading-tight truncate">
                             {{ user?.name }}
                         </h3>
                     </div>
                 </div>
 
-                <!-- Middle Row: Active Unit & Quick Metric Pills -->
+                <!-- Middle Row: Metrics Pills -->
                 <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
-                    <div class="bg-white/5 rounded-xl p-2 text-center border border-white/5">
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Total Unit</span>
-                        <span class="text-sm font-black text-white">{{ unitsCount || 5 }} Unit</span>
+                    <div class="bg-white/5 rounded-xl p-1.5 text-center border border-white/5">
+                        <span class="block text-[9px] uppercase font-bold text-slate-400">Total Unit</span>
+                        <span class="text-xs font-black text-white">{{ unitsCount || 5 }} Unit</span>
                     </div>
-                    <div class="bg-white/5 rounded-xl p-2 text-center border border-white/5">
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Total Siswa</span>
-                        <span class="text-sm font-black text-teal-300">{{ studentsCount || 0 }}</span>
+                    <div class="bg-white/5 rounded-xl p-1.5 text-center border border-white/5">
+                        <span class="block text-[9px] uppercase font-bold text-slate-400">Total Siswa</span>
+                        <span class="text-xs font-black text-teal-300">{{ studentsCount || 0 }}</span>
                     </div>
-                    <div class="bg-white/5 rounded-xl p-2 text-center border border-white/5">
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Mode</span>
-                        <span class="text-sm font-black text-blue-300">Read-Only</span>
+                    <div class="bg-white/5 rounded-xl p-1.5 text-center border border-white/5">
+                        <span class="block text-[9px] uppercase font-bold text-slate-400">Mode</span>
+                        <span class="text-xs font-black text-blue-300">Read-Only</span>
                     </div>
                 </div>
             </div>
 
-            <!-- ============================================================ -->
-            <!-- 📱 STANDARD HERO CARD FOR TEACHER & STAFF (Non-Pengawas) -->
-            <!-- ============================================================ -->
-            <!-- HERO CARD: Ada Foto = Floating Portrait Pop-Out, Tidak Ada Foto = Circle Initials -->
-            <div v-else class="relative pt-6">
+            <!-- 1. COMPACT PROFILE & ATTENDANCE CARD (Guru & Pegawai Non-Pengawas) -->
+            <div 
+                v-else 
+                class="rounded-2xl bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 p-4 text-white shadow-sm border border-teal-800/40 relative overflow-hidden"
+            >
+                <div class="absolute -right-8 -bottom-8 w-28 h-28 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-                <!-- Main Gradient Card Body -->
-                <div class="relative overflow-visible rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 border border-teal-800/60 shadow-xl min-h-[160px] flex flex-col justify-center">
+                <!-- Baris 1: Foto Profil Mini, Salam & Role -->
+                <div class="flex items-center gap-3 relative z-10">
+                    <div class="relative shrink-0">
+                        <div class="w-11 h-11 rounded-full overflow-hidden ring-2 ring-teal-400/40 shadow-xs bg-teal-800 flex items-center justify-center">
+                            <img v-if="user?.profile_photo_url" :src="user.profile_photo_url" :alt="user?.name" class="w-full h-full object-cover">
+                            <span v-else class="text-sm font-black text-white">{{ userInitials }}</span>
+                        </div>
+                        <span 
+                            class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-slate-900" 
+                            :class="userData?.attendance_status?.checked_in ? 'bg-emerald-400' : 'bg-amber-400'"
+                        ></span>
+                    </div>
 
-                    <!-- Background Glow Accent -->
-                    <div class="absolute -left-6 -bottom-6 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                    <!-- Right Text Info (58% width on right side) -->
-                    <div class="z-20 w-[58%] ml-auto pl-1 my-0.5 text-left">
-                        <p class="text-xs font-bold text-slate-400">Selamat Datang,</p>
-                        <h3 class="font-black text-2xl text-white tracking-tight leading-tight mt-1 drop-shadow-sm truncate">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-teal-300 truncate">
+                                {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Pegawai Yayasan')) }}
+                            </span>
+                        </div>
+                        <h3 class="font-extrabold text-base text-white tracking-tight leading-snug truncate">
                             {{ user?.name }}
                         </h3>
-                        <p class="text-xs font-bold text-teal-400 mt-1 truncate">
-                            {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Pegawai Yayasan')) }}
+                        <p class="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                            {{ userData?.today_date }}
                         </p>
                     </div>
+                </div>
 
-                    <!-- Action Button -->
-                    <div class="pt-3 z-20 w-[58%] ml-auto pl-1">
-                        <Link
-                            :href="safeRoute('attendance.index')"
-                            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-teal-50 text-slate-950 font-extrabold text-xs rounded-full shadow-md transition-all active:scale-95 border border-slate-200"
-                        >
-                            <span v-if="userData?.attendance_status?.checked_in" class="flex items-center gap-1.5 text-emerald-800 font-extrabold">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span>Masuk {{ userData.attendance_status.time }} WIB</span>
-                            </span>
-                            <span v-else class="flex items-center gap-1">
-                                <span>Status Presensi</span>
-                                <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
-                            </span>
-                        </Link>
-                    </div>
-
-                    <!-- 🌟 KONDISI 1: ADA FOTO → Portrait Melayang Keluar Atas Card (Pop-Out Header) -->
-                    <div
-                        v-if="user?.profile_photo_url"
-                        class="absolute left-3 bottom-0 h-[122%] w-[38%] flex items-end justify-center pointer-events-none z-30"
-                    >
-                        <div class="w-full max-w-[115px] h-[100%] rounded-t-3xl rounded-b-2xl overflow-hidden ring-4 ring-white/20 shadow-2xl drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]">
-                            <img
-                                :src="user.profile_photo_url"
-                                :alt="user?.name"
-                                class="w-full h-full object-cover object-top"
-                            />
+                <!-- Baris 2: Integrated Compact Attendance Status Bar (Nol Redundansi) -->
+                <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 relative z-10">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0">
+                            <FingerPrintIcon class="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <div class="text-xs truncate">
+                            <template v-if="userData?.attendance_status?.checked_in">
+                                <span class="text-slate-300 font-medium">Presensi: </span>
+                                <span class="font-black text-emerald-400">{{ userData.attendance_status.time }} WIB</span>
+                                <span class="text-[10px] text-emerald-300/80 ml-1 font-semibold">({{ userData.attendance_status.status }})</span>
+                            </template>
+                            <template v-else>
+                                <span class="text-amber-300 font-black">Belum Presensi Masuk Hari Ini</span>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- 🌟 KONDISI 2: TIDAK ADA FOTO → Circle dengan Inisial (tetap di dalam card) -->
-                    <div
-                        v-else
-                        class="absolute left-2 bottom-0 h-[115%] w-[40%] flex items-end justify-center pointer-events-none z-10"
+                    <Link 
+                        :href="safeRoute('attendance.index')"
+                        class="shrink-0 text-[11px] font-extrabold px-3 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-200 border border-teal-400/30 transition-all active:scale-95 flex items-center gap-1"
                     >
-                        <div class="w-28 h-28 mb-2 rounded-full bg-gradient-to-br from-teal-400 via-teal-600 to-slate-800 flex items-center justify-center ring-4 ring-white/20 shadow-2xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                            <span class="text-4xl font-black text-white tracking-tight select-none" style="text-shadow: 0 2px 8px rgba(0,0,0,0.4)">
-                                {{ userInitials }}
-                            </span>
-                        </div>
-                    </div>
+                        <span>{{ userData?.attendance_status?.checked_in ? 'Detail' : 'Absen Masuk' }}</span>
+                        <ChevronRightIcon class="w-3 h-3 stroke-[2.5]" />
+                    </Link>
                 </div>
             </div>
 
-            <!-- Employee Attendance Status Banner (hanya untuk non-pengawas) -->
-            <div v-if="!isPengawas" class="bg-white border border-slate-200 rounded-3xl p-4 flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 border border-teal-100 flex items-center justify-center">
-                        <FingerPrintIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Presensi Masuk Saya</p>
-                        <div v-if="userData?.attendance_status?.checked_in" class="flex items-center gap-2">
-                            <span class="font-black text-base text-slate-800">
-                                {{ userData.attendance_status.time }} WIB
-                            </span>
-                            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                                • {{ userData.attendance_status.status }}
-                            </span>
-                        </div>
-                        <div v-else class="flex items-center gap-2">
-                            <span class="font-black text-sm text-amber-700">
-                                Belum Presensi Masuk
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <Link 
-                    :href="safeRoute('attendance.index')" 
-                    class="text-xs font-extrabold text-teal-800 bg-slate-50 hover:bg-teal-700 hover:text-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition-colors"
-                >
-                    {{ userData?.attendance_status?.checked_in ? 'Detail Absensi' : 'Presensi Sekarang' }}
-                </Link>
-            </div>
-
-            <!-- ============================================================ -->
-            <!-- 📱 APP GRID 5x2 (10 MENU CEPAT KHUSUS PENGAWAS YAYASAN) -->
-            <!-- ============================================================ -->
+            <!-- 2. SPECIAL: APP GRID KHUSUS PENGAWAS YAYASAN (10 Modul) -->
             <div v-if="isPengawas" class="space-y-2 pt-1">
                 <div class="flex items-center justify-between px-1">
                     <h4 class="font-black text-xs uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
@@ -296,513 +263,421 @@ const eventTypeLabels = {
                     <span class="text-[10px] font-bold text-slate-400">10 Modul</span>
                 </div>
 
-                <div class="bg-white rounded-3xl p-3.5 border border-slate-200/80 shadow-sm grid grid-cols-5 gap-y-4 gap-x-1 text-center">
-                    <!-- 1. Monitoring -->
-                    <Link 
-                        :href="safeRoute('yayasan.monitoring.index', {}, '#')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <ChartBarIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                <div class="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-xs grid grid-cols-5 gap-y-3.5 gap-x-1 text-center">
+                    <Link :href="safeRoute('yayasan.monitoring.index', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><ChartBarIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Monitoring</span>
                     </Link>
-
-                    <!-- 2. Akademik -->
-                    <Link 
-                        :href="safeRoute('yayasan.classrooms.index', {}, '#')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <AcademicCapIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('yayasan.classrooms.index', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><AcademicCapIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Akademik</span>
                     </Link>
-
-                    <!-- 3. Pegawai -->
-                    <Link 
-                        :href="safeRoute('yayasan.employee.index', {}, '#')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <UsersIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('yayasan.employee.index', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><UsersIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Pegawai</span>
                     </Link>
-
-                    <!-- 4. Keuangan -->
-                    <Link 
-                        :href="safeRoute('finance.dashboard', {}, '#')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <BanknotesIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('finance.dashboard', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><BanknotesIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Keuangan</span>
                     </Link>
-
-                    <!-- 5. Berita Humas -->
-                    <Link 
-                        :href="safeRoute('public-relations.news.index')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <NewspaperIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('public-relations.news.index')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><NewspaperIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Berita</span>
                     </Link>
-
-                    <!-- 6. Agenda -->
-                    <Link 
-                        :href="safeRoute('public-relations.events.index')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <CalendarDaysIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('public-relations.events.index')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><CalendarDaysIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Agenda</span>
                     </Link>
-
-                    <!-- 7. Konseling BK -->
-                    <Link 
-                        :href="safeRoute('counseling.sessions.index', {}, '#')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <ChatBubbleLeftRightIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('counseling.sessions.index', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><ChatBubbleLeftRightIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Konseling</span>
                     </Link>
-
-                    <!-- 8. Sarpras -->
-                    <Link 
-                        :href="safeRoute('sarpar.dashboard', {}, '#')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <BuildingOffice2Icon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('sarpar.dashboard', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><BuildingOffice2Icon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Sarpras</span>
                     </Link>
-
-                    <!-- 9. Kampus -->
-                    <Link 
-                        :href="safeRoute('public-relations.university-destinations.index')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-600 border border-violet-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <GlobeAltIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('public-relations.university-destinations.index')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 border border-violet-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><GlobeAltIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Kampus</span>
                     </Link>
-
-                    <!-- 10. Pengguna -->
-                    <Link 
-                        :href="safeRoute('yayasan.users.index')"
-                        class="flex flex-col items-center gap-1.5 group active:scale-90 transition-transform"
-                    >
-                        <div class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                            <WrenchScrewdriverIcon class="w-5 h-5 stroke-[2.2]" />
-                        </div>
+                    <Link :href="safeRoute('yayasan.users.index')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><WrenchScrewdriverIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Pengguna</span>
                     </Link>
                 </div>
             </div>
 
-            <!-- Case A: Teacher with active teaching schedule -->
-            <div 
-                v-else-if="teacherData?.current_schedule" 
-                class="rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 text-white shadow-md border border-teal-800/60"
-            >
-                <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-teal-300 mb-3">
-                    <span class="w-2 h-2 rounded-full bg-teal-400"></span>
-                    <span>Mengajar Sekarang ({{ teacherData.current_schedule.start_time }} - {{ teacherData.current_schedule.end_time }} WIB)</span>
-                </div>
-
-                <h3 class="font-extrabold text-2xl tracking-tight leading-snug mb-1">
-                    {{ teacherData.current_schedule.subject_name }} — Kelas {{ teacherData.current_schedule.classroom_name }}
-                </h3>
-
-                <p class="text-xs text-teal-200/90 font-medium flex items-center gap-1.5 mb-6">
-                    <MapPinIcon class="w-4 h-4 text-teal-300" />
-                    <span>Ruang Kelas {{ teacherData.current_schedule.classroom_name }} • Gedung Utama</span>
-                </p>
-
-                <Link 
-                    :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: teacherData.current_schedule.id })" 
-                    class="w-full py-3.5 px-4 bg-white hover:bg-teal-50 text-slate-900 font-extrabold text-sm rounded-2xl shadow-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 border border-slate-200"
-                >
-                    <PencilSquareIcon class="w-5 h-5 text-teal-700" />
-                    <span>Isi Jurnal & Absensi Kelas Ini</span>
-                </Link>
-            </div>
-
-            <!-- Case B1: Daycare Unit Teacher/Caregiver -->
+            <!-- 3. SPECIAL: DAYCARE CARE MODULE (Jika Unit Daycare) -->
             <div 
                 v-else-if="isDaycare" 
-                class="rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-6 text-white shadow-lg border border-amber-400/40 space-y-4"
+                class="rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-4 text-white shadow-sm border border-amber-400/40 space-y-3"
             >
                 <div class="flex items-center justify-between">
-                    <span class="px-3 py-1 rounded-full bg-white/20 text-white font-extrabold text-[10px] uppercase tracking-wider backdrop-blur-md flex items-center gap-1.5">
+                    <span class="px-2.5 py-0.5 rounded-full bg-white/20 text-white font-extrabold text-[10px] uppercase tracking-wider backdrop-blur-xs flex items-center gap-1.5">
                         <HeartIcon class="w-3.5 h-3.5 text-amber-200" />
                         <span>Modul Pengasuhan Daycare</span>
                     </span>
-                    <span class="text-xs font-bold text-amber-100">Unit Daycare Aktif</span>
+                    <span class="text-[11px] font-bold text-amber-100">Unit Aktif</span>
                 </div>
-
                 <div>
-                    <h3 class="font-black text-2xl tracking-tight leading-snug">
+                    <h3 class="font-black text-lg tracking-tight leading-tight">
                         Pengasuhan & Care Log Ananda
                     </h3>
-                    <p class="text-xs text-amber-100 font-medium leading-relaxed mt-1">
-                        Kelola presensi kedatangan/kepulangan anak, catat aktivitas makan, tidur, susu, & lihat tumbuh kembang.
+                    <p class="text-xs text-amber-100/90 font-medium leading-relaxed mt-0.5">
+                        Presensi kedatangan/kepulangan anak, catat makan, tidur, & susu ananda.
                     </p>
                 </div>
-
-                <div class="grid grid-cols-2 gap-3 pt-2">
+                <div class="grid grid-cols-2 gap-2.5 pt-1">
                     <Link 
                         :href="safeRoute('daycare.children.index')" 
-                        class="py-3 px-4 bg-white hover:bg-amber-50 text-amber-900 font-black text-xs rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                        class="py-2.5 px-3 bg-white hover:bg-amber-50 text-amber-900 font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
                         <UsersIcon class="w-4 h-4 text-amber-600" />
                         <span>Data Ananda</span>
                     </Link>
-
                     <Link 
                         :href="safeRoute('daycare.attendance.index')" 
-                        class="py-3 px-4 bg-amber-900/40 hover:bg-amber-900/60 text-white font-black text-xs rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 border border-white/20"
+                        class="py-2.5 px-3 bg-amber-900/40 hover:bg-amber-900/60 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 border border-white/20 active:scale-95 transition-all"
                     >
                         <ClockIcon class="w-4 h-4 text-amber-200" />
-                        <span>Handover Pagi/Sore</span>
+                        <span>Handover</span>
                     </Link>
                 </div>
             </div>
 
-            <!-- Case B2: Formal School Teacher without active schedule today -->
-            <div 
-                v-else-if="teacherData" 
-                class="rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 text-white shadow-md border border-teal-800/60"
-            >
-                <h3 class="font-black text-xl tracking-tight leading-snug mb-2">
-                    Tidak Ada Jam Pelajaran Mengajar
-                </h3>
-                <p class="text-xs text-slate-400 font-medium leading-relaxed mb-6">
-                    Selamat bertugas atau beristirahat, {{ user?.name }}. Anda dapat mengecek seluruh ringkasan jadwal mengajar Anda.
-                </p>
-
-                <Link 
-                    :href="safeRoute('yayasan.schedules.index')" 
-                    class="w-full py-3 px-4 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
+            <!-- 4. MODUL MENGAJAR GURU (Jika Guru / Teacher Data Tersedia) -->
+            <template v-else-if="isTeacher || teacherData">
+                <!-- A. Live Mengajar Sekarang (Jika ada sesi aktif saat ini) -->
+                <div 
+                    v-if="teacherData?.current_schedule" 
+                    class="rounded-2xl bg-gradient-to-r from-teal-800 to-emerald-800 p-4 text-white shadow-sm border border-teal-600/50 relative overflow-hidden"
                 >
-                    <CalendarDaysIcon class="w-4 h-4" />
-                    <span>Lihat Semua Jadwal Saya</span>
-                </Link>
-            </div>
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-white/20 text-teal-100 backdrop-blur-xs">
+                            <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+                            <span>Mengajar Sekarang</span>
+                        </span>
+                        <span class="text-[11px] font-bold text-teal-200">
+                            {{ teacherData.current_schedule.start_time }} - {{ teacherData.current_schedule.end_time }} WIB
+                        </span>
+                    </div>
 
-            <!-- Case C: Non-Teacher (Satpam, Staf Administrasi, Admin, Sarpras, Finance) -->
-            <div 
-                v-else-if="!isPengawas"
-                class="rounded-3xl bg-gradient-to-br from-[#009688] to-[#0f172a] p-6 text-white shadow-md border border-teal-800/60"
-            >
-                <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-teal-300 mb-3">
-                    <span class="w-2 h-2 rounded-full bg-teal-400"></span>
-                    <span>Status Operasional • {{ userData?.today_date }}</span>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <h4 class="font-extrabold text-base text-white tracking-tight leading-tight truncate">
+                                {{ teacherData.current_schedule.subject_name }}
+                            </h4>
+                            <p class="text-xs text-teal-100/90 font-semibold mt-1 flex items-center gap-1">
+                                <MapPinIcon class="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                                <span class="truncate">Kelas {{ teacherData.current_schedule.classroom_name }}</span>
+                            </p>
+                        </div>
+
+                        <Link 
+                            :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: teacherData.current_schedule.id })" 
+                            class="shrink-0 py-2 px-3.5 bg-white hover:bg-teal-50 text-teal-900 font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 active:scale-95 transition-all"
+                        >
+                            <PencilSquareIcon class="w-4 h-4 text-teal-700" />
+                            <span>Isi Jurnal</span>
+                        </Link>
+                    </div>
                 </div>
 
-                <h3 class="font-black text-xl sm:text-2xl tracking-tight leading-snug mb-2">
-                    Portal Tugas {{ userData?.role_title || 'Pegawai' }}
-                </h3>
-                <p class="text-xs text-slate-300 font-medium leading-relaxed mb-6">
-                    Selamat bertugas, {{ user?.name }}. Pastikan presensi masuk pegawai sudah tercatat dan gunakan pintasan menu di bawah untuk melaksanakan tugas operasional.
-                </p>
-
-                <Link 
-                    :href="safeRoute('attendance.index')" 
-                    class="w-full py-3.5 px-4 bg-white hover:bg-teal-50 text-slate-900 font-extrabold text-xs sm:text-sm rounded-2xl shadow-sm flex items-center justify-center gap-2.5 transition-all active:scale-95 border border-slate-200"
+                <!-- B. Jadwal Hari Ini (Horizontal Scrollable Timeline) -->
+                <div 
+                    v-if="teacherData?.schedules && teacherData.schedules.length > 0"
+                    class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs space-y-2.5"
                 >
-                    <FingerPrintIcon class="w-5 h-5 text-teal-700" />
-                    <span>{{ userData?.attendance_status?.checked_in ? 'Lihat Detail Absensi Pegawai' : 'Buka Form Presensi Pegawai' }}</span>
-                </Link>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                            <ClockIcon class="w-4 h-4 text-teal-700" />
+                            <h4 class="font-extrabold text-xs text-slate-800">Jadwal Mengajar Hari Ini</h4>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-extrabold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
+                                {{ teacherData.schedules.length }} Sesi
+                            </span>
+                            <Link 
+                                :href="safeRoute('yayasan.schedules.index')"
+                                class="text-[11px] font-bold text-teal-700 hover:underline"
+                            >
+                                Semua →
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+                        <div 
+                            v-for="s in teacherData.schedules" 
+                            :key="s.id"
+                            class="shrink-0 rounded-xl p-2.5 border transition-all text-left min-w-[140px] max-w-[160px]"
+                            :class="teacherData.current_schedule?.id === s.id 
+                                ? 'bg-teal-50/80 border-teal-300 ring-1 ring-teal-400' 
+                                : 'bg-slate-50 border-slate-200/80 hover:bg-white'"
+                        >
+                            <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-1">
+                                <span>{{ s.start_time }} - {{ s.end_time }}</span>
+                            </div>
+                            <p class="font-extrabold text-xs text-slate-800 truncate" :title="s.subject_name">
+                                {{ s.subject_name }}
+                            </p>
+                            <div class="flex items-center justify-between mt-1 text-[10px]">
+                                <span class="font-bold text-teal-800 bg-white px-1.5 py-0.5 rounded border border-slate-200 truncate">
+                                    Kelas {{ s.classroom_name }}
+                                </span>
+                                <Link 
+                                    :href="safeRoute('yayasan.teaching-journal.create', { schedule_id: s.id })"
+                                    class="text-teal-700 font-extrabold hover:underline"
+                                >
+                                    Jurnal →
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- C. Notice jika tidak ada jadwal mengajar hari ini -->
+                <div 
+                    v-else-if="!teacherData?.current_schedule" 
+                    class="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-xs flex items-center justify-between gap-2"
+                >
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                            <CalendarDaysIcon class="w-4 h-4" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-slate-700 truncate">Tidak ada jam mengajar hari ini</p>
+                            <p class="text-[10px] text-slate-400 truncate">Cek agenda & persiapan materi</p>
+                        </div>
+                    </div>
+                    <Link 
+                        :href="safeRoute('yayasan.schedules.index')" 
+                        class="shrink-0 text-[11px] font-extrabold text-teal-700 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200/60"
+                    >
+                        Jadwal Saya →
+                    </Link>
+                </div>
+            </template>
+
+            <!-- 5. PINTASAN MENU CEPAT (Modern 4-Column App Launcher Grid) -->
+            <div v-if="!isPengawas" class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs space-y-3">
+                <div class="flex items-center justify-between px-0.5">
+                    <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                        <Squares2X2Icon class="w-3.5 h-3.5 text-teal-700" />
+                        <span>Pintasan Cepat</span>
+                    </h4>
+                    <span class="text-[10px] font-bold text-slate-400">Layanan Harian</span>
+                </div>
+
+                <div class="grid grid-cols-4 gap-y-3.5 gap-x-2 text-center">
+                    <!-- 1. Presensi Pegawai -->
+                    <Link 
+                        :href="safeRoute('attendance.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 border border-teal-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <FingerPrintIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Presensi</span>
+                    </Link>
+
+                    <!-- 2. Jurnal Mapel (Guru) -->
+                    <Link 
+                        v-if="isTeacher || hasRole('teacher')"
+                        :href="safeRoute('yayasan.teaching-journal.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <PencilSquareIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Jurnal Guru</span>
+                    </Link>
+
+                    <!-- 3. Absensi Siswa (Wali Kelas) -->
+                    <Link 
+                        v-if="hasRole('wali_kelas') || teacherData?.homeroom_class"
+                        :href="safeRoute('yayasan.student-attendance.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <ClipboardDocumentCheckIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Absen Kelas</span>
+                    </Link>
+
+                    <!-- 4. Scan Gerbang -->
+                    <Link 
+                        :href="safeRoute('yayasan.student-checkin.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <QrCodeIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Scan QR</span>
+                    </Link>
+
+                    <!-- 5. Jadwal Mengajar (Guru) -->
+                    <Link 
+                        v-if="isTeacher || hasRole('teacher')"
+                        :href="safeRoute('yayasan.schedules.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <CalendarDaysIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Jadwal</span>
+                    </Link>
+
+                    <!-- 6. Persetujuan Absen (Kepsek / Admin) -->
+                    <Link 
+                        v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])"
+                        :href="safeRoute('attendance-approvals.index', {}, safeRoute('yayasan.attendance-approvals.index'))"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 border border-amber-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <CheckCircleIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">ACC Izin</span>
+                    </Link>
+
+                    <!-- 7. Konseling BK -->
+                    <Link 
+                        v-if="hasRole(['bk', 'counseling', 'wali_kelas'])"
+                        :href="safeRoute('counseling.sessions.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <ChatBubbleLeftRightIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Konseling</span>
+                    </Link>
+
+                    <!-- 8. Berita Humas -->
+                    <Link 
+                        v-if="hasRole('humas_unit')"
+                        :href="safeRoute('public-relations.news.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 border border-sky-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <NewspaperIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Berita</span>
+                    </Link>
+
+                    <!-- 9. Sarpras (Sarpar / Admin) -->
+                    <Link 
+                        v-if="hasRole(['koordinator_sarpar', 'admin_unit'])"
+                        :href="safeRoute('sarpar.maintenance.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 border border-rose-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <WrenchScrewdriverIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Sarpras</span>
+                    </Link>
+
+                    <!-- 10. Keuangan Unit (Finance) -->
+                    <Link 
+                        v-if="hasRole('finance')"
+                        :href="safeRoute('finance.dashboard')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                            <BanknotesIcon class="w-6 h-6 stroke-[2]" />
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Keuangan</span>
+                    </Link>
+                </div>
             </div>
 
-            <!-- 4. QUICK ACTIONS GRID (Dynamic Multi-Role App Grid) -->
-            <div class="grid grid-cols-2 gap-3.5">
-                <!-- 0. Presensi Pegawai (All Employees except Pengawas) -->
-                <Link 
-                    v-if="!isPengawas"
-                    :href="safeRoute('attendance.index')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-teal-100/80 text-teal-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <FingerPrintIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Presensi Pegawai</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Clock-in / Clock-out HP</p>
-                    </div>
-                </Link>
-
-                <!-- Persetujuan Absen (Kepala Sekolah, Admin Unit, Admin Yayasan, Super Admin) -->
-                <Link 
-                    v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])"
-                    :href="safeRoute('attendance-approvals.index', {}, safeRoute('yayasan.attendance-approvals.index'))"
-                    class="bg-white rounded-3xl p-4 border border-amber-100/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <CheckCircleIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Persetujuan Absen</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">ACC izin & dinas pegawai</p>
-                    </div>
-                </Link>
-                <!-- 1. Isi Jurnal Mapel (Guru Only) -->
-                <Link 
-                    v-if="isTeacher || hasRole('teacher')"
-                    :href="safeRoute('yayasan.teaching-journal.index')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <PencilSquareIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Isi Jurnal Mapel</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Update materi & presensi</p>
-                    </div>
-                </Link>
-
-                <!-- 2. Absensi Kelas (Wali Kelas Only) -->
-                <Link 
-                    v-if="hasRole('wali_kelas')"
-                    :href="safeRoute('yayasan.student-attendance.index')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-blue-100/80 text-blue-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <ClipboardDocumentCheckIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Absensi Kelas</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Monitor siswa harian</p>
-                    </div>
-                </Link>
-
-                <!-- 3. Scan Gerbang (All Users except Pengawas) -->
-                <Link 
-                    v-if="!isPengawas"
-                    :href="safeRoute('yayasan.student-checkin.index')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-teal-100/80 text-teal-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <QrCodeIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Scan Gerbang</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Akses scanner presensi</p>
-                    </div>
-                </Link>
-
-                <!-- 4. Konseling BK (BK / Wali Kelas) -->
-                <Link 
-                    v-if="hasRole(['bk', 'counseling', 'wali_kelas'])"
-                    :href="safeRoute('counseling.sessions.index')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-indigo-100/80 text-indigo-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <ChatBubbleLeftRightIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Konseling BK</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Laporan & poin siswa</p>
-                    </div>
-                </Link>
-
-                <!-- 5. Berita Humas (Humas / Pengawas) -->
-                <Link 
-                    v-if="hasRole('humas_unit') || isPengawas"
-                    :href="safeRoute('public-relations.news.index')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-blue-100/80 text-blue-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <NewspaperIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Berita Sekolah</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Publikasi & warta</p>
-                    </div>
-                </Link>
-
-                <!-- 6. Monitoring Center (Pengawas) -->
-                <Link 
-                    v-if="isPengawas"
-                    :href="safeRoute('yayasan.monitoring.index', {}, '#')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-teal-100/80 text-teal-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <GlobeAltIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Monitoring Unit</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Statistik & laporan unit</p>
-                    </div>
-                </Link>
-
-                <!-- 6. Destinasi Kampus (Humas Only) -->
-                <Link 
-                    v-if="hasRole('humas_unit')"
-                    :href="safeRoute('public-relations.university-destinations.index')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-sky-100/80 text-sky-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <GlobeAltIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Destinasi Kampus</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Kunjungan & alumni</p>
-                    </div>
-                </Link>
-
-                <!-- 7. Lapor Sarpar (Sarpar / Admin Only) -->
-                <Link 
-                    v-if="hasRole(['koordinator_sarpar', 'admin_unit'])"
-                    :href="safeRoute('sarpar.maintenance.index')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <WrenchScrewdriverIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Sarpras Unit</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Pemeliharaan aset</p>
-                    </div>
-                </Link>
-
-                <!-- 8. Keuangan Unit (Finance Only) -->
-                <Link 
-                    v-if="hasRole('finance')"
-                    :href="safeRoute('finance.dashboard')"
-                    class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32 group"
-                >
-                    <div class="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <BanknotesIcon class="w-5 h-5 stroke-[2.2]" />
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-sm text-slate-800">Keuangan Unit</h4>
-                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">SPP & pembayaran</p>
-                    </div>
-                </Link>
-            </div>
-
-            <!-- 5. HOMEROOM CLASS ATTENDANCE SUMMARY WIDGET (Jika User = Wali Kelas) -->
-            <div v-if="teacherData?.homeroom_stats" class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
+            <!-- 6. WIDGET RINGKASAN KEHADIRAN KELAS (Jika Wali Kelas) -->
+            <div v-if="teacherData?.homeroom_stats" class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-xs space-y-2.5">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h4 class="font-extrabold text-base text-slate-800">
-                            Kehadiran Kelas {{ teacherData.homeroom_stats.class_name }}
+                        <h4 class="font-extrabold text-xs text-slate-800">
+                            Presensi Kelas {{ teacherData.homeroom_stats.class_name }}
                         </h4>
-                        <p class="text-xs text-slate-400 font-medium mt-0.5">
-                            {{ teacherData.today_date }}
+                        <p class="text-[10px] text-slate-400 font-medium">
+                            Total {{ teacherData.homeroom_stats.total_students }} Siswa • {{ teacherData.homeroom_stats.rate }}% Hadir
                         </p>
                     </div>
 
-                    <div class="text-right">
-                        <span class="text-2xl font-black text-teal-800 leading-none">
-                            {{ teacherData.homeroom_stats.rate }}%
-                        </span>
-                    </div>
+                    <Link 
+                        v-if="!teacherData.homeroom_stats.has_attendance"
+                        :href="safeRoute('yayasan.student-attendance.show', teacherData.homeroom_stats.classroom_id)"
+                        class="text-[11px] font-extrabold px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800 border border-teal-200/80 hover:bg-teal-100 transition-colors"
+                    >
+                        Mulai Absen
+                    </Link>
                 </div>
 
-                <!-- Progress Bar -->
-                <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <!-- Progress Bar Mini -->
+                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div 
                         class="h-full bg-teal-700 rounded-full transition-all duration-500" 
                         :style="{ width: `${teacherData.homeroom_stats.rate}%` }"
                     ></div>
                 </div>
 
-                <!-- Stat Pills 4 Grid -->
-                <div class="grid grid-cols-4 gap-2 pt-1">
-                    <!-- Hadir -->
-                    <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-2 text-center">
-                        <span class="block font-black text-lg text-emerald-800 leading-none">
-                            {{ teacherData.homeroom_stats.present }}
-                        </span>
-                        <span class="text-[9px] font-black uppercase text-emerald-700 tracking-wider">Hadir</span>
+                <!-- 4 Stats in 1 row compact -->
+                <div class="grid grid-cols-4 gap-1.5 text-center pt-0.5">
+                    <div class="bg-emerald-50/70 border border-emerald-100 rounded-xl py-1.5 px-1">
+                        <span class="block font-black text-sm text-emerald-800 leading-none">{{ teacherData.homeroom_stats.present }}</span>
+                        <span class="text-[9px] font-bold text-emerald-600">Hadir</span>
                     </div>
-
-                    <!-- Sakit -->
-                    <div class="bg-blue-50 border border-blue-100 rounded-2xl p-2 text-center">
-                        <span class="block font-black text-lg text-blue-800 leading-none">
-                            {{ teacherData.homeroom_stats.sick }}
-                        </span>
-                        <span class="text-[9px] font-black uppercase text-blue-700 tracking-wider">Sakit</span>
+                    <div class="bg-blue-50/70 border border-blue-100 rounded-xl py-1.5 px-1">
+                        <span class="block font-black text-sm text-blue-800 leading-none">{{ teacherData.homeroom_stats.sick }}</span>
+                        <span class="text-[9px] font-bold text-blue-600">Sakit</span>
                     </div>
-
-                    <!-- Izin -->
-                    <div class="bg-amber-50 border border-amber-100 rounded-2xl p-2 text-center">
-                        <span class="block font-black text-lg text-amber-800 leading-none">
-                            {{ teacherData.homeroom_stats.permission }}
-                        </span>
-                        <span class="text-[9px] font-black uppercase text-amber-700 tracking-wider">Izin</span>
+                    <div class="bg-amber-50/70 border border-amber-100 rounded-xl py-1.5 px-1">
+                        <span class="block font-black text-sm text-amber-800 leading-none">{{ teacherData.homeroom_stats.permission }}</span>
+                        <span class="text-[9px] font-bold text-amber-600">Izin</span>
                     </div>
-
-                    <!-- Alpha -->
-                    <div class="bg-rose-50 border border-rose-100 rounded-2xl p-2 text-center">
-                        <span class="block font-black text-lg text-rose-800 leading-none">
-                            {{ teacherData.homeroom_stats.alpha }}
-                        </span>
-                        <span class="text-[9px] font-black uppercase text-rose-700 tracking-wider">Alpha</span>
+                    <div class="bg-rose-50/70 border border-rose-100 rounded-xl py-1.5 px-1">
+                        <span class="block font-black text-sm text-rose-800 leading-none">{{ teacherData.homeroom_stats.alpha }}</span>
+                        <span class="text-[9px] font-bold text-rose-600">Alpa</span>
                     </div>
-                </div>
-
-                <!-- CTA Action jika belum diabsen hari ini -->
-                <div v-if="!teacherData.homeroom_stats.has_attendance" class="pt-2">
-                    <Link 
-                        :href="safeRoute('yayasan.student-attendance.show', teacherData.homeroom_stats.classroom_id)"
-                        class="w-full py-2.5 px-3 bg-teal-50 hover:bg-teal-100 text-teal-800 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors border border-teal-200/60"
-                    >
-                        <ClipboardDocumentCheckIcon class="w-4 h-4" />
-                        <span>Mulai Absensi Kelas Sekarang</span>
-                    </Link>
                 </div>
             </div>
 
-            <!-- 6. UPCOMING AGENDA FEED -->
-            <div class="space-y-3">
-                <div class="flex items-center justify-between px-1">
-                    <h4 class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+            <!-- 7. AGENDA TERDEKAT (Ringkas & Rapi) -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between px-0.5">
+                    <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                        <CalendarDaysIcon class="w-3.5 h-3.5 text-teal-700" />
                         <span>Agenda Terdekat</span>
                     </h4>
-                    <Link :href="safeRoute('yayasan.holidays.index')" class="text-xs font-bold text-teal-700 hover:underline">
+                    <Link :href="safeRoute('yayasan.holidays.index')" class="text-[11px] font-bold text-teal-700 hover:underline">
                         Lihat Semua →
                     </Link>
                 </div>
 
-                <div v-if="upcomingEvents && upcomingEvents.length > 0" class="space-y-2.5">
+                <div v-if="upcomingEvents && upcomingEvents.length > 0" class="space-y-1.5">
                     <div 
                         v-for="event in upcomingEvents.slice(0, 3)" 
                         :key="event.id"
-                        class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-teal-200 transition-all"
+                        class="bg-white rounded-xl p-2.5 border border-slate-200/80 shadow-xs flex items-center justify-between gap-2.5"
                     >
-                        <div class="flex items-center gap-3">
-                            <div class="w-11 h-11 rounded-2xl bg-teal-50 border border-teal-100 flex flex-col items-center justify-center text-teal-800 font-black leading-none">
-                                <span class="text-[9px] font-bold uppercase text-teal-600">{{ new Date(event.date).toLocaleDateString('en-US', { month: 'short' }) }}</span>
-                                <span class="text-sm mt-0.5">{{ new Date(event.date).getDate() }}</span>
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-teal-50 border border-teal-100 flex flex-col items-center justify-center text-teal-800 font-black leading-none shrink-0">
+                                <span class="text-[8px] font-bold uppercase text-teal-600">{{ new Date(event.date).toLocaleDateString('id-ID', { month: 'short' }) }}</span>
+                                <span class="text-xs font-black mt-0.5">{{ new Date(event.date).getDate() }}</span>
                             </div>
 
-                            <div>
-                                <h5 class="font-extrabold text-sm text-slate-800 truncate max-w-[200px]">{{ event.description }}</h5>
-                                <p class="text-[10px] text-slate-400 font-medium mt-0.5">
+                            <div class="min-w-0">
+                                <h5 class="font-bold text-xs text-slate-800 truncate">{{ event.description }}</h5>
+                                <p class="text-[10px] text-slate-400 font-medium">
                                     {{ getDaysFromNow(event.date) }} • {{ formatDate(event.date) }}
                                 </p>
                             </div>
                         </div>
 
-                        <ChevronRightIcon class="w-4 h-4 text-slate-300" />
+                        <ChevronRightIcon class="w-3.5 h-3.5 text-slate-300 shrink-0" />
                     </div>
                 </div>
 
-                <div v-else class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-100">
-                    <p class="text-xs font-bold">Tidak ada agenda dalam 30 hari ke depan</p>
+                <div v-else class="bg-white rounded-xl p-4 text-center text-slate-400 border border-slate-200/80">
+                    <p class="text-[11px] font-bold">Tidak ada agenda dalam 30 hari ke depan</p>
                 </div>
             </div>
 
