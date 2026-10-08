@@ -216,10 +216,10 @@ const eventTypeLabels = {
                 </div>
             </div>
 
-            <!-- 1. STANDARD HERO CARD FOR TEACHER & STAFF (Custom Mosque Banner Background + Anti-Clipping Layout) -->
+            <!-- 1. STANDARD HERO CARD FOR TEACHER & STAFF (Option A: Hierarchical 2-Row Layout with Large Avatar & Anti-Clipping) -->
             <div v-else class="relative pt-2">
                 <!-- Main Gradient Card Body with Mosque Illustration Background -->
-                <div class="relative overflow-hidden rounded-3xl p-3.5 sm:p-5 border border-teal-600/30 shadow-xl min-h-[135px] flex items-center">
+                <div class="relative overflow-hidden rounded-3xl p-4 sm:p-5 border border-teal-600/30 shadow-xl flex flex-col justify-between gap-3.5 sm:gap-4">
                     <!-- Mosque Background Image (WebP with PNG fallback) -->
                     <picture class="absolute inset-0 w-full h-full pointer-events-none select-none">
                         <source srcset="/images/banner_dashboard_bg.webp" type="image/webp">
@@ -231,58 +231,29 @@ const eventTypeLabels = {
                     </picture>
 
                     <!-- Gradient Contrast Overlay: Stronger on the left for text readability, soft on the right to show mosque architecture -->
-                    <div class="absolute inset-0 bg-gradient-to-r from-[#004d40]/95 via-[#00695c]/80 to-[#004d40]/25 pointer-events-none"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#004d40]/95 via-[#00695c]/85 to-[#004d40]/25 pointer-events-none"></div>
 
                     <!-- Inner Content (Z-10) -->
-                    <div class="relative z-10 w-full flex items-center justify-between gap-2.5 sm:gap-4">
-                        <!-- LEFT: Avatar + Greeting & Name -->
-                        <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
-                            <!-- Avatar Squircle -->
-                            <div class="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-md shrink-0 bg-teal-950/60 flex items-center justify-center">
-                                <img
-                                    v-if="user?.profile_photo_url"
-                                    :src="user.profile_photo_url"
-                                    :alt="user?.name"
-                                    class="w-full h-full object-cover object-top"
-                                />
-                                <div v-else class="w-full h-full bg-gradient-to-br from-teal-400 to-teal-800 flex items-center justify-center font-black text-xl text-white">
-                                    {{ userInitials }}
-                                </div>
-                            </div>
-
-                            <!-- Greeting Text Info -->
-                            <div class="min-w-0 flex-1 text-left">
-                                <p class="text-[11px] sm:text-xs font-semibold text-teal-100/90 leading-tight">Selamat Datang,</p>
-                                <h3 class="font-black text-base sm:text-lg text-white tracking-tight leading-snug drop-shadow-xs truncate">
-                                    {{ user?.name }}
-                                </h3>
-                                <p class="text-[11px] sm:text-xs font-bold text-teal-300 truncate mt-0.5">
-                                    {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Guru Pengajar')) }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- RIGHT: Stacked Crisp White Date Card & Status Presensi Button -->
-                        <div class="flex flex-col items-stretch gap-1.5 sm:gap-2 shrink-0">
-                            <!-- 1. Crisp White Date Card -->
-                            <div class="bg-white/95 backdrop-blur-xs rounded-2xl px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-sm border border-white/80 flex items-center gap-2">
+                    <div class="relative z-10 flex flex-col justify-between gap-3 sm:gap-4 h-full">
+                        <!-- TOP ROW: Date Badge (Left) & Status Presensi Pill (Right) -->
+                        <div class="flex items-center justify-between gap-2">
+                            <!-- 1. Date Card: Clean White Badge with Calendar Icon & 2-Line Date -->
+                            <div class="inline-flex items-center gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-2xl bg-white/95 backdrop-blur-xs text-slate-800 shadow-xs border border-white/80 shrink-0">
                                 <CalendarDaysIcon class="w-4 h-4 text-teal-700 stroke-[2] shrink-0" />
-                                <div class="text-left leading-tight min-w-0">
-                                    <p class="text-[10px] sm:text-[11px] font-black text-slate-800 whitespace-nowrap">{{ todayGregorian }}</p>
-                                    <p class="text-[8px] sm:text-[9px] font-semibold text-slate-400 whitespace-nowrap mt-0.5">{{ todayHijri }}</p>
+                                <div class="leading-none text-left min-w-0">
+                                    <p class="font-black text-[10px] sm:text-[11px] text-slate-800 whitespace-nowrap">{{ todayGregorian }}</p>
+                                    <p class="font-semibold text-[8px] sm:text-[9px] text-slate-400 whitespace-nowrap mt-0.5">{{ todayHijri }}</p>
                                 </div>
                             </div>
 
-                            <!-- 2. Crisp White Status Presensi Pill Button -->
+                            <!-- 2. Status Presensi Pill Button -->
                             <Link
                                 :href="safeRoute('attendance.index')"
-                                class="bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-[11px] sm:text-xs rounded-full px-3 py-1.5 shadow-sm border border-white/80 flex items-center justify-between gap-1.5 transition-all active:scale-95"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-[11px] sm:text-xs rounded-full shadow-xs border border-white/80 transition-all active:scale-95 shrink-0"
                             >
                                 <template v-if="userData?.attendance_status?.checked_in">
-                                    <span class="flex items-center gap-1.5 text-emerald-800 font-extrabold">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                                        <span class="whitespace-nowrap">Masuk {{ userData.attendance_status.time }}</span>
-                                    </span>
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                                    <span class="text-emerald-800 font-black whitespace-nowrap">Masuk {{ userData.attendance_status.time }}</span>
                                     <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5] text-emerald-600 shrink-0" />
                                 </template>
                                 <template v-else>
@@ -290,6 +261,33 @@ const eventTypeLabels = {
                                     <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5] text-slate-400 shrink-0" />
                                 </template>
                             </Link>
+                        </div>
+
+                        <!-- BOTTOM ROW: Large Teacher Avatar & Greeting/Name (100% Full Width Available - Anti-Clipping!) -->
+                        <div class="flex items-center gap-3.5 sm:gap-4">
+                            <!-- Large Avatar Squircle (w-16 h-16 sm:w-20 sm:h-20) -->
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl overflow-hidden ring-2 ring-white/40 shadow-lg shrink-0 bg-teal-950/60 flex items-center justify-center">
+                                <img
+                                    v-if="user?.profile_photo_url"
+                                    :src="user.profile_photo_url"
+                                    :alt="user?.name"
+                                    class="w-full h-full object-cover object-top"
+                                />
+                                <div v-else class="w-full h-full bg-gradient-to-br from-teal-400 to-teal-800 flex items-center justify-center font-black text-2xl text-white">
+                                    {{ userInitials }}
+                                </div>
+                            </div>
+
+                            <!-- Greeting & Name: Full space, bold and crisp -->
+                            <div class="min-w-0 flex-1 text-left">
+                                <p class="text-xs sm:text-sm font-semibold text-teal-100/90 leading-tight">Selamat Datang,</p>
+                                <h3 class="font-black text-lg sm:text-xl text-white tracking-tight leading-snug drop-shadow-sm break-words line-clamp-2">
+                                    {{ user?.name }}
+                                </h3>
+                                <p class="text-xs sm:text-sm font-bold text-teal-300 truncate mt-0.5">
+                                    {{ userData?.role_title || (teacherData?.homeroom_class ? 'Wali Kelas ' + teacherData.homeroom_class : (teacherData?.title || 'Guru Pengajar')) }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
