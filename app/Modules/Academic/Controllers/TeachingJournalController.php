@@ -180,13 +180,19 @@ class TeachingJournalController extends Controller
         }
 
         // Monthly Summary Stats for Teacher Dashboard
-        $month = Carbon::parse($date)->month;
-        $year = Carbon::parse($date)->year;
+        $month = (int) Carbon::parse($date)->month;
+        $year = (int) Carbon::parse($date)->year;
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $monthName = ($monthNames[$month] ?? 'Oktober') . ' ' . $year;
         $monthlyStats = [
             'teaching_days' => 18,
             'total_journals' => 42,
             'compliance_rate' => 96,
-            'month_name' => Carbon::parse($date)->translatedFormat('F Y'),
+            'month_name' => $monthName,
             'month' => $month,
             'year' => $year,
         ];
@@ -759,6 +765,101 @@ class TeachingJournalController extends Controller
         $journal->delete();
 
         return redirect()->route('yayasan.teaching-journal.index', ['date' => $date])->with('success', 'Jurnal Mengajar berhasil dihapus.');
+    }
+
+    public function recap(Request $request)
+    {
+        $user = auth()->user();
+        $teacher = $user->teacher_profile ?? \App\Modules\Academic\Models\Teacher::where('user_id', $user->id)->first();
+        
+        $month = (int) $request->input('month', date('n'));
+        $year = (int) $request->input('year', date('Y'));
+
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $monthName = ($monthNames[$month] ?? 'Oktober') . ' ' . $year;
+
+        $query = TeachingJournal::with([
+            'classroom:id,name', 
+            'subject:id,name', 
+            'learningObjectives:id,code,description', 
+            'attendance:id,teaching_journal_id,student_id,status',
+            'teacher.user:id,name'
+        ])
+        ->whereMonth('date', $month)
+        ->whereYear('date', $year);
+
+        // Unit scoping
+        $activeUnitId = session('active_unit_id');
+        if ($activeUnitId && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            $query->where('unit_id', $activeUnitId);
+        }
+
+        // Teacher scoping: pure teacher sees own journals
+        $isTeacher = $teacher !== null;
+        $hasAdminRole = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'pengawas_yayasan']);
+        if ($isTeacher && !$hasAdminRole) {
+            $query->where('teacher_id', $teacher->id);
+        }
+
+        $journals = $query->orderBy('date', 'desc')->orderBy('start_time', 'asc')->get();
+
+        // Calculate statistics
+        $totalJournals = $journals->count();
+        $distinctTeachingDays = $journals->pluck('date')->unique()->count();
+        
+        $totalPresent = 0;
+        $totalAttendanceRecords = 0;
+        foreach ($journals as $j) {
+            $totalPresent += $j->attendance->where('status', 'present')->count();
+            $totalAttendanceRecords += $j->attendance->count();
+        }
+        $avgAttendanceRate = $totalAttendanceRecords > 0 ? round(($totalPresent / $totalAttendanceRecords) * 100) : 100;
+
+        $transformedJournals = $journals->map(function ($j) {
+            $dateCarbon = Carbon::parse($j->date);
+            return [
+                'id' => $j->id,
+                'date' => $dateCarbon->format('Y-m-d'),
+                'formatted_date' => $dateCarbon->locale('id')->isoFormat('dddd, D MMMM Y'),
+                'start_time' => substr($j->start_time, 0, 5),
+                'end_time' => substr($j->end_time, 0, 5),
+                'classroom' => $j->classroom?->name ?? '-',
+                'subject' => $j->subject?->name ?? '-',
+                'teacher_name' => $j->teacher?->user?->name ?? '-',
+                'custom_theme' => $j->custom_theme,
+                'learning_objectives' => $j->learningObjectives->map(fn($tp) => [
+                    'code' => $tp->code, 
+                    'description' => $tp->description
+                ]),
+                'notes' => $j->notes,
+                'photo_path' => $j->photo_path,
+                'attendance_summary' => [
+                    'total' => $j->attendance->count(),
+                    'present' => $j->attendance->where('status', 'present')->count(),
+                    'sick' => $j->attendance->where('status', 'sick')->count(),
+                    'permission' => $j->attendance->where('status', 'permission')->count(),
+                    'alpha' => $j->attendance->where('status', 'alpha')->count(),
+                ],
+            ];
+        });
+
+        return Inertia::render('Academic/Journal/Recap', [
+            'journals' => $transformedJournals,
+            'month' => $month,
+            'year' => $year,
+            'monthName' => $monthName,
+            'stats' => [
+                'total_journals' => $totalJournals,
+                'teaching_days' => $distinctTeachingDays,
+                'avg_attendance_rate' => $avgAttendanceRate,
+            ],
+            'isTeacher' => $isTeacher,
+            'hasAdminRole' => $hasAdminRole,
+        ]);
     }
 
     public function exportMonthly(Request $request)

@@ -53,6 +53,7 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::resource('schedules', \App\Modules\Academic\Controllers\ScheduleController::class)->only(['index', 'store', 'destroy', 'update']);
     
     // Teaching Journal
+    Route::get('teaching-journal/recap', [\App\Modules\Academic\Controllers\TeachingJournalController::class, 'recap'])->name('teaching-journal.recap');
     Route::get('teaching-journal/export', [\App\Modules\Academic\Controllers\TeachingJournalController::class, 'exportMonthly'])->name('teaching-journal.export');
     Route::post('teaching-journal/send-reminder', [\App\Modules\Academic\Controllers\TeachingJournalController::class, 'sendReminder'])->name('teaching-journal.send-reminder');
     Route::resource('teaching-journal', \App\Modules\Academic\Controllers\TeachingJournalController::class);

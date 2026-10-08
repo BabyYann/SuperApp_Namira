@@ -520,31 +520,19 @@ const sendReminder = (schedule) => {
             <!-- 2. TEACHER PERSONAL SCHEDULE VIEW (Native Teacher View)   -->
             <!-- ======================================================== -->
             <template v-else>
-                <!-- Header (Identik Referensi) -->
-                <div class="flex items-center justify-between gap-3 mb-2">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 shrink-0">
-                            <BookOpenIcon class="w-6 h-6 stroke-[2.2]" />
-                        </div>
-                        <div>
-                            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
-                                Jurnal Mengajar
-                            </h2>
-                            <p class="text-xs text-slate-500 font-medium">
-                                Catat dan kelola aktivitas mengajar Anda.
-                            </p>
-                        </div>
+                <!-- Header (Clean, Full-Width, Tanpa Terhimpit Tombol) -->
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 shrink-0">
+                        <BookOpenIcon class="w-6 h-6 stroke-[2.2]" />
                     </div>
-
-                    <!-- Right Pill: Rekap Bulan Ini -->
-                    <a 
-                        :href="route('yayasan.teaching-journal.export', { month: new Date(date).getMonth() + 1, year: new Date(date).getFullYear() })"
-                        class="px-3.5 py-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-black border border-emerald-200/80 flex items-center gap-1.5 transition active:scale-95 shadow-2xs shrink-0"
-                    >
-                        <ChartBarIcon class="w-4 h-4 text-emerald-600 stroke-[2.2]" />
-                        <span>Rekap Bulan Ini</span>
-                        <ChevronRightIcon class="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
-                    </a>
+                    <div>
+                        <h2 class="text-xl font-black text-slate-900 tracking-tight leading-tight">
+                            Jurnal Mengajar
+                        </h2>
+                        <p class="text-xs text-slate-500 font-medium mt-0.5">
+                            Catat dan kelola aktivitas mengajar Anda.
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Card 1: Date Selector (Identik Referensi: < [Kalender + Hari, Tgl + Hijriah] >) -->
@@ -572,10 +560,10 @@ const sendReminder = (schedule) => {
                             <CalendarDaysIcon class="w-5 h-5 stroke-[2.2]" />
                         </div>
                         <div class="text-left">
-                            <h4 class="font-black text-xs sm:text-sm text-slate-900 leading-tight">
+                            <h4 class="font-black text-xs sm:text-sm text-slate-900 leading-tight whitespace-nowrap">
                                 {{ formatDate(date) }}
                             </h4>
-                            <p class="text-[11px] font-bold text-slate-500 mt-0.5">
+                            <p class="text-[11px] font-bold text-slate-500 mt-0.5 whitespace-nowrap">
                                 {{ getHijriDate(date) }}
                             </p>
                         </div>
@@ -687,13 +675,13 @@ const sendReminder = (schedule) => {
                             </div>
                         </div>
 
-                        <a 
-                            :href="route('yayasan.teaching-journal.export', { month: new Date(date).getMonth() + 1, year: new Date(date).getFullYear() })"
-                            class="text-xs font-black text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition active:scale-95"
+                        <Link 
+                            :href="route('yayasan.teaching-journal.recap', { month: monthlyStats?.month || (new Date(date).getMonth() + 1), year: monthlyStats?.year || new Date(date).getFullYear() })"
+                            class="text-xs font-black text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition active:scale-95 whitespace-nowrap shrink-0"
                         >
                             <span>Lihat Detail</span>
                             <ArrowRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
-                        </a>
+                        </Link>
                     </div>
 
                     <!-- 3 Mini Stats Grid -->
