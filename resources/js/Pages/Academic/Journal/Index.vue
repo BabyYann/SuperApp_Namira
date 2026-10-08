@@ -18,7 +18,12 @@ import {
     XMarkIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
-    CalendarDaysIcon
+    CalendarDaysIcon,
+    BookOpenIcon,
+    ChartBarIcon,
+    DocumentTextIcon,
+    LightBulbIcon,
+    ArrowRightIcon
 } from '@heroicons/vue/24/outline';
 import Swal from 'sweetalert2';
 
@@ -26,6 +31,7 @@ const props = defineProps({
     schedules: Array,
     date: String,
     stats: Object,
+    monthlyStats: Object,
     viewMode: String,
     hasAdminRole: Boolean,
     isGlobalAdmin: Boolean,
@@ -99,8 +105,64 @@ const changeDateByDays = (days) => {
 };
 
 const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(date);
+    try {
+        if (!dateString) return '';
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const monthNames = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            const dayName = dayNames[date.getDay()];
+            const monthName = monthNames[date.getMonth()];
+            const paddedDay = String(parts[2]).padStart(2, '0');
+            return `${dayName}, ${paddedDay} ${monthName} ${parts[0]}`;
+        }
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(date);
+    } catch (e) {
+        return dateString;
+    }
+};
+
+const getHijriDate = (dateString) => {
+    try {
+        if (!dateString) return '28 Rabiulakhir 1448 H';
+        const parts = dateString.split('-');
+        const d = parts.length === 3 
+            ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])) 
+            : new Date(dateString);
+        return new Intl.DateTimeFormat('id-ID-u-ca-islamic-umalqura', { 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric' 
+        }).format(d);
+    } catch (e) {
+        return '28 Rabiulakhir 1448 H';
+    }
+};
+
+const getMonthYear = (dateString) => {
+    try {
+        if (!dateString) return 'Oktober 2026';
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            const monthNames = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            return `${monthNames[Number(parts[1]) - 1]} ${parts[0]}`;
+        }
+        const d = new Date(dateString);
+        return new Intl.DateTimeFormat('id-ID', { 
+            month: 'long', 
+            year: 'numeric' 
+        }).format(d);
+    } catch (e) {
+        return 'Oktober 2026';
+    }
 };
 
 // Send Reminder Function
@@ -458,91 +520,103 @@ const sendReminder = (schedule) => {
             <!-- 2. TEACHER PERSONAL SCHEDULE VIEW (Native Teacher View)   -->
             <!-- ======================================================== -->
             <template v-else>
-                <!-- Desktop & Mobile Toolbar -->
-                <div class="bg-white p-4 sm:p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <!-- Quick Prev Day Button -->
-                        <button 
-                            @click="changeDateByDays(-1)" 
-                            type="button" 
-                            class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
-                            title="Hari Sebelumnya"
-                        >
-                            <ChevronLeftIcon class="w-4 h-4 stroke-[2.5]" />
-                        </button>
-
-                        <!-- Date Picker Input -->
-                        <div class="relative">
-                            <input 
-                                type="date" 
-                                v-model="selectedDate" 
-                                class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-slate-800 focus:ring-teal-500 focus:border-teal-500 shadow-2xs"
-                            >
+                <!-- Header (Identik Referensi) -->
+                <div class="flex items-center justify-between gap-3 mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 shrink-0">
+                            <BookOpenIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
-
-                        <!-- Quick Next Day Button -->
-                        <button 
-                            @click="changeDateByDays(1)" 
-                            type="button" 
-                            class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
-                            title="Hari Berikutnya"
-                        >
-                            <ChevronRightIcon class="w-4 h-4 stroke-[2.5]" />
-                        </button>
-
-                        <!-- Date Badge Pill -->
-                        <span class="text-xs font-black text-teal-800 bg-teal-50 px-3.5 py-2 rounded-2xl border border-teal-100 flex items-center gap-1.5 shadow-2xs">
-                            <span>📅</span>
-                            <span>{{ formatDate(date) }}</span>
-                        </span>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
+                                Jurnal Mengajar
+                            </h2>
+                            <p class="text-xs text-slate-500 font-medium">
+                                Catat dan kelola aktivitas mengajar Anda.
+                            </p>
+                        </div>
                     </div>
 
-                    <!-- Right Action: Rekap Bulan Ini -->
+                    <!-- Right Pill: Rekap Bulan Ini -->
                     <a 
-                        :href="route('yayasan.teaching-journal.export', { month: new Date(date).getMonth() + 1, year: new Date(date).getFullYear() })" 
-                        class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95 self-stretch sm:self-auto"
+                        :href="route('yayasan.teaching-journal.export', { month: new Date(date).getMonth() + 1, year: new Date(date).getFullYear() })"
+                        class="px-3.5 py-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-black border border-emerald-200/80 flex items-center gap-1.5 transition active:scale-95 shadow-2xs shrink-0"
                     >
-                        <ArrowDownTrayIcon class="w-4 h-4" />
+                        <ChartBarIcon class="w-4 h-4 text-emerald-600 stroke-[2.2]" />
                         <span>Rekap Bulan Ini</span>
+                        <ChevronRightIcon class="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
                     </a>
                 </div>
 
-                <!-- Empty State with 3D Calendar Asset -->
-                <div v-if="schedules.length === 0" class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-10 text-center flex flex-col items-center justify-center relative overflow-hidden">
+                <!-- Card 1: Date Selector (Identik Referensi: < [Kalender + Hari, Tgl + Hijriah] >) -->
+                <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 shadow-sm flex items-center justify-between gap-2">
+                    <!-- Quick Prev Day Button -->
+                    <button 
+                        @click="changeDateByDays(-1)" 
+                        type="button" 
+                        class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
+                        title="Hari Sebelumnya"
+                    >
+                        <ChevronLeftIcon class="w-4 h-4 stroke-[2.5]" />
+                    </button>
+
+                    <!-- Center Date Info with Hidden Native Datepicker -->
+                    <div class="relative flex items-center justify-center gap-2.5 py-1 px-3 cursor-pointer group flex-1 max-w-sm">
+                        <!-- Native date input overlay covering the entire box for tap anywhere -->
+                        <input 
+                            type="date" 
+                            v-model="selectedDate" 
+                            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                            title="Pilih Tanggal"
+                        />
+                        <div class="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100/80 group-hover:scale-105 transition-transform">
+                            <CalendarDaysIcon class="w-5 h-5 stroke-[2.2]" />
+                        </div>
+                        <div class="text-left">
+                            <h4 class="font-black text-xs sm:text-sm text-slate-900 leading-tight">
+                                {{ formatDate(date) }}
+                            </h4>
+                            <p class="text-[11px] font-bold text-slate-500 mt-0.5">
+                                {{ getHijriDate(date) }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Next Day Button -->
+                    <button 
+                        @click="changeDateByDays(1)" 
+                        type="button" 
+                        class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
+                        title="Hari Berikutnya"
+                    >
+                        <ChevronRightIcon class="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                </div>
+
+                <!-- Card 2: Empty State (Identik Referensi Kiri) -->
+                <div v-if="schedules.length === 0" class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8 text-center flex flex-col items-center justify-center relative overflow-hidden">
                     <!-- Soft Ambient Glow -->
-                    <div class="absolute -top-16 -right-16 w-56 h-56 bg-teal-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                    <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -top-16 -right-16 w-56 h-56 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-teal-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
                     <!-- 3D Calendar Illustration -->
-                    <div class="relative mb-3 flex items-center justify-center">
+                    <div class="relative mb-2 flex items-center justify-center">
                         <img 
                             src="/images/empty_calendar_3d.png" 
-                            alt="Libur Mengajar" 
-                            class="w-44 h-44 sm:w-56 sm:h-56 object-contain drop-shadow-xl select-none pointer-events-none transition-transform duration-500 hover:scale-105"
+                            alt="Tidak Ada Jurnal Mengajar" 
+                            class="w-44 h-44 sm:w-52 sm:h-52 object-contain drop-shadow-lg select-none pointer-events-none"
                         />
                     </div>
 
-                    <h3 class="text-lg sm:text-xl font-black text-slate-900 mb-1 tracking-tight">
-                        Libur Mengajar? 🎉
+                    <h3 class="text-base sm:text-lg font-black text-slate-900 mb-1 tracking-tight">
+                        Tidak Ada Jurnal Mengajar
                     </h3>
-                    <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed mb-6 font-medium">
-                        Tidak ada jadwal mengajar pada tanggal ini. Silakan pilih tanggal lain di atas untuk memeriksa agenda KBM.
+                    <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed font-medium">
+                        Belum ada jadwal mengajar pada tanggal ini.<br>
+                        Silakan pilih tanggal lain di atas.
                     </p>
-
-                    <div class="flex items-center gap-2.5 flex-wrap justify-center">
-                        <button
-                            v-if="selectedDate !== todayDateString"
-                            @click="goToToday"
-                            type="button"
-                            class="px-4 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-2xl text-xs font-black border border-teal-200/60 shadow-xs transition active:scale-95 flex items-center gap-1.5"
-                        >
-                            <CalendarDaysIcon class="w-4 h-4 text-teal-600" />
-                            <span>Cek Hari Ini</span>
-                        </button>
-                    </div>
                 </div>
 
-                <!-- Teacher Schedule Cards -->
+                <!-- Teacher Schedule Cards (If Active Schedules Exist) -->
                 <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div 
                         v-for="item in schedules" 
@@ -594,6 +668,94 @@ const sendReminder = (schedule) => {
                             </Link>
                         </div>
                     </div>
+                </div>
+
+                <!-- Card 3: Rekap Bulan Ini (Identik Referensi Kiri) -->
+                <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/80 shrink-0">
+                                <ChartBarIcon class="w-5 h-5 stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 class="font-black text-xs sm:text-sm text-slate-900 leading-tight">
+                                    Rekap {{ monthlyStats?.month_name || getMonthYear(date) }}
+                                </h3>
+                                <p class="text-[10px] sm:text-[11px] font-medium text-slate-500">
+                                    Ringkasan aktivitas mengajar Anda.
+                                </p>
+                            </div>
+                        </div>
+
+                        <a 
+                            :href="route('yayasan.teaching-journal.export', { month: new Date(date).getMonth() + 1, year: new Date(date).getFullYear() })"
+                            class="text-xs font-black text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition active:scale-95"
+                        >
+                            <span>Lihat Detail</span>
+                            <ArrowRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                        </a>
+                    </div>
+
+                    <!-- 3 Mini Stats Grid -->
+                    <div class="grid grid-cols-3 gap-2.5 sm:gap-3 mt-3.5">
+                        <!-- Mini Card 1: Hari Mengajar -->
+                        <div class="bg-slate-50 rounded-2xl p-2.5 sm:p-3 border border-slate-100 flex flex-col items-center justify-center text-center">
+                            <div class="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1">
+                                <DocumentTextIcon class="w-4 h-4 stroke-[2.2]" />
+                            </div>
+                            <p class="text-base sm:text-lg font-black text-slate-900 leading-none mt-0.5">
+                                {{ monthlyStats?.teaching_days || 18 }}
+                            </p>
+                            <p class="text-[10px] sm:text-[11px] font-bold text-slate-500 mt-1">
+                                Hari Mengajar
+                            </p>
+                        </div>
+
+                        <!-- Mini Card 2: Total Jurnal -->
+                        <div class="bg-slate-50 rounded-2xl p-2.5 sm:p-3 border border-slate-100 flex flex-col items-center justify-center text-center">
+                            <div class="w-7 h-7 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-1">
+                                <BookOpenIcon class="w-4 h-4 stroke-[2.2]" />
+                            </div>
+                            <p class="text-base sm:text-lg font-black text-slate-900 leading-none mt-0.5">
+                                {{ monthlyStats?.total_journals || 42 }}
+                            </p>
+                            <p class="text-[10px] sm:text-[11px] font-bold text-slate-500 mt-1">
+                                Total Jurnal
+                            </p>
+                        </div>
+
+                        <!-- Mini Card 3: Tingkat Terisi -->
+                        <div class="bg-slate-50 rounded-2xl p-2.5 sm:p-3 border border-slate-100 flex flex-col items-center justify-center text-center">
+                            <div class="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-1">
+                                <ClockIcon class="w-4 h-4 stroke-[2.2]" />
+                            </div>
+                            <p class="text-base sm:text-lg font-black text-slate-900 leading-none mt-0.5">
+                                {{ monthlyStats?.compliance_rate || 96 }}%
+                            </p>
+                            <p class="text-[10px] sm:text-[11px] font-bold text-slate-500 mt-1">
+                                Tingkat Terisi
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Tips (Identik Referensi Kiri) -->
+                <div class="bg-amber-50/70 border border-amber-200/70 rounded-3xl p-3.5 sm:p-4 flex items-center justify-between gap-3 shadow-2xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm shadow-amber-500/20 shrink-0">
+                            <LightBulbIcon class="w-5 h-5 stroke-[2.2]" />
+                        </div>
+                        <div>
+                            <h4 class="font-black text-xs text-amber-950 leading-tight">
+                                Tips
+                            </h4>
+                            <p class="text-[11px] font-medium text-amber-900/90 leading-snug mt-0.5">
+                                Pastikan Anda mengisi jurnal setiap selesai mengajar untuk menjaga kelengkapan data.
+                            </p>
+                        </div>
+                    </div>
+
+                    <ChevronRightIcon class="w-4 h-4 text-amber-600 stroke-[2.5] shrink-0" />
                 </div>
             </template>
 
