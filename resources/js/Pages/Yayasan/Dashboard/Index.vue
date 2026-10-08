@@ -436,6 +436,10 @@ const safeRoute = (name, params = {}, fallback = '#') => {
     return fallback;
 };
 
+const openAllMenu = () => {
+    window.dispatchEvent(new CustomEvent('open-mobile-drawer'));
+};
+
 const formatDate = (date) => {
     return new Date(date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
 };
@@ -967,7 +971,14 @@ const eventTypeLabels = {
                         <Squares2X2Icon class="w-4 h-4 sm:w-4.5 sm:h-4.5 text-teal-600 stroke-[2.5]" />
                         <span>Pintasan Cepat</span>
                     </h4>
-                    <span class="text-xs font-semibold text-slate-400">Layanan Harian</span>
+                    <button 
+                        type="button" 
+                        @click="openAllMenu"
+                        class="text-xs font-extrabold text-teal-700 hover:text-teal-800 flex items-center gap-0.5 active:scale-95 transition-all"
+                    >
+                        <span>Semua Menu</span>
+                        <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                    </button>
                 </div>
 
                 <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
@@ -1052,16 +1063,15 @@ const eventTypeLabels = {
                         <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-sky-600 transition-colors">Data Siswa</span>
                     </Link>
 
-                    <!-- 8. Konseling BK -->
+                    <!-- 8. Giat Tugas Saya -->
                     <Link 
-                        v-if="isTeacher || hasRole(['bk', 'counseling', 'wali_kelas', 'teacher'])"
-                        :href="safeRoute('counseling.sessions.index')"
+                        :href="safeRoute('employee.activity-logs.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-pink-50/70 border border-white ring-1 ring-pink-400/25 shadow-[0_8px_20px_-3px_rgba(236,72,153,0.30)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
-                            <ChatBubbleLeftRightIcon class="w-6 h-6 sm:w-7 sm:h-7 text-pink-600 stroke-[2.3]" />
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_20px_-3px_rgba(20,184,166,0.30)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <ClipboardDocumentCheckIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
                         </div>
-                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-pink-600 transition-colors">Konseling</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-teal-700 transition-colors">Giat Tugas</span>
                     </Link>
 
                     <!-- 9. Persetujuan Absen (Kepsek / Admin) -->
@@ -1111,6 +1121,18 @@ const eventTypeLabels = {
                         </div>
                         <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-teal-700 transition-colors">Keuangan</span>
                     </Link>
+
+                    <!-- 13. Semua Menu (Lainnya) -->
+                    <button 
+                        type="button"
+                        @click="openAllMenu"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-slate-100/70 border border-white ring-1 ring-slate-400/25 shadow-[0_8px_20px_-3px_rgba(100,116,139,0.30)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <Squares2X2Icon class="w-6 h-6 sm:w-7 sm:h-7 text-slate-700 stroke-[2.3]" />
+                        </div>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-slate-900 transition-colors">Semua Menu</span>
+                    </button>
                 </div>
             </div>
 

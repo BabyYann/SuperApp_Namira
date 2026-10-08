@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { 
     HomeIcon, 
@@ -32,7 +32,10 @@ import {
     UserGroupIcon,
     ClockIcon,
     HeartIcon,
-    TagIcon
+    TagIcon,
+    AcademicCapIcon,
+    CalendarDaysIcon,
+    PencilSquareIcon
 } from '@heroicons/vue/24/outline';
 import { 
     HomeIcon as HomeIconSolid, 
@@ -87,6 +90,18 @@ const switchUnit = (unitId) => {
 const toggleDrawer = () => {
     showDrawer.value = !showDrawer.value;
 };
+
+const openDrawer = () => {
+    showDrawer.value = true;
+};
+
+onMounted(() => {
+    window.addEventListener('open-mobile-drawer', openDrawer);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('open-mobile-drawer', openDrawer);
+});
 
 // Role Check Helper Function
 const hasRole = (roles) => {
@@ -389,494 +404,514 @@ const isRouteActive = (pattern) => {
                 <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm transition-opacity" @click="showDrawer = false"></div>
                 
                 <!-- Drawer Card -->
-                <div class="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto shadow-2xl p-6 border-t border-slate-100 flex flex-col gap-6 animate-in slide-in-from-bottom duration-300">
+                <div class="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto shadow-2xl p-4 sm:p-6 border-t border-slate-100 flex flex-col gap-5 animate-in slide-in-from-bottom duration-300">
+                    <!-- Drawer Handle Bar -->
+                    <div class="w-10 h-1.5 rounded-full bg-slate-200 mx-auto -mt-1 shrink-0"></div>
+
                     <!-- Drawer Header -->
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div>
-                            <h3 class="font-extrabold text-lg text-slate-800">Menu Lengkap Saya</h3>
-                            <p class="text-xs text-slate-400">Seluruh fitur layanan yang Anda miliki saat ini</p>
+                            <h3 class="font-black text-base sm:text-lg text-slate-800 tracking-tight flex items-center gap-2">
+                                <Squares2X2Icon class="w-5 h-5 text-teal-600 stroke-[2.3]" />
+                                <span>Semua Menu & Layanan</span>
+                            </h3>
+                            <p class="text-[11px] text-slate-400 font-medium">Seluruh fitur layanan yang Anda miliki saat ini</p>
                         </div>
-                        <button @click="showDrawer = false" class="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
+                        <button @click="showDrawer = false" class="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 active:scale-95 transition-all">
                             <XMarkIcon class="w-5 h-5" />
                         </button>
                     </div>
 
                     <!-- Dynamic Role-Based App Categorized Groups -->
-                    <div class="space-y-6">
+                    <div class="space-y-5 pb-6">
 
-                        <!-- 1. AKADEMIK & MENGAJAR -->
-                        <div v-if="!isDaycare && (isTeacher || isGlobalAdmin || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum', 'admin_unit', 'kepala_sekolah']))" class="space-y-2">
-                            <p class="text-[11px] font-black uppercase text-teal-700 tracking-wider flex items-center gap-1.5">
-                                <BookOpenIcon class="w-4 h-4" />
-                                <span>Akademik & Kurikulum</span>
-                            </p>
-                            <div class="grid grid-cols-3 gap-3">
+                        <!-- 1. AKADEMIK & KURIKULUM -->
+                        <div v-if="!isDaycare && (isTeacher || isGlobalAdmin || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum', 'admin_unit', 'kepala_sekolah']))" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-teal-500"></div>
+                                <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                    Akademik & Kurikulum
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
                                 <Link 
                                     v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan', 'wali_kelas', 'teacher'])"
                                     :href="safeRoute('yayasan.students.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
-                                        <UserCircleIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-sky-50/70 border border-white ring-1 ring-sky-400/25 shadow-[0_8px_18px_-3px_rgba(2,132,199,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <AcademicCapIcon class="w-6 h-6 sm:w-7 sm:h-7 text-sky-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Data Siswa</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Data Siswa</span>
                                 </Link>
 
                                 <Link 
                                     v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan', 'wali_kelas'])"
                                     :href="safeRoute('yayasan.classrooms.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
-                                        <HomeIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/70 border border-white ring-1 ring-emerald-400/25 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BuildingOfficeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Data Kelas</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Data Kelas</span>
                                 </Link>
 
                                 <Link 
                                     v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan'])"
                                     :href="safeRoute('yayasan.teachers.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 hover:bg-indigo-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
-                                        <UserCircleIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-indigo-50/70 border border-white ring-1 ring-indigo-400/25 shadow-[0_8px_18px_-3px_rgba(99,102,241,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Data Guru</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-indigo-600 transition-colors">Data Guru</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.schedules.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
-                                        <CalendarIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-purple-50/70 border border-white ring-1 ring-purple-400/25 shadow-[0_8px_18px_-3px_rgba(147,51,234,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <CalendarDaysIcon class="w-6 h-6 sm:w-7 sm:h-7 text-purple-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Jadwal Pelajaran</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Jadwal</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.teaching-journal.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
-                                        <BookOpenIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-amber-50/70 border border-white ring-1 ring-amber-400/25 shadow-[0_8px_18px_-3px_rgba(245,158,11,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <PencilSquareIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-500 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Jurnal Mapel</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Jurnal Mapel</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.subjects.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-sky-50/60 border border-sky-100/80 hover:bg-sky-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md">
-                                        <BookOpenIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/70 border border-white ring-1 ring-blue-400/25 shadow-[0_8px_18px_-3px_rgba(37,99,235,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BookOpenIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Mata Pelajaran</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Mata Pelajaran</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.learning-objectives.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-amber-50/60 border border-amber-100/80 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md">
-                                        <TrophyIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-orange-50/70 border border-white ring-1 ring-orange-400/25 shadow-[0_8px_18px_-3px_rgba(249,115,22,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <TrophyIcon class="w-6 h-6 sm:w-7 sm:h-7 text-orange-500 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Tujuan Belajar</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Tujuan Belajar</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.student-attendance.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-cyan-50/60 border border-cyan-100/80 hover:bg-cyan-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-cyan-600 text-white flex items-center justify-center shadow-md">
-                                        <ClipboardDocumentCheckIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-cyan-50/70 border border-white ring-1 ring-cyan-400/25 shadow-[0_8px_18px_-3px_rgba(6,182,212,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ClipboardDocumentCheckIcon class="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Presensi Siswa</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-cyan-600 transition-colors">Presensi Siswa</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.student-attendance.recap')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-blue-50/60 border border-blue-100/80 hover:bg-blue-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md">
-                                        <PresentationChartBarIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <PresentationChartBarIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Rekap Presensi</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Rekap Presensi</span>
                                 </Link>
 
                                 <Link 
                                     v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan'])"
                                     :href="safeRoute('yayasan.promotion.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-purple-50/60 border border-purple-100/80 hover:bg-purple-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md">
-                                        <SparklesIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-violet-50/70 border border-white ring-1 ring-violet-400/25 shadow-[0_8px_18px_-3px_rgba(139,92,246,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <SparklesIcon class="w-6 h-6 sm:w-7 sm:h-7 text-violet-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Kenaikan Kelas</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Kenaikan Kelas</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.holidays.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 hover:bg-indigo-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
-                                        <CalendarIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-rose-50/70 border border-white ring-1 ring-rose-400/25 shadow-[0_8px_18px_-3px_rgba(244,63,94,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <CalendarIcon class="w-6 h-6 sm:w-7 sm:h-7 text-rose-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Kalender Akademik</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-rose-600 transition-colors">Kalender</span>
                                 </Link>
                             </div>
                         </div>
 
-                        <!-- 2. BIMBINGAN & KONSELING -->
-                        <div v-if="!isDaycare && (isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas', 'kepala_sekolah', 'admin_unit']))" class="space-y-2">
-                            <p class="text-[11px] font-black uppercase text-indigo-700 tracking-wider flex items-center gap-1.5">
-                                <ChatBubbleLeftRightIcon class="w-4 h-4" />
-                                <span>Bimbingan Konseling (BK)</span>
-                            </p>
-                            <div class="grid grid-cols-3 gap-3">
+                        <!-- 2. BIMBINGAN & KONSELING (BK) -->
+                        <div v-if="!isDaycare && (isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas', 'kepala_sekolah', 'admin_unit']))" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-pink-500"></div>
+                                <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                    Bimbingan Konseling (BK)
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
                                 <Link 
                                     :href="safeRoute('counseling.sessions.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 hover:bg-indigo-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
-                                        <ChatBubbleLeftRightIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-pink-50/70 border border-white ring-1 ring-pink-400/25 shadow-[0_8px_18px_-3px_rgba(236,72,153,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ChatBubbleLeftRightIcon class="w-6 h-6 sm:w-7 sm:h-7 text-pink-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Sesi Konseling</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-pink-600 transition-colors">Konseling</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('counseling.violations.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-rose-50/60 border border-rose-100/80 hover:bg-rose-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md">
-                                        <ExclamationTriangleIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-rose-50/70 border border-white ring-1 ring-rose-400/25 shadow-[0_8px_18px_-3px_rgba(239,68,68,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ExclamationTriangleIcon class="w-6 h-6 sm:w-7 sm:h-7 text-rose-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Pelanggaran</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-rose-600 transition-colors">Pelanggaran</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('counseling.achievements.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-amber-50/60 border border-amber-100/80 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md">
-                                        <TrophyIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-amber-50/70 border border-white ring-1 ring-amber-400/25 shadow-[0_8px_18px_-3px_rgba(245,158,11,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <TrophyIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-500 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Prestasi Siswa</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Prestasi</span>
                                 </Link>
                             </div>
                         </div>
 
                         <!-- 3. HUMAS & PUBLIKASI -->
-                        <div v-if="isGlobalAdmin || hasRole(['humas_unit', 'kepala_sekolah', 'admin_unit'])" class="space-y-2">
-                            <p class="text-[11px] font-black uppercase text-blue-700 tracking-wider flex items-center gap-1.5">
-                                <MegaphoneIcon class="w-4 h-4" />
-                                <span>Humas & Hubungan Masyarakat</span>
-                            </p>
-                            <div class="grid grid-cols-3 gap-3">
+                        <div v-if="isGlobalAdmin || hasRole(['humas_unit', 'kepala_sekolah', 'admin_unit'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                    Humas & Hubungan Masyarakat
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
                                 <Link 
                                     :href="safeRoute('public-relations.news.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-blue-50/60 border border-blue-100/80 hover:bg-blue-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md">
-                                        <NewspaperIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-slate-100/70 border border-white ring-1 ring-slate-400/25 shadow-[0_8px_18px_-3px_rgba(100,116,139,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <NewspaperIcon class="w-6 h-6 sm:w-7 sm:h-7 text-slate-700 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Berita Sekolah</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-slate-700 transition-colors">Berita</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('public-relations.university-destinations.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-sky-50/60 border border-sky-100/80 hover:bg-sky-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md">
-                                        <GlobeAltIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-sky-50/70 border border-white ring-1 ring-sky-400/25 shadow-[0_8px_18px_-3px_rgba(2,132,199,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <GlobeAltIcon class="w-6 h-6 sm:w-7 sm:h-7 text-sky-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Destinasi Kampus</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Kampus</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('public-relations.events.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-violet-50/60 border border-violet-100/80 hover:bg-violet-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center shadow-md">
-                                        <SparklesIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-violet-50/70 border border-white ring-1 ring-violet-400/25 shadow-[0_8px_18px_-3px_rgba(139,92,246,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <SparklesIcon class="w-6 h-6 sm:w-7 sm:h-7 text-violet-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Event Humas</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Event</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('public-relations.testimonials.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-pink-50/60 border border-pink-100/80 hover:bg-pink-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-md">
-                                        <ChatBubbleLeftRightIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-pink-50/70 border border-white ring-1 ring-pink-400/25 shadow-[0_8px_18px_-3px_rgba(236,72,153,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ChatBubbleLeftRightIcon class="w-6 h-6 sm:w-7 sm:h-7 text-pink-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Testimoni Alumni</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-pink-600 transition-colors">Testimoni</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('public-relations.partners.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 hover:bg-indigo-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
-                                        <BuildingOfficeIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-indigo-50/70 border border-white ring-1 ring-indigo-400/25 shadow-[0_8px_18px_-3px_rgba(99,102,241,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BuildingOfficeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Mitra Sekolah</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-indigo-600 transition-colors">Mitra</span>
                                 </Link>
                             </div>
                         </div>
 
-                        <!-- DAYCARE & PENGASUHAN (Tampil jika SuperAdmin / Daycare Unit) -->
-                        <div v-if="isGlobalAdmin || isDaycare" class="space-y-2">
-                            <p class="text-[11px] font-black uppercase text-amber-700 tracking-wider flex items-center gap-1.5">
-                                <HeartIcon class="w-4 h-4 text-amber-600" />
-                                <span>Daycare & Pengasuhan</span>
-                            </p>
-                            <div class="grid grid-cols-3 gap-3">
+                        <!-- 4. DAYCARE & PENGASUHAN -->
+                        <div v-if="isGlobalAdmin || isDaycare" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                                <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                    Daycare & Pengasuhan
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
                                 <Link 
                                     :href="safeRoute('daycare.children.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md">
-                                        <UserGroupIcon class="w-6 h-6" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-amber-50/70 border border-white ring-1 ring-amber-400/25 shadow-[0_8px_18px_-3px_rgba(245,158,11,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-500 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-extrabold text-slate-800">Data Ananda</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Data Ananda</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('daycare.attendance.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3.5 rounded-2xl bg-orange-50/80 border border-orange-200 hover:bg-orange-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-11 h-11 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-md">
-                                        <ClockIcon class="w-6 h-6" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-orange-50/70 border border-white ring-1 ring-orange-400/25 shadow-[0_8px_18px_-3px_rgba(249,115,22,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ClockIcon class="w-6 h-6 sm:w-7 sm:h-7 text-orange-500 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-extrabold text-slate-800">Presensi & Handover</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Handover</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.holidays.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3.5 rounded-2xl bg-teal-50/80 border border-teal-200 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-md">
-                                        <CalendarIcon class="w-6 h-6" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <CalendarIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-extrabold text-slate-800">Kalender Kegiatan</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Kegiatan</span>
                                 </Link>
                             </div>
                         </div>
 
-                        <!-- 4. SARANA & PRASARANA -->
-                        <div v-if="isGlobalAdmin || hasRole(['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])" class="space-y-2">
-                            <p class="text-[11px] font-black uppercase text-amber-700 tracking-wider flex items-center gap-1.5">
-                                <CubeIcon class="w-4 h-4" />
-                                <span>Sarana & Prasarana (Sarpar)</span>
-                            </p>
-                            <div class="grid grid-cols-3 gap-3">
+                        <!-- 5. SARANA & PRASARANA (SARPAR) -->
+                        <div v-if="isGlobalAdmin || hasRole(['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                                <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                    Sarana & Prasarana
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
                                 <Link 
                                     :href="safeRoute('sarpar.dashboard')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center shadow-md">
-                                        <HomeIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-slate-100/70 border border-white ring-1 ring-slate-400/25 shadow-[0_8px_18px_-3px_rgba(100,116,139,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <HomeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-slate-700 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Dashboard</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-slate-700 transition-colors">Dashboard</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('sarpar.inventories.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
-                                        <CubeIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <CubeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Inventaris</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Inventaris</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('sarpar.loans.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-blue-50/60 border border-blue-100/80 hover:bg-blue-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md">
-                                        <ArrowPathRoundedSquareIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/70 border border-white ring-1 ring-blue-400/25 shadow-[0_8px_18px_-3px_rgba(37,99,235,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ArrowPathRoundedSquareIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Peminjaman</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Peminjaman</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('sarpar.maintenance.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-amber-50/60 border border-amber-100/80 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md">
-                                        <WrenchScrewdriverIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-orange-50/70 border border-white ring-1 ring-orange-400/25 shadow-[0_8px_18px_-3px_rgba(249,115,22,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <WrenchScrewdriverIcon class="w-6 h-6 sm:w-7 sm:h-7 text-orange-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Pemeliharaan</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Pemeliharaan</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('sarpar.rooms.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-purple-50/60 border border-purple-100/80 hover:bg-purple-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md">
-                                        <BuildingOfficeIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-purple-50/70 border border-white ring-1 ring-purple-400/25 shadow-[0_8px_18px_-3px_rgba(147,51,234,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BuildingOfficeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-purple-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Ruangan</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Ruangan</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('sarpar.categories.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
-                                        <TagIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/70 border border-white ring-1 ring-emerald-400/25 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <TagIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Kategori</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Kategori</span>
                                 </Link>
                             </div>
                         </div>
 
-                        <!-- 5. KEUANGAN -->
-                        <div v-if="isGlobalAdmin || hasRole(['finance', 'staff_admin_keuangan'])" class="space-y-2">
-                            <p class="text-[11px] font-black uppercase text-emerald-700 tracking-wider flex items-center gap-1.5">
-                                <BanknotesIcon class="w-4 h-4" />
-                                <span>Keuangan & SPP</span>
-                            </p>
-                            <div class="grid grid-cols-3 gap-3">
+                        <!-- 6. KEUANGAN & SPP -->
+                        <div v-if="isGlobalAdmin || hasRole(['finance', 'staff_admin_keuangan'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                    Keuangan & SPP
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
                                 <Link 
                                     :href="safeRoute('yayasan.finance.dashboard')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
-                                        <BanknotesIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-500/25 shadow-[0_8px_18px_-3px_rgba(13,148,136,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BanknotesIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-700 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Keuangan Unit</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Keuangan</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.finance.bills.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
-                                        <DocumentTextIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/70 border border-white ring-1 ring-emerald-400/25 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ClipboardDocumentListIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Tagihan Siswa</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Tagihan</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('yayasan.finance.transactions.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-sky-50/60 border border-sky-100/80 hover:bg-sky-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md">
-                                        <ArrowsRightLeftIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-sky-50/70 border border-white ring-1 ring-sky-400/25 shadow-[0_8px_18px_-3px_rgba(2,132,199,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ArrowPathRoundedSquareIcon class="w-6 h-6 sm:w-7 sm:h-7 text-sky-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Pembayaran</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Pembayaran</span>
                                 </Link>
                             </div>
                         </div>
 
-                        <!-- 6. UMUM & PEGAWAI (Semua User) -->
-                        <div class="space-y-2 pt-2 border-t border-slate-100">
-                            <p class="text-[11px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1.5">
-                                <UserCircleIcon class="w-4 h-4" />
-                                <span>Akun & Kepegawaian</span>
-                            </p>
-                            <div class="grid grid-cols-3 gap-3">
+                        <!-- 7. UMUM & KEPEGAWAIAN -->
+                        <div class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-teal-500"></div>
+                                <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                    Akun & Kepegawaian
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
                                 <Link 
                                     v-if="hasRole(['admin_unit', 'super_admin_yayasan', 'admin_yayasan'])"
                                     :href="safeRoute('yayasan.staff.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md">
-                                        <UserCircleIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Data Staf</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Data Staf</span>
                                 </Link>
 
                                 <Link 
                                     v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])"
                                     :href="safeRoute('attendance-approvals.index', {}, safeRoute('yayasan.attendance-approvals.index'))" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-amber-50/60 border border-amber-100/80 hover:bg-amber-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md">
-                                        <CheckCircleIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-amber-50/70 border border-white ring-1 ring-amber-400/25 shadow-[0_8px_18px_-3px_rgba(245,158,11,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <CheckCircleIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-500 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Persetujuan Absen</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">ACC Izin</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('attendance.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100/80 hover:bg-emerald-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
-                                        <FingerPrintIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/70 border border-white ring-1 ring-emerald-400/25 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <FingerPrintIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Presensi Saya</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Presensi</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('employee.activity-logs.index')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80 hover:bg-teal-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
-                                        <ClipboardDocumentCheckIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ClipboardDocumentCheckIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Giat Tugas Saya</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Giat Tugas</span>
                                 </Link>
 
                                 <Link 
                                     v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'staff_yayasan'])"
                                     :href="safeRoute('yayasan.activity-logs.feed')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-purple-50/60 border border-purple-100/80 hover:bg-purple-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md">
-                                        <SparklesIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-purple-50/70 border border-white ring-1 ring-purple-400/25 shadow-[0_8px_18px_-3px_rgba(147,51,234,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <SparklesIcon class="w-6 h-6 sm:w-7 sm:h-7 text-purple-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Linimasa SDM</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Linimasa SDM</span>
                                 </Link>
 
                                 <Link 
                                     :href="safeRoute('profile.edit')" 
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-slate-100 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center shadow-md">
-                                        <UserCircleIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-slate-100/70 border border-white ring-1 ring-slate-400/25 shadow-[0_8px_18px_-3px_rgba(100,116,139,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserCircleIcon class="w-6 h-6 sm:w-7 sm:h-7 text-slate-700 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800">Profil Saya</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-slate-700 transition-colors">Profil Saya</span>
                                 </Link>
 
                                 <Link 
@@ -884,12 +919,12 @@ const isRouteActive = (pattern) => {
                                     method="post"
                                     as="button"
                                     @click="showDrawer = false"
-                                    class="flex flex-col items-center p-3 rounded-2xl bg-rose-50/60 border border-rose-100/80 hover:bg-rose-100/80 text-center gap-2 transition-all active:scale-95"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md">
-                                        <ArrowRightOnRectangleIcon class="w-5 h-5" />
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-rose-50/70 border border-white ring-1 ring-rose-400/25 shadow-[0_8px_18px_-3px_rgba(239,68,68,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ArrowRightOnRectangleIcon class="w-6 h-6 sm:w-7 sm:h-7 text-rose-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-xs font-bold text-rose-700">Keluar</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-rose-600 tracking-tight leading-tight mt-0.5 group-hover:text-rose-700 transition-colors">Keluar</span>
                                 </Link>
                             </div>
                         </div>
