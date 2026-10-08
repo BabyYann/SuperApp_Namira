@@ -558,7 +558,7 @@ const eventTypeLabels = {
                                     <BookOpenIcon class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2]" />
                                 </div>
                                 <div class="min-w-0 flex-1 text-left">
-                                    <h4 class="font-black text-sm sm:text-base text-white tracking-tight leading-tight drop-shadow-xs break-words line-clamp-2">
+                                    <h4 class="font-black text-sm sm:text-base text-white tracking-tight leading-snug drop-shadow-xs truncate">
                                         {{ activeSchedule.subject_name }}
                                     </h4>
                                     <p class="text-xs font-semibold text-teal-100 flex items-center gap-1 mt-0.5 truncate">
@@ -693,94 +693,94 @@ const eventTypeLabels = {
                 </div>
 
                 <div class="grid grid-cols-4 gap-y-3.5 gap-x-2 text-center">
-                    <!-- 1. Presensi Pegawai (Teal Namira) -->
+                    <!-- 1. Presensi Pegawai -->
                     <Link 
                         :href="safeRoute('attendance.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-emerald-50/90 text-emerald-700 border border-emerald-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-emerald-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white flex items-center justify-center shadow-md shadow-teal-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <FingerPrintIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Presensi</span>
                     </Link>
 
-                    <!-- 2. Jurnal Guru (Warm Amber) -->
+                    <!-- 2. Jurnal Guru -->
                     <Link 
                         v-if="isTeacher || hasRole('teacher')"
                         :href="safeRoute('yayasan.teaching-journal.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-amber-50/90 text-amber-600 border border-amber-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-amber-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-500/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <PencilSquareIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Jurnal Guru</span>
                     </Link>
 
-                    <!-- 3. Absensi Siswa (Royal Blue) -->
+                    <!-- 3. Absensi Siswa (Wali Kelas / Guru) -->
                     <Link 
                         v-if="isTeacher || hasRole(['teacher', 'wali_kelas']) || teacherData?.homeroom_class"
                         :href="safeRoute('yayasan.student-attendance.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-blue-50/90 text-blue-600 border border-blue-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-blue-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <ClipboardDocumentCheckIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Absen Siswa</span>
                     </Link>
 
-                    <!-- 4. Jadwal Mengajar (Soft Purple) -->
+                    <!-- 4. Jadwal Mengajar -->
                     <Link 
                         v-if="isTeacher || hasRole('teacher')"
                         :href="safeRoute('yayasan.schedules.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-purple-50/90 text-purple-600 border border-purple-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-purple-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <CalendarDaysIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Jadwal</span>
                     </Link>
 
-                    <!-- 5. Scan QR Gerbang (Teal/Cyan) -->
+                    <!-- 5. Scan QR Gerbang -->
                     <Link 
                         :href="safeRoute('yayasan.student-checkin.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-teal-50/90 text-teal-700 border border-teal-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-teal-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-700 to-cyan-600 text-white flex items-center justify-center shadow-md shadow-teal-700/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <QrCodeIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Scan QR</span>
                     </Link>
 
-                    <!-- 6. Agenda & Kalender Event (Warm Orange) -->
+                    <!-- 6. Agenda & Kalender Event -->
                     <Link 
                         :href="safeRoute('public-relations.events.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-orange-50/90 text-orange-600 border border-orange-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-orange-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-md shadow-orange-500/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <CalendarIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Agenda</span>
                     </Link>
 
-                    <!-- 7. Data Siswa (Indigo) -->
+                    <!-- 7. Data Siswa -->
                     <Link 
                         v-if="isTeacher || hasRole(['teacher', 'wali_kelas', 'admin_unit', 'kepala_sekolah'])"
                         :href="safeRoute('yayasan.students.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-indigo-50/90 text-indigo-600 border border-indigo-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-indigo-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-600 text-white flex items-center justify-center shadow-md shadow-sky-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <AcademicCapIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Data Siswa</span>
                     </Link>
 
-                    <!-- 8. Konseling BK (Soft Rose) -->
+                    <!-- 8. Konseling BK -->
                     <Link 
                         v-if="isTeacher || hasRole(['bk', 'counseling', 'wali_kelas', 'teacher'])"
                         :href="safeRoute('counseling.sessions.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-rose-50/90 text-rose-600 border border-rose-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-rose-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-600 text-white flex items-center justify-center shadow-md shadow-rose-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <ChatBubbleLeftRightIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Konseling</span>
@@ -792,7 +792,7 @@ const eventTypeLabels = {
                         :href="safeRoute('attendance-approvals.index', {}, safeRoute('yayasan.attendance-approvals.index'))"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-amber-50/90 text-amber-700 border border-amber-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-amber-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shadow-amber-500/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <CheckCircleIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">ACC Izin</span>
@@ -804,7 +804,7 @@ const eventTypeLabels = {
                         :href="safeRoute('sarpar.maintenance.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-slate-100/90 text-slate-700 border border-slate-200/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-slate-200/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-500 text-white flex items-center justify-center shadow-md shadow-rose-600/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <WrenchScrewdriverIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Sarpras</span>
@@ -816,7 +816,7 @@ const eventTypeLabels = {
                         :href="safeRoute('public-relations.news.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-slate-100/90 text-slate-700 border border-slate-200/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-slate-200/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-900 text-white flex items-center justify-center shadow-md shadow-slate-700/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <NewspaperIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Berita</span>
@@ -828,7 +828,7 @@ const eventTypeLabels = {
                         :href="safeRoute('finance.dashboard')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
-                        <div class="w-12 h-12 rounded-2xl bg-emerald-50/90 text-emerald-800 border border-emerald-100/80 flex items-center justify-center shadow-2xs ring-1 ring-white/60 group-hover:scale-105 group-hover:bg-emerald-100/80 active:scale-90 transition-all duration-150">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-700 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-700/30 ring-1 ring-white/25 group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <BanknotesIcon class="w-6 h-6 stroke-[2.2]" />
                         </div>
                         <span class="text-[11px] font-bold text-slate-700 tracking-tight leading-tight">Keuangan</span>
