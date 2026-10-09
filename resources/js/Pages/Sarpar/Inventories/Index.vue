@@ -11,6 +11,7 @@ import {
     FunnelIcon, ExclamationTriangleIcon, EyeIcon, PhotoIcon, ArchiveBoxIcon, ChevronDownIcon,
     BuildingOfficeIcon, PrinterIcon, ArrowsRightLeftIcon, MapPinIcon, CheckCircleIcon
 } from '@heroicons/vue/24/outline';
+import SarparBanner from '../Partials/SarparBanner.vue';
 
 const props = defineProps({
     inventories: Object,
@@ -275,45 +276,53 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
 
             <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
             <div class="block md:hidden -mx-4 -mt-4 space-y-4">
-                <!-- Header Card Gradient -->
-                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Data Master Sarpar</p>
-                            <h1 class="text-xl font-black leading-tight">Data Inventaris</h1>
-                        </div>
-                        <button
-                            @click="openCreateModal"
-                            class="px-3 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
-                        >
-                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                            <span>Tambah</span>
-                        </button>
-                    </div>
+                <!-- Header Card with Warehouse Banner Background -->
+                <div class="relative overflow-hidden px-4 pt-5 pb-6 text-white rounded-b-3xl shadow-md border-b border-teal-500/20">
+                    <picture class="absolute inset-0 w-full h-full pointer-events-none">
+                        <source srcset="/images/sarpar/banner.webp" type="image/webp">
+                        <img src="/images/sarpar/banner.png" alt="Banner Sarpar" class="w-full h-full object-cover object-right" />
+                    </picture>
+                    <div class="absolute inset-0 bg-gradient-to-r from-teal-950/92 via-teal-900/65 to-transparent pointer-events-none"></div>
 
-                    <!-- Quick Stats Cards (4 Column Grid) -->
-                    <div class="grid grid-cols-4 gap-1.5 text-center mt-3">
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
-                            <p class="text-lg font-black text-white leading-none">{{ inventories.total || inventories.data.length }}</p>
-                            <p class="text-[8px] text-teal-200 font-bold mt-1 uppercase">Total Item</p>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Data Master Sarpar</p>
+                                <h1 class="text-xl font-black leading-tight">Data Inventaris</h1>
+                            </div>
+                            <button
+                                @click="openCreateModal"
+                                class="px-3 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                            >
+                                <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                                <span>Tambah</span>
+                            </button>
                         </div>
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
-                            <p class="text-lg font-black text-blue-300 leading-none">
-                                {{ inventories.data.filter(i => i.item_type === 'asset').length }}
-                            </p>
-                            <p class="text-[8px] text-blue-200 font-bold mt-1 uppercase">Aset Tetap</p>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
-                            <p class="text-lg font-black text-amber-300 leading-none">
-                                {{ inventories.data.filter(i => i.item_type === 'consumable').length }}
-                            </p>
-                            <p class="text-[8px] text-amber-200 font-bold mt-1 uppercase">Habis Pakai</p>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
-                            <p class="text-lg font-black text-red-300 leading-none">
-                                {{ inventories.data.filter(i => i.is_low_stock).length }}
-                            </p>
-                            <p class="text-[8px] text-red-200 font-bold mt-1 uppercase">Stok Menipis</p>
+
+                        <!-- Quick Stats Cards (4 Column Grid) -->
+                        <div class="grid grid-cols-4 gap-1.5 text-center mt-3">
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                                <p class="text-lg font-black text-white leading-none">{{ inventories.total || inventories.data.length }}</p>
+                                <p class="text-[8px] text-teal-200 font-bold mt-1 uppercase">Total Item</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                                <p class="text-lg font-black text-blue-300 leading-none">
+                                    {{ inventories.data.filter(i => i.item_type === 'asset').length }}
+                                </p>
+                                <p class="text-[8px] text-blue-200 font-bold mt-1 uppercase">Aset Tetap</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                                <p class="text-lg font-black text-amber-300 leading-none">
+                                    {{ inventories.data.filter(i => i.item_type === 'consumable').length }}
+                                </p>
+                                <p class="text-[8px] text-amber-200 font-bold mt-1 uppercase">Habis Pakai</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                                <p class="text-lg font-black text-red-300 leading-none">
+                                    {{ inventories.data.filter(i => i.is_low_stock).length }}
+                                </p>
+                                <p class="text-[8px] text-red-200 font-bold mt-1 uppercase">Stok Menipis</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -461,6 +470,24 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
             <div class="hidden md:block space-y-6">
+                <!-- Executive Hero Banner -->
+                <SarparBanner 
+                    title="Data Inventaris & Aset" 
+                    subtitle="Pusat inventarisasi seluruh barang, aset tetap, barang habis pakai, serta penomoran QR inventaris"
+                    tag="Aset & Logistik Sarpar"
+                >
+                    <template #actions>
+                        <a :href="route('sarpar.inventories.print-stickers')" target="_blank" class="px-4 py-2 bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 text-white rounded-xl font-bold flex items-center gap-1.5 transition text-xs shadow-sm">
+                            <PrinterIcon class="w-4 h-4" />
+                            <span>Cetak Stiker QR</span>
+                        </a>
+                        <button @click="openCreateModal" class="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white rounded-xl font-bold shadow-md flex items-center gap-1.5 transition text-xs">
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah Barang</span>
+                        </button>
+                    </template>
+                </SarparBanner>
+
                 <!-- Toolbar -->
                 <div class="flex flex-col md:flex-row items-center gap-4">
                     <div class="relative group flex-1 w-full">

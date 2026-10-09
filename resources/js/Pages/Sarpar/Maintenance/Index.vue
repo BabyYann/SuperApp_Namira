@@ -8,6 +8,7 @@ import {
     MagnifyingGlassIcon, WrenchScrewdriverIcon, CheckCircleIcon,
     ClockIcon, XCircleIcon
 } from '@heroicons/vue/24/outline';
+import SarparBanner from '../Partials/SarparBanner.vue';
 
 const props = defineProps({
     logs: Object,
@@ -84,6 +85,15 @@ const getStatusLabel = (status) => {
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 space-y-5 md:space-y-6">
             
+            <!-- 🖥️ DESKTOP BANNER -->
+            <div class="hidden md:block">
+                <SarparBanner 
+                    title="Perawatan & Perbaikan" 
+                    subtitle="Pencatatan laporan kerusakan fasilitas, penanganan teknisi, dan riwayat pemeliharaan sarana prasarana"
+                    tag="Pemeliharaan & Servis Sarpar"
+                />
+            </div>
+
             <!-- 1A. DESKTOP TOOLBAR (Unchanged Desktop Layout) -->
             <div class="hidden md:flex flex-row items-center gap-4">
                 <div class="relative flex-1 w-full">
@@ -103,36 +113,45 @@ const getStatusLabel = (status) => {
 
             <!-- 1B. MOBILE TOOLBAR (Executive Namira Teal-to-Slate Header Card with Stats) -->
             <div class="block md:hidden -mx-4 -mt-4 space-y-4">
-                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
-                            <h1 class="text-xl font-black leading-tight">Perawatan & Perbaikan</h1>
-                        </div>
-                        <div class="p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
-                            <WrenchScrewdriverIcon class="w-6 h-6 text-amber-300" />
-                        </div>
-                    </div>
+                <!-- Header Card with Warehouse Banner Background -->
+                <div class="relative overflow-hidden px-4 pt-5 pb-6 text-white rounded-b-3xl shadow-md border-b border-teal-500/20">
+                    <picture class="absolute inset-0 w-full h-full pointer-events-none">
+                        <source srcset="/images/sarpar/banner.webp" type="image/webp">
+                        <img src="/images/sarpar/banner.png" alt="Banner Sarpar" class="w-full h-full object-cover object-right" />
+                    </picture>
+                    <div class="absolute inset-0 bg-gradient-to-r from-teal-950/92 via-teal-900/65 to-transparent pointer-events-none"></div>
 
-                    <!-- Quick Stats Grid (3 Columns) -->
-                    <div class="grid grid-cols-3 gap-2 text-center mt-3">
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
-                            <p class="text-lg font-black text-amber-300 leading-none">
-                                {{ logs.data.filter(l => l.status === 'pending').length }}
-                            </p>
-                            <p class="text-[8px] text-amber-200 font-bold mt-1 uppercase">Menunggu</p>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
+                                <h1 class="text-xl font-black leading-tight">Perawatan & Perbaikan</h1>
+                            </div>
+                            <div class="p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                                <WrenchScrewdriverIcon class="w-6 h-6 text-amber-300" />
+                            </div>
                         </div>
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
-                            <p class="text-lg font-black text-blue-300 leading-none">
-                                {{ logs.data.filter(l => l.status === 'in_progress').length }}
-                            </p>
-                            <p class="text-[8px] text-blue-200 font-bold mt-1 uppercase">Ditangani</p>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
-                            <p class="text-lg font-black text-emerald-300 leading-none">
-                                {{ logs.data.filter(l => l.status === 'resolved').length }}
-                            </p>
-                            <p class="text-[8px] text-emerald-200 font-bold mt-1 uppercase">Selesai</p>
+
+                        <!-- Quick Stats Grid (3 Columns) -->
+                        <div class="grid grid-cols-3 gap-2 text-center mt-3">
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                                <p class="text-lg font-black text-amber-300 leading-none">
+                                    {{ logs.data.filter(l => l.status === 'pending').length }}
+                                </p>
+                                <p class="text-[8px] text-amber-200 font-bold mt-1 uppercase">Menunggu</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                                <p class="text-lg font-black text-blue-300 leading-none">
+                                    {{ logs.data.filter(l => l.status === 'in_progress').length }}
+                                </p>
+                                <p class="text-[8px] text-blue-200 font-bold mt-1 uppercase">Ditangani</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-2 py-2">
+                                <p class="text-lg font-black text-emerald-300 leading-none">
+                                    {{ logs.data.filter(l => l.status === 'resolved').length }}
+                                </p>
+                                <p class="text-[8px] text-emerald-200 font-bold mt-1 uppercase">Selesai</p>
+                            </div>
                         </div>
                     </div>
                 </div>

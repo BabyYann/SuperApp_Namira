@@ -5,6 +5,7 @@ import {
     CubeIcon, ArchiveBoxIcon, ExclamationTriangleIcon, WrenchScrewdriverIcon,
     ClockIcon, ArrowPathIcon, ChartBarIcon, BanknotesIcon
 } from '@heroicons/vue/24/outline';
+import SarparBanner from './Partials/SarparBanner.vue';
 
 const props = defineProps({
     stats: Object,
@@ -60,53 +61,61 @@ const getConditionColor = (key) => {
 
             <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
             <div class="block md:hidden -mx-4 -mt-4 space-y-4">
-                <!-- Header Card Gradient -->
-                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
-                            <h1 class="text-xl font-black leading-tight">Sarana & Prasarana</h1>
-                        </div>
-                        <div class="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
-                            <CubeIcon class="w-6 h-6 text-teal-300" />
-                        </div>
-                    </div>
-                    <p class="text-xs text-teal-100/90 font-medium">Ringkasan aset, inventaris, dan status perbaikan unit.</p>
+                <!-- Header Card with Warehouse Banner Background -->
+                <div class="relative overflow-hidden px-4 pt-5 pb-6 text-white rounded-b-3xl shadow-md border-b border-teal-500/20">
+                    <picture class="absolute inset-0 w-full h-full pointer-events-none">
+                        <source srcset="/images/sarpar/banner.webp" type="image/webp">
+                        <img src="/images/sarpar/banner.png" alt="Banner Sarpar" class="w-full h-full object-cover object-right" />
+                    </picture>
+                    <div class="absolute inset-0 bg-gradient-to-r from-teal-950/92 via-teal-900/65 to-transparent pointer-events-none"></div>
 
-                    <!-- Quick Stats Grid (2x2) -->
-                    <div class="grid grid-cols-2 gap-2 mt-4">
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3">
-                            <div class="flex items-center gap-2 mb-1">
-                                <CubeIcon class="w-4 h-4 text-teal-300" />
-                                <span class="text-[10px] text-teal-200 font-extrabold uppercase">Total Item</span>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
+                                <h1 class="text-xl font-black leading-tight">Sarana & Prasarana</h1>
                             </div>
-                            <p class="text-2xl font-black text-white leading-none">{{ stats.totalItems }}</p>
+                            <div class="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                                <CubeIcon class="w-6 h-6 text-teal-300" />
+                            </div>
                         </div>
+                        <p class="text-xs text-teal-100/90 font-medium">Ringkasan aset, inventaris, dan status perbaikan unit.</p>
 
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3">
-                            <div class="flex items-center gap-2 mb-1">
-                                <BanknotesIcon class="w-4 h-4 text-emerald-300" />
-                                <span class="text-[10px] text-emerald-200 font-extrabold uppercase">Nilai Aset</span>
+                        <!-- Quick Stats Grid (2x2) -->
+                        <div class="grid grid-cols-2 gap-2 mt-4">
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <CubeIcon class="w-4 h-4 text-teal-300" />
+                                    <span class="text-[10px] text-teal-200 font-extrabold uppercase">Total Item</span>
+                                </div>
+                                <p class="text-2xl font-black text-white leading-none">{{ stats.totalItems }}</p>
                             </div>
-                            <p class="text-base font-black text-emerald-300 leading-none truncate" :title="formatCurrency(stats.totalValue)">
-                                {{ formatCurrencyShort(stats.totalValue) }}
-                            </p>
-                        </div>
 
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3">
-                            <div class="flex items-center gap-2 mb-1">
-                                <WrenchScrewdriverIcon class="w-4 h-4 text-amber-300" />
-                                <span class="text-[10px] text-amber-200 font-extrabold uppercase">Perlu Perbaikan</span>
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <BanknotesIcon class="w-4 h-4 text-emerald-300" />
+                                    <span class="text-[10px] text-emerald-200 font-extrabold uppercase">Nilai Aset</span>
+                                </div>
+                                <p class="text-base font-black text-emerald-300 leading-none truncate" :title="formatCurrency(stats.totalValue)">
+                                    {{ formatCurrencyShort(stats.totalValue) }}
+                                </p>
                             </div>
-                            <p class="text-2xl font-black text-amber-300 leading-none">{{ stats.pendingMaintenanceCount }}</p>
-                        </div>
 
-                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3">
-                            <div class="flex items-center gap-2 mb-1">
-                                <ExclamationTriangleIcon class="w-4 h-4 text-red-300" />
-                                <span class="text-[10px] text-red-200 font-extrabold uppercase">Stok Menipis</span>
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <WrenchScrewdriverIcon class="w-4 h-4 text-amber-300" />
+                                    <span class="text-[10px] text-amber-200 font-extrabold uppercase">Perlu Perbaikan</span>
+                                </div>
+                                <p class="text-2xl font-black text-amber-300 leading-none">{{ stats.pendingMaintenanceCount }}</p>
                             </div>
-                            <p class="text-2xl font-black text-red-300 leading-none">{{ stats.lowStockCount }}</p>
+
+                            <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <ExclamationTriangleIcon class="w-4 h-4 text-red-300" />
+                                    <span class="text-[10px] text-red-200 font-extrabold uppercase">Stok Menipis</span>
+                                </div>
+                                <p class="text-2xl font-black text-red-300 leading-none">{{ stats.lowStockCount }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -207,6 +216,13 @@ const getConditionColor = (key) => {
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
             <div class="hidden md:block space-y-6">
+                <!-- Executive Hero Banner -->
+                <SarparBanner 
+                    title="Dashboard Sarana & Prasarana" 
+                    subtitle="Ringkasan data aset inventaris, valuasi aset, dan status pemeliharaan fasilitas sekolah Yayasan Namira"
+                    tag="Monitoring Eksekutif Sarpar"
+                />
+
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-gradient-to-br from-teal-500 to-teal-600 rounded-3xl p-5 text-white shadow-lg shadow-teal-500/30">

@@ -10,6 +10,7 @@ import {
     PlusIcon, PencilSquareIcon, TrashIcon, TagIcon,
     ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline';
+import SarparBanner from '../Partials/SarparBanner.vue';
 
 const props = defineProps({
     categories: Array,
@@ -96,26 +97,34 @@ const deleteItem = () => {
 
             <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
             <div class="block md:hidden -mx-4 -mt-4 space-y-4">
-                <!-- Header Card Gradient -->
-                <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
-                            <h1 class="text-xl font-black leading-tight">Kategori Inventaris</h1>
-                        </div>
-                        <button
-                            @click="openCreateModal"
-                            class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
-                        >
-                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                            <span>Tambah</span>
-                        </button>
-                    </div>
+                <!-- Header Card with Warehouse Banner Background -->
+                <div class="relative overflow-hidden px-4 pt-5 pb-6 text-white rounded-b-3xl shadow-md border-b border-teal-500/20">
+                    <picture class="absolute inset-0 w-full h-full pointer-events-none">
+                        <source srcset="/images/sarpar/banner.webp" type="image/webp">
+                        <img src="/images/sarpar/banner.png" alt="Banner Sarpar" class="w-full h-full object-cover object-right" />
+                    </picture>
+                    <div class="absolute inset-0 bg-gradient-to-r from-teal-950/92 via-teal-900/65 to-transparent pointer-events-none"></div>
 
-                    <!-- Quick Stats Banner -->
-                    <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs">
-                        <span class="text-teal-200 font-bold">Total Kategori Terdaftar</span>
-                        <span class="font-black text-white text-base">{{ categories.length }}</span>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <p class="text-[10px] font-extrabold tracking-widest uppercase text-teal-300">Modul Sarpar</p>
+                                <h1 class="text-xl font-black leading-tight">Kategori Inventaris</h1>
+                            </div>
+                            <button
+                                @click="openCreateModal"
+                                class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+                            >
+                                <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                                <span>Tambah</span>
+                            </button>
+                        </div>
+
+                        <!-- Quick Stats Banner -->
+                        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs">
+                            <span class="text-teal-200 font-bold">Total Kategori Terdaftar</span>
+                            <span class="font-black text-white text-base">{{ categories.length }}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -166,6 +175,23 @@ const deleteItem = () => {
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
             <div class="hidden md:block space-y-6">
+                <!-- Executive Hero Banner -->
+                <SarparBanner 
+                    title="Kategori Inventaris" 
+                    subtitle="Klasifikasi dan pengelompokan jenis barang inventaris serta aset sekolah"
+                    tag="Master Klasifikasi Sarpar"
+                >
+                    <template #actions>
+                        <button 
+                            @click="openCreateModal"
+                            class="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white rounded-xl font-bold shadow-md flex items-center gap-1.5 transition text-xs"
+                        >
+                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                            <span>Tambah Kategori</span>
+                        </button>
+                    </template>
+                </SarparBanner>
+
                 <!-- Toolbar -->
                 <div class="flex justify-end">
                     <button 

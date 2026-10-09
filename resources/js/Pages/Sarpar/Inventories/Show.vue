@@ -9,6 +9,7 @@ import {
     ExclamationCircleIcon, CheckCircleIcon, TagIcon, MapPinIcon,
     PhotoIcon, ArchiveBoxIcon, MinusCircleIcon, PrinterIcon
 } from '@heroicons/vue/24/outline';
+import SarparBanner from '../Partials/SarparBanner.vue';
 
 const props = defineProps({
     inventory: Object,
@@ -68,7 +69,26 @@ const getSourceBadge = (source) => source === 'BOS' ? 'bg-purple-100 text-purple
             </div>
         </template>
 
-        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 px-4 pb-12">
+        <div class="max-w-7xl mx-auto px-4 pt-4 md:pt-6 space-y-5 md:space-y-6 pb-12">
+            <!-- Hero Banner -->
+            <SarparBanner 
+                :title="inventory.name" 
+                :subtitle="`Kode Inventaris: ${inventory.code} • Lokasi: ${inventory.location_name}`"
+                tag="Detail Inventaris"
+            >
+                <template #actions>
+                    <Link :href="route('sarpar.inventories.index')" class="px-4 py-2 bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 text-white rounded-xl font-bold flex items-center gap-1.5 transition text-xs shadow-sm">
+                        <ArrowLeftIcon class="w-4 h-4" />
+                        <span>Kembali</span>
+                    </Link>
+                    <a :href="route('sarpar.inventories.print-stickers', { ids: inventory.id })" target="_blank" class="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white rounded-xl font-bold flex items-center gap-1.5 transition text-xs shadow-md">
+                        <PrinterIcon class="w-4 h-4" />
+                        <span>Stiker QR</span>
+                    </a>
+                </template>
+            </SarparBanner>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Info Card -->
             <div class="lg:col-span-1 bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 p-6 space-y-6">
                 <!-- Photo -->
@@ -233,6 +253,7 @@ const getSourceBadge = (source) => source === 'BOS' ? 'bg-purple-100 text-purple
                 </div>
             </div>
         </div>
+    </div>
 
         <!-- Report Damage Modal -->
         <Teleport to="body">
