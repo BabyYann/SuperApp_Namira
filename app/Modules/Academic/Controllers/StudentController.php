@@ -69,6 +69,19 @@ class StudentController extends Controller
             $activeScope = 'all';
         }
 
+        // Self-heal: ensure active students in this unit have academic_year_id assigned to active year
+        if ($activeYear && $unitId) {
+            Student::where('unit_id', $unitId)
+                ->where(function ($q) use ($activeYear) {
+                    $q->whereNull('academic_year_id')
+                      ->orWhere(function ($sub) use ($activeYear) {
+                          $sub->whereNotNull('classroom_id')
+                              ->where('academic_year_id', '!=', $activeYear->id);
+                      });
+                })
+                ->update(['academic_year_id' => $activeYear->id]);
+        }
+
         $studentsQuery = Student::with(['user', 'classroom', 'academicYear'])
             ->where('unit_id', $unitId)
             ->when(request('search'), function ($query, $search) {
@@ -81,8 +94,16 @@ class StudentController extends Controller
             ->when(request('gender'), function ($query, $gender) {
                 $query->where('gender', $gender);
             })
-            ->when(request('academic_year_id'), function ($query, $yearId) {
-                $query->where('academic_year_id', $yearId);
+            ->when(request('academic_year_id'), function ($query, $yearId) use ($activeYear) {
+                if ($activeYear && $yearId == $activeYear->id) {
+                    $query->where(function ($q) use ($yearId) {
+                        $q->where('academic_year_id', $yearId)
+                          ->orWhereNull('academic_year_id')
+                          ->orWhereNotNull('classroom_id');
+                    });
+                } else {
+                    $query->where('academic_year_id', $yearId);
+                }
             });
 
         // Apply classroom scoping
@@ -164,7 +185,8 @@ class StudentController extends Controller
         }
 
         $count = 0;
-        \DB::transaction(function () use ($handle, $unitId, &$count) {
+        $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
+        \DB::transaction(function () use ($handle, $unitId, $activeYear, &$count) {
             while (($row = fgetcsv($handle)) !== false) {
                 // Expected CSV Format: Name, Email, NIS, Gender (L/P)
                 // Adjust index based on CSV structure. Assuming: 0=Name, 1=Email, 2=NIS, 3=Gender
@@ -193,6 +215,7 @@ class StudentController extends Controller
                 Student::create([
                     'user_id' => $user->id,
                     'unit_id' => $unitId,
+                    'academic_year_id' => $activeYear?->id,
                     'full_name' => $name,
                     'nis' => $nis,
                     'gender' => in_array($gender, ['L', 'P']) ? $gender : 'L',
@@ -445,6 +468,11 @@ class StudentController extends Controller
                 \Storage::disk('public')->delete($student->photo);
             }
             $student->photo = $request->file('photo')->store('students', 'public');
+        }
+
+        if (!$student->academic_year_id) {
+            $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
+            $student->academic_year_id = $activeYear?->id;
         }
 
         $student->save();

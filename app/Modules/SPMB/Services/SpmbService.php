@@ -112,9 +112,12 @@ class SpmbService
                 $nextSeq = $lastNis ? ((int)substr($lastNis, -4)) + 1 : 1;
                 $nis = $yearPrefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
+                $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
+
                 $student = Student::create([
                     'unit_id' => $applicant->unit_id,
                     'user_id' => $applicant->user_id,
+                    'academic_year_id' => $activeYear?->id,
                     'nis' => $nis,
                     'nisn' => $applicant->nisn,
                     'nik' => $applicant->nik,

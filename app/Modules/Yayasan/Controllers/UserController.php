@@ -484,16 +484,22 @@ class UserController extends Controller
 
         // 3. Student Sync
         if ($role === 'siswa') {
+             $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
              $student = \App\Modules\Academic\Models\Student::where('user_id', $user->id)->first();
              if ($student) {
-                 $student->update([
+                 $updateData = [
                     'unit_id' => $unitId,
                     'full_name' => $user->name,
-                 ]);
+                 ];
+                 if (!$student->academic_year_id && $activeYear) {
+                     $updateData['academic_year_id'] = $activeYear->id;
+                 }
+                 $student->update($updateData);
              } else {
                  \App\Modules\Academic\Models\Student::create([
                     'user_id' => $user->id,
                     'unit_id' => $unitId,
+                    'academic_year_id' => $activeYear?->id,
                     'full_name' => $user->name,
                     'gender' => 'L',
                 ]);

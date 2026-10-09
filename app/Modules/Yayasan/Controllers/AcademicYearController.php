@@ -70,6 +70,10 @@ class AcademicYearController extends Controller
 
         AcademicYear::where('is_active', true)->update(['is_active' => false]);
         $academicYear->update(['is_active' => true]);
+
+        // Auto-heal any students without academic year
+        \App\Modules\Academic\Models\Student::whereNull('academic_year_id')
+            ->update(['academic_year_id' => $academicYear->id]);
          
         return redirect()->back()->with('success', 'Tahun Akademik aktif diperbarui.');
     }
