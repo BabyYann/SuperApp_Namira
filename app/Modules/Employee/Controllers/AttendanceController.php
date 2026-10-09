@@ -513,20 +513,22 @@ class AttendanceController extends Controller
         
         if ($isGlobalAdmin) {
             $unitId = $request->input('unit_id') ?: (session('active_unit_id') ?: \App\Modules\Yayasan\Models\Unit::first()?->id);
+            $units = \App\Modules\Yayasan\Models\Unit::orderBy('name')->get(['id', 'name', 'code']);
         } else {
-            $unitId = session('active_unit_id')
-                ?: ($user->teacher_profile?->unit_id 
-                    ?: ($user->staff?->unit_id 
-                        ?: \DB::table('model_has_roles')->where('model_id', $user->id)->whereNotNull('team_id')->value('team_id')
+            // Untuk akun guru / pegawai biasa: Mutlak terkunci ke unit tempat mereka ditugaskan
+            $unitId = $user->teacher_profile?->unit_id 
+                ?: ($user->staff?->unit_id 
+                    ?: (\DB::table('model_has_roles')->where('model_id', $user->id)->whereNotNull('team_id')->value('team_id')
+                        ?: (session('active_unit_id') ?: \App\Modules\Yayasan\Models\Unit::first()?->id)
                     )
                 );
             if (!$unitId) {
                 $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
             }
+            $units = []; // Guru biasa tidak menerima daftar unit lain
         }
 
         $activeUnit = $unitId ? \App\Modules\Yayasan\Models\Unit::find($unitId) : null;
-        $units = $isGlobalAdmin ? \App\Modules\Yayasan\Models\Unit::orderBy('name')->get(['id', 'name', 'code']) : [];
 
         // Employee role names across modules
         $employeeRoleNames = [
@@ -659,7 +661,7 @@ class AttendanceController extends Controller
                 'id' => $emp->id,
                 'name' => $emp->name,
                 'photo' => $emp->profile_photo_url,
-                'phone' => $emp->phone ?? null,
+                'phone' => $emp->phone ?: ($emp->teacher_profile?->phone ?: ($emp->staff?->phone ?: null)),
                 'jabatan' => $jabatan,
                 'nip' => $nip,
                 'status' => 'not_checked_in',

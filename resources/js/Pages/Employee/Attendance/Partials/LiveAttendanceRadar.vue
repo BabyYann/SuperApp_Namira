@@ -25,7 +25,7 @@ const activeFilter = ref(props.data?.stats?.not_checked_in > 0 ? 'not_checked_in
 const chartMode = ref('donut'); // 'donut' | 'timeline' | 'quorum'
 const hoveredSlice = ref(null);
 const currentTime = ref('');
-const mobileView = ref('both'); // 'analytics' | 'employees' | 'both'
+const mobileView = ref('analytics'); // 'analytics' | 'employees' | 'both'
 
 // Live Digital Clock (WIB)
 let timer = null;
@@ -37,6 +37,12 @@ const updateClock = () => {
 onMounted(() => {
     updateClock();
     timer = setInterval(updateClock, 1000);
+    // On tablet / desktop, both columns are always visible via CSS md:flex
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        mobileView.value = 'both';
+    } else {
+        mobileView.value = 'analytics';
+    }
 });
 
 onUnmounted(() => {
@@ -191,7 +197,7 @@ const refreshData = () => {
     });
 };
 
-// Unit Switcher (Global Admin)
+// Unit Switcher (Khusus Superadmin Yayasan)
 const switchUnit = (newUnitId) => {
     router.get(route('attendance.index'), {
         unit_id: newUnitId,
@@ -202,11 +208,20 @@ const switchUnit = (newUnitId) => {
     });
 };
 
-// Filter Toggle from Chart
+// KPI Card Click Handler
+const handleKpiClick = (filterKey) => {
+    activeFilter.value = filterKey;
+    // On small screens, guide user directly to employee list
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        mobileView.value = 'employees';
+    }
+};
+
+// Filter Toggle from Chart Slice or Legend
 const setFilterFromChart = (key) => {
     activeFilter.value = activeFilter.value === key ? 'all' : key;
-    // On small screens, guide user to see results
-    if (window.innerWidth < 768 && mobileView.value === 'analytics') {
+    // On small screens, guide user directly to employee list
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
         mobileView.value = 'employees';
     }
 };
@@ -276,9 +291,9 @@ const getInitials = (name) => {
 </script>
 
 <template>
-    <div class="space-y-3 sm:space-y-3.5">
+    <div class="space-y-3 sm:space-y-3.5 pb-24 sm:pb-6">
 
-        <!-- 1. COMPACT EXECUTIVE TOP BAR (Dense, single-tier footprint) -->
+        <!-- 1. COMPACT EXECUTIVE TOP BAR -->
         <div class="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-md border border-emerald-800/40 relative overflow-hidden">
             <!-- Subtle accent glow -->
             <div class="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-emerald-500/15 blur-2xl pointer-events-none"></div>
@@ -299,24 +314,29 @@ const getInitials = (name) => {
                                 {{ currentTime }}
                             </span>
                         </div>
-                        <h2 class="text-sm sm:text-base font-black text-white tracking-tight truncate">
-                            {{ data?.unit_name }}
+                        <h2 class="text-sm sm:text-base font-black text-white tracking-tight truncate flex items-center gap-1.5 mt-0.5">
+                            <span>{{ data?.unit_name }}</span>
+                            <!-- Label Unit Saya untuk akun guru biasa -->
+                            <span v-if="!data?.is_global_admin" class="text-[9px] font-bold text-emerald-300/90 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/50">
+                                Unit Anda
+                            </span>
                         </h2>
                     </div>
                 </div>
 
                 <!-- Right: Executive Quick Actions -->
                 <div class="flex items-center gap-1.5 self-end sm:self-auto">
-                    <!-- Unit Switcher (Global Admin) -->
-                    <div v-if="data?.is_global_admin && data?.units?.length > 0" class="flex items-center gap-1 bg-slate-800/90 border border-slate-700/80 rounded-xl px-2 py-1 text-[11px] font-bold text-slate-200">
-                        <BuildingOffice2Icon class="w-3 h-3 text-slate-400" />
+                    <!-- Filter Unit: HANYA MUNCUL JIKA SUPERADMIN YAYASAN -->
+                    <div v-if="data?.is_global_admin && data?.units?.length > 0" class="flex items-center gap-1.5 bg-slate-800/90 border border-emerald-500/40 rounded-xl px-2 py-1 text-[11px] font-bold text-slate-200 shadow-xs">
+                        <BuildingOffice2Icon class="w-3 h-3 text-emerald-400" />
                         <select 
                             :value="data?.unit_id"
                             @change="switchUnit($event.target.value)"
-                            class="bg-transparent text-[11px] font-bold text-slate-200 border-none p-0 focus:ring-0 cursor-pointer pr-3"
+                            class="bg-transparent text-[11px] font-black text-white border-none p-0 focus:ring-0 cursor-pointer pr-3"
+                            title="Ganti Unit Pantauan (Khusus Superadmin)"
                         >
-                            <option v-for="u in data.units" :key="u.id" :value="u.id" class="text-slate-900">
-                                {{ u.name }}
+                            <option v-for="u in data.units" :key="u.id" :value="u.id" class="text-slate-900 font-bold">
+                                Unit: {{ u.name }}
                             </option>
                         </select>
                     </div>
@@ -351,7 +371,7 @@ const getInitials = (name) => {
         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
             <!-- 1. Total Pegawai -->
             <div 
-                @click="activeFilter = 'all'"
+                @click="handleKpiClick('all')"
                 class="bg-white px-3 py-2 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex items-center justify-between shadow-xs hover:border-slate-300"
                 :class="activeFilter === 'all' ? 'border-slate-800 bg-slate-50 ring-1 ring-slate-800' : 'border-slate-200/80'"
             >
@@ -366,7 +386,7 @@ const getInitials = (name) => {
 
             <!-- 2. Hadir Tepat Waktu -->
             <div 
-                @click="activeFilter = 'present'"
+                @click="handleKpiClick('present')"
                 class="bg-white px-3 py-2 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex items-center justify-between shadow-xs hover:border-emerald-300"
                 :class="activeFilter === 'present' ? 'border-emerald-600 bg-emerald-50/60 ring-1 ring-emerald-600' : 'border-slate-200/80'"
             >
@@ -381,7 +401,7 @@ const getInitials = (name) => {
 
             <!-- 3. Terlambat -->
             <div 
-                @click="activeFilter = 'late'"
+                @click="handleKpiClick('late')"
                 class="bg-white px-3 py-2 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex items-center justify-between shadow-xs hover:border-amber-300"
                 :class="activeFilter === 'late' ? 'border-amber-500 bg-amber-50/60 ring-1 ring-amber-500' : 'border-slate-200/80'"
             >
@@ -396,7 +416,7 @@ const getInitials = (name) => {
 
             <!-- 4. Izin / Dinas -->
             <div 
-                @click="activeFilter = 'permit'"
+                @click="handleKpiClick('permit')"
                 class="bg-white px-3 py-2 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex items-center justify-between shadow-xs hover:border-purple-300"
                 :class="activeFilter === 'permit' ? 'border-purple-600 bg-purple-50/60 ring-1 ring-purple-600' : 'border-slate-200/80'"
             >
@@ -411,7 +431,7 @@ const getInitials = (name) => {
 
             <!-- 5. Belum Absen (Pulsing Focus Point) -->
             <div 
-                @click="activeFilter = 'not_checked_in'"
+                @click="handleKpiClick('not_checked_in')"
                 class="col-span-2 sm:col-span-4 lg:col-span-1 bg-white px-3 py-2 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between shadow-xs hover:border-rose-400"
                 :class="activeFilter === 'not_checked_in' ? 'border-rose-600 bg-rose-50/80 ring-1 ring-rose-600' : 'border-rose-200 bg-rose-50/30'"
             >
@@ -459,15 +479,18 @@ const getInitials = (name) => {
             </button>
         </div>
 
-        <!-- 3. UNIFIED DENSE SPLIT VIEW (Calibrated height, synchronized balance) -->
+        <!-- 3. UNIFIED DENSE SPLIT VIEW -->
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-stretch">
 
             <!-- ========================================== -->
             <!-- LEFT: SOPHISTICATED ANALYTICS HUB (5 COLS) -->
             <!-- ========================================== -->
             <div 
-                v-show="mobileView === 'analytics' || mobileView === 'both' || window?.innerWidth >= 768"
-                class="md:col-span-5 bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-slate-200/80 shadow-xs flex flex-col justify-between"
+                class="md:col-span-5 bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-slate-200/80 shadow-xs flex-col justify-between"
+                :class="{
+                    'hidden md:flex': mobileView === 'employees',
+                    'flex': mobileView === 'analytics' || mobileView === 'both'
+                }"
             >
                 <div>
                     <!-- Mode Switcher: Donut vs Jam Datang vs Kuorum Disiplin -->
@@ -711,8 +734,11 @@ const getInitials = (name) => {
             <!-- RIGHT: COMPACT REAL-TIME EMPLOYEE LIST (7 COLS) -->
             <!-- ============================================== -->
             <div 
-                v-show="mobileView === 'employees' || mobileView === 'both' || window?.innerWidth >= 768"
-                class="md:col-span-7 bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-slate-200/80 shadow-xs flex flex-col justify-between"
+                class="md:col-span-7 bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-slate-200/80 shadow-xs flex-col justify-between"
+                :class="{
+                    'hidden md:flex': mobileView === 'analytics',
+                    'flex': mobileView === 'employees' || mobileView === 'both'
+                }"
             >
                 <div>
                     <!-- Header: Count & Compact Search -->
@@ -798,7 +824,7 @@ const getInitials = (name) => {
                         </button>
                     </div>
 
-                    <!-- Calibrated Height Scroll Area (Fixed max height avoids endless page scroll!) -->
+                    <!-- Calibrated Height Scroll Area -->
                     <div class="overflow-y-auto h-[290px] sm:h-[310px] divide-y divide-slate-100 pr-1">
                         <div 
                             v-for="emp in filteredEmployees" 
