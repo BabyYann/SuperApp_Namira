@@ -226,7 +226,7 @@ const menuGroups = [
             { 
                 label: 'Presensi Siswa', 
                 route: 'yayasan.student-attendance.index', 
-                active: 'yayasan.student-attendance.index',
+                active: 'yayasan.student-attendance.*',
                 icon: ClipboardDocumentCheckIcon 
             },
             { 
@@ -234,12 +234,6 @@ const menuGroups = [
                 route: 'yayasan.student-checkin.index', 
                 active: 'yayasan.student-checkin.*',
                 icon: CameraIcon 
-            },
-            { 
-                label: 'Rekap Kehadiran', 
-                route: 'yayasan.student-attendance.recap', 
-                active: 'yayasan.student-attendance.recap',
-                icon: ChartBarIcon 
             },
             { 
                 label: 'Kenaikan Kelas', 

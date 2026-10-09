@@ -17,45 +17,158 @@ class StudentAttendanceController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $unitId = session('active_unit_id');
+        $tab = $request->input('tab', 'daily'); // 'daily' | 'recap'
         
-        // Logic to determine which classrooms the user can access
-        // 1. Admin: All Classrooms
-        // 2. Wali Kelas: Only their assigned classroom
-        // 3. Guru Mata Pelajaran (Future): Based on Schedule
-        
-        $classrooms = Classroom::query();
-
-        // Filter by Active Unit (Session Scoping)
-        if (session()->has('active_unit_id')) {
-            $classrooms->where('unit_id', session('active_unit_id'));
+        // 1. Role-based classrooms access
+        $classroomsQuery = Classroom::query();
+        if ($unitId) {
+            $classroomsQuery->where('unit_id', $unitId);
         }
-        
-        // Role-Based Filtering
-        // If user is a Teacher AND NOT an Admin/SuperAdmin/Pengawas
-        if ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
-             if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
-                // Determine Teacher Profile
+
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
+            if ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
                 $teacherProfile = $user->teacher_profile;
-
                 if ($teacherProfile) {
-                    $classrooms->where('homeroom_teacher_id', $teacherProfile->id);
+                    $classroomsQuery->where('homeroom_teacher_id', $teacherProfile->id);
                 } else {
-                    // User has teacher role but no profile linked?
-                    $classrooms->whereRaw('1 = 0');
+                    $classroomsQuery->whereRaw('1 = 0');
                 }
-             }
-        }
-        
-        // If regular user (not teacher/admin/pengawas)
-        if (!$user->hasRole('teacher') && !$user->hasRole('wali_kelas') && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
-             $classrooms->whereRaw('1 = 0');
+            } else {
+                $classroomsQuery->whereRaw('1 = 0');
+            }
         }
 
-        $classrooms = $classrooms->with('unit')->get();
+        $classrooms = $classroomsQuery
+            ->with(['unit', 'homeroomTeacher.user'])
+            ->withCount('students')
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        // 2. Daily Status for Tab 1 (Presensi Harian)
+        $today = Carbon::today()->toDateString();
+        $todayAttendanceCounts = StudentAttendance::whereIn('classroom_id', $classrooms->pluck('id'))
+            ->where('date', $today)
+            ->selectRaw('classroom_id, count(*) as count')
+            ->groupBy('classroom_id')
+            ->pluck('count', 'classroom_id');
+
+        $classrooms->transform(function ($c) use ($todayAttendanceCounts) {
+            $count = $todayAttendanceCounts[$c->id] ?? 0;
+            $c->has_attendance_today = $count > 0;
+            $c->today_attendance_count = $count;
+            return $c;
+        });
+
+        // 3. Recap Data for Tab 2 (Rekap Bulanan)
+        $month = (int)$request->input('month', Carbon::now()->month);
+        $year = (int)$request->input('year', Carbon::now()->year);
+        $classroomId = $request->input('classroom_id');
+
+        // Auto-select first class if none specified
+        if (!$classroomId && $classrooms->isNotEmpty()) {
+            $classroomId = $classrooms->first()->id;
+        }
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+        $daysInMonth = $startDate->daysInMonth;
+
+        // Schedule days to determine weekend holidays
+        $scheduleDayNumbers = [];
+        if ($classroomId) {
+            $scheduleDays = \App\Modules\Academic\Models\ClassSchedule::where('classroom_id', $classroomId)
+                ->pluck('day')
+                ->unique()
+                ->toArray();
+            $dayNameMap = [
+                'Minggu' => 0, 'Senin' => 1, 'Selasa' => 2, 'Rabu' => 3, 
+                'Kamis' => 4, 'Jumat' => 5, 'Sabtu' => 6
+            ];
+            $scheduleDayNumbers = array_map(fn($day) => $dayNameMap[$day] ?? -1, $scheduleDays);
+        }
+
+        $dates = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $date = Carbon::createFromDate($year, $month, $d);
+            $dayOfWeek = $date->dayOfWeek;
+            $hasSchedule = in_array($dayOfWeek, $scheduleDayNumbers);
+            $isHoliday = $date->isWeekend() && !$hasSchedule;
+            $dates[] = [
+                'day' => $d,
+                'date' => $date->format('Y-m-d'),
+                'dayName' => $date->locale('id')->shortDayName,
+                'isWeekend' => $date->isWeekend(),
+                'isHoliday' => $isHoliday,
+            ];
+        }
+
+        $recapData = [];
+        $selectedClassroom = null;
+        $recapStats = ['H' => 0, 'S' => 0, 'I' => 0, 'A' => 0];
+
+        if ($classroomId) {
+            $selectedClassroom = $classrooms->firstWhere('id', $classroomId) 
+                ?? Classroom::with(['unit', 'homeroomTeacher.user'])->find($classroomId);
+
+            if ($selectedClassroom) {
+                $students = Student::where('classroom_id', $classroomId)
+                    ->orderBy('full_name')
+                    ->get();
+
+                $allAttendances = StudentAttendance::where('classroom_id', $classroomId)
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->get()
+                    ->groupBy('student_id');
+
+                foreach ($students as $student) {
+                    $studentAttendances = $allAttendances->get($student->id, collect())
+                        ->keyBy(fn($a) => is_string($a->date) ? substr($a->date, 0, 10) : $a->date->format('Y-m-d'));
+
+                    $summary = ['H' => 0, 'S' => 0, 'I' => 0, 'A' => 0];
+                    $daily = [];
+
+                    foreach ($dates as $d) {
+                        $att = $studentAttendances->get($d['date']);
+                        $status = $att ? $att->status : null;
+                        $daily[$d['day']] = $status;
+                        
+                        if ($status && isset($summary[$status])) {
+                            $summary[$status]++;
+                            $recapStats[$status]++;
+                        }
+                    }
+
+                    $totalRecorded = array_sum($summary);
+                    $percentage = $totalRecorded > 0 ? round(($summary['H'] / $totalRecorded) * 100, 1) : 0;
+
+                    $recapData[] = [
+                        'student' => $student,
+                        'summary' => $summary,
+                        'daily' => $daily,
+                        'percentage' => $percentage,
+                    ];
+                }
+            }
+        }
 
         return Inertia::render('Academic/StudentAttendance/Index', [
             'classrooms' => $classrooms,
-            'user_is_homeroom' => $classrooms->isNotEmpty(), // Helper flag
+            'user_is_homeroom' => $classrooms->isNotEmpty(),
+            'initialTab' => $tab,
+            'recapData' => $recapData,
+            'recapStats' => $recapStats,
+            'dates' => $dates,
+            'selectedClassroom' => $selectedClassroom,
+            'filters' => [
+                'month' => $month,
+                'year' => $year,
+                'classroom_id' => $classroomId ? (int)$classroomId : null,
+                'tab' => $tab,
+            ],
+            'monthName' => Carbon::createFromDate($year, $month, 1)->locale('id')->monthName,
+            'daysInMonth' => $daysInMonth,
         ]);
     }
 
@@ -245,114 +358,10 @@ class StudentAttendanceController extends Controller
 
     public function recap(Request $request)
     {
-        $unitId = session('active_unit_id');
-        $month = $request->input('month', date('m'));
-        $year = $request->input('year', date('Y'));
-        $classroomId = $request->input('classroom_id');
-
-        $classrooms = Classroom::where('unit_id', $unitId)
-            ->with('homeroomTeacher')
-            ->orderBy('level')
-            ->orderBy('name')
-            ->get();
-
-        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
-        $daysInMonth = $startDate->daysInMonth;
-
-        // Get schedule days for the classroom (to check if weekend has class)
-        $scheduleDays = [];
-        if ($classroomId) {
-            $scheduleDays = \App\Modules\Academic\Models\ClassSchedule::where('classroom_id', $classroomId)
-                ->pluck('day')
-                ->unique()
-                ->toArray();
-        }
-
-        // Day name mapping for schedule check
-        $dayNameMap = [
-            'Minggu' => 0, 'Senin' => 1, 'Selasa' => 2, 'Rabu' => 3, 
-            'Kamis' => 4, 'Jumat' => 5, 'Sabtu' => 6
-        ];
-        $scheduleDayNumbers = array_map(fn($day) => $dayNameMap[$day] ?? -1, $scheduleDays);
-
-        // Generate dates array for the month
-        $dates = [];
-        for ($d = 1; $d <= $daysInMonth; $d++) {
-            $date = Carbon::createFromDate($year, $month, $d);
-            $dayOfWeek = $date->dayOfWeek; // 0=Sunday, 6=Saturday
-            
-            // Check if this day has schedule - if yes, not considered holiday
-            $hasSchedule = in_array($dayOfWeek, $scheduleDayNumbers);
-            $isHoliday = $date->isWeekend() && !$hasSchedule;
-            
-            $dates[] = [
-                'day' => $d,
-                'date' => $date->format('Y-m-d'),
-                'dayName' => $date->locale('id')->shortDayName,
-                'isWeekend' => $date->isWeekend(),
-                'isHoliday' => $isHoliday, // True only if weekend AND no schedule
-            ];
-        }
-
-        $recapData = [];
-        $selectedClassroom = null;
-
-        if ($classroomId) {
-            $selectedClassroom = Classroom::find($classroomId);
-            $students = Student::where('classroom_id', $classroomId)
-                ->orderBy('full_name')
-                ->get();
-
-            // Fetch all attendances for this classroom in the given date range at once to avoid N+1 queries
-            $allAttendances = StudentAttendance::where('classroom_id', $classroomId)
-                ->whereBetween('date', [$startDate, $endDate])
-                ->get()
-                ->groupBy('student_id');
-
-            foreach ($students as $student) {
-                // Get attendances for this specific student from the pre-fetched collection
-                $studentAttendances = $allAttendances->get($student->id, collect())
-                    ->keyBy(fn($a) => $a->date->format('Y-m-d'));
-
-                $summary = [
-                    'H' => 0, 'S' => 0, 'I' => 0, 'A' => 0
-                ];
-
-                // Build daily status array
-                $daily = [];
-                foreach ($dates as $d) {
-                    $att = $studentAttendances->get($d['date']);
-                    $status = $att ? $att->status : null;
-                    $daily[$d['day']] = $status;
-                    
-                    if ($status && isset($summary[$status])) {
-                        $summary[$status]++;
-                    }
-                }
-
-                $recapData[] = [
-                    'student' => $student,
-                    'summary' => $summary,
-                    'daily' => $daily,
-                    'percentage' => $daysInMonth > 0 ? round(($summary['H'] / max(1, array_sum($summary))) * 100, 1) : 0,
-                ];
-            }
-        }
-
-        return Inertia::render('Academic/StudentAttendance/Recap', [
-            'classrooms' => $classrooms,
-            'recapData' => $recapData,
-            'dates' => $dates,
-            'selectedClassroom' => $selectedClassroom,
-            'filters' => [
-                'month' => $month,
-                'year' => $year,
-                'classroom_id' => $classroomId,
-            ],
-            'monthName' => Carbon::createFromDate($year, $month, 1)->locale('id')->monthName,
-            'daysInMonth' => $daysInMonth,
-        ]);
+        return redirect()->route('yayasan.student-attendance.index', array_merge(
+            ['tab' => 'recap'],
+            $request->all()
+        ));
     }
 
     public function export(Request $request)

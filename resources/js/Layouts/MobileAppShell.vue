@@ -526,7 +526,7 @@ const isRouteActive = (pattern) => {
                                 </Link>
 
                                 <Link 
-                                    :href="safeRoute('yayasan.student-attendance.recap')" 
+                                    :href="safeRoute('yayasan.student-attendance.index', { tab: 'recap' })" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
