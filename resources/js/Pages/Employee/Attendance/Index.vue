@@ -38,297 +38,326 @@
             <!-- ========================================== -->
             <div v-if="mainTab === 'personal'" class="max-w-2xl mx-auto space-y-4 pb-28 sm:pb-8">
 
-                <!-- CARD 1: PRESENSI PEGAWAI & ACTION CARD -->
-                <div class="bg-white rounded-3xl border border-gray-100 shadow-xs p-5 sm:p-6 relative">
-                    <!-- Top Greeting & Header -->
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <span class="text-[11px] font-extrabold tracking-widest text-gray-400 uppercase">
-                                PRESENSI PEGAWAI
-                            </span>
-                            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5">
-                                Halo, {{ $page.props.auth.user.name }}
-                            </h3>
-                            <p class="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-                                {{ todayFormatted }}
-                            </p>
+                <!-- CARD 1A: HERO HEADER BANNER WITH ILLUSTRATION BACKGROUND -->
+                <div class="relative rounded-3xl overflow-hidden border border-emerald-100/70 shadow-md p-5 sm:p-6 flex flex-col justify-between">
+                    <!-- Background Illustration -->
+                    <img 
+                        src="/images/attendance_header_bg.png" 
+                        alt="Header Ilustrasi Sekolah" 
+                        class="absolute inset-0 w-full h-full object-cover object-right pointer-events-none select-none"
+                    />
+                    
+                    <!-- Soft Gradient Overlay for text contrast -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#e6f7f3]/95 via-white/85 to-white/20 sm:to-transparent pointer-events-none"></div>
 
-                            <!-- Status Pill Badge -->
-                            <div class="mt-2.5">
-                                <div v-if="todayAttendance" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border"
-                                    :class="todayAttendance.approval_status === 'pending' 
-                                        ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
-                                    <span class="w-1.5 h-1.5 rounded-full" :class="todayAttendance.approval_status === 'pending' ? 'bg-amber-500' : 'bg-emerald-500'"></span>
-                                    <span>{{ todayAttendance.check_in_time ? 'Sudah Masuk: ' + todayAttendance.check_in_time : 'Sudah Mengajukan' }}</span>
+                    <!-- Banner Content Layer -->
+                    <div class="relative z-10 flex flex-col justify-between">
+                        <!-- Top Row: Greeting & Frosted Glass Calendar Icon -->
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <span class="text-[11px] font-extrabold tracking-widest text-[#00584b] uppercase">
+                                    PRESENSI PEGAWAI
+                                </span>
+                                <h3 class="text-xl sm:text-2xl font-black text-slate-900 mt-1 tracking-tight">
+                                    Halo, {{ $page.props.auth.user.name }}
+                                </h3>
+                                <p class="text-xs sm:text-sm text-slate-600 font-medium mt-0.5">
+                                    {{ todayFormatted }}
+                                </p>
+
+                                <!-- Status Pill Badge -->
+                                <div class="mt-2.5">
+                                    <div v-if="todayAttendance" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold border shadow-xs bg-white/95 backdrop-blur-sm"
+                                        :class="todayAttendance.approval_status === 'pending' 
+                                            ? 'text-amber-700 border-amber-200' 
+                                            : 'text-emerald-700 border-emerald-200'">
+                                        <span class="w-2 h-2 rounded-full" :class="todayAttendance.approval_status === 'pending' ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'"></span>
+                                        <span>{{ todayAttendance.check_in_time ? 'Sudah Masuk: ' + todayAttendance.check_in_time : 'Sudah Mengajukan' }}</span>
+                                    </div>
+                                    <div v-else class="inline-flex items-center gap-2 px-3.5 py-1 bg-white/95 backdrop-blur-sm border border-rose-200 shadow-xs text-rose-600 rounded-full text-xs font-bold">
+                                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                                        <span>Belum Absen Masuk</span>
+                                    </div>
                                 </div>
-                                <div v-else class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 border border-rose-100 text-rose-600 rounded-full text-xs font-semibold">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                    <span>Belum Absen Masuk</span>
-                                </div>
+                            </div>
+
+                            <!-- Top-Right Frosted Glass Calendar Icon (Matching Reference Mockup) -->
+                            <div class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-white/45 backdrop-blur-md border border-white/70 shadow-sm flex items-center justify-center shrink-0">
+                                <svg class="w-7 h-7 sm:w-8 sm:h-8 text-white/90 drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="4" width="18" height="18" rx="3" ry="3"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                    <rect x="7" y="14" width="4" height="4" rx="1" fill="currentColor" fill-opacity="0.3"/>
+                                </svg>
                             </div>
                         </div>
 
-                        <!-- Top-Right Soft Calendar Watermark Icon -->
-                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 shrink-0">
-                            <CalendarDaysIcon class="w-7 h-7 sm:w-8 sm:h-8" />
-                        </div>
-                    </div>
-
-                    <!-- 3 Segmented Mode Tabs: WFO | Dinas Luar | Izin / Sakit -->
-                    <div v-if="!todayAttendance" class="mt-4 p-1 bg-slate-50 rounded-2xl border border-slate-100 flex gap-1">
-                        <button
-                            @click="activeTab = 'present'"
-                            type="button"
-                            class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
-                            :class="activeTab === 'present' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        >
-                            <BuildingOffice2Icon class="w-4 h-4 shrink-0" />
-                            <span>WFO (Hadir)</span>
-                        </button>
-                        <button
-                            @click="activeTab = 'business_trip'"
-                            type="button"
-                            class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
-                            :class="activeTab === 'business_trip' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        >
-                            <PaperAirplaneIcon class="w-4 h-4 shrink-0" />
-                            <span>Dinas Luar</span>
-                        </button>
-                        <button
-                            @click="activeTab = 'permit'"
-                            type="button"
-                            class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
-                            :class="activeTab === 'permit' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        >
-                            <DocumentTextIcon class="w-4 h-4 shrink-0" />
-                            <span>Izin / Sakit</span>
-                        </button>
-                    </div>
-
-                    <!-- LOKASI PRESENSI BOX (Shown for WFO & Dinas Luar) -->
-                    <div v-show="activeTab !== 'permit'" class="mt-4 border border-slate-100 rounded-2xl p-3.5 sm:p-4 bg-white shadow-xs">
-                        <!-- Location Header & Refresh Button -->
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <div class="w-8 h-8 rounded-full bg-emerald-50 text-[#00584b] flex items-center justify-center shrink-0">
-                                    <MapPinIcon class="w-5 h-5 text-[#00584b]" />
-                                </div>
-                                <div class="min-w-0">
-                                    <h4 class="text-sm font-bold text-gray-900">Lokasi presensi</h4>
-                                    <p class="text-xs text-gray-500 truncate">
-                                        {{ nearestLocation ? (nearestLocation.name + (nearestLocation.address ? ', ' + nearestLocation.address : '')) : 'Mencari lokasi sekolah...' }}
-                                    </p>
-                                </div>
-                            </div>
-                            
+                        <!-- Bottom Segmented Mode Tabs: WFO (Hadir) | Dinas Luar | Izin / Sakit -->
+                        <div v-if="!todayAttendance" class="mt-5 sm:mt-6 bg-white/90 backdrop-blur-md border border-white/80 p-1.5 rounded-2xl flex items-center gap-1.5 shadow-sm">
                             <button
-                                @click="refreshLocation"
+                                @click="activeTab = 'present'"
                                 type="button"
-                                :disabled="isLocating"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-800/40 text-[#00584b] text-xs font-bold hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer shrink-0"
+                                class="flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                                :class="activeTab === 'present' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                             >
-                                <ArrowPathIcon class="w-3.5 h-3.5" :class="isLocating ? 'animate-spin' : ''" />
-                                <span>Perbarui lokasi</span>
+                                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+                                    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+                                    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+                                    <path d="M10 6h4"/>
+                                    <path d="M10 10h4"/>
+                                    <path d="M10 14h4"/>
+                                    <path d="M10 18h4"/>
+                                </svg>
+                                <span>WFO (Hadir)</span>
+                            </button>
+                            <button
+                                @click="activeTab = 'business_trip'"
+                                type="button"
+                                class="flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                                :class="activeTab === 'business_trip' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            >
+                                <svg class="w-4 h-4 shrink-0 rotate-45" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                                </svg>
+                                <span>Dinas Luar</span>
+                            </button>
+                            <button
+                                @click="activeTab = 'permit'"
+                                type="button"
+                                class="flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                                :class="activeTab === 'permit' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            >
+                                <DocumentPlusIcon class="w-4 h-4 shrink-0" />
+                                <span>Izin / Sakit</span>
                             </button>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Mini Leaflet Map -->
-                        <div class="relative w-full h-40 sm:h-48 rounded-xl overflow-hidden mt-3 border border-slate-100 z-0">
-                            <div id="map" ref="mapContainer" class="w-full h-full"></div>
-                        </div>
-
-                        <!-- Proximity Alert Banner -->
-                        <div v-if="isWithinRadius" class="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-2.5 text-left">
-                            <CheckCircleIcon class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                            <div>
-                                <p class="text-xs font-bold text-emerald-800">
-                                    Di dalam jangkauan ({{ nearestLocation?.name }})
-                                </p>
-                                <p class="text-[11px] text-emerald-600 mt-0.5">
-                                    Anda berada di area presensi dan siap untuk melakukan absensi.
-                                </p>
+                <!-- CARD 1B: LOKASI PRESENSI BOX (Shown for WFO & Dinas Luar) -->
+                <div v-show="activeTab !== 'permit'" class="bg-white rounded-3xl border border-gray-100 shadow-xs p-4 sm:p-5 space-y-4">
+                    <!-- Location Header & Refresh Button -->
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-[#00584b] flex items-center justify-center shrink-0">
+                                <MapPinIcon class="w-5 h-5 text-[#00584b]" />
                             </div>
-                        </div>
-                        <div v-else-if="activeTab === 'business_trip'" class="mt-3 p-3 bg-sky-50 border border-sky-100 rounded-xl flex items-start gap-2.5 text-left">
-                            <InformationCircleIcon class="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
-                            <div>
-                                <p class="text-xs font-bold text-sky-800">
-                                    Lokasi Bebas (Dinas Luar)
-                                </p>
-                                <p class="text-[11px] text-sky-600 mt-0.5">
-                                    Presensi penugasan dinas di luar sekolah dengan melampirkan foto selfie & keterangan kegiatan.
+                            <div class="min-w-0">
+                                <h4 class="text-sm font-bold text-gray-900">Lokasi presensi</h4>
+                                <p class="text-xs text-gray-500 truncate">
+                                    {{ nearestLocation ? (nearestLocation.name + (nearestLocation.address ? ', ' + nearestLocation.address : '')) : 'Mencari lokasi sekolah...' }}
                                 </p>
                             </div>
                         </div>
-                        <div v-else class="mt-3 p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2.5 text-left">
-                            <ExclamationCircleIcon class="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                            <div>
-                                <p class="text-xs font-bold text-rose-700">
-                                    Di luar jangkauan (Jarak: {{ distanceToNearest ? distanceToNearest + ' m' : 'Menghitung...' }})
-                                </p>
-                                <p class="text-[11px] text-rose-600 mt-0.5">
-                                    Anda berada di luar area presensi sekolah.
-                                </p>
-                            </div>
+                        
+                        <button
+                            @click="refreshLocation"
+                            type="button"
+                            :disabled="isLocating"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-800/40 text-[#00584b] text-xs font-bold hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer shrink-0"
+                        >
+                            <ArrowPathIcon class="w-3.5 h-3.5" :class="isLocating ? 'animate-spin' : ''" />
+                            <span>Perbarui lokasi</span>
+                        </button>
+                    </div>
+
+                    <!-- Mini Leaflet Map -->
+                    <div class="relative w-full h-40 sm:h-48 rounded-2xl overflow-hidden border border-slate-100 z-0">
+                        <div id="map" ref="mapContainer" class="w-full h-full"></div>
+                    </div>
+
+                    <!-- Proximity Alert Banner -->
+                    <div v-if="isWithinRadius" class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-2.5 text-left">
+                        <CheckCircleIcon class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                        <div>
+                            <p class="text-xs font-bold text-emerald-800">
+                                Di dalam jangkauan ({{ nearestLocation?.name }})
+                            </p>
+                            <p class="text-[11px] text-emerald-600 mt-0.5">
+                                Anda berada di area presensi dan siap untuk melakukan absensi.
+                            </p>
+                        </div>
+                    </div>
+                    <div v-else-if="activeTab === 'business_trip'" class="p-3 bg-sky-50 border border-sky-100 rounded-xl flex items-start gap-2.5 text-left">
+                        <InformationCircleIcon class="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                        <div>
+                            <p class="text-xs font-bold text-sky-800">
+                                Lokasi Bebas (Dinas Luar)
+                            </p>
+                            <p class="text-[11px] text-sky-600 mt-0.5">
+                                Presensi penugasan dinas di luar sekolah dengan melampirkan foto selfie & keterangan kegiatan.
+                            </p>
+                        </div>
+                    </div>
+                    <div v-else class="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2.5 text-left">
+                        <ExclamationCircleIcon class="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                            <p class="text-xs font-bold text-rose-700">
+                                Di luar jangkauan (Jarak: {{ distanceToNearest ? distanceToNearest + ' m' : 'Menghitung...' }})
+                            </p>
+                            <p class="text-[11px] text-rose-600 mt-0.5">
+                                Anda berada di luar area presensi sekolah.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Camera Viewfinder & Action Form (WFO / Dinas) -->
+                    <div v-if="!todayAttendance" class="pt-2 border-t border-slate-100">
+                        <!-- Note for Dinas Luar -->
+                        <div v-if="activeTab === 'business_trip'" class="mb-3">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">
+                                Keterangan Kegiatan Dinas <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea 
+                                v-model="form.note" 
+                                rows="2" 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-2.5 focus:border-[#00584b] focus:ring-[#00584b] resize-none"
+                                placeholder="Contoh: Mengikuti workshop kurikulum di dinas..."
+                            ></textarea>
                         </div>
 
-                        <!-- Camera Viewfinder & Action Form (WFO / Dinas) -->
-                        <div v-if="!todayAttendance" class="mt-4 pt-3 border-t border-slate-100">
-                            <!-- Note for Dinas Luar -->
-                            <div v-if="activeTab === 'business_trip'" class="mb-3">
-                                <label class="block text-xs font-bold text-gray-700 mb-1">
-                                    Keterangan Kegiatan Dinas <span class="text-rose-500">*</span>
-                                </label>
-                                <textarea 
-                                    v-model="form.note" 
-                                    rows="2" 
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-2.5 focus:border-[#00584b] focus:ring-[#00584b] resize-none"
-                                    placeholder="Contoh: Mengikuti workshop kurikulum di dinas..."
-                                ></textarea>
-                            </div>
-
-                            <!-- Camera View / Capture -->
-                            <div v-if="isCameraOpen" class="relative w-full max-w-xs mx-auto aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-lg flex items-center justify-center mb-3">
-                                <video ref="videoRef" autoplay playsinline class="w-full h-full object-cover"></video>
-                                <canvas ref="canvasRef" class="hidden"></canvas>
-                                
-                                <div class="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-4">
-                                    <button 
-                                        type="button" 
-                                        @click="stopCamera" 
-                                        class="px-3.5 py-1.5 bg-black/50 text-white rounded-xl text-xs font-semibold backdrop-blur-sm cursor-pointer hover:bg-black/70"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button 
-                                        type="button" 
-                                        @click="takePhoto" 
-                                        class="w-14 h-14 bg-white rounded-full border-4 border-slate-300 flex items-center justify-center shadow-xl active:scale-95 transition-transform cursor-pointer"
-                                    >
-                                        <div class="w-10 h-10 bg-rose-600 rounded-full"></div>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Photo Preview & Confirmation -->
-                            <div v-else-if="photoPreview" class="w-full max-w-xs mx-auto space-y-3">
-                                <div class="relative aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border-2 border-[#00584b] shadow-md">
-                                    <img :src="photoPreview" class="w-full h-full object-cover" />
-                                </div>
-                                <div class="space-y-2">
-                                    <button 
-                                        @click="submitCheckIn(activeTab)" 
-                                        :disabled="form.processing || (activeTab === 'business_trip' && !form.note)" 
-                                        class="w-full py-3.5 bg-[#00584b] hover:bg-[#00473c] text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                                    >
-                                        {{ form.processing ? 'Mengirim...' : (activeTab === 'business_trip' ? 'Konfirmasi Dinas Luar' : 'Konfirmasi Hadir') }}
-                                    </button>
-                                    <button 
-                                        @click="photoPreview = null; startCamera()" 
-                                        type="button"
-                                        class="w-full py-2 text-slate-500 text-xs font-bold hover:text-slate-800 transition-colors cursor-pointer text-center"
-                                    >
-                                        Foto Ulang
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Default Action Button (Before Camera Opened) -->
-                            <div v-else>
+                        <!-- Camera View / Capture -->
+                        <div v-if="isCameraOpen" class="relative w-full max-w-xs mx-auto aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-lg flex items-center justify-center mb-3">
+                            <video ref="videoRef" autoplay playsinline class="w-full h-full object-cover"></video>
+                            <canvas ref="canvasRef" class="hidden"></canvas>
+                            
+                            <div class="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-4">
                                 <button 
-                                    @click="startCamera" 
-                                    :disabled="activeTab === 'present' && !isWithinRadius" 
-                                    :class="(activeTab === 'present' && !isWithinRadius) 
-                                        ? 'opacity-60 cursor-not-allowed bg-slate-200 text-slate-400' 
-                                        : 'bg-[#00584b] hover:bg-[#00473c] text-white shadow-md active:scale-95 cursor-pointer'" 
-                                    class="w-full py-3.5 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all"
+                                    type="button" 
+                                    @click="stopCamera" 
+                                    class="px-3.5 py-1.5 bg-black/50 text-white rounded-xl text-xs font-semibold backdrop-blur-sm cursor-pointer hover:bg-black/70"
                                 >
-                                    <CameraIcon class="h-5 w-5" />
-                                    <span>{{ activeTab === 'business_trip' ? 'Ambil Foto Bukti Dinas' : 'Ambil Foto & Absen' }}</span>
+                                    Batal
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="takePhoto" 
+                                    class="w-14 h-14 bg-white rounded-full border-4 border-slate-300 flex items-center justify-center shadow-xl active:scale-95 transition-transform cursor-pointer"
+                                >
+                                    <div class="w-10 h-10 bg-rose-600 rounded-full"></div>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Check Out Button (When already checked in) -->
-                        <div v-else-if="todayAttendance && !todayAttendance.check_out_time && (todayAttendance.status === 'present' || todayAttendance.status === 'business_trip' || todayAttendance.status === 'late')" class="mt-4 pt-3 border-t border-slate-100 space-y-2">
-                            <button 
-                                @click="submitCheckOut(todayAttendance.id)"
-                                :disabled="!isWithinRadius && todayAttendance.status !== 'business_trip'"
-                                class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-                            >
-                                <span>Absen Pulang Sekarang</span>
-                            </button>
-                            <p v-if="todayAttendance.status !== 'business_trip' && !isWithinRadius" class="text-xs text-rose-600 font-semibold text-center">
-                                Harus berada di lokasi kantor untuk Absen Pulang
-                            </p>
-                        </div>
-
-                        <!-- Already Completed State -->
-                        <div v-else-if="todayAttendance && todayAttendance.check_out_time" class="mt-4 p-4 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-100 font-bold flex items-center justify-center gap-3 w-full">
-                            <div class="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center shrink-0">
-                                <CheckIcon class="w-5 h-5 stroke-[2.5]" />
+                        <!-- Photo Preview & Confirmation -->
+                        <div v-else-if="photoPreview" class="w-full max-w-xs mx-auto space-y-3">
+                            <div class="relative aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border-2 border-[#00584b] shadow-md">
+                                <img :src="photoPreview" class="w-full h-full object-cover" />
                             </div>
-                            <span class="text-xs sm:text-sm">Absensi Hari Ini Telah Selesai</span>
+                            <div class="space-y-2">
+                                <button 
+                                    @click="submitCheckIn(activeTab)" 
+                                    :disabled="form.processing || (activeTab === 'business_trip' && !form.note)" 
+                                    class="w-full py-3.5 bg-[#00584b] hover:bg-[#00473c] text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                                >
+                                    {{ form.processing ? 'Mengirim...' : (activeTab === 'business_trip' ? 'Konfirmasi Dinas Luar' : 'Konfirmasi Hadir') }}
+                                </button>
+                                <button 
+                                    @click="photoPreview = null; startCamera()" 
+                                    type="button"
+                                    class="w-full py-2 text-slate-500 text-xs font-bold hover:text-slate-800 transition-colors cursor-pointer text-center"
+                                >
+                                    Foto Ulang
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Default Action Button (Before Camera Opened) -->
+                        <div v-else>
+                            <button 
+                                @click="startCamera" 
+                                :disabled="activeTab === 'present' && !isWithinRadius" 
+                                :class="(activeTab === 'present' && !isWithinRadius) 
+                                    ? 'opacity-60 cursor-not-allowed bg-slate-200 text-slate-400' 
+                                    : 'bg-[#00584b] hover:bg-[#00473c] text-white shadow-md active:scale-95 cursor-pointer'" 
+                                class="w-full py-3.5 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all"
+                            >
+                                <CameraIcon class="h-5 w-5" />
+                                <span>{{ activeTab === 'business_trip' ? 'Ambil Foto Bukti Dinas' : 'Ambil Foto & Absen' }}</span>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- FORM IZIN / SAKIT (Shown when activeTab === 'permit') -->
-                    <div v-if="activeTab === 'permit' && !todayAttendance" class="mt-4 border border-slate-100 rounded-2xl p-4 bg-white shadow-xs space-y-4">
-                        <div class="flex items-center gap-2 text-purple-800 font-bold text-sm">
-                            <ClipboardDocumentCheckIcon class="w-5 h-5" />
-                            <span>Form Pengajuan Izin / Sakit</span>
-                        </div>
-
-                        <!-- Radio Type: Izin vs Sakit -->
-                        <div class="flex gap-4 p-3 bg-purple-50/60 rounded-xl border border-purple-100">
-                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-900">
-                                <input type="radio" value="permit" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
-                                <span>Izin</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-900">
-                                <input type="radio" value="sick" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
-                                <span>Sakit</span>
-                            </label>
-                        </div>
-
-                        <!-- Keterangan / Alasan -->
-                        <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-1">
-                                Keterangan / Alasan <span class="text-rose-500">*</span>
-                            </label>
-                            <textarea 
-                                v-model="form.note" 
-                                rows="3" 
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-3 focus:border-purple-600 focus:ring-purple-600 resize-none"
-                                placeholder="Jelaskan detail alasan ketidakhadiran..."
-                            ></textarea>
-                        </div>
-
-                        <!-- Upload Bukti Dokumen -->
-                        <div>
-                            <label class="block text-xs font-bold text-gray-700 mb-1">
-                                Upload Bukti (Surat Dokter / Dokumen Pendukung)
-                            </label>
-                            <input 
-                                type="file" 
-                                @change="e => form.document = e.target.files[0]" 
-                                class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer"
-                            />
-                            <p v-if="form.document" class="text-xs text-purple-700 font-bold mt-1 truncate">
-                                📎 {{ form.document.name }}
-                            </p>
-                        </div>
-
-                        <!-- Submit Button -->
+                    <!-- Check Out Button (When already checked in) -->
+                    <div v-else-if="todayAttendance && !todayAttendance.check_out_time && (todayAttendance.status === 'present' || todayAttendance.status === 'business_trip' || todayAttendance.status === 'late')" class="pt-2 border-t border-slate-100 space-y-2">
                         <button 
-                            @click="submitCheckIn(permitType)" 
-                            :disabled="form.processing || !form.note" 
-                            class="w-full py-3.5 bg-purple-700 hover:bg-purple-800 text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                            @click="submitCheckOut(todayAttendance.id)"
+                            :disabled="!isWithinRadius && todayAttendance.status !== 'business_trip'"
+                            class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                         >
-                            {{ form.processing ? 'Mengirim...' : 'Ajukan ' + (permitType === 'sick' ? 'Sakit' : 'Izin') }}
+                            <span>Absen Pulang Sekarang</span>
                         </button>
+                        <p v-if="todayAttendance.status !== 'business_trip' && !isWithinRadius" class="text-xs text-rose-600 font-semibold text-center">
+                            Harus berada di lokasi kantor untuk Absen Pulang
+                        </p>
                     </div>
+
+                    <!-- Already Completed State -->
+                    <div v-else-if="todayAttendance && todayAttendance.check_out_time" class="p-4 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-100 font-bold flex items-center justify-center gap-3 w-full">
+                        <div class="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center shrink-0">
+                            <CheckIcon class="w-5 h-5 stroke-[2.5]" />
+                        </div>
+                        <span class="text-xs sm:text-sm">Absensi Hari Ini Telah Selesai</span>
+                    </div>
+                </div>
+
+                <!-- CARD 1C: FORM IZIN / SAKIT (Shown when activeTab === 'permit') -->
+                <div v-if="activeTab === 'permit' && !todayAttendance" class="bg-white rounded-3xl border border-gray-100 shadow-xs p-5 space-y-4">
+                    <div class="flex items-center gap-2 text-purple-800 font-bold text-sm">
+                        <ClipboardDocumentCheckIcon class="w-5 h-5" />
+                        <span>Form Pengajuan Izin / Sakit</span>
+                    </div>
+
+                    <!-- Radio Type: Izin vs Sakit -->
+                    <div class="flex gap-4 p-3 bg-purple-50/60 rounded-xl border border-purple-100">
+                        <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-900">
+                            <input type="radio" value="permit" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
+                            <span>Izin</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-900">
+                            <input type="radio" value="sick" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
+                            <span>Sakit</span>
+                        </label>
+                    </div>
+
+                    <!-- Keterangan / Alasan -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">
+                            Keterangan / Alasan <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea 
+                            v-model="form.note" 
+                            rows="3" 
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-3 focus:border-purple-600 focus:ring-purple-600 resize-none"
+                            placeholder="Jelaskan detail alasan ketidakhadiran..."
+                        ></textarea>
+                    </div>
+
+                    <!-- Upload Bukti Dokumen -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">
+                            Upload Bukti (Surat Dokter / Dokumen Pendukung)
+                        </label>
+                        <input 
+                            type="file" 
+                            @change="e => form.document = e.target.files[0]" 
+                            class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer"
+                        />
+                        <p v-if="form.document" class="text-xs text-purple-700 font-bold mt-1 truncate">
+                            📎 {{ form.document.name }}
+                        </p>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button 
+                        @click="submitCheckIn(permitType)" 
+                        :disabled="form.processing || !form.note" 
+                        class="w-full py-3.5 bg-purple-700 hover:bg-purple-800 text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                        {{ form.processing ? 'Mengirim...' : 'Ajukan ' + (permitType === 'sick' ? 'Sakit' : 'Izin') }}
+                    </button>
                 </div>
 
                 <!-- CARD 2: KALENDER ABSENSI SAYA -->
@@ -572,16 +601,16 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import LiveAttendanceRadar from './Partials/LiveAttendanceRadar.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Swal from 'sweetalert2';
 import { 
     ClipboardDocumentCheckIcon, CameraIcon, CheckIcon, XMarkIcon, ClockIcon, 
-    CheckCircleIcon, XCircleIcon, UserIcon, UserGroupIcon, BuildingOffice2Icon,
+    CheckCircleIcon, UserIcon, UserGroupIcon, DocumentPlusIcon,
     CalendarDaysIcon, DocumentTextIcon, MapPinIcon, ArrowPathIcon, ChevronLeftIcon,
-    ChevronRightIcon, PaperAirplaneIcon, ExclamationCircleIcon, InformationCircleIcon
+    ChevronRightIcon, ExclamationCircleIcon, InformationCircleIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
