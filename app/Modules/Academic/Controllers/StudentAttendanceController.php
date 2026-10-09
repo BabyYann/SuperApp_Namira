@@ -17,8 +17,10 @@ class StudentAttendanceController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $unitId = session('active_unit_id');
+        $teacherProfile = $user->teacher_profile;
+        $unitId = session('active_unit_id') ?? $teacherProfile?->unit_id;
         $tab = $request->input('tab', 'daily'); // 'daily' | 'recap'
+        $isManagement = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit']);
         
         // 1. Role-based classrooms access
         $classroomsQuery = Classroom::query();
@@ -26,11 +28,12 @@ class StudentAttendanceController extends Controller
             $classroomsQuery->where('unit_id', $unitId);
         }
 
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
+        if (!$isManagement) {
             if ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
-                $teacherProfile = $user->teacher_profile;
-                if ($teacherProfile) {
-                    $classroomsQuery->where('homeroom_teacher_id', $teacherProfile->id);
+                // Teachers (both Guru Mapel & Wali Kelas) can view classrooms within their school unit
+                $targetUnitId = $unitId ?? $teacherProfile?->unit_id;
+                if ($targetUnitId) {
+                    $classroomsQuery->where('unit_id', $targetUnitId);
                 } else {
                     $classroomsQuery->whereRaw('1 = 0');
                 }
@@ -54,10 +57,12 @@ class StudentAttendanceController extends Controller
             ->groupBy('classroom_id')
             ->pluck('count', 'classroom_id');
 
-        $classrooms->transform(function ($c) use ($todayAttendanceCounts) {
+        $classrooms->transform(function ($c) use ($todayAttendanceCounts, $isManagement, $teacherProfile) {
             $count = $todayAttendanceCounts[$c->id] ?? 0;
             $c->has_attendance_today = $count > 0;
             $c->today_attendance_count = $count;
+            $c->is_homeroom = $teacherProfile && ($c->homeroom_teacher_id === $teacherProfile->id);
+            $c->can_edit = $isManagement || $c->is_homeroom;
             return $c;
         });
 
@@ -175,21 +180,20 @@ class StudentAttendanceController extends Controller
     public function show(Request $request, Classroom $classroom)
     {
         $user = Auth::user();
+        $isManagement = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit']);
+        $teacher = $user->teacher_profile;
+        $unitId = session('active_unit_id') ?? $teacher?->unit_id;
         
         // 1. Unit Isolation Validation
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']) && $classroom->unit_id != session('active_unit_id')) {
+        if (!$isManagement && $classroom->unit_id != $unitId) {
             abort(403, 'Akses Ditolak: Anda tidak dapat mengakses kelas dari unit lain.');
         }
 
-        // 2. Role Authorization Validation (Admin, Pengawas, or Homeroom Teacher of this class)
-        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
-            // Allowed
-        } elseif ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
-            $teacher = $user->teacher_profile;
-            if (!$teacher || $classroom->homeroom_teacher_id !== $teacher->id) {
-                abort(403, 'Akses Ditolak: Hanya Wali Kelas yang berhak melihat absensi kelas ini.');
-            }
-        } else {
+        // 2. Role Authorization Validation (Admin, Pengawas, Homeroom, or Teachers within the unit)
+        $isHomeroom = $teacher && ($classroom->homeroom_teacher_id === $teacher->id);
+        $canEdit = $isManagement || $isHomeroom;
+
+        if (!$isManagement && !$user->hasRole('teacher') && !$user->hasRole('wali_kelas')) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk melihat data absensi.');
         }
 
@@ -248,6 +252,8 @@ class StudentAttendanceController extends Controller
             'date' => $date,
             'history' => $history,
             'subject_journals' => $subjectJournals,
+            'can_edit' => $canEdit,
+            'is_homeroom' => $isHomeroom,
         ]);
     }
 
@@ -262,24 +268,14 @@ class StudentAttendanceController extends Controller
             'attendances.*.note' => 'nullable|string',
         ]);
 
-        // Security: Only Homeroom Teacher or Admin
-        // Security: Only Homeroom Teacher or Admin
+        // Security: Only Homeroom Teacher or Admin can modify attendance
         $user = Auth::user();
-        
-        // Bypass for Admin & Pengawas
-        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit'])) {
-            // Admin allowed
-        } elseif ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
-            $teacher = $user->teacher_profile;
-            
-            // Check if this teacher is the homeroom teacher for this class
-            if (!$teacher || $classroom->homeroom_teacher_id !== $teacher->id) {
-                // Determine if they are "Piket" or have special permission?
-                // For now, strict: Only Homeroom.
-                abort(403, 'Akses Ditolak: Hanya Wali Kelas yang berhak mengisi absensi kelas ini.');
-            }
-        } else {
-             abort(403, 'Unauthorized action.');
+        $isManagement = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit']);
+        $teacher = $user->teacher_profile;
+        $isHomeroom = $teacher && ($classroom->homeroom_teacher_id === $teacher->id);
+
+        if (!$isManagement && !$isHomeroom) {
+            abort(403, 'Akses Ditolak: Hanya Wali Kelas atau Admin yang berhak mengisi dan menyimpan presensi kelas ini.');
         }
 
         // Use date from form, fallback to today
@@ -366,7 +362,6 @@ class StudentAttendanceController extends Controller
 
     public function export(Request $request)
     {
-        $unitId = session('active_unit_id');
         $month = $request->input('month', date('m'));
         $year = $request->input('year', date('Y'));
         $classroomId = $request->input('classroom_id');
@@ -375,8 +370,13 @@ class StudentAttendanceController extends Controller
             return redirect()->back()->withErrors(['classroom_id' => 'Pilih kelas terlebih dahulu.']);
         }
 
-        $unit = \App\Modules\Yayasan\Models\Unit::find($unitId);
         $classroom = Classroom::find($classroomId);
+        if (!$classroom) {
+            return redirect()->back()->withErrors(['classroom_id' => 'Kelas tidak ditemukan.']);
+        }
+
+        $unitId = session('active_unit_id') ?? $classroom->unit_id;
+        $unit = \App\Modules\Yayasan\Models\Unit::find($unitId);
         $students = Student::where('classroom_id', $classroomId)->orderBy('full_name')->get();
         
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();

@@ -519,21 +519,10 @@ const isRouteActive = (pattern) => {
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
-                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-cyan-50/70 border border-white ring-1 ring-cyan-400/25 shadow-[0_8px_18px_-3px_rgba(6,182,212,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
-                                        <ClipboardDocumentCheckIcon class="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600 stroke-[2.3]" />
-                                    </div>
-                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-cyan-600 transition-colors">Presensi Siswa</span>
-                                </Link>
-
-                                <Link 
-                                    :href="safeRoute('yayasan.student-attendance.index', { tab: 'recap' })" 
-                                    @click="showDrawer = false"
-                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
-                                >
                                     <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
-                                        <PresentationChartBarIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
+                                        <ClipboardDocumentCheckIcon class="w-6 h-6 sm:w-7 sm:h-7 text-[#00584b] stroke-[2.3]" />
                                     </div>
-                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Rekap Presensi</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Presensi Siswa</span>
                                 </Link>
 
                                 <Link 

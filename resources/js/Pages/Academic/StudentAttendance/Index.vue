@@ -6,7 +6,7 @@ import {
     ClipboardDocumentCheckIcon, ChartBarIcon, BuildingOfficeIcon, 
     AcademicCapIcon, UserGroupIcon, UserIcon, ArrowDownTrayIcon,
     CheckCircleIcon, ClockIcon, CalendarDaysIcon, ChevronRightIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon, EyeIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -191,10 +191,18 @@ const todayFormatted = computed(() => {
                     >
                         <!-- Top Class Header -->
                         <div>
-                            <div class="flex items-start justify-between gap-3 mb-3">
-                                <span class="px-3 py-1 bg-teal-50 text-[#00584b] rounded-full text-xs font-bold border border-teal-100">
-                                    {{ classroom.unit?.name || 'Unit Sekolah' }}
-                                </span>
+                            <div class="flex items-start justify-between gap-2 mb-3">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="px-2.5 py-1 bg-teal-50 text-[#00584b] rounded-full text-xs font-bold border border-teal-100">
+                                        {{ classroom.unit?.name || 'Unit Sekolah' }}
+                                    </span>
+                                    <span v-if="classroom.is_homeroom" class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black border border-emerald-300">
+                                        Wali Kelas
+                                    </span>
+                                    <span v-else-if="!classroom.can_edit" class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold border border-slate-200">
+                                        Mode Pantau
+                                    </span>
+                                </div>
                                 <div class="w-9 h-9 rounded-2xl bg-slate-50 border border-slate-100 text-slate-500 flex items-center justify-center shrink-0">
                                     <AcademicCapIcon class="w-5 h-5 text-[#00584b]" />
                                 </div>
@@ -241,9 +249,18 @@ const todayFormatted = computed(() => {
                         <div class="mt-5 pt-2">
                             <Link 
                                 :href="route('yayasan.student-attendance.show', classroom.id)"
-                                class="w-full py-3 bg-[#00584b] hover:bg-[#00473c] text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs text-center flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                                :class="classroom.can_edit 
+                                    ? 'bg-[#00584b] hover:bg-[#00473c] text-white shadow-xs' 
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shadow-2xs'"
+                                class="w-full py-2.5 font-bold text-xs sm:text-sm rounded-2xl text-center flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                             >
-                                <span>Input Presensi Kelas</span>
+                                <span v-if="classroom.can_edit">
+                                    {{ classroom.has_attendance_today ? 'Edit / Cek Presensi' : 'Input Presensi Kelas' }}
+                                </span>
+                                <span v-else class="flex items-center gap-1.5">
+                                    <EyeIcon class="w-4 h-4 text-slate-500" />
+                                    <span>Lihat Kehadiran Siswa</span>
+                                </span>
                                 <ChevronRightIcon class="w-4 h-4" />
                             </Link>
                         </div>
@@ -268,19 +285,18 @@ const todayFormatted = computed(() => {
             <!-- ==================================================== -->
             <div v-else-if="activeTab === 'recap'" class="space-y-4">
 
-                <!-- Filter & Action Card -->
-                <div class="bg-white rounded-3xl border border-gray-100 shadow-xs p-4 sm:p-5">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <!-- Filters Group -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 max-w-2xl">
-                            <!-- Select Kelas -->
-                            <div>
-                                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                    Kelas
-                                </label>
+                <!-- Ultra Compact Filter & Action Bar -->
+                <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs p-3 sm:p-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                        <!-- Kelas Selector (Flexible) -->
+                        <div class="flex-1 min-w-0">
+                            <label class="block sm:hidden text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                Pilih Kelas
+                            </label>
+                            <div class="relative">
                                 <select 
                                     v-model="selectedClassroomId"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold p-2.5 focus:border-[#00584b] focus:ring-[#00584b] cursor-pointer"
+                                    class="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 py-2 sm:py-2.5 pl-3 pr-8 focus:border-[#00584b] focus:ring-[#00584b] transition-colors cursor-pointer truncate"
                                 >
                                     <option value="" disabled>-- Pilih Kelas --</option>
                                     <option v-for="c in classrooms" :key="'opt-' + c.id" :value="c.id">
@@ -288,15 +304,15 @@ const todayFormatted = computed(() => {
                                     </option>
                                 </select>
                             </div>
+                        </div>
 
+                        <!-- Controls Group: Bulan, Tahun, Export side-by-side -->
+                        <div class="grid grid-cols-12 gap-2 sm:flex sm:items-center sm:gap-2.5 shrink-0">
                             <!-- Select Bulan -->
-                            <div>
-                                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                    Bulan
-                                </label>
+                            <div class="col-span-5 sm:w-36">
                                 <select 
                                     v-model="selectedMonth"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold p-2.5 focus:border-[#00584b] focus:ring-[#00584b] cursor-pointer"
+                                    class="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 py-2 sm:py-2.5 px-3 focus:border-[#00584b] focus:ring-[#00584b] transition-colors cursor-pointer"
                                 >
                                     <option v-for="m in months" :key="'m-' + m.value" :value="m.value">
                                         {{ m.label }}
@@ -305,71 +321,69 @@ const todayFormatted = computed(() => {
                             </div>
 
                             <!-- Select Tahun -->
-                            <div>
-                                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                    Tahun
-                                </label>
+                            <div class="col-span-3 sm:w-28">
                                 <select 
                                     v-model="selectedYear"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold p-2.5 focus:border-[#00584b] focus:ring-[#00584b] cursor-pointer"
+                                    class="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 py-2 sm:py-2.5 px-3 focus:border-[#00584b] focus:ring-[#00584b] transition-colors cursor-pointer"
                                 >
                                     <option v-for="y in years" :key="'y-' + y" :value="y">
                                         {{ y }}
                                     </option>
                                 </select>
                             </div>
-                        </div>
 
-                        <!-- Export Button -->
-                        <div class="flex items-end">
-                            <button
-                                @click="exportRecap"
-                                :disabled="!selectedClassroomId"
-                                type="button"
-                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-xs active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                            >
-                                <ArrowDownTrayIcon class="w-4 h-4" />
-                                <span>Export Excel</span>
-                            </button>
+                            <!-- Export Excel Button -->
+                            <div class="col-span-4 sm:w-auto">
+                                <button
+                                    @click="exportRecap"
+                                    :disabled="!selectedClassroomId"
+                                    type="button"
+                                    title="Export Excel Rekap Kehadiran"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-xs active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                                >
+                                    <ArrowDownTrayIcon class="w-4 h-4 shrink-0" />
+                                    <span class="truncate">Export</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Summary Statistics Bar for Selected Class -->
-                <div v-if="selectedClassroom && recapStats" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                <!-- Summary Statistics Bar for Selected Class (Compact 4-column) -->
+                <div v-if="selectedClassroom && recapStats" class="grid grid-cols-4 gap-2 sm:gap-3">
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs p-2.5 sm:p-3 flex items-center justify-between">
                         <div>
-                            <span class="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Total Hadir (H)</span>
-                            <h4 class="text-xl font-black text-emerald-600">{{ recapStats.H }}</h4>
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase text-gray-400 tracking-wider">Hadir</span>
+                            <h4 class="text-base sm:text-xl font-black text-emerald-600 leading-tight">{{ recapStats.H }}</h4>
                         </div>
-                        <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-xs">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0">
                             H
                         </div>
                     </div>
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs p-2.5 sm:p-3 flex items-center justify-between">
                         <div>
-                            <span class="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Total Sakit (S)</span>
-                            <h4 class="text-xl font-black text-sky-600">{{ recapStats.S }}</h4>
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase text-gray-400 tracking-wider">Sakit</span>
+                            <h4 class="text-base sm:text-xl font-black text-sky-600 leading-tight">{{ recapStats.S }}</h4>
                         </div>
-                        <div class="w-8 h-8 rounded-full bg-sky-50 text-sky-700 font-bold flex items-center justify-center text-xs">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-sky-50 text-sky-700 font-bold flex items-center justify-center text-xs shrink-0">
                             S
                         </div>
                     </div>
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs p-2.5 sm:p-3 flex items-center justify-between">
                         <div>
-                            <span class="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Total Izin (I)</span>
-                            <h4 class="text-xl font-black text-amber-600">{{ recapStats.I }}</h4>
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase text-gray-400 tracking-wider">Izin</span>
+                            <h4 class="text-base sm:text-xl font-black text-amber-600 leading-tight">{{ recapStats.I }}</h4>
                         </div>
-                        <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-700 font-bold flex items-center justify-center text-xs">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-50 text-amber-700 font-bold flex items-center justify-center text-xs shrink-0">
                             I
                         </div>
                     </div>
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs p-2.5 sm:p-3 flex items-center justify-between">
                         <div>
-                            <span class="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Total Alpha (A)</span>
-                            <h4 class="text-xl font-black text-rose-600">{{ recapStats.A }}</h4>
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase text-gray-400 tracking-wider">Alpha</span>
+                            <h4 class="text-base sm:text-xl font-black text-rose-600 leading-tight">{{ recapStats.A }}</h4>
                         </div>
-                        <div class="w-8 h-8 rounded-full bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-xs">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-50 text-rose-700 font-bold flex items-center justify-center text-xs shrink-0">
                             A
                         </div>
                     </div>

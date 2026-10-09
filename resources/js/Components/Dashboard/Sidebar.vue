@@ -653,22 +653,23 @@ const filteredMenuGroups = computed(() => {
 
     // B. WALI KELAS (Homeroom Teacher)
     if (hasRole('wali_kelas')) {
-        groups.push({
-            title: 'Wali Kelas',
-            key: 'homeroom',
-            items: [
-                { 
-                    label: 'Data Kelas', 
-                    route: 'yayasan.classrooms.index', 
-                    active: 'yayasan.classrooms.*',
-                    icon: HomeModernIcon 
-                },
-                { 
-                    label: 'Data Siswa', 
-                    route: 'yayasan.students.index', 
-                    active: 'yayasan.students.*',
-                    icon: AcademicCapIcon 
-                },
+        const homeroomItems = [
+            { 
+                label: 'Data Kelas', 
+                route: 'yayasan.classrooms.index', 
+                active: 'yayasan.classrooms.*',
+                icon: HomeModernIcon 
+            },
+            { 
+                label: 'Data Siswa', 
+                route: 'yayasan.students.index', 
+                active: 'yayasan.students.*',
+                icon: AcademicCapIcon 
+            },
+        ];
+
+        if (!isTeacher) {
+            homeroomItems.push(
                 { 
                     label: 'Presensi Siswa', 
                     route: 'yayasan.student-attendance.index', 
@@ -680,8 +681,14 @@ const filteredMenuGroups = computed(() => {
                     route: 'yayasan.schedules.index', 
                     active: 'yayasan.schedules.*',
                     icon: ClockIcon 
-                },
-            ]
+                }
+            );
+        }
+
+        groups.push({
+            title: 'Wali Kelas',
+            key: 'homeroom',
+            items: homeroomItems
         });
     }
 

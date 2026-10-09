@@ -5,7 +5,8 @@ import { ref, onMounted, watch, computed } from 'vue';
 import { 
     ChevronLeftIcon, ChevronRightIcon, CheckIcon, 
     ExclamationCircleIcon, ArrowPathIcon,
-    ClipboardDocumentCheckIcon, BookOpenIcon
+    ClipboardDocumentCheckIcon, BookOpenIcon,
+    InformationCircleIcon, EyeIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -15,6 +16,14 @@ const props = defineProps({
     date: String,
     history: Object, // { student_id: { A: 2, S: 1 } }
     subject_journals: Array, // [{ subject_name, start_time, end_time, attendances }]
+    can_edit: {
+        type: Boolean,
+        default: true,
+    },
+    is_homeroom: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const activeTab = ref('daily'); // 'daily' | 'subject_matrix'
@@ -215,6 +224,15 @@ const getHistoryWarning = (studentId) => {
                     </button>
                 </div>
 
+                <!-- Read-Only Banner for Non-Wali Kelas (Guru Mapel) -->
+                <div v-if="!can_edit" class="p-3.5 bg-amber-50 border-b border-amber-200/80 flex items-center gap-2.5 text-xs text-amber-900">
+                    <InformationCircleIcon class="w-5 h-5 text-amber-600 shrink-0" />
+                    <div>
+                        <strong class="font-bold">Mode Pemantauan Guru Mapel (Read-Only):</strong>
+                        <span class="text-amber-800 ml-1">Anda dapat melihat kehadiran siswa kelas ini. Penginputan dan perubahan presensi kelas hanya dapat dilakukan oleh Wali Kelas atau Admin.</span>
+                    </div>
+                </div>
+
                 <!-- Toolbar (Only for Daily Tab) -->
                 <div v-if="activeTab === 'daily'" class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
                     <div class="flex items-center gap-4 text-sm text-slate-500">
@@ -227,7 +245,7 @@ const getHistoryWarning = (studentId) => {
                             Belum Absen: <span class="font-bold text-slate-800">{{ summary.Unset }}</span>
                         </div>
                     </div>
-                    <div class="flex gap-2 w-full sm:w-auto">
+                    <div v-if="can_edit" class="flex gap-2 w-full sm:w-auto">
                         <button @click="markRemainingPresent" type="button" class="flex-1 sm:flex-none px-3 py-2 bg-white text-slate-700 text-xs font-bold rounded-lg border border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm flex items-center justify-center gap-2">
                             <CheckIcon class="h-4 w-4 text-emerald-500" />
                             Isi Sisa Hadir
@@ -236,6 +254,10 @@ const getHistoryWarning = (studentId) => {
                             <span v-if="!form.processing">Simpan Perubahan</span>
                             <span v-else>Menyimpan...</span>
                         </button>
+                    </div>
+                    <div v-else class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs border border-slate-200">
+                        <EyeIcon class="w-4 h-4 text-slate-400" />
+                        <span>Mode Pantau (Hanya Lihat)</span>
                     </div>
                 </div>
 
@@ -284,14 +306,15 @@ const getHistoryWarning = (studentId) => {
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-center gap-1">
-                                        <label v-for="code in ['H', 'S', 'I', 'A']" :key="code" class="cursor-pointer group">
-                                            <input type="radio" v-model="item.status" :value="code" class="sr-only peer">
+                                        <label v-for="code in ['H', 'S', 'I', 'A']" :key="code" :class="can_edit ? 'cursor-pointer' : 'cursor-not-allowed'" class="group">
+                                            <input type="radio" v-model="item.status" :value="code" :disabled="!can_edit" class="sr-only peer">
                                             <div 
                                                 class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] border transition-all duration-200 shadow-sm"
                                                 :class="[
                                                     item.status === code 
                                                         ? statusColors[code] + ' scale-105 ring-2 ring-offset-1' 
-                                                        : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:bg-slate-50'
+                                                        : 'bg-white border-slate-200 text-slate-400',
+                                                    can_edit ? 'hover:border-slate-300 hover:bg-slate-50' : 'opacity-80'
                                                 ]"
                                             >
                                                 {{ code }}
@@ -303,12 +326,14 @@ const getHistoryWarning = (studentId) => {
                                     <div class="space-y-1.5">
                                         <input 
                                             v-model="item.note" 
+                                            :readonly="!can_edit"
                                             type="text" 
-                                            placeholder="Catatan..." 
+                                            :placeholder="can_edit ? 'Catatan...' : '-'" 
                                             class="w-full text-xs border-slate-200 rounded-lg focus:ring-slate-500 focus:border-slate-500 bg-white/50 py-1.5"
+                                            :class="{ 'bg-slate-50/50 cursor-not-allowed': !can_edit }"
                                         >
-                                        <!-- Quick Chips -->
-                                        <div v-if="item.status && item.status !== 'H'" class="flex flex-wrap gap-1">
+                                        <!-- Quick Chips (Only if can_edit) -->
+                                        <div v-if="can_edit && item.status && item.status !== 'H'" class="flex flex-wrap gap-1">
                                             <button 
                                                 v-for="note in quickNotes" 
                                                 :key="note"
@@ -372,8 +397,8 @@ const getHistoryWarning = (studentId) => {
                 </div>
             </div>
             
-            <!-- Mobile Floating Save Button -->
-            <div class="fixed bottom-6 right-6 md:hidden z-50">
+            <!-- Mobile Floating Save Button (Only if can_edit) -->
+            <div v-if="can_edit" class="fixed bottom-6 right-6 md:hidden z-50">
                 <button @click="submit" :disabled="form.processing" class="h-14 w-14 bg-slate-900 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95">
                     <CheckIcon v-if="!form.processing" class="h-6 w-6" />
                     <ArrowPathIcon v-else class="animate-spin h-6 w-6 text-white" />
