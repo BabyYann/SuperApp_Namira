@@ -25,7 +25,7 @@ const activeFilter = ref(props.data?.stats?.not_checked_in > 0 ? 'not_checked_in
 const chartMode = ref('donut'); // 'donut' | 'timeline' | 'quorum'
 const hoveredSlice = ref(null);
 const currentTime = ref('');
-const mobileView = ref('analytics'); // 'analytics' | 'employees' | 'both'
+const mobileView = ref('both'); // 'analytics' | 'employees' | 'both' (default matches reference)
 
 // Live Digital Clock (WIB)
 let timer = null;
@@ -37,12 +37,6 @@ const updateClock = () => {
 onMounted(() => {
     updateClock();
     timer = setInterval(updateClock, 1000);
-    // On tablet / desktop, both columns are always visible via CSS md:flex
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-        mobileView.value = 'both';
-    } else {
-        mobileView.value = 'analytics';
-    }
 });
 
 onUnmounted(() => {
@@ -211,19 +205,11 @@ const switchUnit = (newUnitId) => {
 // KPI Card Click Handler
 const handleKpiClick = (filterKey) => {
     activeFilter.value = filterKey;
-    // On small screens, guide user directly to employee list
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-        mobileView.value = 'employees';
-    }
 };
 
 // Filter Toggle from Chart Slice or Legend
 const setFilterFromChart = (key) => {
     activeFilter.value = activeFilter.value === key ? 'all' : key;
-    // On small screens, guide user directly to employee list
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-        mobileView.value = 'employees';
-    }
 };
 
 // Copy WhatsApp Summary to Clipboard
@@ -291,7 +277,7 @@ const getInitials = (name) => {
 </script>
 
 <template>
-    <div class="space-y-3 sm:space-y-3.5 pb-24 sm:pb-6">
+    <div class="space-y-3 sm:space-y-3.5 pb-32 sm:pb-8">
 
         <!-- 1. COMPACT EXECUTIVE TOP BAR -->
         <div class="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-md border border-emerald-800/40 relative overflow-hidden">
