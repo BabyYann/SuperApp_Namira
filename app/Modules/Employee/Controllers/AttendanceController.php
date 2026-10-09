@@ -591,8 +591,54 @@ class AttendanceController extends Controller
             ],
         ];
 
+        $hourlyDistribution = [
+            'early' => 0,       // < 06:30
+            'on_time' => 0,     // 06:30 - 07:00
+            'grace' => 0,       // 07:01 - 07:15
+            'late' => 0,        // > 07:15
+        ];
+
+        $checkInMinutes = [];
+        $earliestCheckIn = null;
+        $latestCheckIn = null;
+
         foreach ($employees as $emp) {
             $att = $todayAttendances->get($emp->id);
+
+            // Track check in metrics for present/late
+            if ($att && in_array($att->status, ['present', 'late']) && $att->check_in_time) {
+                $timeParts = explode(':', $att->check_in_time);
+                if (count($timeParts) >= 2) {
+                    $minutes = ((int)$timeParts[0] * 60) + (int)$timeParts[1];
+                    $checkInMinutes[] = $minutes;
+                    $shortTime = sprintf('%02d:%02d', (int)$timeParts[0], (int)$timeParts[1]);
+
+                    if ($minutes < 390) {
+                        $hourlyDistribution['early']++;
+                    } elseif ($minutes <= 420) {
+                        $hourlyDistribution['on_time']++;
+                    } elseif ($minutes <= 435) {
+                        $hourlyDistribution['grace']++;
+                    } else {
+                        $hourlyDistribution['late']++;
+                    }
+
+                    if (!$earliestCheckIn || $minutes < $earliestCheckIn['minutes']) {
+                        $earliestCheckIn = [
+                            'name' => $emp->name,
+                            'time' => $shortTime,
+                            'minutes' => $minutes,
+                        ];
+                    }
+                    if (!$latestCheckIn || $minutes > $latestCheckIn['minutes']) {
+                        $latestCheckIn = [
+                            'name' => $emp->name,
+                            'time' => $shortTime,
+                            'minutes' => $minutes,
+                        ];
+                    }
+                }
+            }
 
             // Determine jabatan
             if ($emp->staff?->position) {
@@ -671,7 +717,54 @@ class AttendanceController extends Controller
         $total = $liveAttendance['stats']['total'];
         $attendanceCount = $liveAttendance['stats']['present'] + $liveAttendance['stats']['late'];
         $liveAttendance['stats']['attendance_count'] = $attendanceCount;
-        $liveAttendance['stats']['attendance_percentage'] = $total > 0 ? round(($attendanceCount / $total) * 100, 1) : 0;
+        $attendancePercentage = $total > 0 ? round(($attendanceCount / $total) * 100, 1) : 0;
+        $liveAttendance['stats']['attendance_percentage'] = $attendancePercentage;
+
+        $presentCount = $liveAttendance['stats']['present'];
+        $onTimePercentage = $attendanceCount > 0 ? round(($presentCount / $attendanceCount) * 100, 1) : 0;
+        $liveAttendance['stats']['on_time_percentage'] = $onTimePercentage;
+
+        // Quorum status (Target 95%)
+        $quorumTarget = 95;
+        $quorumStatus = 'attention';
+        if ($attendancePercentage >= $quorumTarget) {
+            $quorumStatus = 'achieved';
+        } elseif ($attendancePercentage >= 70) {
+            $quorumStatus = 'progress';
+        }
+        $liveAttendance['stats']['quorum_status'] = $quorumStatus;
+        $liveAttendance['stats']['quorum_target'] = $quorumTarget;
+
+        // Calculate average & peak
+        $avgCheckInTime = null;
+        if (count($checkInMinutes) > 0) {
+            $avgMinutes = round(array_sum($checkInMinutes) / count($checkInMinutes));
+            $avgCheckInTime = sprintf('%02d:%02d WIB', floor($avgMinutes / 60), $avgMinutes % 60);
+        }
+
+        $peakLabels = [
+            'early' => 'Sebelum 06:30 WIB',
+            'on_time' => '06:30 - 07:00 WIB',
+            'grace' => '07:01 - 07:15 WIB',
+            'late' => 'Setelah 07:15 WIB',
+        ];
+
+        $maxKey = 'on_time';
+        $maxVal = $hourlyDistribution['on_time'];
+        foreach ($hourlyDistribution as $k => $v) {
+            if ($v > $maxVal) {
+                $maxKey = $k;
+                $maxVal = $v;
+            }
+        }
+
+        $liveAttendance['hourly_distribution'] = $hourlyDistribution;
+        $liveAttendance['insights'] = [
+            'average_check_in' => $avgCheckInTime,
+            'earliest' => $earliestCheckIn,
+            'latest' => $latestCheckIn,
+            'peak_period' => $maxVal > 0 ? $peakLabels[$maxKey] : null,
+        ];
 
         return $liveAttendance;
     }
