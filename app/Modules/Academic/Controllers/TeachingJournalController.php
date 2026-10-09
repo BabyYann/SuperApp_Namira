@@ -346,6 +346,24 @@ class TeachingJournalController extends Controller
                 ->first();
         }
 
+        // Fallback for admin or testing if teacherSchedules is empty
+        if (empty($teacherSchedules) && !empty($schedule) && $schedule->teacher_id) {
+            $teacherSchedules = ClassSchedule::with(['classroom', 'subject'])
+                ->where('teacher_id', $schedule->teacher_id)
+                ->orderBy('start_time')
+                ->get()
+                ->map(fn($s) => [
+                    'id' => $s->id,
+                    'classroom_id' => $s->classroom_id,
+                    'classroom_name' => $s->classroom?->name ?? '-',
+                    'subject_id' => $s->subject_id,
+                    'subject_name' => $s->subject?->name ?? '-',
+                    'start_time' => $s->start_time,
+                    'end_time' => $s->end_time,
+                    'day' => $s->day,
+                ]);
+        }
+
         if ($classroom && $subject) {
             // Fetch Daily Attendance & Gate Checkins for auto-population
             $dailyAttendances = StudentAttendance::where('classroom_id', $classroom->id)

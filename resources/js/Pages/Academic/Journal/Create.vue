@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, Link, router } from '@inertiajs/vue3';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { 
     ArrowLeftIcon,
     CalendarDaysIcon,
@@ -92,7 +92,10 @@ const toggleTp = (tpId) => {
 };
 
 // Photo & Compression Logic
+const cameraInputRef = ref(null);
+const galleryInputRef = ref(null);
 const photoPreview = ref(null);
+const photoSizeInfo = ref('');
 const isCompressing = ref(false);
 const showPhotoSection = ref(false);
 
@@ -107,7 +110,7 @@ const compressImage = (file) => {
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-                const maxDim = 1600;
+                const maxDim = 1280;
 
                 if (width > height && width > maxDim) {
                     height = Math.round((height * maxDim) / width);
@@ -122,7 +125,15 @@ const compressImage = (file) => {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+                
+                // Calculate file size in KB
+                const head = 'data:image/jpeg;base64,';
+                const base64Length = compressedDataUrl.length - head.length;
+                const sizeInBytes = Math.round((base64Length * 3) / 4);
+                const sizeInKB = Math.round(sizeInBytes / 1024);
+                photoSizeInfo.value = `${sizeInKB} KB`;
+
                 resolve(compressedDataUrl);
             };
             img.onerror = (error) => reject(error);
@@ -132,7 +143,7 @@ const compressImage = (file) => {
 };
 
 const handlePhotoInput = async (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
     if (!file) return;
 
     isCompressing.value = true;
@@ -148,6 +159,7 @@ const handlePhotoInput = async (event) => {
         showPhotoSection.value = true;
     } finally {
         isCompressing.value = false;
+        if (event.target) event.target.value = '';
     }
 };
 
@@ -236,12 +248,83 @@ const removeNewTp = (index) => {
     form.new_tps.splice(index, 1);
 };
 
-// Switch Schedule / Class / Subject from Row 2 & 3
-const onScheduleSelect = (event) => {
-    const selectedSchedId = event.target.value;
-    if (selectedSchedId && selectedSchedId !== form.class_schedule_id) {
+// Deduplicated Classrooms taught by teacher
+const availableClassrooms = computed(() => {
+    const map = new Map();
+    if (props.teacherSchedules && props.teacherSchedules.length > 0) {
+        props.teacherSchedules.forEach(s => {
+            if (s.classroom_id && !map.has(s.classroom_id)) {
+                map.set(s.classroom_id, {
+                    id: s.classroom_id,
+                    name: s.classroom_name,
+                });
+            }
+        });
+    }
+    if (props.classroom?.id && !map.has(props.classroom.id)) {
+        map.set(props.classroom.id, {
+            id: props.classroom.id,
+            name: props.classroom.name,
+        });
+    }
+    return Array.from(map.values());
+});
+
+// Deduplicated Subjects taught by teacher in current classroom
+const availableSubjects = computed(() => {
+    const map = new Map();
+    const currentClassId = form.classroom_id || props.classroom?.id;
+    const filtered = (props.teacherSchedules || []).filter(s => s.classroom_id === currentClassId);
+
+    filtered.forEach(s => {
+        if (s.subject_id && !map.has(s.subject_id)) {
+            map.set(s.subject_id, {
+                id: s.subject_id,
+                name: s.subject_name,
+                schedule_id: s.id,
+            });
+        }
+    });
+
+    if (props.subject?.id && !map.has(props.subject.id)) {
+        map.set(props.subject.id, {
+            id: props.subject.id,
+            name: props.subject.name,
+            schedule_id: props.schedule?.id,
+        });
+    }
+
+    return Array.from(map.values());
+});
+
+// Switch Classroom from Row 2
+const onClassroomChange = (event) => {
+    const newClassId = Number(event.target.value);
+    if (!newClassId || newClassId === (form.classroom_id || props.classroom?.id)) return;
+
+    const dayName = new Date(form.date).toLocaleDateString('id-ID', { weekday: 'long' });
+    const classSchedules = (props.teacherSchedules || []).filter(s => s.classroom_id === newClassId);
+    const targetSchedule = classSchedules.find(s => s.day?.toLowerCase() === dayName?.toLowerCase()) || classSchedules[0];
+
+    if (targetSchedule) {
         router.get(route('yayasan.teaching-journal.create'), {
-            schedule_id: selectedSchedId,
+            schedule_id: targetSchedule.id,
+            date: form.date,
+        }, { preserveScroll: true });
+    }
+};
+
+// Switch Subject from Row 3
+const onSubjectChange = (event) => {
+    const newSubjectId = Number(event.target.value);
+    if (!newSubjectId || newSubjectId === (form.subject_id || props.subject?.id)) return;
+
+    const currentClassId = form.classroom_id || props.classroom?.id;
+    const targetSchedule = (props.teacherSchedules || []).find(s => s.classroom_id === currentClassId && s.subject_id === newSubjectId);
+
+    if (targetSchedule) {
+        router.get(route('yayasan.teaching-journal.create'), {
+            schedule_id: targetSchedule.id,
             date: form.date,
         }, { preserveScroll: true });
     }
@@ -259,8 +342,30 @@ const onDateChange = (event) => {
     }
 };
 
+// Track scroll to update active stepper step dynamically
+const updateActiveStepOnScroll = () => {
+    const cardMateri = document.getElementById('card-materi');
+    const cardPresensi = document.getElementById('card-presensi');
+    
+    if (!cardMateri || !cardPresensi) return;
+
+    const scrollY = window.scrollY + 220;
+    const materiTop = cardMateri.offsetTop;
+    const presensiTop = cardPresensi.offsetTop;
+
+    if (scrollY >= presensiTop) {
+        currentStep.value = 3;
+    } else if (scrollY >= materiTop) {
+        currentStep.value = 2;
+    } else {
+        currentStep.value = 1;
+    }
+};
+
 // Initialize for Edit Mode or Pre-populated Journal
 onMounted(() => {
+    window.addEventListener('scroll', updateActiveStepOnScroll, { passive: true });
+
     if (props.journal) {
         form.class_schedule_id = props.journal.class_schedule_id;
         form.date = props.journal.date ? props.journal.date.substring(0, 10) : props.date;
@@ -292,6 +397,10 @@ onMounted(() => {
             form.selected_tps = props.journal.learning_objectives.map(tp => tp.id);
         }
     }
+});
+
+onUnmounted(() => {
+    window.removeEventListener('scroll', updateActiveStepOnScroll);
 });
 
 // Submit Form (Draft or Submitted)
@@ -380,19 +489,24 @@ const formatIndonesianDate = (dateString) => {
                 <button 
                     type="button" 
                     @click="scrollToSection('card-informasi', 1)"
-                    class="flex items-center gap-2 group cursor-pointer focus:outline-none"
+                    class="flex items-center gap-1.5 sm:gap-2 group cursor-pointer focus:outline-none"
                 >
                     <span 
                         :class="[
                             'w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all',
                             currentStep === 1 
                                 ? 'bg-[#00796B] text-white ring-4 ring-teal-100 shadow-xs' 
-                                : 'bg-[#00796B]/80 text-white'
+                                : 'bg-slate-200 text-slate-600 group-hover:bg-slate-300'
                         ]"
                     >
                         1
                     </span>
-                    <span class="text-xs sm:text-sm font-bold text-slate-800">
+                    <span 
+                        :class="[
+                            'text-xs sm:text-sm font-bold transition-colors',
+                            currentStep === 1 ? 'text-slate-900' : 'text-slate-500'
+                        ]"
+                    >
                         Informasi
                     </span>
                 </button>
@@ -404,14 +518,14 @@ const formatIndonesianDate = (dateString) => {
                 <button 
                     type="button" 
                     @click="scrollToSection('card-materi', 2)"
-                    class="flex items-center gap-2 group cursor-pointer focus:outline-none"
+                    class="flex items-center gap-1.5 sm:gap-2 group cursor-pointer focus:outline-none"
                 >
                     <span 
                         :class="[
                             'w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all',
                             currentStep === 2 
                                 ? 'bg-[#00796B] text-white ring-4 ring-teal-100 shadow-xs' 
-                                : 'bg-slate-200 text-slate-600'
+                                : 'bg-slate-200 text-slate-600 group-hover:bg-slate-300'
                         ]"
                     >
                         2
@@ -433,14 +547,14 @@ const formatIndonesianDate = (dateString) => {
                 <button 
                     type="button" 
                     @click="scrollToSection('card-presensi', 3)"
-                    class="flex items-center gap-2 group cursor-pointer focus:outline-none"
+                    class="flex items-center gap-1.5 sm:gap-2 group cursor-pointer focus:outline-none"
                 >
                     <span 
                         :class="[
                             'w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all',
                             currentStep === 3 
                                 ? 'bg-[#00796B] text-white ring-4 ring-teal-100 shadow-xs' 
-                                : 'bg-slate-200 text-slate-600'
+                                : 'bg-slate-200 text-slate-600 group-hover:bg-slate-300'
                         ]"
                     >
                         3
@@ -508,27 +622,26 @@ const formatIndonesianDate = (dateString) => {
                                 <span class="font-bold text-xs sm:text-sm">Kelas</span>
                             </div>
 
-                            <div class="relative min-w-[120px]">
-                                <!-- Select dropdown if teacher has multiple schedules -->
+                            <div class="relative min-w-[120px] max-w-[200px]">
+                                <!-- Select dropdown if multiple classrooms available -->
                                 <select 
-                                    v-if="teacherSchedules.length > 0"
-                                    :value="form.class_schedule_id"
-                                    @change="onScheduleSelect"
-                                    class="w-full appearance-none px-3.5 py-1.5 pr-8 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800 focus:ring-teal-500 focus:border-teal-500 cursor-pointer"
+                                    v-if="availableClassrooms.length > 1"
+                                    :value="form.classroom_id || classroom?.id"
+                                    @change="onClassroomChange"
+                                    class="w-full appearance-none px-3.5 py-1.5 pr-8 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800 focus:ring-teal-500 focus:border-teal-500 cursor-pointer truncate"
                                 >
                                     <option 
-                                        v-for="s in teacherSchedules" 
-                                        :key="s.id" 
-                                        :value="s.id"
+                                        v-for="c in availableClassrooms" 
+                                        :key="c.id" 
+                                        :value="c.id"
                                     >
-                                        {{ s.classroom_name }} ({{ s.subject_name }})
+                                        {{ c.name }}
                                     </option>
                                 </select>
                                 <div v-else class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800">
                                     <span>{{ classroom?.name || '-' }}</span>
-                                    <ChevronDownIcon class="w-4 h-4 text-slate-400" />
                                 </div>
-                                <ChevronDownIcon v-if="teacherSchedules.length > 0" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <ChevronDownIcon v-if="availableClassrooms.length > 1" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                             </div>
                         </div>
 
@@ -541,24 +654,23 @@ const formatIndonesianDate = (dateString) => {
 
                             <div class="relative min-w-[150px] max-w-[220px]">
                                 <select 
-                                    v-if="teacherSchedules.length > 0"
-                                    :value="form.class_schedule_id"
-                                    @change="onScheduleSelect"
+                                    v-if="availableSubjects.length > 1"
+                                    :value="form.subject_id || subject?.id"
+                                    @change="onSubjectChange"
                                     class="w-full appearance-none px-3.5 py-1.5 pr-8 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800 focus:ring-teal-500 focus:border-teal-500 cursor-pointer truncate"
                                 >
                                     <option 
-                                        v-for="s in teacherSchedules" 
-                                        :key="s.id" 
-                                        :value="s.id"
+                                        v-for="sub in availableSubjects" 
+                                        :key="sub.id" 
+                                        :value="sub.id"
                                     >
-                                        {{ s.subject_name }}
+                                        {{ sub.name }}
                                     </option>
                                 </select>
                                 <div v-else class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800 truncate">
-                                    <span class="truncate">{{ subject?.name || '-' }}</span>
-                                    <ChevronDownIcon class="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span class="truncate">{{ availableSubjects[0]?.name || subject?.name || '-' }}</span>
                                 </div>
-                                <ChevronDownIcon v-if="teacherSchedules.length > 0" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <ChevronDownIcon v-if="availableSubjects.length > 1" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                             </div>
                         </div>
                     </div>
@@ -737,30 +849,63 @@ const formatIndonesianDate = (dateString) => {
                             </div>
 
                             <!-- Photo Preview -->
-                            <div v-if="photoPreview || (isEditing && journal?.photo_path && !photoPreview)" class="relative rounded-xl overflow-hidden border border-teal-500/40 bg-slate-900 aspect-video max-h-48 flex items-center justify-center">
+                            <div v-if="photoPreview || (isEditing && journal?.photo_path && !photoPreview)" class="relative rounded-2xl overflow-hidden border border-teal-500/40 bg-slate-900 aspect-video max-h-52 flex items-center justify-center group shadow-md">
                                 <img :src="photoPreview || ('/storage/' + journal.photo_path)" class="w-full h-full object-cover" />
-                                <button type="button" @click="removePhoto" class="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition shadow">
+                                
+                                <!-- Compression Status Badge -->
+                                <div class="absolute bottom-2.5 left-2.5 bg-black/75 backdrop-blur-xs text-white text-[11px] font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5 shadow">
+                                    <CheckCircleIcon class="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                    <span>Terkompresi otomatis ({{ photoSizeInfo || 'Optimal' }})</span>
+                                </div>
+
+                                <button type="button" @click="removePhoto" class="absolute top-2.5 right-2.5 p-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition shadow active:scale-95" title="Hapus Foto">
                                     <XMarkIcon class="w-4 h-4" />
                                 </button>
                             </div>
 
                             <!-- Buttons Capture / Upload -->
                             <div v-else class="grid grid-cols-2 gap-2.5">
-                                <label class="flex items-center justify-center gap-2 p-3 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-xl cursor-pointer transition active:scale-95 text-xs font-bold text-slate-700">
+                                <!-- Hidden File Inputs -->
+                                <input 
+                                    ref="cameraInputRef"
+                                    type="file" 
+                                    accept="image/*" 
+                                    capture="environment" 
+                                    class="hidden" 
+                                    @change="handlePhotoInput"
+                                />
+                                <input 
+                                    ref="galleryInputRef"
+                                    type="file" 
+                                    accept="image/*" 
+                                    class="hidden" 
+                                    @change="handlePhotoInput"
+                                />
+
+                                <!-- Kamera Button -->
+                                <button
+                                    type="button"
+                                    @click="cameraInputRef?.click()"
+                                    class="flex items-center justify-center gap-2 p-3 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-xl cursor-pointer transition active:scale-95 text-xs font-bold text-slate-700"
+                                >
                                     <CameraIcon class="w-4 h-4 text-teal-600" />
                                     <span>Kamera</span>
-                                    <input type="file" accept="image/*" capture="environment" class="hidden" @change="handlePhotoInput">
-                                </label>
-                                <label class="flex items-center justify-center gap-2 p-3 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-xl cursor-pointer transition active:scale-95 text-xs font-bold text-slate-700">
+                                </button>
+
+                                <!-- Galeri Button -->
+                                <button
+                                    type="button"
+                                    @click="galleryInputRef?.click()"
+                                    class="flex items-center justify-center gap-2 p-3 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-xl cursor-pointer transition active:scale-95 text-xs font-bold text-slate-700"
+                                >
                                     <PhotoIcon class="w-4 h-4 text-slate-600" />
                                     <span>Galeri</span>
-                                    <input type="file" accept="image/*" class="hidden" @change="handlePhotoInput">
-                                </label>
+                                </button>
                             </div>
 
-                            <div v-if="isCompressing" class="flex items-center justify-center gap-2 text-xs font-bold text-amber-700">
+                            <div v-if="isCompressing" class="flex items-center justify-center gap-2 text-xs font-bold text-amber-700 py-1">
                                 <ArrowPathIcon class="w-3.5 h-3.5 animate-spin" />
-                                <span>Mengompresi foto...</span>
+                                <span>Mengompresi foto otomatis...</span>
                             </div>
                         </div>
                     </div>
