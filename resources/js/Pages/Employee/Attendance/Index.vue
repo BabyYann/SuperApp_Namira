@@ -8,7 +8,7 @@
             </h2>
         </template>
 
-        <div class="py-4 md:py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-5 md:space-y-6">
+        <div class="py-4 md:py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4 md:space-y-5">
             
             <!-- MAIN TOP NAVIGATION: Presensi Saya vs Presensi Karyawan -->
             <div class="flex items-center justify-center p-1 bg-slate-100 rounded-2xl max-w-md mx-auto border border-slate-200 shadow-xs">
@@ -28,427 +28,560 @@
                     class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
                     :class="mainTab === 'live' ? 'bg-[#00584b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                 >
-                    <BuildingOffice2Icon class="w-4 h-4" />
+                    <UserGroupIcon class="w-4 h-4" />
                     <span>Presensi Karyawan</span>
                 </button>
             </div>
 
-            <!-- TAB 1: PRESENSI PRIBADI SAYA -->
-            <div v-if="mainTab === 'personal'" class="space-y-5 md:space-y-6">
+            <!-- ========================================== -->
+            <!-- TAB 1: PRESENSI SAYA (MATCHES MOCKUP DESIGN) -->
+            <!-- ========================================== -->
+            <div v-if="mainTab === 'personal'" class="max-w-2xl mx-auto space-y-4 pb-28 sm:pb-8">
 
-            <!-- 1A. DESKTOP VIEW STATUS CARD (Unchanged Desktop Layout) -->
-            <div class="hidden md:block bg-white/80 backdrop-blur-xl overflow-hidden shadow-sm rounded-3xl border border-white/50 p-6">
-                <div class="flex justify-between items-center gap-4">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-800">Halo, {{ $page.props.auth.user.name }}! 👋</h3>
-                        <p class="text-gray-500 font-medium">{{ new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
-                    </div>
-                    
-                    <div class="flex items-center gap-3">
-                        <div v-if="todayAttendance" class="px-4 py-2 rounded-2xl font-bold text-sm border border-white/50 shadow-sm"
-                            :class="todayAttendance.approval_status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'">
-                            {{ todayAttendance.check_in_time ? 'Sudah Masuk: ' + todayAttendance.check_in_time : 'Sudah Mengajukan' }}
-                        </div>
-                        <div v-else class="px-4 py-2 bg-gray-100 text-gray-500 rounded-2xl font-bold text-sm border border-gray-200">
-                            Belum Absen Masuk
-                        </div>
+                <!-- CARD 1: PRESENSI PEGAWAI & ACTION CARD -->
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-xs p-5 sm:p-6 relative">
+                    <!-- Top Greeting & Header -->
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <span class="text-[11px] font-extrabold tracking-widest text-gray-400 uppercase">
+                                PRESENSI PEGAWAI
+                            </span>
+                            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5">
+                                Halo, {{ $page.props.auth.user.name }}
+                            </h3>
+                            <p class="text-xs sm:text-sm text-gray-500 font-medium mt-1">
+                                {{ todayFormatted }}
+                            </p>
 
-                        <div v-if="todayAttendance && todayAttendance.check_out_time" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-2xl font-bold text-sm border border-blue-200">
-                            Sudah Pulang: {{ todayAttendance.check_out_time }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 1B. MOBILE VIEW STATUS CARD (Executive Deep Emerald Mobile Layout) -->
-            <div class="block md:hidden bg-[#064e3b] text-white rounded-3xl p-5 shadow-xl border border-emerald-800/80 relative overflow-hidden">
-                <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-teal-500/10 blur-xl pointer-events-none"></div>
-
-                <div class="flex flex-col justify-between items-start gap-4 relative z-10">
-                    <div>
-                        <span class="text-[10px] font-black tracking-widest text-teal-400 uppercase">Presensi Pegawai</span>
-                        <h3 class="text-xl font-extrabold text-white mt-0.5">Halo, {{ $page.props.auth.user.name }}</h3>
-                        <p class="text-xs text-slate-400 font-medium mt-1">
-                            {{ new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
-                        </p>
-                    </div>
-                    
-                    <div class="flex flex-wrap items-center gap-2.5 w-full">
-                        <div v-if="todayAttendance" class="px-3.5 py-2 rounded-2xl font-black text-xs border shadow-sm flex items-center gap-2"
-                            :class="todayAttendance.approval_status === 'pending' ? 'bg-amber-950/80 text-amber-300 border-amber-800/60' : 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60'">
-                            <span class="w-2 h-2 rounded-full" :class="todayAttendance.approval_status === 'pending' ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'"></span>
-                            <span>{{ todayAttendance.check_in_time ? 'Sudah Masuk: ' + todayAttendance.check_in_time : 'Sudah Mengajukan' }}</span>
-                        </div>
-                        <div v-else class="px-3.5 py-2 bg-slate-800 text-slate-300 rounded-2xl font-bold text-xs border border-slate-700/80 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                            <span>Belum Absen Masuk</span>
-                        </div>
-
-                        <div v-if="todayAttendance && todayAttendance.check_out_time" class="px-3.5 py-2 bg-sky-950/80 text-sky-300 rounded-2xl font-bold text-xs border border-sky-800/60 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                            <span>Sudah Pulang: {{ todayAttendance.check_out_time }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2A. DESKTOP TABS NAVIGATION -->
-            <div v-if="!todayAttendance" class="hidden md:flex space-x-2 bg-white/50 backdrop-blur-sm border border-white/50 p-1.5 rounded-2xl w-fit shadow-sm">
-                <button @click="activeTab = 'present'" :class="activeTab === 'present' ? 'bg-namira-teal text-white shadow-md shadow-namira-teal/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">WFO (Hadir)</button>
-                <button @click="activeTab = 'business_trip'" :class="activeTab === 'business_trip' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">Dinas Luar</button>
-                <button @click="activeTab = 'permit'" :class="activeTab === 'permit' ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'" class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">Izin / Sakit</button>
-            </div>
-
-            <!-- 2B. MOBILE TABS NAVIGATION -->
-            <div v-if="!todayAttendance" class="flex md:hidden bg-slate-200/80 p-1.5 rounded-2xl space-x-1.5 w-full shadow-inner">
-                <button 
-                    @click="activeTab = 'present'" 
-                    :class="activeTab === 'present' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'" 
-                    class="px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex-1 text-center"
-                >
-                    WFO (Hadir)
-                </button>
-                <button 
-                    @click="activeTab = 'business_trip'" 
-                    :class="activeTab === 'business_trip' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'" 
-                    class="px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex-1 text-center"
-                >
-                    Dinas Luar
-                </button>
-                <button 
-                    @click="activeTab = 'permit'" 
-                    :class="activeTab === 'permit' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'" 
-                    class="px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex-1 text-center"
-                >
-                    Izin / Sakit
-                </button>
-            </div>
-
-            <!-- Content Area -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-                
-                <!-- Helper/Info Section (Map or Form Info) -->
-                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm overflow-hidden border border-white/50 min-h-[350px] md:min-h-[400px] relative z-0 flex flex-col">
-                    
-                    <!-- WFO / Business Trip: Show Map -->
-                    <div v-show="activeTab !== 'permit'" class="h-full w-full relative flex-1 min-h-[320px]">
-                        <div id="map" ref="mapContainer" class="w-full h-full min-h-[320px]"></div>
-                        <!-- Overlay Status -->
-                        <div class="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-4 bg-slate-900/95 text-white md:bg-white/90 md:text-gray-800 backdrop-blur-md p-3.5 md:p-4 rounded-2xl shadow-lg z-[1000] border border-slate-800 md:border-white/50">
-                             <div class="flex items-center gap-3">
-                                <div :class="isWithinRadius ? 'bg-emerald-400 md:bg-green-500 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'" class="w-3 h-3 rounded-full animate-pulse"></div>
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-[9px] md:text-[10px] text-slate-400 md:text-gray-400 font-bold uppercase tracking-wider mb-0.5">Status Lokasi</p>
-                                    <p v-if="isWithinRadius" class="text-emerald-300 md:text-green-700 font-bold text-xs md:text-sm truncate">
-                                        Di dalam jangkauan {{ nearestLocation?.name }}
-                                    </p>
-                                    <p v-else-if="activeTab === 'business_trip'" class="text-sky-300 md:text-blue-600 font-bold text-xs md:text-sm truncate">
-                                        Lokasi Bebas (Dinas Luar)
-                                    </p>
-                                    <p v-else class="text-rose-300 md:text-red-600 font-bold text-xs md:text-sm truncate">
-                                        Di luar jangkauan (Jarak: {{ distanceToNearest ? distanceToNearest + 'm' : 'Menghitung...' }})
-                                    </p>
+                            <!-- Status Pill Badge -->
+                            <div class="mt-2.5">
+                                <div v-if="todayAttendance" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border"
+                                    :class="todayAttendance.approval_status === 'pending' 
+                                        ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
+                                    <span class="w-1.5 h-1.5 rounded-full" :class="todayAttendance.approval_status === 'pending' ? 'bg-amber-500' : 'bg-emerald-500'"></span>
+                                    <span>{{ todayAttendance.check_in_time ? 'Sudah Masuk: ' + todayAttendance.check_in_time : 'Sudah Mengajukan' }}</span>
+                                </div>
+                                <div v-else class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 border border-rose-100 text-rose-600 rounded-full text-xs font-semibold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                    <span>Belum Absen Masuk</span>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Top-Right Soft Calendar Watermark Icon -->
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 shrink-0">
+                            <CalendarDaysIcon class="w-7 h-7 sm:w-8 sm:h-8" />
+                        </div>
                     </div>
 
-                    <!-- Permit: Info Upload -->
-                    <div v-if="activeTab === 'permit'" class="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-purple-50/50 backdrop-blur-sm">
-                        <ClipboardDocumentCheckIcon class="w-20 h-20 md:w-24 md:h-24 text-purple-300 md:text-purple-200 mb-3 md:mb-4" />
-                        <h3 class="text-lg md:text-xl font-bold text-purple-900 md:text-purple-800 mb-1 md:mb-2">Form Pengajuan Izin/Sakit</h3>
-                        <p class="text-xs md:text-sm text-slate-500 md:text-gray-600 max-w-xs">Pastikan melampirkan bukti surat dokter atau dokumen pendukung lainnya.</p>
+                    <!-- 3 Segmented Mode Tabs: WFO | Dinas Luar | Izin / Sakit -->
+                    <div v-if="!todayAttendance" class="mt-4 p-1 bg-slate-50 rounded-2xl border border-slate-100 flex gap-1">
+                        <button
+                            @click="activeTab = 'present'"
+                            type="button"
+                            class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                            :class="activeTab === 'present' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            <BuildingOffice2Icon class="w-4 h-4 shrink-0" />
+                            <span>WFO (Hadir)</span>
+                        </button>
+                        <button
+                            @click="activeTab = 'business_trip'"
+                            type="button"
+                            class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                            :class="activeTab === 'business_trip' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            <PaperAirplaneIcon class="w-4 h-4 shrink-0" />
+                            <span>Dinas Luar</span>
+                        </button>
+                        <button
+                            @click="activeTab = 'permit'"
+                            type="button"
+                            class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                            :class="activeTab === 'permit' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            <DocumentTextIcon class="w-4 h-4 shrink-0" />
+                            <span>Izin / Sakit</span>
+                        </button>
                     </div>
-                </div>
 
-                <!-- Input Action Section -->
-                <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm p-6 md:p-8 border border-white/50 flex flex-col justify-center items-center text-center space-y-5 md:space-y-6 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-gray-100 to-transparent rounded-bl-[100px] opacity-50 -z-10"></div>
-                    
-                    <!-- Camera for WFO/Dinas -->
-                    <div v-show="activeTab !== 'permit' && (!todayAttendance)" class="w-full">
-                         <div v-if="isCameraOpen || photoPreview" class="relative w-full max-w-xs mx-auto aspect-[3/4] bg-slate-900 md:bg-gray-100 rounded-3xl overflow-hidden border-4 border-slate-900 md:border-white shadow-xl flex items-center justify-center mb-2 md:mb-4">
-                            <video v-show="isCameraOpen" ref="videoRef" autoplay playsinline class="w-full h-full object-cover"></video>
-                            <img v-if="photoPreview && !isCameraOpen" :src="photoPreview" class="w-full h-full object-cover" />
-                            <canvas ref="canvasRef" class="hidden"></canvas>
+                    <!-- LOKASI PRESENSI BOX (Shown for WFO & Dinas Luar) -->
+                    <div v-show="activeTab !== 'permit'" class="mt-4 border border-slate-100 rounded-2xl p-3.5 sm:p-4 bg-white shadow-xs">
+                        <!-- Location Header & Refresh Button -->
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-full bg-emerald-50 text-[#00584b] flex items-center justify-center shrink-0">
+                                    <MapPinIcon class="w-5 h-5 text-[#00584b]" />
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-sm font-bold text-gray-900">Lokasi presensi</h4>
+                                    <p class="text-xs text-gray-500 truncate">
+                                        {{ nearestLocation ? (nearestLocation.name + (nearestLocation.address ? ', ' + nearestLocation.address : '')) : 'Mencari lokasi sekolah...' }}
+                                    </p>
+                                </div>
+                            </div>
                             
-                            <button v-if="isCameraOpen" @click="takePhoto" class="absolute bottom-5 md:bottom-6 w-16 h-16 bg-white rounded-full border-4 border-slate-200 md:border-gray-100 flex items-center justify-center shadow-2xl active:scale-95 transition-transform hover:scale-105">
-                                <div class="w-11 h-11 md:w-12 md:h-12 bg-rose-600 md:bg-red-500 rounded-full border-2 border-white"></div>
+                            <button
+                                @click="refreshLocation"
+                                type="button"
+                                :disabled="isLocating"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-800/40 text-[#00584b] text-xs font-bold hover:bg-emerald-50 active:scale-95 transition-all cursor-pointer shrink-0"
+                            >
+                                <ArrowPathIcon class="w-3.5 h-3.5" :class="isLocating ? 'animate-spin' : ''" />
+                                <span>Perbarui lokasi</span>
                             </button>
                         </div>
-                    </div>
 
-                    <!-- Form Inputs base on Tab -->
-                    <div v-if="!todayAttendance" class="w-full max-w-xs space-y-4">
-                        
-                        <!-- Note Input (All non-WFO requires note) -->
-                        <div v-if="activeTab !== 'present'" class="text-left">
-                            <label class="block text-[11px] md:text-xs font-bold text-slate-500 md:text-gray-400 uppercase tracking-wider mb-1">Keterangan / Alasan</label>
-                            <textarea v-model="form.note" rows="3" class="w-full bg-slate-50 md:bg-white/50 backdrop-blur-sm border-slate-200 md:border-white/50 rounded-2xl shadow-sm focus:border-namira-teal focus:ring-namira-teal resize-none p-3" placeholder="Jelaskan detail kegiatan..."></textarea>
+                        <!-- Mini Leaflet Map -->
+                        <div class="relative w-full h-40 sm:h-48 rounded-xl overflow-hidden mt-3 border border-slate-100 z-0">
+                            <div id="map" ref="mapContainer" class="w-full h-full"></div>
                         </div>
 
-                        <!-- Permit File Upload -->
-                        <div v-if="activeTab === 'permit'" class="text-left space-y-3">
-                             <div>
-                                 <label class="block text-[11px] md:text-xs font-bold text-slate-500 md:text-gray-400 uppercase tracking-wider mb-1">Upload Bukti (Surat/Foto) <span class="text-slate-400 font-normal lowercase">(opsional)</span></label>
-                                 <input type="file" @change="e => form.document = e.target.files[0]" class="block w-full text-xs md:text-sm text-slate-500 md:text-gray-500
-                                    file:mr-3 md:file:mr-4 file:py-2 md:file:py-2.5 file:px-3 md:file:px-4
-                                    file:rounded-xl file:border-0
-                                    file:text-xs file:font-bold
-                                    file:bg-purple-100 md:file:bg-purple-50 file:text-purple-800 md:file:text-purple-700
-                                    hover:file:bg-purple-200 md:hover:file:bg-purple-100
-                                    transition-all
-                                  "/>
-                                  <p v-if="form.document" class="text-xs text-purple-700 font-bold mt-1 truncate">
-                                      📎 {{ form.document.name }}
-                                  </p>
-                                  <p v-if="form.errors.document" class="text-xs text-rose-600 font-bold mt-1">
-                                      {{ form.errors.document }}
-                                  </p>
-                             </div>
-
-                             <div class="flex gap-4 text-left bg-slate-50 md:bg-gray-50/50 p-3 rounded-2xl border border-slate-200 md:border-white/50">
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                     <input type="radio" value="permit" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
-                                     <span class="text-xs md:text-sm font-bold text-slate-700 md:text-gray-700">Izin</span>
-                                </label>
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                     <input type="radio" value="sick" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
-                                     <span class="text-xs md:text-sm font-bold text-slate-700 md:text-gray-700">Sakit</span>
-                                </label>
-                             </div>
+                        <!-- Proximity Alert Banner -->
+                        <div v-if="isWithinRadius" class="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-2.5 text-left">
+                            <CheckCircleIcon class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                            <div>
+                                <p class="text-xs font-bold text-emerald-800">
+                                    Di dalam jangkauan ({{ nearestLocation?.name }})
+                                </p>
+                                <p class="text-[11px] text-emerald-600 mt-0.5">
+                                    Anda berada di area presensi dan siap untuk melakukan absensi.
+                                </p>
+                            </div>
                         </div>
-
-                        <!-- Submit Buttons -->
-                        
-                        <!-- WFO Button -->
-                        <div v-if="activeTab === 'present'">
-                            <button v-if="!photoPreview" @click="startCamera" :disabled="!isWithinRadius" :class="!isWithinRadius ? 'opacity-50 cursor-not-allowed bg-slate-300 md:bg-namira-teal text-slate-500 md:text-white' : 'bg-slate-900 md:bg-namira-teal hover:bg-slate-800 text-white shadow-lg md:shadow-namira-teal/30 active:scale-95 md:hover:-translate-y-1 md:hover:shadow-xl'" class="w-full py-3.5 md:py-4 rounded-2xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all">
-                                <CameraIcon class="h-5 w-5 md:h-6 md:w-6 text-teal-400 md:text-white" />
-                                Ambil Foto & Absen
-                            </button>
-                            <div v-else class="space-y-2 md:space-y-3">
-                                <button @click="submitCheckIn('present')" :disabled="form.processing" class="w-full py-3.5 md:py-4 bg-emerald-600 md:bg-green-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-green-600/30 transition-all active:scale-95 md:hover:scale-105">
-                                    {{ form.processing ? 'Mengirim...' : 'Konfirmasi Hadir' }}
-                                </button>
-                                <button @click="photoPreview = null; startCamera()" class="text-slate-500 text-xs md:text-sm font-bold hover:text-teal-700 transition-colors py-1">Foto Ulang</button>
+                        <div v-else-if="activeTab === 'business_trip'" class="mt-3 p-3 bg-sky-50 border border-sky-100 rounded-xl flex items-start gap-2.5 text-left">
+                            <InformationCircleIcon class="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                            <div>
+                                <p class="text-xs font-bold text-sky-800">
+                                    Lokasi Bebas (Dinas Luar)
+                                </p>
+                                <p class="text-[11px] text-sky-600 mt-0.5">
+                                    Presensi penugasan dinas di luar sekolah dengan melampirkan foto selfie & keterangan kegiatan.
+                                </p>
+                            </div>
+                        </div>
+                        <div v-else class="mt-3 p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2.5 text-left">
+                            <ExclamationCircleIcon class="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                            <div>
+                                <p class="text-xs font-bold text-rose-700">
+                                    Di luar jangkauan (Jarak: {{ distanceToNearest ? distanceToNearest + ' m' : 'Menghitung...' }})
+                                </p>
+                                <p class="text-[11px] text-rose-600 mt-0.5">
+                                    Anda berada di luar area presensi sekolah.
+                                </p>
                             </div>
                         </div>
 
-                        <!-- Business Trip Button -->
-                        <div v-if="activeTab === 'business_trip'">
-                             <button v-if="!photoPreview" @click="startCamera" class="w-full py-3.5 md:py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-blue-600/30 flex items-center justify-center gap-2 transition-all active:scale-95 md:hover:-translate-y-1 md:hover:shadow-xl">
-                                 <CameraIcon class="h-5 w-5 md:h-6 md:w-6" />
-                                 Foto Bukti Dinas
-                             </button>
-                             <div v-else class="space-y-2 md:space-y-3">
-                                <button @click="submitCheckIn('business_trip')" :disabled="form.processing || !form.note" class="w-full py-3.5 md:py-4 bg-blue-700 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-blue-700/30 transition-all active:scale-95 md:hover:scale-105 disabled:opacity-50">
-                                    {{ form.processing ? 'Mengirim...' : 'Konfirmasi Dinas Luar' }}
+                        <!-- Camera Viewfinder & Action Form (WFO / Dinas) -->
+                        <div v-if="!todayAttendance" class="mt-4 pt-3 border-t border-slate-100">
+                            <!-- Note for Dinas Luar -->
+                            <div v-if="activeTab === 'business_trip'" class="mb-3">
+                                <label class="block text-xs font-bold text-gray-700 mb-1">
+                                    Keterangan Kegiatan Dinas <span class="text-rose-500">*</span>
+                                </label>
+                                <textarea 
+                                    v-model="form.note" 
+                                    rows="2" 
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-2.5 focus:border-[#00584b] focus:ring-[#00584b] resize-none"
+                                    placeholder="Contoh: Mengikuti workshop kurikulum di dinas..."
+                                ></textarea>
+                            </div>
+
+                            <!-- Camera View / Capture -->
+                            <div v-if="isCameraOpen" class="relative w-full max-w-xs mx-auto aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-lg flex items-center justify-center mb-3">
+                                <video ref="videoRef" autoplay playsinline class="w-full h-full object-cover"></video>
+                                <canvas ref="canvasRef" class="hidden"></canvas>
+                                
+                                <div class="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-4">
+                                    <button 
+                                        type="button" 
+                                        @click="stopCamera" 
+                                        class="px-3.5 py-1.5 bg-black/50 text-white rounded-xl text-xs font-semibold backdrop-blur-sm cursor-pointer hover:bg-black/70"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        @click="takePhoto" 
+                                        class="w-14 h-14 bg-white rounded-full border-4 border-slate-300 flex items-center justify-center shadow-xl active:scale-95 transition-transform cursor-pointer"
+                                    >
+                                        <div class="w-10 h-10 bg-rose-600 rounded-full"></div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Photo Preview & Confirmation -->
+                            <div v-else-if="photoPreview" class="w-full max-w-xs mx-auto space-y-3">
+                                <div class="relative aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border-2 border-[#00584b] shadow-md">
+                                    <img :src="photoPreview" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="space-y-2">
+                                    <button 
+                                        @click="submitCheckIn(activeTab)" 
+                                        :disabled="form.processing || (activeTab === 'business_trip' && !form.note)" 
+                                        class="w-full py-3.5 bg-[#00584b] hover:bg-[#00473c] text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                                    >
+                                        {{ form.processing ? 'Mengirim...' : (activeTab === 'business_trip' ? 'Konfirmasi Dinas Luar' : 'Konfirmasi Hadir') }}
+                                    </button>
+                                    <button 
+                                        @click="photoPreview = null; startCamera()" 
+                                        type="button"
+                                        class="w-full py-2 text-slate-500 text-xs font-bold hover:text-slate-800 transition-colors cursor-pointer text-center"
+                                    >
+                                        Foto Ulang
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Default Action Button (Before Camera Opened) -->
+                            <div v-else>
+                                <button 
+                                    @click="startCamera" 
+                                    :disabled="activeTab === 'present' && !isWithinRadius" 
+                                    :class="(activeTab === 'present' && !isWithinRadius) 
+                                        ? 'opacity-60 cursor-not-allowed bg-slate-200 text-slate-400' 
+                                        : 'bg-[#00584b] hover:bg-[#00473c] text-white shadow-md active:scale-95 cursor-pointer'" 
+                                    class="w-full py-3.5 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all"
+                                >
+                                    <CameraIcon class="h-5 w-5" />
+                                    <span>{{ activeTab === 'business_trip' ? 'Ambil Foto Bukti Dinas' : 'Ambil Foto & Absen' }}</span>
                                 </button>
-                                <button @click="photoPreview = null; startCamera()" class="text-slate-500 text-xs md:text-sm font-bold hover:text-blue-600 transition-colors py-1">Foto Ulang</button>
-                             </div>
+                            </div>
                         </div>
 
-                        <!-- Permit Button -->
-                        <div v-if="activeTab === 'permit'">
-                             <button @click="submitCheckIn(permitType)" :disabled="form.processing || !form.note" class="w-full py-3.5 md:py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-purple-600/30 transition-all active:scale-95 md:hover:scale-105 disabled:opacity-50 cursor-pointer">
-                                {{ form.processing ? 'Mengirim...' : 'Ajukan ' + (permitType === 'sick' ? 'Sakit' : 'Izin') }}
+                        <!-- Check Out Button (When already checked in) -->
+                        <div v-else-if="todayAttendance && !todayAttendance.check_out_time && (todayAttendance.status === 'present' || todayAttendance.status === 'business_trip' || todayAttendance.status === 'late')" class="mt-4 pt-3 border-t border-slate-100 space-y-2">
+                            <button 
+                                @click="submitCheckOut(todayAttendance.id)"
+                                :disabled="!isWithinRadius && todayAttendance.status !== 'business_trip'"
+                                class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <span>Absen Pulang Sekarang</span>
+                            </button>
+                            <p v-if="todayAttendance.status !== 'business_trip' && !isWithinRadius" class="text-xs text-rose-600 font-semibold text-center">
+                                Harus berada di lokasi kantor untuk Absen Pulang
+                            </p>
+                        </div>
+
+                        <!-- Already Completed State -->
+                        <div v-else-if="todayAttendance && todayAttendance.check_out_time" class="mt-4 p-4 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-100 font-bold flex items-center justify-center gap-3 w-full">
+                            <div class="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center shrink-0">
+                                <CheckIcon class="w-5 h-5 stroke-[2.5]" />
+                            </div>
+                            <span class="text-xs sm:text-sm">Absensi Hari Ini Telah Selesai</span>
+                        </div>
+                    </div>
+
+                    <!-- FORM IZIN / SAKIT (Shown when activeTab === 'permit') -->
+                    <div v-if="activeTab === 'permit' && !todayAttendance" class="mt-4 border border-slate-100 rounded-2xl p-4 bg-white shadow-xs space-y-4">
+                        <div class="flex items-center gap-2 text-purple-800 font-bold text-sm">
+                            <ClipboardDocumentCheckIcon class="w-5 h-5" />
+                            <span>Form Pengajuan Izin / Sakit</span>
+                        </div>
+
+                        <!-- Radio Type: Izin vs Sakit -->
+                        <div class="flex gap-4 p-3 bg-purple-50/60 rounded-xl border border-purple-100">
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-900">
+                                <input type="radio" value="permit" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
+                                <span>Izin</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-900">
+                                <input type="radio" value="sick" v-model="permitType" class="text-purple-600 focus:ring-purple-500">
+                                <span>Sakit</span>
+                            </label>
+                        </div>
+
+                        <!-- Keterangan / Alasan -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">
+                                Keterangan / Alasan <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea 
+                                v-model="form.note" 
+                                rows="3" 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-3 focus:border-purple-600 focus:ring-purple-600 resize-none"
+                                placeholder="Jelaskan detail alasan ketidakhadiran..."
+                            ></textarea>
+                        </div>
+
+                        <!-- Upload Bukti Dokumen -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">
+                                Upload Bukti (Surat Dokter / Dokumen Pendukung)
+                            </label>
+                            <input 
+                                type="file" 
+                                @change="e => form.document = e.target.files[0]" 
+                                class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer"
+                            />
+                            <p v-if="form.document" class="text-xs text-purple-700 font-bold mt-1 truncate">
+                                📎 {{ form.document.name }}
+                            </p>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button 
+                            @click="submitCheckIn(permitType)" 
+                            :disabled="form.processing || !form.note" 
+                            class="w-full py-3.5 bg-purple-700 hover:bg-purple-800 text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                        >
+                            {{ form.processing ? 'Mengirim...' : 'Ajukan ' + (permitType === 'sick' ? 'Sakit' : 'Izin') }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CARD 2: KALENDER ABSENSI SAYA -->
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-xs p-5 sm:p-6">
+                    <!-- Calendar Header with Month Navigation -->
+                    <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                        <div class="flex items-center gap-2.5">
+                            <CalendarDaysIcon class="w-6 h-6 text-gray-900" />
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base">Kalender Absensi Saya</h3>
+                                <p class="text-xs text-gray-500 font-medium">
+                                    {{ getMonthName(currentMonth) }} {{ currentYear }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <button
+                                @click="changeMonth(-1)"
+                                type="button"
+                                title="Bulan Sebelumnya"
+                                class="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 active:scale-95 transition-all cursor-pointer"
+                            >
+                                <ChevronLeftIcon class="w-4 h-4" />
+                            </button>
+                            <button
+                                @click="changeMonth(1)"
+                                type="button"
+                                title="Bulan Berikutnya"
+                                class="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 active:scale-95 transition-all cursor-pointer"
+                            >
+                                <ChevronRightIcon class="w-4 h-4" />
                             </button>
                         </div>
-
                     </div>
 
-                    <!-- Check Out Button (Showing logic when already checked in) -->
-                    <div v-else-if="todayAttendance && !todayAttendance.check_out_time && (todayAttendance.status === 'present' || todayAttendance.status === 'business_trip' || todayAttendance.status === 'late')" class="w-full max-w-xs space-y-2">
-                          <button 
-                            @click="submitCheckOut(todayAttendance.id)"
-                            :disabled="!isWithinRadius && todayAttendance.status !== 'business_trip'"
-                            class="w-full py-3.5 md:py-4 bg-rose-600 md:bg-orange-500 text-white rounded-2xl font-bold text-sm md:text-lg shadow-md md:shadow-orange-500/30 transition-all active:scale-95 md:hover:scale-105 disabled:opacity-50"
+                    <!-- 7-Column Day Header -->
+                    <div class="grid grid-cols-7 text-center pt-3 pb-1">
+                        <div 
+                            v-for="day in ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB']" 
+                            :key="day" 
+                            class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-1"
                         >
-                            {{ form.processing ? 'Mengirim...' : 'Absen Pulang Sekarang' }}
-                        </button>
-                        <p v-if="todayAttendance.status !== 'business_trip' && !isWithinRadius" class="text-xs text-rose-600 md:text-red-500 font-bold">Harus berada di lokasi kantor untuk Absen Pulang</p>
-                    </div>
-
-                    <div v-else-if="todayAttendance" class="p-5 md:p-6 bg-emerald-50 md:bg-green-50 text-emerald-800 md:text-green-700 rounded-2xl border border-emerald-200 md:border-green-200 font-bold flex flex-col items-center w-full">
-                        <div class="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 md:bg-green-100 text-emerald-700 rounded-full flex items-center justify-center mb-2">
-                            <CheckIcon class="w-5 h-5 md:w-6 md:h-6 stroke-[2.5]" />
-                        </div>
-                        <span class="text-xs md:text-base">Absensi Hari Ini Telah Selesai</span>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Personal Calendar -->
-            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden mb-6">
-                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                     <div>
-                        <h3 class="font-bold text-gray-800 text-lg">Kalender Absensi Saya</h3>
-                        <p class="text-sm text-gray-500 font-medium">{{ getMonthName(currentMonth) }} {{ currentYear }}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <!-- Navigation Arrows could go here later -->
-                    </div>
-                </div>
-                
-                <div class="p-6">
-                    <!-- Calendar Grid -->
-                    <div class="grid grid-cols-7 text-center mb-2">
-                         <div v-for="day in ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jumat', 'Sab']" :key="day" class="text-xs font-bold text-gray-400 uppercase py-2">
                             {{ day }}
                         </div>
                     </div>
-                    
-                    <div class="grid grid-cols-7 gap-2">
-                        <!-- Empty Cells for start offset -->
-                        <div v-for="n in firstDayOffset" :key="'empty-'+n" class="p-2"></div>
 
-                        <!-- Days -->
-                        <div v-for="day in daysInMonth" :key="day" 
-                            class="relative min-h-[80px] border rounded-xl p-2 flex flex-col items-start gap-1 transition-all cursor-pointer hover:shadow-md"
-                            :class="[
-                                getDayData(day) ? 'bg-white border-gray-200' : 'bg-gray-50/50 border-transparent',
-                                isToday(day) ? 'ring-2 ring-namira-teal border-transparent' : ''
-                            ]"
-                            @click="showDayDetail(day)"
+                    <!-- Calendar Numbers Grid -->
+                    <div class="grid grid-cols-7 gap-y-2.5 sm:gap-y-3 text-center">
+                        <!-- Trailing Days from Previous Month -->
+                        <div 
+                            v-for="d in prevMonthDays" 
+                            :key="'prev-' + d" 
+                            class="h-8 sm:h-9 flex items-center justify-center text-xs font-medium text-gray-300"
                         >
-                            <span class="text-xs font-bold" :class="isToday(day) ? 'text-namira-teal' : 'text-gray-700'">{{ day }}</span>
-                            
-                            <!-- Status Badges -->
-                            <div v-if="getDayData(day)" class="w-full flex flex-col gap-1 items-start">
-                                <div class="w-full h-1.5 rounded-full" :class="getStatusColor(getDayData(day).status)"></div>
-                                <div class="text-[10px] font-bold text-gray-600 truncate w-full text-left">
-                                     {{ getDayData(day).check_in_time ? getDayData(day).check_in_time.substring(0,5) : getDayData(day).status }}
-                                </div>
-                                <div v-if="getDayData(day).late_minutes > 0" class="text-[9px] text-rose-600 font-bold">
-                                    +{{ getDayData(day).late_minutes }}m
-                                </div>
-                            </div>
+                            {{ d }}
+                        </div>
+
+                        <!-- Current Month Days -->
+                        <div 
+                            v-for="day in daysInMonth" 
+                            :key="'cur-' + day" 
+                            class="flex flex-col items-center justify-center"
+                        >
+                            <button
+                                @click="showDayDetail(day)"
+                                type="button"
+                                class="relative w-8 h-8 sm:w-9 sm:h-9 flex flex-col items-center justify-center rounded-xl transition-all cursor-pointer"
+                                :class="[
+                                    isToday(day) 
+                                        ? 'bg-[#00584b] text-white font-bold shadow-xs' 
+                                        : 'text-gray-700 hover:bg-slate-100 font-semibold text-xs sm:text-sm'
+                                ]"
+                            >
+                                <span>{{ day }}</span>
+                                <!-- Status Indicator Dot -->
+                                <span 
+                                    v-if="getDayData(day)"
+                                    class="absolute bottom-1 w-1.5 h-1.5 rounded-full"
+                                    :class="isToday(day) ? 'bg-emerald-300' : getStatusDot(getDayData(day).status)"
+                                ></span>
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Detail Modal -->
-             <div v-if="selectedDayData" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="selectedDayData = null">
-                <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-fade-in-up">
-                    <div class="relative h-48 bg-gray-100 flex items-center justify-center">
-                        <img v-if="selectedDayData.check_in_photo" :src="`/storage/${selectedDayData.check_in_photo}`" class="w-full h-full object-cover">
-                         <span v-else class="text-gray-400 text-sm font-bold">Tidak ada foto</span>
-                         <button @click="selectedDayData = null" class="absolute top-2 right-2 bg-black/30 text-white rounded-full p-1 hover:bg-black/50 transition-colors">
-                            <XMarkIcon class="w-5 h-5" />
+                <!-- CARD 3: RIWAYAT PRESENSI -->
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-xs p-5 sm:p-6">
+                    <!-- History Header -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <DocumentTextIcon class="w-5 h-5 text-gray-900" />
+                            <h3 class="font-bold text-gray-900 text-base">Riwayat Presensi</h3>
+                        </div>
+
+                        <button 
+                            v-if="history && history.length > 5"
+                            @click="showAllHistory = !showAllHistory" 
+                            type="button" 
+                            class="text-xs font-bold text-[#00584b] hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
+                            <span>{{ showAllHistory ? 'Tampilkan Lebih Sedikit' : 'Lihat Semua' }}</span>
+                            <ChevronRightIcon class="w-3.5 h-3.5" :class="showAllHistory ? 'rotate-90' : ''" />
                         </button>
                     </div>
-                    <div class="p-6 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-xl font-bold text-gray-900">Detail Absensi</h3>
-                            <span :class="['px-2 py-1 rounded-lg text-xs font-bold uppercase', getStatusBg(selectedDayData.status)]">
-                                {{ selectedDayData.status }}
-                            </span>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                <p class="text-xs text-gray-500 font-bold uppercase mb-1">Masuk</p>
-                                <p class="text-lg font-mono font-bold text-gray-800">{{ selectedDayData.check_in_time || '--:--' }}</p>
-                            </div>
-                            <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                <p class="text-xs text-gray-500 font-bold uppercase mb-1">Pulang</p>
-                                <p class="text-lg font-mono font-bold text-gray-800">{{ selectedDayData.check_out_time || '--:--' }}</p>
-                            </div>
-                        </div>
 
-                         <div v-if="selectedDayData.late_minutes > 0" class="flex items-start gap-2 text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100">
-                            <ClockIcon class="w-5 h-5 flex-shrink-0" />
-                            <div>
-                                <p class="font-bold text-sm">Terlambat {{ selectedDayData.late_minutes }} Menit</p>
-                                <p class="text-xs text-rose-500">Mohon lebih disiplin lagi ya!</p>
-                            </div>
-                        </div>
+                    <!-- 4-Column Table Header -->
+                    <div class="mt-3 bg-slate-50 rounded-xl px-3 sm:px-4 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wider grid grid-cols-4 items-center">
+                        <div class="text-left">WAKTU</div>
+                        <div class="text-center">JENIS</div>
+                        <div class="text-center sm:text-left">LOKASI</div>
+                        <div class="text-right">KETERANGAN</div>
+                    </div>
 
-                        <div v-if="selectedDayData.note" class="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100 italic">
-                            "{{ selectedDayData.note }}"
+                    <!-- Empty State (When no history this month) -->
+                    <div v-if="!history || history.length === 0" class="py-8 text-center flex flex-col items-center justify-center">
+                        <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-gray-400 mb-2">
+                            <DocumentTextIcon class="w-6 h-6" />
+                        </div>
+                        <p class="font-bold text-xs sm:text-sm text-gray-800">
+                            Belum ada riwayat presensi bulan ini
+                        </p>
+                        <p class="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+                            Lakukan presensi untuk melihat riwayat Anda di sini.
+                        </p>
+                    </div>
+
+                    <!-- Filled Rows (When history exists) -->
+                    <div v-else class="divide-y divide-slate-100 mt-1">
+                        <div 
+                            v-for="log in (showAllHistory ? history : history.slice(0, 5))" 
+                            :key="log.id"
+                            @click="showDayDetailFromLog(log)"
+                            class="grid grid-cols-4 items-center px-2 sm:px-3 py-3 hover:bg-slate-50/70 rounded-xl transition-colors cursor-pointer text-xs"
+                        >
+                            <!-- Col 1: Waktu -->
+                            <div class="min-w-0 pr-1 text-left">
+                                <p class="font-semibold text-gray-800 truncate">{{ formatDateShort(log.date) }}</p>
+                                <p class="font-mono text-[11px] text-gray-500">{{ log.check_in_time ? log.check_in_time.substring(0, 5) : '--:--' }}</p>
+                            </div>
+
+                            <!-- Col 2: Jenis -->
+                            <div class="text-center pr-1">
+                                <span 
+                                    class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider"
+                                    :class="getTypeBadge(log.status).class"
+                                >
+                                    {{ getTypeBadge(log.status).label }}
+                                </span>
+                            </div>
+
+                            <!-- Col 3: Lokasi -->
+                            <div class="min-w-0 pr-1 text-center sm:text-left">
+                                <p class="text-gray-600 truncate text-[11px]">
+                                    {{ log.location?.name || nearestLocation?.name || 'Sekolah' }}
+                                </p>
+                            </div>
+
+                            <!-- Col 4: Keterangan -->
+                            <div class="text-right">
+                                <span v-if="log.approval_status === 'approved'" class="text-emerald-700 font-bold text-[11px]">
+                                    Disetujui
+                                </span>
+                                <span v-else-if="log.approval_status === 'pending'" class="text-amber-600 font-bold text-[11px]">
+                                    Menunggu
+                                </span>
+                                <span v-else-if="log.approval_status === 'rejected'" class="text-rose-600 font-bold text-[11px]">
+                                    Ditolak
+                                </span>
+                                <span v-else class="text-gray-400 text-[11px]">-</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-             </div>
-
-            <!-- History Table (Condensed) -->
-            <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-gray-600">
-                        <thead class="bg-gray-50 text-gray-800 font-bold uppercase text-xs">
-                            <tr>
-                                <th class="px-6 py-3">Tanggal</th>
-                                <th class="px-6 py-3">Jenis</th>
-                                <th class="px-6 py-3">Masuk</th>
-                                <th class="px-6 py-3">Pulang</th>
-                                <th class="px-6 py-3">Approval</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr v-for="log in history" :key="log.id" class="hover:bg-gray-50">
-                                <td class="px-6 py-4">{{ log.date }}</td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2 py-1 rounded text-xs font-bold uppercase"
-                                        :class="{
-                                            'bg-green-100 text-green-700': log.status === 'present',
-                                            'bg-amber-100 text-amber-700': log.status === 'late',
-                                            'bg-blue-100 text-blue-700': log.status === 'business_trip',
-                                            'bg-purple-100 text-purple-700': log.status === 'sick' || log.status === 'permit'
-                                        }"
-                                    >
-                                        {{ log.status }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 font-mono">{{ log.check_in_time || '-' }}</td>
-                                <td class="px-6 py-4 font-mono">{{ log.check_out_time || '-' }}</td>
-                                <td class="px-6 py-4">
-                                     <span v-if="log.approval_status === 'approved'" class="text-green-600 font-bold flex items-center gap-1">
-                                         <CheckCircleIcon class="w-4 h-4" />
-                                         Disetujui
-                                     </span>
-                                     <span v-else-if="log.approval_status === 'pending'" class="text-yellow-600 font-bold flex items-center gap-1">
-                                         <ClockIcon class="w-4 h-4" />
-                                         Menunggu
-                                     </span>
-                                     <span v-else-if="log.approval_status === 'rejected'" class="text-red-600 font-bold flex items-center gap-1">
-                                          <XCircleIcon class="w-4 h-4" />
-                                          Ditolak
-                                     </span>
-                                    <span v-else class="text-gray-400 font-medium">-</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
             </div>
-            <!-- END TAB 1: PRESENSI PRIBADI -->
+            <!-- ========================================== -->
+            <!-- END TAB 1: PRESENSI SAYA -->
+            <!-- ========================================== -->
 
+            <!-- ========================================== -->
             <!-- TAB 2: PANTAUAN HARI INI (Live Radar) -->
+            <!-- ========================================== -->
             <div v-else-if="mainTab === 'live'">
                 <LiveAttendanceRadar :data="liveAttendance" />
             </div>
 
         </div>
+
+        <!-- Detail Modal for Calendar / History Click -->
+        <div v-if="selectedDayData" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="selectedDayData = null">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-fade-in-up">
+                <div class="relative h-48 bg-gray-100 flex items-center justify-center">
+                    <img v-if="selectedDayData.check_in_photo" :src="`/storage/${selectedDayData.check_in_photo}`" class="w-full h-full object-cover">
+                    <span v-else class="text-gray-400 text-sm font-bold">Tidak ada foto selfie</span>
+                    <button @click="selectedDayData = null" class="absolute top-2 right-2 bg-black/40 text-white rounded-full p-1.5 hover:bg-black/60 transition-colors cursor-pointer">
+                        <XMarkIcon class="w-5 h-5" />
+                    </button>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Detail Presensi</h3>
+                            <p class="text-xs text-gray-500">{{ selectedDayData.date }}</p>
+                        </div>
+                        <span :class="['px-2.5 py-1 rounded-lg text-xs font-bold uppercase border', getTypeBadge(selectedDayData.status).class]">
+                            {{ getTypeBadge(selectedDayData.status).label }}
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <p class="text-xs text-gray-500 font-bold uppercase mb-1">Masuk</p>
+                            <p class="text-base font-mono font-bold text-gray-800">{{ selectedDayData.check_in_time || '--:--' }}</p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <p class="text-xs text-gray-500 font-bold uppercase mb-1">Pulang</p>
+                            <p class="text-base font-mono font-bold text-gray-800">{{ selectedDayData.check_out_time || '--:--' }}</p>
+                        </div>
+                    </div>
+
+                    <div v-if="selectedDayData.late_minutes > 0" class="flex items-start gap-2 text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100">
+                        <ClockIcon class="w-5 h-5 flex-shrink-0" />
+                        <div>
+                            <p class="font-bold text-xs">Terlambat {{ selectedDayData.late_minutes }} Menit</p>
+                            <p class="text-[11px] text-rose-500">Tingkatkan kedisiplinan waktu kehadiran.</p>
+                        </div>
+                    </div>
+
+                    <div v-if="selectedDayData.note" class="text-xs text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100 italic">
+                        "{{ selectedDayData.note }}"
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import LiveAttendanceRadar from './Partials/LiveAttendanceRadar.vue';
-import { Head, useForm, router, Link } from '@inertiajs/vue3';
-import { ref, onMounted, computed, watch } from 'vue';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Swal from 'sweetalert2';
 import { 
     ClipboardDocumentCheckIcon, CameraIcon, CheckIcon, XMarkIcon, ClockIcon, 
-    CheckCircleIcon, XCircleIcon, UserIcon, ChartPieIcon, BuildingOffice2Icon 
+    CheckCircleIcon, XCircleIcon, UserIcon, UserGroupIcon, BuildingOffice2Icon,
+    CalendarDaysIcon, DocumentTextIcon, MapPinIcon, ArrowPathIcon, ChevronLeftIcon,
+    ChevronRightIcon, PaperAirplaneIcon, ExclamationCircleIcon, InformationCircleIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -497,18 +630,45 @@ const getInitialTab = () => {
     return 'present';
 };
 
-const activeTab = ref(getInitialTab()); // present, business_trip, permit
-const permitType = ref('permit'); // permit, sick
+const activeTab = ref(getInitialTab()); // 'present' | 'business_trip' | 'permit'
+const permitType = ref('permit'); // 'permit' | 'sick'
 const selectedDayData = ref(null);
+const showAllHistory = ref(false);
+const isLocating = ref(false);
 
-// Get number of days in current month
+// Formatted today string e.g. "Jumat, 9 Oktober 2026"
+const todayFormatted = computed(() => {
+    return new Date().toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+});
+
+// Calendar math
 const daysInMonth = computed(() => {
     return new Date(props.currentYear, props.currentMonth, 0).getDate();
 });
 
-// Get day of week of the 1st of the month (0=Sun, 6=Sat)
+const daysInPrevMonth = computed(() => {
+    return new Date(props.currentYear, props.currentMonth - 1, 0).getDate();
+});
+
+// Day of week of 1st day of month (0 = Sun, 1 = Mon, ..., 6 = Sat)
 const firstDayOffset = computed(() => {
     return new Date(props.currentYear, props.currentMonth - 1, 1).getDay();
+});
+
+// Trailing days from previous month to populate row 1
+const prevMonthDays = computed(() => {
+    const offset = firstDayOffset.value;
+    const totalDays = daysInPrevMonth.value;
+    const days = [];
+    for (let i = offset - 1; i >= 0; i--) {
+        days.push(totalDays - i);
+    }
+    return days;
 });
 
 const getDayData = (day) => {
@@ -528,41 +688,73 @@ const showDayDetail = (day) => {
     if (data) selectedDayData.value = data;
 };
 
+const showDayDetailFromLog = (log) => {
+    selectedDayData.value = log;
+};
+
 const getMonthName = (month) => {
     const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     return months[month - 1];
 };
 
-const getStatusColor = (status) => {
+const changeMonth = (direction) => {
+    let newMonth = props.currentMonth + direction;
+    let newYear = props.currentYear;
+    if (newMonth < 1) {
+        newMonth = 12;
+        newYear -= 1;
+    } else if (newMonth > 12) {
+        newMonth = 1;
+        newYear += 1;
+    }
+    router.get(route('employee.attendance.index'), {
+        month: newMonth,
+        year: newYear,
+        tab: 'personal',
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
+const getStatusDot = (status) => {
     const map = {
         'present': 'bg-emerald-500', 
         'late': 'bg-rose-500', 
         'business_trip': 'bg-indigo-500', 
-        'sick': 'bg-blue-500', 
+        'sick': 'bg-sky-500', 
         'permit': 'bg-amber-500',
     };
-    return map[status] || 'bg-gray-300';
+    return map[status] || 'bg-gray-400';
 };
 
-const getStatusBg = (status) => {
+const getTypeBadge = (status) => {
     const map = {
-        'present': 'bg-emerald-100 text-emerald-700', 
-        'late': 'bg-rose-100 text-rose-700', 
-        'business_trip': 'bg-indigo-100 text-indigo-700', 
-        'sick': 'bg-blue-100 text-blue-700', 
-        'permit': 'bg-amber-100 text-amber-700',
+        'present': { label: 'Hadir', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+        'late': { label: 'Terlambat', class: 'bg-rose-50 text-rose-700 border-rose-200' },
+        'business_trip': { label: 'Dinas Luar', class: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+        'sick': { label: 'Sakit', class: 'bg-sky-50 text-sky-700 border-sky-200' },
+        'permit': { label: 'Izin', class: 'bg-amber-50 text-amber-700 border-amber-200' },
+        'cuti': { label: 'Cuti', class: 'bg-purple-50 text-purple-700 border-purple-200' },
     };
-    return map[status] || 'bg-gray-100 text-gray-700';
+    return map[status] || { label: status, class: 'bg-gray-50 text-gray-700 border-gray-200' };
+};
+
+const formatDateShort = (dateStr) => {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 };
 
 // Geolocation
 const { coords, resume } = useGeolocation({ enableHighAccuracy: true });
 
-// Map Refs
+// Map & Layer Refs
 const mapContainer = ref(null);
 const map = ref(null);
 const userMarker = ref(null);
-const locationCircles = ref([]);
+const polylineLayer = ref(null);
+const distanceMarker = ref(null);
 
 // Camera Refs
 const videoRef = ref(null);
@@ -586,9 +778,8 @@ const isWithinRadius = ref(false);
 const nearestLocation = ref(null);
 const distanceToNearest = ref(null);
 
-// Initialize Map
+// Initialize Map & Geolocation
 onMounted(() => {
-    // Only init map if not Permit tab (though mounted runs once, so just init)
     initMap();
     resume();
 });
@@ -596,24 +787,66 @@ onMounted(() => {
 watch(coords, (newCoords) => {
     if (newCoords.latitude && newCoords.longitude) {
         updateUserLocation(newCoords.latitude, newCoords.longitude);
-        checkProximity(newCoords.latitude, newCoords.longitude);
+    }
+});
+
+// Keep map responsive when tabs change
+watch([mainTab, activeTab], async () => {
+    if (mainTab.value === 'personal' && activeTab.value !== 'permit') {
+        setTimeout(() => {
+            if (map.value) {
+                map.value.invalidateSize();
+                if (coords.value?.latitude && coords.value?.longitude) {
+                    updateMapPolyline(coords.value.latitude, coords.value.longitude);
+                }
+            }
+        }, 150);
     }
 });
 
 const initMap = () => {
     if (!mapContainer.value) return;
-    const defaultLat = -6.200000; 
-    const defaultLng = 106.816666;
-    map.value = L.map(mapContainer.value).setView([defaultLat, defaultLng], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map.value);
 
-    // Add Circles
+    const defaultLat = props.locations && props.locations.length > 0 ? props.locations[0].latitude : -7.7569;
+    const defaultLng = props.locations && props.locations.length > 0 ? props.locations[0].longitude : 113.2115;
+
+    if (!map.value) {
+        map.value = L.map(mapContainer.value, {
+            zoomControl: false,
+        }).setView([defaultLat, defaultLng], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map.value);
+    }
+
+    // Add Office/School markers & radius circles
     props.locations.forEach(loc => {
+        // Red circle area
         L.circle([loc.latitude, loc.longitude], {
-            color: '#14b8a6', fillColor: '#14b8a6', fillOpacity: 0.2, radius: loc.radius
-        }).addTo(map.value)
-        .bindPopup(`<b>${loc.name}</b><br>Radius: ${loc.radius}m`);
+            color: '#ef4444',
+            fillColor: '#ef4444',
+            fillOpacity: 0.12,
+            radius: loc.radius || 100,
+            weight: 1
+        }).addTo(map.value);
+
+        // Office pin marker
+        const redPin = L.divIcon({
+            className: 'custom-school-pin',
+            html: `<div style="background-color: #ef4444; width: 28px; height: 28px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3);"><div style="width: 8px; height: 8px; background: white; border-radius: 50%; transform: rotate(45deg);"></div></div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 28]
+        });
+
+        L.marker([loc.latitude, loc.longitude], { icon: redPin })
+            .addTo(map.value)
+            .bindPopup(`<b>${loc.name}</b><br>Radius: ${loc.radius}m`);
     });
+
+    if (coords.value?.latitude && coords.value?.longitude) {
+        updateUserLocation(coords.value.latitude, coords.value.longitude);
+    }
 };
 
 const updateUserLocation = (lat, lng) => {
@@ -621,11 +854,67 @@ const updateUserLocation = (lat, lng) => {
     form.latitude = lat;
     form.longitude = lng;
 
-    if (userMarker.value) userMarker.value.setLatLng([lat, lng]);
-    else userMarker.value = L.marker([lat, lng]).addTo(map.value).bindPopup("Lokasi Anda").openPopup();
-    
-    // Auto center only initially or if needed?
-    // map.value.setView([lat, lng]); 
+    const userDotIcon = L.divIcon({
+        className: 'custom-user-dot',
+        html: `<div style="width: 16px; height: 16px; background-color: #0284c7; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.25), 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+
+    if (userMarker.value) {
+        userMarker.value.setLatLng([lat, lng]);
+    } else {
+        userMarker.value = L.marker([lat, lng], { icon: userDotIcon })
+            .addTo(map.value)
+            .bindPopup("Lokasi Anda");
+    }
+
+    updateMapPolyline(lat, lng);
+};
+
+const updateMapPolyline = (userLat, userLng) => {
+    if (!map.value) return;
+
+    checkProximity(userLat, userLng);
+
+    if (nearestLocation.value) {
+        const officeLat = nearestLocation.value.latitude;
+        const officeLng = nearestLocation.value.longitude;
+
+        if (polylineLayer.value) {
+            map.value.removeLayer(polylineLayer.value);
+        }
+        if (distanceMarker.value) {
+            map.value.removeLayer(distanceMarker.value);
+        }
+
+        const latlngs = [
+            [officeLat, officeLng],
+            [userLat, userLng]
+        ];
+
+        polylineLayer.value = L.polyline(latlngs, {
+            color: '#0284c7',
+            weight: 2,
+            dashArray: '6, 8',
+            opacity: 0.85
+        }).addTo(map.value);
+
+        const distStr = distanceToNearest.value ? `Jarak: ${distanceToNearest.value} m` : 'Menghitung...';
+        const midLat = (officeLat + userLat) / 2;
+        const midLng = (officeLng + userLng) / 2;
+
+        const badgeIcon = L.divIcon({
+            className: 'custom-dist-badge',
+            html: `<div style="background: rgba(255, 255, 255, 0.95); border: 1px solid #cbd5e1; border-radius: 9999px; padding: 2px 8px; font-size: 10px; font-weight: 700; color: #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap; transform: translate(-50%, -50%); pointer-events: none;">${distStr}</div>`,
+            iconSize: [0, 0]
+        });
+
+        distanceMarker.value = L.marker([midLat, midLng], { icon: badgeIcon }).addTo(map.value);
+
+        const bounds = L.latLngBounds(latlngs);
+        map.value.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+    }
 };
 
 const checkProximity = (lat, lng) => {
@@ -647,25 +936,54 @@ const checkProximity = (lat, lng) => {
     distanceToNearest.value = Math.round(minDistance);
 };
 
-// Haversine
+const refreshLocation = () => {
+    isLocating.value = true;
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                isLocating.value = false;
+                const { latitude, longitude } = pos.coords;
+                updateUserLocation(latitude, longitude);
+                if (map.value) {
+                    map.value.invalidateSize();
+                }
+            },
+            (err) => {
+                isLocating.value = false;
+                console.warn('Geolocation refresh error:', err);
+                resume();
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    } else {
+        isLocating.value = false;
+        resume();
+    }
+};
+
+// Haversine formula
 function getDistanceFromLatLonInM(lat1, lon1, lat2, lon2) {
-    var R = 6371000; 
-    var dLat = deg2rad(lat2 - lat1);
-    var dLon = deg2rad(lon2 - lon1);
-    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const R = 6371000; 
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
 function deg2rad(deg) { return deg * (Math.PI / 180); }
 
-// Camera
+// Camera methods
 const startCamera = async () => {
     isCameraOpen.value = true;
     try {
         stream.value = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
         if (videoRef.value) videoRef.value.srcObject = stream.value;
-    } catch (err) { alert("Gagal akses kamera."); isCameraOpen.value = false; }
+    } catch (err) { 
+        alert("Gagal mengakses kamera. Pastikan izin kamera telah diberikan."); 
+        isCameraOpen.value = false; 
+    }
 };
+
 const takePhoto = () => {
     if (!videoRef.value || !canvasRef.value) return;
     const context = canvasRef.value.getContext('2d');
@@ -677,15 +995,16 @@ const takePhoto = () => {
     form.photo = dataUrl;
     stopCamera();
 };
+
 const stopCamera = () => {
     if (stream.value) stream.value.getTracks().forEach(track => track.stop());
     isCameraOpen.value = false;
 };
 
+// Check-in submission
 const submitCheckIn = (type) => {
     form.type = type;
 
-    // Attach coordinates if available
     if (coords.value?.latitude && coords.value?.longitude) {
         form.latitude = coords.value.latitude;
         form.longitude = coords.value.longitude;
@@ -694,13 +1013,12 @@ const submitCheckIn = (type) => {
         form.longitude = null;
     }
     
-    // Frontend Pre-Validation Logic
     if (type === 'present' && !isWithinRadius.value) {
         Swal.fire({
             icon: 'warning',
             title: 'Di Luar Jangkauan',
-            text: 'Anda berada di luar radius lokasi absensi yang diizinkan.',
-            confirmButtonColor: '#009688',
+            text: 'Anda berada di luar radius lokasi absensi sekolah yang diizinkan.',
+            confirmButtonColor: '#00584b',
         });
         return;
     }
@@ -709,7 +1027,7 @@ const submitCheckIn = (type) => {
             icon: 'warning',
             title: 'Foto Wajib',
             text: 'Silakan ambil foto selfie kehadiran terlebih dahulu.',
-            confirmButtonColor: '#009688',
+            confirmButtonColor: '#00584b',
         });
         return;
     }
@@ -718,7 +1036,7 @@ const submitCheckIn = (type) => {
             icon: 'warning',
             title: 'Keterangan Wajib',
             text: 'Harap tuliskan alasan/keterangan pengajuan Anda.',
-            confirmButtonColor: '#009688',
+            confirmButtonColor: '#00584b',
         });
         return;
     }
@@ -732,7 +1050,7 @@ const submitCheckIn = (type) => {
                 icon: 'success',
                 title: 'Berhasil!',
                 text: type === 'present' ? 'Presensi masuk berhasil dicatat.' : `Pengajuan ${labelType} berhasil dikirim dan menunggu persetujuan.`,
-                confirmButtonColor: '#009688',
+                confirmButtonColor: '#00584b',
             });
             photoPreview.value = null;
             form.reset();
@@ -743,12 +1061,13 @@ const submitCheckIn = (type) => {
                 icon: 'error',
                 title: 'Gagal Mengajukan',
                 html: errorMsg,
-                confirmButtonColor: '#009688',
+                confirmButtonColor: '#00584b',
             });
         }
     });
 };
 
+// Check-out submission
 const submitCheckOut = (attendanceId) => {
     Swal.fire({
         title: 'Absen Pulang?',
@@ -757,7 +1076,7 @@ const submitCheckOut = (attendanceId) => {
         showCancelButton: true,
         confirmButtonText: 'Ya, Pulang',
         cancelButtonText: 'Batal',
-        confirmButtonColor: '#009688',
+        confirmButtonColor: '#00584b',
     }).then((result) => {
         if (result.isConfirmed) {
             form.put(route('employee.attendance.check-out', attendanceId), {
@@ -767,7 +1086,7 @@ const submitCheckOut = (attendanceId) => {
                         icon: 'success',
                         title: 'Sampai Jumpa!',
                         text: 'Absen pulang berhasil dicatat.',
-                        confirmButtonColor: '#009688',
+                        confirmButtonColor: '#00584b',
                     });
                 },
                 onError: (errors) => {
@@ -776,7 +1095,7 @@ const submitCheckOut = (attendanceId) => {
                         icon: 'error',
                         title: 'Gagal',
                         html: errorMsg,
-                        confirmButtonColor: '#009688',
+                        confirmButtonColor: '#00584b',
                     });
                 }
             });
@@ -784,7 +1103,12 @@ const submitCheckOut = (attendanceId) => {
     });
 };
 </script>
+
 <style scoped>
 :deep(.leaflet-pane) { z-index: 10; }
 :deep(.leaflet-top), :deep(.leaflet-bottom) { z-index: 20; }
+:deep(.custom-school-pin), :deep(.custom-user-dot), :deep(.custom-dist-badge) {
+    background: transparent;
+    border: none;
+}
 </style>
