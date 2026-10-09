@@ -287,9 +287,35 @@ class TeachingJournalController extends Controller
         $subject = null;
         $students = [];
         $chapters = [];
+        $existingJournal = null;
 
         $user = auth()->user();
         $teacher = $user->teacher_profile ?? \App\Modules\Academic\Models\Teacher::where('user_id', $user->id)->first();
+
+        // Fetch teacher's schedules to allow quick switching in the header dropdowns
+        $teacherSchedules = [];
+        if ($teacher) {
+            $dayName = $this->getDayName($date);
+            $teacherSchedules = ClassSchedule::with(['classroom', 'subject'])
+                ->where('teacher_id', $teacher->id)
+                ->orderBy('start_time')
+                ->get()
+                ->map(fn($s) => [
+                    'id' => $s->id,
+                    'classroom_id' => $s->classroom_id,
+                    'classroom_name' => $s->classroom?->name ?? '-',
+                    'subject_id' => $s->subject_id,
+                    'subject_name' => $s->subject?->name ?? '-',
+                    'start_time' => $s->start_time,
+                    'end_time' => $s->end_time,
+                    'day' => $s->day,
+                ]);
+
+            if (!$scheduleId && count($teacherSchedules) > 0) {
+                $todaySchedule = collect($teacherSchedules)->firstWhere('day', $dayName) ?? $teacherSchedules[0];
+                $scheduleId = $todaySchedule['id'];
+            }
+        }
 
         // If accessed via Schedule
         if ($scheduleId) {
@@ -312,6 +338,12 @@ class TeachingJournalController extends Controller
 
             $classroom = $schedule->classroom;
             $subject = $schedule->subject;
+
+            // Check if journal already exists for this schedule and date
+            $existingJournal = TeachingJournal::with(['attendance', 'learningObjectives'])
+                ->where('class_schedule_id', $schedule->id)
+                ->whereDate('date', $date)
+                ->first();
         }
 
         if ($classroom && $subject) {
@@ -398,6 +430,8 @@ class TeachingJournalController extends Controller
             'subject' => $subject,
             'students' => $students,
             'existingChapters' => $chapters,
+            'journal' => $existingJournal,
+            'teacherSchedules' => $teacherSchedules,
         ]);
     }
 
@@ -414,13 +448,15 @@ class TeachingJournalController extends Controller
             'attendance.*.status' => 'required|in:present,sick,permission,alpha,late',
         ]);
 
-        // Prevent Duplicate Journal
+        $status = $request->input('status', 'submitted') === 'draft' ? 'draft' : 'submitted';
+
+        // Prevent Duplicate Journal: if already exists, update it seamlessly
         $exists = TeachingJournal::where('class_schedule_id', $request->class_schedule_id)
             ->where('date', $request->date)
-            ->exists();
+            ->first();
 
         if ($exists) {
-            return redirect()->back()->withErrors(['class_schedule_id' => 'Jurnal untuk jadwal ini sudah dibuat. Silakan edit jurnal yang sudah ada.']);
+            return $this->update($request, $exists->id);
         }
 
         // Security: Ensure Teacher Owns this Schedule
@@ -443,7 +479,7 @@ class TeachingJournalController extends Controller
             $unitId = $schedule->unit_id;
         }
 
-        DB::transaction(function () use ($request, $teacher, $unitId) {
+        DB::transaction(function () use ($request, $teacher, $unitId, $status) {
             // 1. Handle New TPs (JIT Creation)
             $newTpIds = [];
             if ($request->has('new_tps')) {
@@ -502,7 +538,7 @@ class TeachingJournalController extends Controller
                 'custom_theme' => $request->custom_theme,
                 'notes' => $request->notes,
                 'photo_path' => $photoPath,
-                'status' => 'submitted',
+                'status' => $status,
             ]);
 
             // Broadcast Reverb Event
@@ -713,6 +749,7 @@ class TeachingJournalController extends Controller
                 'custom_theme' => $request->custom_theme,
                 'notes' => $request->notes,
                 'photo_path' => $photoPath,
+                'status' => $request->input('status', $journal->status),
             ]);
 
             // 3. Sync TPs
