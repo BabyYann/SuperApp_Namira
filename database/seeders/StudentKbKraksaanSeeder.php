@@ -27,6 +27,7 @@ class StudentKbKraksaanSeeder extends Seeder
 
         $role = DB::table('roles')->where('name', 'siswa')->orWhere('name', 'student')->first();
         $roleId = $role ? $role->id : null;
+        $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
 
         $studentsData = array (
   0 => 
@@ -303,6 +304,7 @@ class StudentKbKraksaanSeeder extends Seeder
                 'unit_id' => $unitId,
             ], [
                 'full_name' => $name,
+                'academic_year_id' => $activeYear?->id,
             ]);
         }
         echo "Berhasil mengimpor 50 Siswa KB Namira Kraksaan!\n";

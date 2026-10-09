@@ -28,6 +28,7 @@ class StudentKbDringuSeeder extends Seeder
 
         $role = DB::table('roles')->where('name', 'siswa')->orWhere('name', 'student')->first();
         $roleId = $role ? $role->id : null;
+        $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
 
         $studentsData = array (
   0 => 
@@ -509,6 +510,7 @@ class StudentKbDringuSeeder extends Seeder
                 'address' => $address,
                 'parent_name' => $parentName,
                 'classroom_id' => $classroomId,
+                'academic_year_id' => $activeYear?->id,
             ]);
         }
         echo "Berhasil mengimpor 32 Siswa KB Namira Dringu beserta pemetaan Kelas!\n";

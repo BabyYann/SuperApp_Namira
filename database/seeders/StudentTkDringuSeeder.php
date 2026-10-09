@@ -28,6 +28,7 @@ class StudentTkDringuSeeder extends Seeder
 
         $role = DB::table('roles')->where('name', 'siswa')->orWhere('name', 'student')->first();
         $roleId = $role ? $role->id : null;
+        $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
 
         $studentsData = array (
   0 => 
@@ -990,6 +991,7 @@ class StudentTkDringuSeeder extends Seeder
                 'address' => $address,
                 'parent_name' => $parentName,
                 'classroom_id' => $classroomId,
+                'academic_year_id' => $activeYear?->id,
             ]);
         }
         echo "Berhasil mengimpor 69 Siswa TK Namira Dringu beserta pemetaan Kelas!\n";
