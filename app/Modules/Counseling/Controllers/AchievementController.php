@@ -93,7 +93,24 @@ class AchievementController extends Controller
             'title' => 'required|string|max:255',
             'level' => 'required|string', // e.g. Sekolah, Kabupaten, Nasional
             'description' => 'nullable|string',
-            'proof_file' => 'nullable|file|image|max:2048',
+            'proof_file' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'pdf'])) {
+                            $fail('Format file bukti harus berupa foto (JPG, PNG, WEBP) atau dokumen PDF.');
+                        }
+                        if ($value->getSize() > 10 * 1024 * 1024) {
+                            $fail('Ukuran file bukti maksimal 10MB.');
+                        }
+                    } elseif (is_string($value)) {
+                        if (!str_starts_with($value, 'data:image/')) {
+                            $fail('Format gambar tidak valid.');
+                        }
+                    }
+                }
+            ],
         ]);
 
         // Unit isolation: verify student belongs to active unit
@@ -108,9 +125,22 @@ class AchievementController extends Controller
         $data['unit_id'] = session('active_unit_id');
         $data['created_by'] = auth()->id();
 
+        // Process Proof File (Supports both UploadedFile and Base64 Compressed Image)
+        $proofPath = null;
         if ($request->hasFile('proof_file')) {
-            $data['proof_file'] = $request->file('proof_file')->store('achievements', 'public');
+            $proofPath = $request->file('proof_file')->store('achievements', 'public');
+        } elseif ($request->proof_file && is_string($request->proof_file) && str_starts_with($request->proof_file, 'data:image')) {
+            $image = $request->proof_file;
+            $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
+            $image = str_replace(' ', '+', $image);
+            $imageName = 'achievement_' . ($request->student_id ?? time()) . '_' . time() . '.jpg';
+            if (!file_exists(storage_path('app/public/achievements'))) {
+                mkdir(storage_path('app/public/achievements'), 0777, true);
+            }
+            \Illuminate\Support\Facades\Storage::disk('public')->put('achievements/' . $imageName, base64_decode($image));
+            $proofPath = 'achievements/' . $imageName;
         }
+        $data['proof_file'] = $proofPath;
 
         $achievement = Achievement::create($data);
 

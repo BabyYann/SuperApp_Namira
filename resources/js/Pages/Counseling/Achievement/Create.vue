@@ -7,9 +7,15 @@ import {
     TrophyIcon, 
     DocumentArrowUpIcon,
     CameraIcon,
+    PhotoIcon,
+    DocumentTextIcon,
+    CheckCircleIcon,
+    XMarkIcon,
+    ArrowPathIcon,
     UserIcon,
     CalendarIcon
 } from '@heroicons/vue/24/outline';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     classrooms: Array,
@@ -31,8 +37,133 @@ const filteredStudents = computed(() => {
     return props.students.filter(s => s.classroom_id === selectedClassroom.value);
 });
 
+// Photo / Document State & Compression
+const cameraInputRef = ref(null);
+const galleryInputRef = ref(null);
+const photoPreview = ref(null);
+const isPdf = ref(false);
+const fileName = ref('');
+const photoSizeInfo = ref('');
+const isCompressing = ref(false);
+
+const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 1280;
+
+                if (width > height && width > maxDim) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+
+                const head = 'data:image/jpeg;base64,';
+                const base64Length = compressedDataUrl.length - head.length;
+                const sizeInBytes = Math.round((base64Length * 3) / 4);
+                const sizeInKB = Math.round(sizeInBytes / 1024);
+                photoSizeInfo.value = `${sizeInKB} KB`;
+
+                resolve(compressedDataUrl);
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+};
+
+const handleFileInput = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    fileName.value = file.name;
+
+    // If PDF document
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        isPdf.value = true;
+        photoPreview.value = null;
+        const sizeInKB = Math.round(file.size / 1024);
+        photoSizeInfo.value = `${sizeInKB} KB`;
+        form.proof_file = file;
+        return;
+    }
+
+    // If Image: compress automatically
+    isPdf.value = false;
+    isCompressing.value = true;
+    try {
+        const compressedBase64 = await compressImage(file);
+        photoPreview.value = compressedBase64;
+        form.proof_file = compressedBase64;
+    } catch (err) {
+        console.error('Compress error:', err);
+        form.proof_file = file;
+        photoPreview.value = URL.createObjectURL(file);
+        photoSizeInfo.value = `${Math.round(file.size / 1024)} KB`;
+    } finally {
+        isCompressing.value = false;
+        if (event.target) event.target.value = '';
+    }
+};
+
+const removeFile = () => {
+    form.proof_file = null;
+    photoPreview.value = null;
+    isPdf.value = false;
+    fileName.value = '';
+    photoSizeInfo.value = '';
+};
+
 const submit = () => {
-    form.post(route('counseling.achievements.store'));
+    if (!form.student_id) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Pilih Siswa',
+            text: 'Silakan pilih kelas dan siswa terlebih dahulu.',
+            confirmButtonColor: '#00796B',
+        });
+        return;
+    }
+
+    if (!form.title) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Isi Judul Prestasi',
+            text: 'Harap masukkan nama / judul prestasi yang diraih siswa.',
+            confirmButtonColor: '#00796B',
+        });
+        return;
+    }
+
+    form.post(route('counseling.achievements.store'), {
+        forceFormData: true,
+        preserveScroll: true,
+        onError: (errors) => {
+            const errorMsg = Object.values(errors).flat().join('<br>') || 'Terjadi kesalahan saat menyimpan prestasi.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyimpan',
+                html: errorMsg,
+                confirmButtonColor: '#00796B',
+            });
+        }
+    });
 };
 </script>
 
@@ -150,23 +281,104 @@ const submit = () => {
                          <div class="space-y-5">
                              <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-200">3</div>
-                                <h3 class="text-lg font-bold text-slate-700">Bukti Foto</h3>
+                                <h3 class="text-lg font-bold text-slate-700">Bukti Sertifikat / Foto</h3>
                             </div>
 
                             <div class="pl-2 md:pl-12">
-                                <div class="relative group">
-                                    <input type="file" @input="form.proof_file = $event.target.files[0]" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*">
-                                    <div class="w-full border-2 border-dashed border-slate-200 rounded-3xl p-8 flex flex-col items-center justify-center bg-slate-50/50 group-hover:bg-blue-50/50 group-hover:border-blue-400 transition-all duration-300">
-                                        <div class="bg-white p-4 rounded-full shadow-md mb-3 group-hover:scale-110 transition-transform">
-                                            <CameraIcon class="w-8 h-8 text-slate-400 group-hover:text-blue-500" />
-                                        </div>
-                                        <p class="text-sm font-bold text-slate-600 group-hover:text-blue-600 transition-colors" v-if="!form.proof_file">Klik untuk upload foto piala/sertifikat</p>
-                                        <p class="text-sm font-bold text-teal-600 flex items-center gap-2" v-else>
-                                            <DocumentArrowUpIcon class="w-5 h-5" />
-                                            {{ form.proof_file.name }}
-                                        </p>
-                                        <p class="text-xs text-slate-400 mt-1 font-medium">Format: PNG, JPG (Maks. 2MB)</p>
+                                <!-- Hidden File Inputs -->
+                                <input 
+                                    ref="cameraInputRef" 
+                                    type="file" 
+                                    accept="image/*" 
+                                    capture="environment" 
+                                    class="hidden" 
+                                    @change="handleFileInput"
+                                />
+                                <input 
+                                    ref="galleryInputRef" 
+                                    type="file" 
+                                    accept="image/*,application/pdf" 
+                                    class="hidden" 
+                                    @change="handleFileInput"
+                                />
+
+                                <!-- Preview if Image Uploaded -->
+                                <div v-if="photoPreview" class="relative rounded-3xl overflow-hidden border border-teal-500/30 bg-slate-900 aspect-video max-h-64 flex items-center justify-center group shadow-lg">
+                                    <img :src="photoPreview" class="w-full h-full object-cover" alt="Bukti Prestasi" />
+                                    
+                                    <!-- Badge status kompresi -->
+                                    <div class="absolute bottom-3 left-3 bg-black/75 backdrop-blur-xs text-white text-xs font-bold px-3 py-1 rounded-xl flex items-center gap-1.5 shadow">
+                                        <CheckCircleIcon class="w-4 h-4 text-emerald-400 shrink-0" />
+                                        <span>Terkompresi otomatis ({{ photoSizeInfo || 'Optimal' }})</span>
                                     </div>
+
+                                    <button 
+                                        type="button" 
+                                        @click="removeFile" 
+                                        class="absolute top-3 right-3 p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition shadow active:scale-95" 
+                                        title="Hapus Bukti"
+                                    >
+                                        <XMarkIcon class="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <!-- Preview if PDF Uploaded -->
+                                <div v-else-if="isPdf && form.proof_file" class="flex items-center justify-between p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 shadow-xs">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-11 h-11 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                                            <DocumentTextIcon class="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-sm text-slate-800 line-clamp-1">{{ fileName }}</p>
+                                            <p class="text-xs text-slate-400 font-medium">Dokumen PDF ({{ photoSizeInfo }})</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        @click="removeFile" 
+                                        class="p-2 text-rose-500 hover:bg-rose-100 rounded-xl transition active:scale-90"
+                                        title="Hapus File"
+                                    >
+                                        <XMarkIcon class="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <!-- Upload Buttons if No File Selected -->
+                                <div v-else class="space-y-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <!-- Kamera Button -->
+                                        <button 
+                                            type="button" 
+                                            @click="cameraInputRef?.click()"
+                                            class="flex items-center justify-center gap-2.5 p-4 rounded-2xl bg-white hover:bg-teal-50/80 border-2 border-dashed border-teal-300 text-teal-800 font-bold text-sm transition active:scale-95 shadow-2xs group"
+                                        >
+                                            <div class="p-2 bg-teal-100 text-teal-700 rounded-xl group-hover:scale-110 transition-transform">
+                                                <CameraIcon class="w-5 h-5" />
+                                            </div>
+                                            <span>Ambil Foto (Kamera)</span>
+                                        </button>
+
+                                        <!-- Galeri / Dokumen Button -->
+                                        <button 
+                                            type="button" 
+                                            @click="galleryInputRef?.click()"
+                                            class="flex items-center justify-center gap-2.5 p-4 rounded-2xl bg-white hover:bg-blue-50/80 border-2 border-dashed border-blue-300 text-blue-800 font-bold text-sm transition active:scale-95 shadow-2xs group"
+                                        >
+                                            <div class="p-2 bg-blue-100 text-blue-700 rounded-xl group-hover:scale-110 transition-transform">
+                                                <PhotoIcon class="w-5 h-5" />
+                                            </div>
+                                            <span>Pilih Galeri / PDF</span>
+                                        </button>
+                                    </div>
+
+                                    <p class="text-xs text-slate-400 font-medium text-center">
+                                        Format: Foto (JPG, PNG) atau Dokumen PDF. Foto otomatis dikompres agar ringan & anti gagal upload.
+                                    </p>
+                                </div>
+
+                                <div v-if="isCompressing" class="flex items-center justify-center gap-2 text-xs font-bold text-amber-700 py-2">
+                                    <ArrowPathIcon class="w-4 h-4 animate-spin" />
+                                    <span>Sedang mengompresi foto otomatis...</span>
                                 </div>
                                 <p v-if="form.errors.proof_file" class="text-xs text-red-500 font-bold ml-1 mt-1">{{ form.errors.proof_file }}</p>
                             </div>

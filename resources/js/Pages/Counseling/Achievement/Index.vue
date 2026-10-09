@@ -10,7 +10,8 @@ import {
     PhotoIcon,
     ArrowPathIcon,
     FunnelIcon,
-    UserCircleIcon
+    UserCircleIcon,
+    DocumentTextIcon
 } from '@heroicons/vue/24/outline';
 import Swal from 'sweetalert2';
 import debounce from 'lodash/debounce';
@@ -89,6 +90,10 @@ const activePhoto = ref(null);
 
 const openLightbox = (photoUrl) => {
     if (!photoUrl) return;
+    if (photoUrl.toLowerCase().endsWith('.pdf') || photoUrl.toLowerCase().includes('.pdf')) {
+        window.open(photoUrl, '_blank');
+        return;
+    }
     activePhoto.value = photoUrl;
     showLightbox.value = true;
 };
@@ -251,10 +256,11 @@ const closeLightbox = () => {
                                 <button
                                     v-if="item.proof_file"
                                     @click="openLightbox(item.proof_file)"
-                                    class="text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg flex items-center gap-1"
+                                    class="text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition"
+                                    :class="item.proof_file.toLowerCase().endsWith('.pdf') ? 'text-rose-600 bg-rose-50 hover:bg-rose-100' : 'text-blue-600 bg-blue-50 hover:bg-blue-100'"
                                 >
-                                    <PhotoIcon class="w-3.5 h-3.5" />
-                                    Bukti
+                                    <component :is="item.proof_file.toLowerCase().endsWith('.pdf') ? DocumentTextIcon : PhotoIcon" class="w-3.5 h-3.5" />
+                                    <span>{{ item.proof_file.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Bukti' }}</span>
                                 </button>
                                 <button
                                     v-if="canDelete"
@@ -378,10 +384,11 @@ const closeLightbox = () => {
                                         <button 
                                             v-if="item.proof_file" 
                                             @click="openLightbox(item.proof_file)"
-                                            class="text-xs font-bold text-blue-500 hover:text-blue-700 hover:underline inline-flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg"
+                                            class="text-xs font-bold hover:underline inline-flex items-center gap-1 px-2.5 py-1 rounded-lg transition"
+                                            :class="item.proof_file.toLowerCase().endsWith('.pdf') ? 'text-rose-600 hover:text-rose-800 bg-rose-50' : 'text-blue-500 hover:text-blue-700 bg-blue-50'"
                                         >
-                                            <PhotoIcon class="w-4 h-4" />
-                                            Lihat
+                                            <component :is="item.proof_file.toLowerCase().endsWith('.pdf') ? DocumentTextIcon : PhotoIcon" class="w-4 h-4" />
+                                            <span>{{ item.proof_file.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Lihat' }}</span>
                                         </button>
                                         <span v-else class="text-slate-300">-</span>
                                     </td>
