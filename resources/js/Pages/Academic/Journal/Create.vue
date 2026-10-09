@@ -163,6 +163,19 @@ const selectAllPresent = () => {
     });
 };
 
+// Attendance Summary Counts
+const attendanceCounts = computed(() => {
+    const counts = { present: 0, sick: 0, permission: 0, alpha: 0, late: 0 };
+    if (form.attendance) {
+        form.attendance.forEach(att => {
+            if (counts[att.status] !== undefined) {
+                counts[att.status]++;
+            }
+        });
+    }
+    return counts;
+});
+
 // Student Note Modal State
 const showStudentNoteModal = ref(false);
 const activeStudentForNote = ref(null);
@@ -758,17 +771,45 @@ const formatIndonesianDate = (dateString) => {
                 <!-- ════════════════════════════════════════════════════════ -->
                 <div id="card-presensi" class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
                     <!-- Section Header with Pilih Semua Hadir Button -->
-                    <div class="flex items-center justify-between gap-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div class="flex items-start gap-3">
                             <span class="w-7 h-7 rounded-full bg-[#00796B] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                                 3
                             </span>
                             <div>
-                                <h2 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
-                                    Presensi Siswa
-                                </h2>
-                                <p class="text-xs text-slate-500 font-medium mt-0.5">
+                                <div class="flex items-center gap-2.5 flex-wrap">
+                                    <h2 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
+                                        Presensi Siswa
+                                    </h2>
+                                    <!-- Status Summary Badges -->
+                                    <div class="flex items-center gap-1.5 flex-wrap text-[11px] font-black">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50 text-[#00796B] border border-teal-200/60" title="Hadir">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#00796B]"></span>
+                                            H: {{ attendanceCounts.present }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60" title="Sakit">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                            S: {{ attendanceCounts.sick }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60" title="Izin">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                            I: {{ attendanceCounts.permission }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/60" title="Alpa">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                            A: {{ attendanceCounts.alpha }}
+                                        </span>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 border border-orange-200/60" title="Telat">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                            T: {{ attendanceCounts.late }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-500 font-medium mt-1">
                                     Pilih status kehadiran untuk {{ students.length }} siswa kelas {{ classroom?.name || '-' }}.
+                                    <span class="hidden sm:inline text-slate-400 font-semibold ml-1">
+                                        (<strong class="text-teal-700">H</strong>: Hadir, <strong class="text-amber-600">S</strong>: Sakit, <strong class="text-blue-600">I</strong>: Izin, <strong class="text-rose-600">A</strong>: Alpa, <strong class="text-orange-600">T</strong>: Telat)
+                                    </span>
                                 </p>
                             </div>
                         </div>
@@ -777,7 +818,7 @@ const formatIndonesianDate = (dateString) => {
                         <button
                             type="button"
                             @click="selectAllPresent"
-                            class="px-3 sm:px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#00796B] font-extrabold text-xs border border-teal-200/80 flex items-center gap-1.5 transition active:scale-95 shrink-0"
+                            class="px-3 sm:px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#00796B] font-extrabold text-xs border border-teal-200/80 flex items-center justify-center gap-1.5 transition active:scale-95 shrink-0 self-start sm:self-auto"
                         >
                             <UsersIcon class="w-4 h-4 stroke-[2.2]" />
                             <span>Pilih Semua Hadir</span>
@@ -790,8 +831,8 @@ const formatIndonesianDate = (dateString) => {
                             <thead>
                                 <tr class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">
                                     <th class="py-2.5 px-2 text-center w-8">No</th>
-                                    <th class="py-2.5 px-3 min-w-[140px]">Nama Siswa</th>
-                                    <th class="py-2.5 px-3 text-center min-w-[240px]">Status Kehadiran</th>
+                                    <th class="py-2.5 px-3 min-w-[130px]">Nama Siswa</th>
+                                    <th class="py-2.5 px-2 sm:px-3 text-center min-w-[150px] sm:min-w-[180px]">Status</th>
                                     <th class="py-2.5 px-2 text-center w-12">Catatan</th>
                                 </tr>
                             </thead>
@@ -824,77 +865,82 @@ const formatIndonesianDate = (dateString) => {
                                         </div>
                                     </td>
 
-                                    <!-- Status Kehadiran (Pill Toggle Buttons) -->
-                                    <td class="py-3 px-3">
-                                        <div class="flex items-center justify-center gap-1 sm:gap-1.5 flex-wrap">
-                                            <!-- Hadir -->
+                                    <!-- Status Kehadiran (Pill Toggle Buttons H S I A T) -->
+                                    <td class="py-3 px-2 sm:px-3 text-center">
+                                        <div class="inline-flex items-center justify-center gap-1 sm:gap-1.5">
+                                            <!-- Hadir (H) -->
                                             <button
                                                 type="button"
                                                 @click="att.status = 'present'"
+                                                title="Hadir (H)"
                                                 :class="[
-                                                    'px-2.5 py-1 text-[11px] rounded-lg font-black transition active:scale-95',
+                                                    'w-7 h-7 sm:w-8 sm:h-8 inline-flex items-center justify-center text-xs rounded-lg font-black transition active:scale-95',
                                                     att.status === 'present'
                                                         ? 'bg-[#00796B] text-white shadow-xs ring-1 ring-teal-700'
                                                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/70 font-semibold'
                                                 ]"
                                             >
-                                                Hadir
+                                                H
                                             </button>
 
-                                            <!-- Sakit -->
+                                            <!-- Sakit (S) -->
                                             <button
                                                 type="button"
                                                 @click="att.status = 'sick'"
+                                                title="Sakit (S)"
                                                 :class="[
-                                                    'px-2.5 py-1 text-[11px] rounded-lg font-black transition active:scale-95',
+                                                    'w-7 h-7 sm:w-8 sm:h-8 inline-flex items-center justify-center text-xs rounded-lg font-black transition active:scale-95',
                                                     att.status === 'sick'
                                                         ? 'bg-amber-500 text-white shadow-xs ring-1 ring-amber-600'
                                                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/70 font-semibold'
                                                 ]"
                                             >
-                                                Sakit
+                                                S
                                             </button>
 
-                                            <!-- Izin -->
+                                            <!-- Izin (I) -->
                                             <button
                                                 type="button"
                                                 @click="att.status = 'permission'"
+                                                title="Izin (I)"
                                                 :class="[
-                                                    'px-2.5 py-1 text-[11px] rounded-lg font-black transition active:scale-95',
+                                                    'w-7 h-7 sm:w-8 sm:h-8 inline-flex items-center justify-center text-xs rounded-lg font-black transition active:scale-95',
                                                     att.status === 'permission'
                                                         ? 'bg-blue-500 text-white shadow-xs ring-1 ring-blue-600'
                                                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/70 font-semibold'
                                                 ]"
                                             >
-                                                Izin
+                                                I
                                             </button>
 
-                                            <!-- Alpa -->
+                                            <!-- Alpa (A) -->
                                             <button
                                                 type="button"
                                                 @click="att.status = 'alpha'"
+                                                title="Alpa (A)"
                                                 :class="[
-                                                    'px-2.5 py-1 text-[11px] rounded-lg font-black transition active:scale-95',
+                                                    'w-7 h-7 sm:w-8 sm:h-8 inline-flex items-center justify-center text-xs rounded-lg font-black transition active:scale-95',
                                                     att.status === 'alpha'
                                                         ? 'bg-rose-500 text-white shadow-xs ring-1 ring-rose-600'
                                                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/70 font-semibold'
                                                 ]"
                                             >
-                                                Alpa
+                                                A
                                             </button>
 
-                                            <!-- Telat -->
+                                            <!-- Telat (T) -->
                                             <button
                                                 type="button"
                                                 @click="att.status = 'late'"
+                                                title="Telat (T)"
                                                 :class="[
-                                                    'px-2.5 py-1 text-[11px] rounded-lg font-black transition active:scale-95',
+                                                    'w-7 h-7 sm:w-8 sm:h-8 inline-flex items-center justify-center text-xs rounded-lg font-black transition active:scale-95',
                                                     att.status === 'late'
                                                         ? 'bg-orange-500 text-white shadow-xs ring-1 ring-orange-600'
                                                         : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/70 font-semibold'
                                                 ]"
                                             >
-                                                Telat
+                                                T
                                             </button>
                                         </div>
                                     </td>
