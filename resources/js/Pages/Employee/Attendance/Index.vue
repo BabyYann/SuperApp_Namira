@@ -41,11 +41,14 @@
                 <!-- CARD 1A: HERO HEADER BANNER WITH ILLUSTRATION BACKGROUND -->
                 <div class="relative rounded-3xl overflow-hidden border border-emerald-100/70 shadow-md p-5 sm:p-6 flex flex-col justify-between">
                     <!-- Background Illustration -->
-                    <img 
-                        src="/images/attendance_header_bg.png" 
-                        alt="Header Ilustrasi Sekolah" 
-                        class="absolute inset-0 w-full h-full object-cover object-right pointer-events-none select-none"
-                    />
+                    <picture>
+                        <source srcset="/images/attendance_header_bg.webp" type="image/webp">
+                        <img 
+                            src="/images/attendance_header_bg.png" 
+                            alt="Header Ilustrasi Sekolah" 
+                            class="absolute inset-0 w-full h-full object-cover object-right pointer-events-none select-none"
+                        />
+                    </picture>
                     
                     <!-- Soft Gradient Overlay for text contrast -->
                     <div class="absolute inset-0 bg-gradient-to-r from-[#e6f7f3]/95 via-white/85 to-white/20 sm:to-transparent pointer-events-none"></div>
