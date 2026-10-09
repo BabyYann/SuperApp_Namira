@@ -585,8 +585,8 @@ const eventTypeLabels = {
 
                             <!-- 2. Status Presensi Pill Button -->
                             <Link
-                                :href="safeRoute('attendance.index')"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-[11px] sm:text-xs rounded-full shadow-xs border border-white/80 transition-all active:scale-95 shrink-0"
+                                :href="safeRoute('attendance.index', { tab: 'personal' })"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-[11px] sm:text-xs rounded-full shadow-xs border border-white/80 transition-all active:scale-95 shrink-0 cursor-pointer"
                             >
                                 <template v-if="userData?.attendance_status?.checked_in">
                                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
@@ -984,13 +984,13 @@ const eventTypeLabels = {
                 <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
                     <!-- 1. Presensi Pegawai -->
                     <Link 
-                        :href="safeRoute('attendance.index')"
+                        :href="safeRoute('attendance.index', { tab: 'personal' })"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
                         <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_20px_-3px_rgba(20,184,166,0.30)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
                             <FingerPrintIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
                         </div>
-                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-teal-700 transition-colors">Presensi</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-teal-700 transition-colors">Presensi Saya</span>
                     </Link>
 
                     <!-- 2. Jurnal Guru -->

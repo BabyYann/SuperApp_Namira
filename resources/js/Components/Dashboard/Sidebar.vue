@@ -132,7 +132,7 @@ const menuGroups = [
                 icon: IdentificationIcon 
             },
             { 
-                label: 'Presensi', 
+                label: 'Presensi Saya', 
                 route: 'employee.attendance.index', 
                 active: 'employee.attendance.*',
                 icon: FingerPrintIcon 

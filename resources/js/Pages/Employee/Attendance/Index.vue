@@ -629,14 +629,20 @@ const props = defineProps({
 });
 
 const getMainInitialTab = () => {
+    // 1. Explicit initialTab prop from Inertia
+    if (props.initialTab === 'live' || props.initialTab === 'radar') return 'live';
+    if (['personal', 'present', 'business_trip', 'permit'].includes(props.initialTab)) return 'personal';
+
+    // 2. URL query param if present
     if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
         if (['live', 'radar'].includes(tab)) return 'live';
-        if (tab === 'personal') return 'personal';
+        if (['personal', 'present', 'business_trip', 'permit'].includes(tab)) return 'personal';
     }
-    if (props.liveAttendance?.is_global_admin) return 'live';
-    return props.initialTab === 'live' ? 'live' : 'personal';
+
+    // 3. Default: Always 'personal' (Presensi Saya)
+    return 'personal';
 };
 
 const mainTab = ref(getMainInitialTab()); // 'personal' | 'live'
@@ -651,6 +657,9 @@ const setMainTab = (tab) => {
 };
 
 const getInitialTab = () => {
+    const tabFromProp = props.initialTab;
+    if (['present', 'business_trip', 'permit'].includes(tabFromProp)) return tabFromProp;
+
     if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
@@ -660,6 +669,18 @@ const getInitialTab = () => {
 };
 
 const activeTab = ref(getInitialTab()); // 'present' | 'business_trip' | 'permit'
+
+// Watch props.initialTab when navigating client-side
+watch(() => props.initialTab, (newTab) => {
+    if (['live', 'radar'].includes(newTab)) {
+        mainTab.value = 'live';
+    } else {
+        mainTab.value = 'personal';
+        if (['present', 'business_trip', 'permit'].includes(newTab)) {
+            activeTab.value = newTab;
+        }
+    }
+});
 const permitType = ref('permit'); // 'permit' | 'sick'
 const selectedDayData = ref(null);
 const showAllHistory = ref(false);

@@ -268,7 +268,7 @@ const isRouteActive = (pattern) => {
                 <!-- Staff biasa: Presensi -->
                 <Link 
                     v-else
-                    :href="safeRoute('attendance.index')"
+                    :href="safeRoute('attendance.index', { tab: 'personal' })"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('attendance.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                 >
@@ -276,7 +276,7 @@ const isRouteActive = (pattern) => {
                         :is="isRouteActive('attendance.*') ? FingerPrintIconSolid : FingerPrintIcon" 
                         class="w-6 h-6 transition-transform" 
                     />
-                    <span class="text-[10px] font-bold tracking-tight">Presensi</span>
+                    <span class="text-[10px] font-bold tracking-tight">Presensi Saya</span>
                 </Link>
 
                 <!-- 3. CENTER FAB: Daycare -> Absensi Saya / Pengawas -> Monitoring / Other -> QR Scanner -->
@@ -372,12 +372,12 @@ const isRouteActive = (pattern) => {
                 <!-- Staff biasa / Guru: Presensi Pegawai -->
                 <Link 
                     v-else
-                    :href="safeRoute('employee.attendance.index')"
+                    :href="safeRoute('employee.attendance.index', { tab: 'personal' })"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('employee.attendance.*') || isRouteActive('attendance.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                 >
                     <ClipboardDocumentCheckIcon class="w-6 h-6 transition-transform" />
-                    <span class="text-[10px] font-bold tracking-tight">Presensi</span>
+                    <span class="text-[10px] font-bold tracking-tight">Presensi Saya</span>
                 </Link>
 
                 <!-- 5. Drawer Menu "Lainnya" -->
@@ -859,14 +859,14 @@ const isRouteActive = (pattern) => {
                                 </Link>
 
                                 <Link 
-                                    :href="safeRoute('attendance.index')" 
+                                    :href="safeRoute('attendance.index', { tab: 'personal' })" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                                 >
                                     <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/70 border border-white ring-1 ring-emerald-400/25 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
                                         <FingerPrintIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
                                     </div>
-                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Presensi</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Presensi Saya</span>
                                 </Link>
 
                                 <Link 
