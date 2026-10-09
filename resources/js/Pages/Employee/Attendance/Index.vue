@@ -10,6 +10,34 @@
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-5 md:space-y-6">
             
+            <!-- MAIN TOP NAVIGATION: Presensi Saya vs Pantauan Unit Real-Time -->
+            <div class="flex items-center justify-center p-1.5 bg-slate-200/70 backdrop-blur-md rounded-2xl max-w-md mx-auto shadow-inner border border-slate-300/60">
+                <button
+                    @click="mainTab = 'personal'"
+                    type="button"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer"
+                    :class="mainTab === 'personal' ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                >
+                    <UserIcon class="w-4 h-4" />
+                    <span>Presensi Saya</span>
+                </button>
+                <button
+                    @click="mainTab = 'live'"
+                    type="button"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer relative"
+                    :class="mainTab === 'live' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                >
+                    <ChartPieIcon class="w-4 h-4" />
+                    <span>Pantauan Hari Ini</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white animate-pulse">
+                        LIVE
+                    </span>
+                </button>
+            </div>
+
+            <!-- TAB 1: PRESENSI PRIBADI SAYA -->
+            <div v-if="mainTab === 'personal'" class="space-y-5 md:space-y-6">
+
             <!-- 1A. DESKTOP VIEW STATUS CARD (Unchanged Desktop Layout) -->
             <div class="hidden md:block bg-white/80 backdrop-blur-xl overflow-hidden shadow-sm rounded-3xl border border-white/50 p-6">
                 <div class="flex justify-between items-center gap-4">
@@ -399,12 +427,21 @@
                 </div>
             </div>
 
+            </div>
+            <!-- END TAB 1: PRESENSI PRIBADI -->
+
+            <!-- TAB 2: PANTAUAN HARI INI (Live Radar) -->
+            <div v-else-if="mainTab === 'live'">
+                <LiveAttendanceRadar :data="liveAttendance" />
+            </div>
+
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import LiveAttendanceRadar from './Partials/LiveAttendanceRadar.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useGeolocation } from '@vueuse/core';
@@ -413,7 +450,7 @@ import 'leaflet/dist/leaflet.css';
 import Swal from 'sweetalert2';
 import { 
     ClipboardDocumentCheckIcon, CameraIcon, CheckIcon, XMarkIcon, ClockIcon, 
-    CheckCircleIcon, XCircleIcon 
+    CheckCircleIcon, XCircleIcon, UserIcon, ChartPieIcon 
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -421,9 +458,27 @@ const props = defineProps({
     history: Array,
     locations: Array,
     calendarData: Object,
+    monthStats: Object,
     currentMonth: Number,
     currentYear: Number,
+    liveAttendance: Object,
+    initialTab: {
+        type: String,
+        default: 'personal',
+    },
 });
+
+const getMainInitialTab = () => {
+    if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (['live', 'radar'].includes(tab)) return 'live';
+        if (tab === 'personal') return 'personal';
+    }
+    return props.initialTab === 'live' ? 'live' : 'personal';
+};
+
+const mainTab = ref(getMainInitialTab()); // 'personal' | 'live'
 
 const getInitialTab = () => {
     if (typeof window !== 'undefined') {

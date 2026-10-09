@@ -55,6 +55,9 @@ class AttendanceController extends Controller
         // Get allowed locations
         $locations = AttendanceLocation::all(); 
 
+        // Get live unit attendance data for radar
+        $liveAttendance = $this->getLiveAttendanceData($request, $user);
+
         return Inertia::render('Employee/Attendance/Index', [
             'todayAttendance' => $todayAttendance,
             'history' => $history,
@@ -63,6 +66,8 @@ class AttendanceController extends Controller
             'locations' => $locations,
             'currentMonth' => (int)$month,
             'currentYear' => (int)$year,
+            'liveAttendance' => $liveAttendance,
+            'initialTab' => $request->input('tab', 'personal'),
         ]);
     }
 
@@ -496,5 +501,178 @@ class AttendanceController extends Controller
         $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
             cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
         return $angle * $earthRadius;
+    }
+
+    /**
+     * Get real-time unit attendance data for the Live Radar chart & employee list
+     */
+    private function getLiveAttendanceData(Request $request, $user): array
+    {
+        $today = Carbon::today();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+        
+        if ($isGlobalAdmin) {
+            $unitId = $request->input('unit_id') ?: (session('active_unit_id') ?: \App\Modules\Yayasan\Models\Unit::first()?->id);
+        } else {
+            $unitId = session('active_unit_id')
+                ?: ($user->teacher_profile?->unit_id 
+                    ?: ($user->staff?->unit_id 
+                        ?: \DB::table('model_has_roles')->where('model_id', $user->id)->whereNotNull('team_id')->value('team_id')
+                    )
+                );
+            if (!$unitId) {
+                $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+            }
+        }
+
+        $activeUnit = $unitId ? \App\Modules\Yayasan\Models\Unit::find($unitId) : null;
+        $units = $isGlobalAdmin ? \App\Modules\Yayasan\Models\Unit::orderBy('name')->get(['id', 'name', 'code']) : [];
+
+        // Employee role names across modules
+        $employeeRoleNames = [
+            'teacher', 'staff', 'admin_unit', 'staff_unit',
+            'wali_kelas', 'bk', 'guru', 'finance', 'kepala_sekolah',
+            'koordinator_kurikulum', 'koordinator_sarpar', 'koordinator_keuangan', 'koordinator_tahfidz'
+        ];
+
+        $roleUserIds = \DB::table('model_has_roles')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->whereIn('roles.name', $employeeRoleNames)
+            ->when($unitId, function ($q) use ($unitId) {
+                $q->where('model_has_roles.team_id', $unitId);
+            })
+            ->pluck('model_id');
+
+        $teacherUserIds = \App\Modules\Academic\Models\Teacher::when($unitId, fn ($q) => $q->where('unit_id', $unitId))->pluck('user_id');
+        $staffUserIds = \App\Modules\Employee\Models\Staff::when($unitId, fn ($q) => $q->where('unit_id', $unitId))->pluck('user_id');
+
+        $allUserIds = $roleUserIds->concat($teacherUserIds)->concat($staffUserIds)->unique()->filter();
+
+        $employees = \App\Models\User::whereIn('id', $allUserIds)
+            ->whereDoesntHave('roles', function ($q) {
+                $q->whereIn('name', ['siswa', 'student', 'super_admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
+            })
+            ->with(['teacher_profile', 'staff', 'roles'])
+            ->orderBy('name')
+            ->get();
+
+        $todayString = $today->toDateString();
+        $todayAttendances = EmployeeAttendance::whereIn('user_id', $employees->pluck('id'))
+            ->where('date', $todayString)
+            ->get()
+            ->keyBy('user_id');
+
+        \Carbon\Carbon::setLocale('id');
+        $dateFormatted = $today->translatedFormat('l, d F Y');
+
+        $liveAttendance = [
+            'date' => $todayString,
+            'date_formatted' => $dateFormatted,
+            'unit_name' => $activeUnit?->name ?? 'Semua Unit',
+            'unit_code' => $activeUnit?->code ?? '-',
+            'unit_id' => $unitId,
+            'is_global_admin' => $isGlobalAdmin,
+            'units' => $units,
+            'stats' => [
+                'total' => $employees->count(),
+                'present' => 0,
+                'late' => 0,
+                'permit' => 0,
+                'not_checked_in' => 0,
+                'attendance_count' => 0,
+                'attendance_percentage' => 0,
+            ],
+            'lists' => [
+                'not_checked_in' => [],
+                'present' => [],
+                'late' => [],
+                'permit' => [],
+                'all' => [],
+            ],
+        ];
+
+        foreach ($employees as $emp) {
+            $att = $todayAttendances->get($emp->id);
+
+            // Determine jabatan
+            if ($emp->staff?->position) {
+                $jabatan = $emp->staff->position;
+            } elseif ($emp->hasRole('kepala_sekolah')) {
+                $jabatan = 'Kepala Sekolah';
+            } elseif ($emp->hasRole('wali_kelas')) {
+                $jabatan = 'Wali Kelas';
+            } elseif ($emp->teacher_profile) {
+                $jabatan = 'Guru';
+            } else {
+                $jabatan = ucfirst(str_replace('_', ' ', $emp->roles->first()?->name ?? 'Staff'));
+            }
+
+            $nip = $emp->teacher_profile?->nip ?? $emp->staff?->nip ?? null;
+
+            $empData = [
+                'id' => $emp->id,
+                'name' => $emp->name,
+                'photo' => $emp->profile_photo_url,
+                'phone' => $emp->phone ?? null,
+                'jabatan' => $jabatan,
+                'nip' => $nip,
+                'status' => 'not_checked_in',
+                'status_label' => 'Belum Absen',
+                'check_in_time' => null,
+                'check_out_time' => null,
+                'late_minutes' => 0,
+                'note' => null,
+            ];
+
+            if (!$att) {
+                $empData['status'] = 'not_checked_in';
+                $empData['status_label'] = 'Belum Absen';
+                $liveAttendance['stats']['not_checked_in']++;
+                $liveAttendance['lists']['not_checked_in'][] = $empData;
+            } elseif ($att->status === 'present') {
+                $empData['status'] = 'present';
+                $empData['status_label'] = 'Tepat Waktu';
+                $empData['check_in_time'] = $att->check_in_time ? substr($att->check_in_time, 0, 5) : null;
+                $empData['check_out_time'] = $att->check_out_time ? substr($att->check_out_time, 0, 5) : null;
+                $liveAttendance['stats']['present']++;
+                $liveAttendance['lists']['present'][] = $empData;
+            } elseif ($att->status === 'late') {
+                $empData['status'] = 'late';
+                $empData['status_label'] = 'Terlambat (' . ($att->late_minutes ?? 0) . 'm)';
+                $empData['check_in_time'] = $att->check_in_time ? substr($att->check_in_time, 0, 5) : null;
+                $empData['check_out_time'] = $att->check_out_time ? substr($att->check_out_time, 0, 5) : null;
+                $empData['late_minutes'] = $att->late_minutes ?? 0;
+                $liveAttendance['stats']['late']++;
+                $liveAttendance['lists']['late'][] = $empData;
+            } elseif (in_array($att->status, ['sick', 'permit', 'cuti', 'business_trip'])) {
+                $statusLabels = [
+                    'sick' => 'Sakit',
+                    'permit' => 'Izin',
+                    'cuti' => 'Cuti',
+                    'business_trip' => 'Dinas Luar',
+                ];
+                $empData['status'] = 'permit';
+                $empData['status_type'] = $att->status;
+                $empData['status_label'] = $statusLabels[$att->status] ?? 'Izin';
+                $empData['note'] = $att->note;
+                $empData['check_in_time'] = $att->check_in_time ? substr($att->check_in_time, 0, 5) : null;
+                $liveAttendance['stats']['permit']++;
+                $liveAttendance['lists']['permit'][] = $empData;
+            } else {
+                $empData['status'] = 'not_checked_in';
+                $empData['status_label'] = 'Tidak Hadir';
+                $liveAttendance['stats']['not_checked_in']++;
+                $liveAttendance['lists']['not_checked_in'][] = $empData;
+            }
+
+            $liveAttendance['lists']['all'][] = $empData;
+        }
+
+        $total = $liveAttendance['stats']['total'];
+        $attendanceCount = $liveAttendance['stats']['present'] + $liveAttendance['stats']['late'];
+        $liveAttendance['stats']['attendance_count'] = $attendanceCount;
+        $liveAttendance['stats']['attendance_percentage'] = $total > 0 ? round(($attendanceCount / $total) * 100, 1) : 0;
+
+        return $liveAttendance;
     }
 }
