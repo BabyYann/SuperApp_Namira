@@ -565,7 +565,7 @@ class AttendanceController extends Controller
             ->keyBy('user_id');
 
         \Carbon\Carbon::setLocale('id');
-        $dateFormatted = $today->translatedFormat('l, d F Y');
+        $dateFormatted = $today->translatedFormat('l, j F Y');
 
         $liveAttendance = [
             'date' => $todayString,

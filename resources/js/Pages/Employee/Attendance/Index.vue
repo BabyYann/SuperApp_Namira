@@ -10,28 +10,38 @@
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-5 md:space-y-6">
             
-            <!-- MAIN TOP NAVIGATION: Presensi Saya vs Pantauan Unit Real-Time -->
-            <div class="flex items-center justify-center p-1.5 bg-slate-200/70 backdrop-blur-md rounded-2xl max-w-md mx-auto shadow-inner border border-slate-300/60">
+            <!-- MAIN TOP NAVIGATION: Presensi Siswa / Presensi Saya vs Presensi Karyawan (Matches Reference) -->
+            <div class="flex items-center justify-center p-1 bg-slate-100 rounded-2xl max-w-md mx-auto border border-slate-200 shadow-xs">
+                <!-- If Super Admin Yayasan: Presensi Siswa links directly to student attendance (Matches reference mockup) -->
+                <Link
+                    v-if="liveAttendance?.is_global_admin"
+                    :href="route('yayasan.student-attendance.index')"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
+                >
+                    <UserIcon class="w-4 h-4" />
+                    <span>Presensi Siswa</span>
+                </Link>
+
+                <!-- If Guru / Regular Staff: Presensi Saya toggles personal check-in form -->
                 <button
+                    v-else
                     @click="mainTab = 'personal'"
                     type="button"
-                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer"
-                    :class="mainTab === 'personal' ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                    :class="mainTab === 'personal' ? 'bg-[#00584b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                 >
                     <UserIcon class="w-4 h-4" />
                     <span>Presensi Saya</span>
                 </button>
+
                 <button
                     @click="mainTab = 'live'"
                     type="button"
-                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer relative"
-                    :class="mainTab === 'live' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                    :class="mainTab === 'live' ? 'bg-[#00584b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
                 >
-                    <ChartPieIcon class="w-4 h-4" />
-                    <span>Pantauan Hari Ini</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white animate-pulse">
-                        LIVE
-                    </span>
+                    <BuildingOffice2Icon class="w-4 h-4" />
+                    <span>Presensi Karyawan</span>
                 </button>
             </div>
 
@@ -442,7 +452,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import LiveAttendanceRadar from './Partials/LiveAttendanceRadar.vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useGeolocation } from '@vueuse/core';
 import L from 'leaflet';
@@ -450,7 +460,7 @@ import 'leaflet/dist/leaflet.css';
 import Swal from 'sweetalert2';
 import { 
     ClipboardDocumentCheckIcon, CameraIcon, CheckIcon, XMarkIcon, ClockIcon, 
-    CheckCircleIcon, XCircleIcon, UserIcon, ChartPieIcon 
+    CheckCircleIcon, XCircleIcon, UserIcon, ChartPieIcon, BuildingOffice2Icon 
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -475,6 +485,7 @@ const getMainInitialTab = () => {
         if (['live', 'radar'].includes(tab)) return 'live';
         if (tab === 'personal') return 'personal';
     }
+    if (props.liveAttendance?.is_global_admin) return 'live';
     return props.initialTab === 'live' ? 'live' : 'personal';
 };
 
