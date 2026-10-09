@@ -50,21 +50,36 @@ class StudentAttendanceController extends Controller
             ->get();
 
         // 2. Daily Status for Tab 1 (Presensi Harian)
-        $today = Carbon::today()->toDateString();
-        $todayAttendanceCounts = StudentAttendance::whereIn('classroom_id', $classrooms->pluck('id'))
-            ->where('date', $today)
+        $date = $request->input('date', Carbon::today()->toDateString());
+        $carbonDate = Carbon::parse($date);
+        $attendanceCounts = StudentAttendance::whereIn('classroom_id', $classrooms->pluck('id'))
+            ->where('date', $date)
             ->selectRaw('classroom_id, count(*) as count')
             ->groupBy('classroom_id')
             ->pluck('count', 'classroom_id');
 
-        $classrooms->transform(function ($c) use ($todayAttendanceCounts, $isManagement, $teacherProfile) {
-            $count = $todayAttendanceCounts[$c->id] ?? 0;
+        $classrooms->transform(function ($c) use ($attendanceCounts, $isManagement, $teacherProfile) {
+            $count = $attendanceCounts[$c->id] ?? 0;
+            $total = $c->students_count ?: 0;
+            $percentage = $total > 0 ? min(100, round(($count / $total) * 100)) : 0;
+            $isComplete = $total > 0 && ($count >= $total);
+
             $c->has_attendance_today = $count > 0;
+            $c->is_complete = $isComplete;
             $c->today_attendance_count = $count;
+            $c->attendance_count = $count;
+            $c->attendance_percentage = $percentage;
+            $c->homeroom_teacher_name = $c->homeroomTeacher?->full_name 
+                ?: ($c->homeroomTeacher?->user?->name ?: 'Belum Ditentukan');
             $c->is_homeroom = $teacherProfile && ($c->homeroom_teacher_id === $teacherProfile->id);
             $c->can_edit = $isManagement || $c->is_homeroom;
             return $c;
         });
+
+        $totalClasses = $classrooms->count();
+        $completedClasses = $classrooms->where('is_complete', true)->count();
+        $pendingClasses = $totalClasses - $completedClasses;
+        $levels = $classrooms->pluck('level')->filter()->unique()->sort()->values();
 
         // 3. Recap Data for Tab 2 (Rekap Bulanan)
         $month = (int)$request->input('month', Carbon::now()->month);
@@ -162,6 +177,15 @@ class StudentAttendanceController extends Controller
             'classrooms' => $classrooms,
             'user_is_homeroom' => $classrooms->isNotEmpty(),
             'initialTab' => $tab,
+            'selectedDate' => $date,
+            'formattedDate' => $carbonDate->locale('id')->isoFormat('dddd, D MMMM Y'),
+            'shortDate' => $carbonDate->locale('id')->isoFormat('D MMM Y'),
+            'dailyStats' => [
+                'total_classes' => $totalClasses,
+                'completed_classes' => $completedClasses,
+                'pending_classes' => $pendingClasses,
+            ],
+            'levels' => $levels,
             'recapData' => $recapData,
             'recapStats' => $recapStats,
             'dates' => $dates,
@@ -171,6 +195,7 @@ class StudentAttendanceController extends Controller
                 'year' => $year,
                 'classroom_id' => $classroomId ? (int)$classroomId : null,
                 'tab' => $tab,
+                'date' => $date,
             ],
             'monthName' => Carbon::createFromDate($year, $month, 1)->locale('id')->monthName,
             'daysInMonth' => $daysInMonth,

@@ -82,7 +82,7 @@ class StudentController extends Controller
                 ->update(['academic_year_id' => $activeYear->id]);
         }
 
-        $studentsQuery = Student::with(['user', 'classroom', 'academicYear'])
+        $studentsQuery = Student::with(['user', 'classroom.homeroomTeacher', 'academicYear'])
             ->where('unit_id', $unitId)
             ->when(request('search'), function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -118,7 +118,8 @@ class StudentController extends Controller
             ->withQueryString();
 
         // Classrooms in this unit
-        $classrooms = \App\Modules\Academic\Models\Classroom::where('unit_id', $unitId)
+        $classrooms = \App\Modules\Academic\Models\Classroom::with('homeroomTeacher')
+             ->where('unit_id', $unitId)
              ->orderBy('level')
              ->orderBy('name')
              ->get();
@@ -294,7 +295,7 @@ class StudentController extends Controller
 
         $student->load([
             'user', 
-            'classroom', 
+            'classroom.homeroomTeacher', 
             'academicYear',
             'unit',
             'bills' => function ($q) {

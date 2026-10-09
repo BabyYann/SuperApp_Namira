@@ -1,12 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { 
     ClipboardDocumentCheckIcon, ChartBarIcon, BuildingOfficeIcon, 
     AcademicCapIcon, UserGroupIcon, UserIcon, ArrowDownTrayIcon,
     CheckCircleIcon, ClockIcon, CalendarDaysIcon, ChevronRightIcon,
-    ExclamationTriangleIcon, EyeIcon
+    ChevronDownIcon, EllipsisVerticalIcon, ArrowRightIcon,
+    MagnifyingGlassIcon, XMarkIcon, ExclamationTriangleIcon, EyeIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -16,6 +17,11 @@ const props = defineProps({
         type: String,
         default: 'daily',
     },
+    selectedDate: String,
+    formattedDate: String,
+    shortDate: String,
+    dailyStats: Object,
+    levels: Array,
     recapData: Array,
     recapStats: Object,
     dates: Array,
@@ -32,6 +38,7 @@ const setTab = (tab) => {
     activeTab.value = tab;
     router.get(route('yayasan.student-attendance.index'), {
         tab: tab,
+        date: currentDate.value,
         classroom_id: selectedClassroomId.value,
         month: selectedMonth.value,
         year: selectedYear.value,
@@ -40,6 +47,96 @@ const setTab = (tab) => {
         preserveScroll: true,
         replace: true,
     });
+};
+
+// Daily View State
+const currentDate = ref(props.selectedDate || props.filters?.date || new Date().toISOString().split('T')[0]);
+const searchQuery = ref('');
+const selectedLevel = ref(null);
+const activeMenuId = ref(null);
+const dateInputRef = ref(null);
+
+const openDatePicker = () => {
+    if (dateInputRef.value?.showPicker) {
+        dateInputRef.value.showPicker();
+    } else {
+        dateInputRef.value?.focus();
+        dateInputRef.value?.click();
+    }
+};
+
+const onDateChange = (e) => {
+    const newDate = e.target.value;
+    if (!newDate || newDate === currentDate.value) return;
+    currentDate.value = newDate;
+    router.get(route('yayasan.student-attendance.index'), {
+        tab: 'daily',
+        date: newDate,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+// Available levels extracted from classrooms or props
+const availableLevels = computed(() => {
+    if (props.levels && props.levels.length > 0) {
+        return props.levels;
+    }
+    const extracted = (props.classrooms || [])
+        .map(c => c.level || (c.name ? parseInt(c.name) : null))
+        .filter(lvl => !isNaN(lvl) && lvl !== null);
+    return Array.from(new Set(extracted)).sort((a, b) => a - b);
+});
+
+// Filtered Classrooms for Daily View
+const filteredClassrooms = computed(() => {
+    let list = props.classrooms || [];
+
+    // Filter by level
+    if (selectedLevel.value !== null) {
+        list = list.filter(c => {
+            if (c.level !== undefined && c.level !== null) {
+                return Number(c.level) === Number(selectedLevel.value);
+            }
+            return String(c.name).startsWith(String(selectedLevel.value));
+        });
+    }
+
+    // Filter by search query (classroom name or teacher name)
+    if (searchQuery.value.trim()) {
+        const q = searchQuery.value.toLowerCase().trim();
+        list = list.filter(c => {
+            const nameMatch = c.name && c.name.toLowerCase().includes(q);
+            const teacherMatch = c.homeroom_teacher_name && c.homeroom_teacher_name.toLowerCase().includes(q);
+            return nameMatch || teacherMatch;
+        });
+    }
+
+    return list;
+});
+
+const toggleMenu = (id) => {
+    activeMenuId.value = activeMenuId.value === id ? null : id;
+};
+
+const closeMenuOnClickOutside = () => {
+    activeMenuId.value = null;
+};
+
+onMounted(() => {
+    window.addEventListener('click', closeMenuOnClickOutside);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('click', closeMenuOnClickOutside);
+});
+
+const goToRecap = (classroomId) => {
+    activeMenuId.value = null;
+    selectedClassroomId.value = classroomId;
+    setTab('recap');
 };
 
 // Recap Filters
@@ -102,179 +199,293 @@ const getStatusBadge = (status) => {
     };
     return map[status] || 'bg-slate-100 text-slate-300';
 };
-
-// Formatted today string
-const todayFormatted = computed(() => {
-    return new Date().toLocaleDateString('id-ID', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
-});
 </script>
 
 <template>
-    <Head title="Presensi Siswa" />
+    <Head title="Presensi Kelas" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
-                        Presensi Siswa
-                    </h2>
-                    <p class="text-xs sm:text-sm text-gray-500 mt-0.5">
-                        Kelola kehadiran harian kelas dan rekapitulasi kehadiran bulanan siswa.
-                    </p>
-                </div>
-            </div>
-        </template>
-
-        <div class="py-4 md:py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-5">
+        <div class="py-3 sm:py-6 max-w-7xl mx-auto space-y-4">
             
             <!-- MAIN TOP NAVIGATION TABS: Presensi Harian vs Rekap Bulanan -->
-            <div class="flex items-center justify-center p-1 bg-slate-100 rounded-2xl max-w-md mx-auto border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-center p-1 bg-slate-100 rounded-2xl max-w-xs mx-auto border border-slate-200/80 shadow-2xs">
                 <button
                     @click="setTab('daily')"
                     type="button"
-                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
-                    :class="activeTab === 'daily' ? 'bg-[#00584b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    :class="activeTab === 'daily' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                 >
-                    <ClipboardDocumentCheckIcon class="w-4 h-4" />
+                    <ClipboardDocumentCheckIcon class="w-3.5 h-3.5" />
                     <span>Presensi Harian</span>
                 </button>
 
                 <button
                     @click="setTab('recap')"
                     type="button"
-                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
-                    :class="activeTab === 'recap' ? 'bg-[#00584b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    :class="activeTab === 'recap' ? 'bg-[#00584b] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                 >
-                    <ChartBarIcon class="w-4 h-4" />
+                    <ChartBarIcon class="w-3.5 h-3.5" />
                     <span>Rekap Bulanan</span>
                 </button>
             </div>
 
             <!-- ==================================================== -->
-            <!-- TAB 1: PRESENSI HARIAN (PILIH KELAS & INPUT HARIAN) -->
+            <!-- TAB 1: PRESENSI KELAS (REDESIGNED MATCHING REFERENCE) -->
             <!-- ==================================================== -->
             <div v-if="activeTab === 'daily'" class="space-y-4">
                 
-                <!-- Info Header Banner -->
-                <div class="bg-white rounded-3xl border border-gray-100 shadow-xs p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-[#00584b] flex items-center justify-center shrink-0">
-                            <CalendarDaysIcon class="w-6 h-6" />
-                        </div>
-                        <div>
-                            <span class="text-[10px] font-black uppercase tracking-wider text-gray-400">Hari Ini</span>
-                            <h3 class="text-base sm:text-lg font-bold text-gray-900 leading-tight">{{ todayFormatted }}</h3>
-                            <p class="text-xs text-gray-500">Pilih kelas di bawah ini untuk mencatat kehadiran harian siswa.</p>
-                        </div>
+                <!-- 1. Page Header: Title + Subtitle (Left) & Date Dropdown Pill (Right) -->
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                            Presensi Kelas
+                        </h1>
+                        <p class="text-xs sm:text-sm font-semibold text-slate-400 mt-0.5 truncate">
+                            {{ formattedDate || 'Hari Ini' }}
+                        </p>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
-                            <BuildingOfficeIcon class="w-4 h-4 text-[#00584b]" />
-                            <span>{{ classrooms.length }} Kelas Tersedia</span>
-                        </span>
+                    <!-- Date Selector Pill Button with Native Picker Overlay -->
+                    <div class="relative shrink-0">
+                        <button 
+                            @click="openDatePicker"
+                            type="button" 
+                            class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 bg-white border border-slate-200/90 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition active:scale-95 cursor-pointer"
+                        >
+                            <CalendarDaysIcon class="w-4 h-4 text-slate-500 shrink-0" />
+                            <span>{{ shortDate || currentDate }}</span>
+                            <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400 shrink-0 stroke-[2.5]" />
+                        </button>
+                        <input 
+                            ref="dateInputRef" 
+                            type="date" 
+                            :value="currentDate" 
+                            @change="onDateChange"
+                            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full pointer-events-auto" 
+                        />
                     </div>
                 </div>
 
-                <!-- Grid of Classrooms -->
-                <div v-if="classrooms.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                    <div 
-                        v-for="classroom in classrooms" 
-                        :key="'cls-' + classroom.id" 
-                        class="bg-white rounded-3xl border border-gray-100 shadow-xs hover:shadow-md hover:border-emerald-200 transition-all p-5 sm:p-6 flex flex-col justify-between"
+                <!-- 2. Stat Cards Row (3 Cards: Kelas | Selesai | Belum) -->
+                <div class="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+                    <!-- Stat Card 1: Kelas -->
+                    <div class="bg-white rounded-2xl border border-slate-100 p-3 sm:p-3.5 shadow-2xs flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                            <UserGroupIcon class="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-base sm:text-xl font-black text-slate-900 leading-none">
+                                {{ dailyStats?.total_classes ?? classrooms.length }}
+                            </p>
+                            <p class="text-[11px] sm:text-xs font-semibold text-slate-400 mt-1">Kelas</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 2: Selesai -->
+                    <div class="bg-white rounded-2xl border border-emerald-100/70 p-3 sm:p-3.5 shadow-2xs flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <CheckCircleIcon class="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-base sm:text-xl font-black text-slate-900 leading-none">
+                                {{ dailyStats?.completed_classes ?? 0 }}
+                            </p>
+                            <p class="text-[11px] sm:text-xs font-semibold text-slate-400 mt-1">Selesai</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 3: Belum -->
+                    <div class="bg-white rounded-2xl border border-amber-100/70 p-3 sm:p-3.5 shadow-2xs flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <ClockIcon class="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-base sm:text-xl font-black text-slate-900 leading-none">
+                                {{ dailyStats?.pending_classes ?? 0 }}
+                            </p>
+                            <p class="text-[11px] sm:text-xs font-semibold text-slate-400 mt-1">Belum</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Search Bar -->
+                <div class="relative">
+                    <MagnifyingGlassIcon class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input 
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Cari kelas atau wali kelas..."
+                        class="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200/90 rounded-2xl text-xs sm:text-sm font-semibold focus:ring-[#00584b] focus:border-[#00584b] shadow-2xs placeholder:text-slate-400 placeholder:font-normal"
+                    />
+                    <button 
+                        v-if="searchQuery" 
+                        @click="searchQuery = ''"
+                        type="button" 
+                        class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition"
+                        title="Hapus pencarian"
                     >
-                        <!-- Top Class Header -->
+                        <XMarkIcon class="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                </div>
+
+                <!-- 4. Horizontal Level Filter Pills -->
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-xs">
+                    <button 
+                        @click="selectedLevel = null"
+                        type="button"
+                        class="px-4 py-2 rounded-xl font-bold text-xs shrink-0 transition-all border shadow-2xs active:scale-95"
+                        :class="selectedLevel === null 
+                            ? 'bg-[#00584b] text-white border-[#00584b]' 
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
+                    >
+                        Semua
+                    </button>
+                    <button 
+                        v-for="lvl in availableLevels"
+                        :key="'lvl-' + lvl"
+                        @click="selectedLevel = (selectedLevel === lvl ? null : lvl)"
+                        type="button"
+                        class="px-4 py-2 rounded-xl font-bold text-xs shrink-0 transition-all border shadow-2xs active:scale-95"
+                        :class="selectedLevel === lvl 
+                            ? 'bg-[#00584b] text-white border-[#00584b]' 
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
+                    >
+                        Kelas {{ lvl }}
+                    </button>
+                </div>
+
+                <!-- 5. 2-Column Class Cards Grid (Matching Reference Exact) -->
+                <div v-if="filteredClassrooms.length > 0" class="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pt-1">
+                    <div 
+                        v-for="classroom in filteredClassrooms" 
+                        :key="'cls-' + classroom.id" 
+                        class="bg-white rounded-2xl border border-slate-100 p-3 sm:p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative group"
+                    >
+                        <!-- Top Row: Class Name, Homeroom Teacher, 3-dots Menu -->
                         <div>
-                            <div class="flex items-start justify-between gap-2 mb-3">
-                                <div class="flex flex-wrap items-center gap-1.5">
-                                    <span class="px-2.5 py-1 bg-teal-50 text-[#00584b] rounded-full text-xs font-bold border border-teal-100">
-                                        {{ classroom.unit?.name || 'Unit Sekolah' }}
-                                    </span>
-                                    <span v-if="classroom.is_homeroom" class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black border border-emerald-300">
-                                        Wali Kelas
-                                    </span>
-                                    <span v-else-if="!classroom.can_edit" class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold border border-slate-200">
-                                        Mode Pantau
-                                    </span>
+                            <div class="flex items-start justify-between gap-1">
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                                        {{ classroom.name }}
+                                    </h3>
+                                    <p class="text-[11px] sm:text-xs text-slate-600 font-medium truncate mt-0.5" :title="classroom.homeroom_teacher_name">
+                                        {{ classroom.homeroom_teacher_name }}
+                                    </p>
                                 </div>
-                                <div class="w-9 h-9 rounded-2xl bg-slate-50 border border-slate-100 text-slate-500 flex items-center justify-center shrink-0">
-                                    <AcademicCapIcon class="w-5 h-5 text-[#00584b]" />
+
+                                <!-- 3-dots Options Menu Dropdown -->
+                                <div class="relative shrink-0">
+                                    <button 
+                                        @click.stop="toggleMenu(classroom.id)"
+                                        type="button"
+                                        class="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition active:scale-95 cursor-pointer"
+                                        title="Pilihan menu"
+                                    >
+                                        <EllipsisVerticalIcon class="w-4 h-4 stroke-[2]" />
+                                    </button>
+
+                                    <!-- Dropdown Popover -->
+                                    <div 
+                                        v-if="activeMenuId === classroom.id" 
+                                        @click.stop 
+                                        class="absolute right-0 top-7 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-150"
+                                    >
+                                        <Link 
+                                            :href="route('yayasan.student-attendance.show', classroom.id) + '?date=' + currentDate"
+                                            class="flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                                        >
+                                            <ClipboardDocumentCheckIcon class="w-4 h-4 text-teal-600" />
+                                            <span>{{ classroom.can_edit ? 'Input / Cek Presensi' : 'Lihat Kehadiran' }}</span>
+                                        </Link>
+                                        <button 
+                                            @click="goToRecap(classroom.id)"
+                                            type="button"
+                                            class="w-full flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold text-left cursor-pointer"
+                                        >
+                                            <ChartBarIcon class="w-4 h-4 text-indigo-600" />
+                                            <span>Rekap Bulanan</span>
+                                        </button>
+                                        <Link 
+                                            :href="route('yayasan.students.index', { classroom_id: classroom.id })"
+                                            class="flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 font-semibold"
+                                        >
+                                            <UserGroupIcon class="w-4 h-4 text-sky-600" />
+                                            <span>Data Siswa Kelas</span>
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
 
-                            <h3 class="text-xl font-black text-gray-900 tracking-tight">
-                                {{ classroom.name }}
-                            </h3>
-
-                            <!-- Details Info -->
-                            <div class="mt-3 space-y-1.5 text-xs text-gray-600">
-                                <div class="flex items-center gap-2">
-                                    <UserIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                                    <span class="truncate">
-                                        Wali Kelas: 
-                                        <strong class="text-gray-800">
-                                            {{ classroom.homeroom_teacher?.full_name || classroom.homeroom_teacher?.user?.name || 'Belum Ditentukan' }}
-                                        </strong>
+                            <!-- Middle Section: Student Count + Attendance Percentage + Progress Bar -->
+                            <div class="mt-3 space-y-1.5">
+                                <div class="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+                                    <div class="flex items-center gap-1 min-w-0">
+                                        <UserGroupIcon class="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <span class="truncate">{{ classroom.students_count || 0 }} siswa</span>
+                                    </div>
+                                    <span class="font-bold text-slate-600 shrink-0">
+                                        {{ classroom.attendance_percentage || 0 }}%
                                     </span>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <UserGroupIcon class="w-4 h-4 text-gray-400 shrink-0" />
-                                    <span>
-                                        Total Siswa: 
-                                        <strong class="text-gray-800">{{ classroom.students_count || 0 }} Siswa</strong>
-                                    </span>
+
+                                <!-- Progress Bar -->
+                                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div 
+                                        class="h-full rounded-full transition-all duration-300"
+                                        :class="classroom.attendance_percentage === 100 ? 'bg-emerald-500' : 'bg-teal-600'"
+                                        :style="{ width: `${classroom.attendance_percentage || 0}%` }"
+                                    ></div>
                                 </div>
                             </div>
 
-                            <!-- Attendance Status Today -->
-                            <div class="mt-4 pt-3 border-t border-slate-100">
-                                <div v-if="classroom.has_attendance_today" class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full text-xs font-semibold border border-emerald-200">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    <span>Sudah Diabsen ({{ classroom.today_attendance_count }} Siswa)</span>
+                            <!-- Status Pill (Belum presensi / Selesai presensi / Sebagian) -->
+                            <div class="mt-2.5">
+                                <div 
+                                    v-if="classroom.is_complete"
+                                    class="py-1 px-2 rounded-lg bg-emerald-50 text-emerald-800 text-[10px] sm:text-[11px] font-bold text-center border border-emerald-200/60 flex items-center justify-center gap-1.5"
+                                >
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span class="truncate">Selesai presensi</span>
                                 </div>
-                                <div v-else class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 rounded-full text-xs font-semibold border border-amber-200">
-                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                                    <span>Belum Diabsen Hari Ini</span>
+                                <div 
+                                    v-else-if="classroom.has_attendance_today"
+                                    class="py-1 px-2 rounded-lg bg-sky-50 text-sky-800 text-[10px] sm:text-[11px] font-bold text-center border border-sky-200/60 flex items-center justify-center gap-1.5"
+                                >
+                                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                    <span class="truncate">Sebagian ({{ classroom.attendance_count }}/{{ classroom.students_count }})</span>
+                                </div>
+                                <div 
+                                    v-else
+                                    class="py-1 px-2 rounded-lg bg-amber-50 text-amber-800 text-[10px] sm:text-[11px] font-bold text-center border border-amber-200/60 flex items-center justify-center gap-1.5"
+                                >
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    <span class="truncate">Belum presensi</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Action Button -->
-                        <div class="mt-5 pt-2">
+                        <!-- Action Button: Full Width Teal Button -->
+                        <div class="mt-3">
                             <Link 
-                                :href="route('yayasan.student-attendance.show', classroom.id)"
-                                :class="classroom.can_edit 
-                                    ? 'bg-[#00584b] hover:bg-[#00473c] text-white shadow-xs' 
-                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shadow-2xs'"
-                                class="w-full py-2.5 font-bold text-xs sm:text-sm rounded-2xl text-center flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                                :href="route('yayasan.student-attendance.show', classroom.id) + '?date=' + currentDate"
+                                class="w-full py-2 bg-[#00584b] hover:bg-[#00473c] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition cursor-pointer"
                             >
-                                <span v-if="classroom.can_edit">
-                                    {{ classroom.has_attendance_today ? 'Edit / Cek Presensi' : 'Input Presensi Kelas' }}
-                                </span>
-                                <span v-else class="flex items-center gap-1.5">
-                                    <EyeIcon class="w-4 h-4 text-slate-500" />
-                                    <span>Lihat Kehadiran Siswa</span>
-                                </span>
-                                <ChevronRightIcon class="w-4 h-4" />
+                                <span class="truncate">{{ classroom.can_edit ? 'Input Presensi' : 'Lihat Detail' }}</span>
+                                <ArrowRightIcon class="w-3.5 h-3.5 stroke-[2.5] shrink-0" />
                             </Link>
                         </div>
                     </div>
                 </div>
 
                 <!-- Empty State -->
-                <div v-else class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-xs flex flex-col items-center justify-center p-6">
-                    <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-[#00584b] mb-4">
-                        <AcademicCapIcon class="w-8 h-8" />
+                <div v-else class="text-center py-12 bg-white rounded-2xl border border-slate-100 shadow-xs p-6 space-y-2">
+                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-[#00584b] flex items-center justify-center mx-auto">
+                        <AcademicCapIcon class="w-6 h-6 stroke-[2]" />
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-1">Tidak Ada Kelas Tersedia</h3>
-                    <p class="text-xs sm:text-sm text-gray-500 max-w-sm">
-                        Anda belum ditugaskan sebagai Wali Kelas atau tidak memiliki izin akses kelas pada unit ini.
+                    <p class="font-black text-sm text-slate-800">Tidak ada kelas yang cocok</p>
+                    <p class="text-xs text-slate-400 max-w-xs mx-auto">
+                        {{ searchQuery ? 'Tidak ada kelas atau wali kelas yang sesuai dengan pencarian.' : 'Data kelas belum tersedia pada filter ini.' }}
                     </p>
                 </div>
 

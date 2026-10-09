@@ -615,31 +615,31 @@ const submitExcelImport = () => {
                             </div>
                         </div>
 
-                        <!-- Bottom Row: Wali Murid (Left) | No HP (Right) -->
+                        <!-- Bottom Row: Wali Kelas (Left) | Wali Murid / Kontak (Right) -->
                         <div class="pt-3 border-t border-slate-100/80 grid grid-cols-2 gap-2 text-xs">
-                            <!-- Col 1: Wali Murid -->
+                            <!-- Col 1: Wali Kelas -->
                             <div class="flex items-center gap-2 min-w-0">
-                                <UserGroupIcon class="w-4 h-4 text-slate-400 shrink-0" />
+                                <AcademicCapIcon class="w-4 h-4 text-teal-600 shrink-0" />
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider leading-none">Wali Murid</p>
-                                    <p class="text-xs font-bold text-slate-800 truncate mt-1">
-                                        {{ student.parent_name || student.guardian_name || 'Belum diisi' }}
+                                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider leading-none">Wali Kelas</p>
+                                    <p class="text-xs font-bold text-slate-800 truncate mt-1" :title="student.classroom?.homeroom_teacher?.full_name || student.classroom?.homeroomTeacher?.full_name || 'Belum Ditentukan'">
+                                        {{ student.classroom?.homeroom_teacher?.full_name || student.classroom?.homeroomTeacher?.full_name || student.classroom?.homeroom_teacher?.user?.name || (student.classroom ? 'Belum Ada' : 'Belum Masuk Kelas') }}
                                     </p>
                                 </div>
                             </div>
 
-                            <!-- Col 2: No HP (with vertical divider) -->
+                            <!-- Col 2: Wali Murid / No HP -->
                             <div 
                                 class="flex items-center gap-2 min-w-0 border-l border-slate-100 pl-3 transition-colors"
                                 :class="student.parent_phone || student.guardian_phone ? 'hover:text-emerald-700' : ''"
                                 @click.stop="openWhatsApp(student)"
                                 :title="student.parent_phone || student.guardian_phone ? 'Hubungi via WhatsApp' : ''"
                             >
-                                <PhoneIcon class="w-4 h-4 text-slate-400 shrink-0" />
+                                <UserGroupIcon class="w-4 h-4 text-slate-400 shrink-0" />
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider leading-none">No HP</p>
-                                    <p class="text-xs font-semibold text-slate-600 truncate mt-1">
-                                        {{ student.parent_phone || student.guardian_phone || '-' }}
+                                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider leading-none">Wali Murid</p>
+                                    <p class="text-xs font-semibold text-slate-700 truncate mt-1">
+                                        {{ student.parent_name || student.guardian_name || (student.parent_phone ? student.parent_phone : 'Belum diisi') }}
                                     </p>
                                 </div>
                             </div>
@@ -936,6 +936,9 @@ const submitExcelImport = () => {
                                     <td class="px-6 py-4">
                                         <div v-if="student.classroom" class="flex flex-col">
                                              <span class="font-bold text-gray-700 text-xs bg-gray-100 px-2 py-1 rounded-lg w-fit border border-gray-200">{{ student.classroom.name }}</span>
+                                             <span class="text-[11px] text-teal-700 font-semibold mt-1">
+                                                 Wali: {{ student.classroom?.homeroom_teacher?.full_name || student.classroom?.homeroomTeacher?.full_name || '-' }}
+                                             </span>
                                         </div>
                                         <span v-else class="text-xs text-gray-400 italic">Belum Masuk Kelas</span>
                                     </td>

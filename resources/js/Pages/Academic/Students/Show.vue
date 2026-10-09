@@ -179,6 +179,9 @@ const formatDate = (dateString) => {
                                 <dd class="text-lg font-bold text-namira-teal">
                                     {{ student.classroom?.name || 'Belum Masuk Kelas' }}
                                 </dd>
+                                <p v-if="student.classroom?.homeroom_teacher || student.classroom?.homeroomTeacher" class="text-xs text-slate-500 font-semibold mt-0.5">
+                                    Wali Kelas: {{ student.classroom?.homeroom_teacher?.full_name || student.classroom?.homeroomTeacher?.full_name || student.classroom?.homeroom_teacher?.user?.name }}
+                                </p>
                             </div>
                              <div>
                                 <dt class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Tahun Masuk</dt>
