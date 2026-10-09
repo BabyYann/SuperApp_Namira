@@ -7,7 +7,7 @@ import {
     CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, UserGroupIcon,
     CalendarDaysIcon, ChartBarIcon, DocumentTextIcon, XMarkIcon, ArrowPathIcon,
     FunnelIcon, AcademicCapIcon, BriefcaseIcon, PlusCircleIcon, UsersIcon, CalendarIcon,
-    ChevronLeftIcon, ChevronRightIcon
+    ChevronLeftIcon, ChevronRightIcon, CameraIcon
 } from '@heroicons/vue/24/outline';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -134,6 +134,13 @@ const employeeHistoryData = ref([]);
 const employeeStats = ref(null);
 const detailMonth = ref(parseInt(props.filters.month) || dayjs().month() + 1);
 const detailYear = ref(parseInt(props.filters.year) || dayjs().year());
+const photoPreviewModalOpen = ref(false);
+const selectedAttendanceForPhoto = ref(null);
+
+const openPhotoPreview = (att) => {
+    selectedAttendanceForPhoto.value = att;
+    photoPreviewModalOpen.value = true;
+};
 
 const openEmployeeDetail = async (employee) => {
     selectedEmployee.value = employee;
@@ -739,6 +746,7 @@ const getPercentageClass = (pct) => {
                                                         <th class="px-4 py-3">Pulang</th>
                                                         <th class="px-4 py-3">Telat</th>
                                                         <th class="px-4 py-3">Status</th>
+                                                        <th class="px-4 py-3 text-center">Foto / Bukti</th>
                                                         <th class="px-4 py-3">Keterangan</th>
                                                     </tr>
                                                 </thead>
@@ -756,6 +764,29 @@ const getPercentageClass = (pct) => {
                                                                 {{ getStatusLabel(att.status) }}
                                                             </span>
                                                         </td>
+                                                        <td class="px-4 py-3 text-center">
+                                                            <button 
+                                                                v-if="att.check_in_photo || att.check_out_photo"
+                                                                @click="openPhotoPreview(att)"
+                                                                type="button"
+                                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 text-[11px] font-bold transition active:scale-95 cursor-pointer"
+                                                                title="Lihat Foto Selfie"
+                                                            >
+                                                                <CameraIcon class="w-3.5 h-3.5" />
+                                                                <span>Foto</span>
+                                                            </button>
+                                                            <a 
+                                                                v-else-if="att.permit_file" 
+                                                                :href="`/storage/${att.permit_file}`" 
+                                                                target="_blank" 
+                                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-[11px] font-bold"
+                                                                title="Lihat Surat Lampiran"
+                                                            >
+                                                                <PaperClipIcon class="w-3.5 h-3.5" />
+                                                                <span>Bukti</span>
+                                                            </a>
+                                                            <span v-else class="text-gray-300 font-mono text-[10px]">-</span>
+                                                        </td>
                                                         <td class="px-4 py-3 text-slate-500 italic max-w-[150px] truncate" :title="att.note || ''">{{ att.note || '-' }}</td>
                                                     </tr>
                                                 </tbody>
@@ -765,6 +796,78 @@ const getPercentageClass = (pct) => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photo Preview Modal -->
+            <div 
+                v-if="photoPreviewModalOpen" 
+                class="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in duration-150" 
+                @click.self="photoPreviewModalOpen = false"
+            >
+                <div class="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl p-5 space-y-4">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div>
+                            <h4 class="font-black text-slate-900 text-sm leading-tight">{{ selectedEmployee?.name }}</h4>
+                            <p class="text-[11px] text-slate-400 font-semibold mt-0.5">
+                                {{ dayjs(selectedAttendanceForPhoto?.date).format('DD MMMM YYYY') }} • Masuk {{ selectedAttendanceForPhoto?.check_in_time ? selectedAttendanceForPhoto.check_in_time.substring(0, 5) : '-' }}
+                            </p>
+                        </div>
+                        <button @click="photoPreviewModalOpen = false" class="p-1 rounded-full text-slate-400 hover:text-slate-600 transition">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- Photo Image Preview (Masuk / Pulang) -->
+                    <div class="space-y-3">
+                        <div v-if="selectedAttendanceForPhoto?.check_in_photo" class="space-y-1">
+                            <span class="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                                <CameraIcon class="w-3.5 h-3.5 text-teal-600" />
+                                Foto Selfie Masuk ({{ selectedAttendanceForPhoto?.check_in_time ? selectedAttendanceForPhoto.check_in_time.substring(0, 5) : '-' }})
+                            </span>
+                            <div class="rounded-2xl overflow-hidden aspect-3/4 bg-slate-100 border border-slate-200 shadow-inner relative flex items-center justify-center">
+                                <img 
+                                    :src="`/storage/${selectedAttendanceForPhoto.check_in_photo}`" 
+                                    :alt="selectedEmployee?.name"
+                                    class="w-full h-full object-cover" 
+                                />
+                            </div>
+                        </div>
+
+                        <div v-if="selectedAttendanceForPhoto?.check_out_photo" class="space-y-1">
+                            <span class="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                                <CameraIcon class="w-3.5 h-3.5 text-indigo-600" />
+                                Foto Selfie Pulang ({{ selectedAttendanceForPhoto?.check_out_time ? selectedAttendanceForPhoto.check_out_time.substring(0, 5) : '-' }})
+                            </span>
+                            <div class="rounded-2xl overflow-hidden aspect-3/4 bg-slate-100 border border-slate-200 shadow-inner relative flex items-center justify-center">
+                                <img 
+                                    :src="`/storage/${selectedAttendanceForPhoto.check_out_photo}`" 
+                                    :alt="selectedEmployee?.name"
+                                    class="w-full h-full object-cover" 
+                                />
+                            </div>
+                        </div>
+
+                        <div v-if="!selectedAttendanceForPhoto?.check_in_photo && !selectedAttendanceForPhoto?.check_out_photo" class="py-10 text-center text-slate-400 text-xs font-bold">
+                            Foto tidak tersedia
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="flex items-center justify-between text-xs pt-1">
+                        <span class="font-bold text-teal-700 flex items-center gap-1">
+                            <CheckCircleIcon class="w-4 h-4" />
+                            <span>Verifikasi Kehadiran</span>
+                        </span>
+                        <a 
+                            v-if="selectedAttendanceForPhoto?.check_in_photo"
+                            :href="`/storage/${selectedAttendanceForPhoto.check_in_photo}`" 
+                            target="_blank" 
+                            class="text-teal-700 font-black hover:underline"
+                        >
+                            Buka Foto Asli ↗
+                        </a>
                     </div>
                 </div>
             </div>

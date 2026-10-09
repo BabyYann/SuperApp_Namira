@@ -670,6 +670,9 @@ class AttendanceController extends Controller
                 'status_label' => 'Belum Absen',
                 'check_in_time' => null,
                 'check_out_time' => null,
+                'check_in_photo' => $att?->check_in_photo,
+                'check_out_photo' => $att?->check_out_photo,
+                'permit_file' => $att?->permit_file,
                 'late_minutes' => 0,
                 'note' => null,
             ];

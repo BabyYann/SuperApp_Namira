@@ -5,7 +5,8 @@ import Swal from 'sweetalert2';
 import { 
     CalendarDaysIcon, BuildingOffice2Icon, ChevronDownIcon,
     UsersIcon, ClockIcon, DocumentTextIcon, ExclamationCircleIcon,
-    MagnifyingGlassIcon, ShareIcon, ChatBubbleOvalLeftEllipsisIcon
+    MagnifyingGlassIcon, ShareIcon, ChatBubbleOvalLeftEllipsisIcon,
+    CameraIcon, XMarkIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -19,6 +20,13 @@ const props = defineProps({
 const searchQuery = ref('');
 const activeFilter = ref('all');
 const activePeriod = ref('today'); // 'today' | 'week' | 'month'
+const photoModalOpen = ref(false);
+const selectedEmpForPhoto = ref(null);
+
+const viewPhoto = (emp) => {
+    selectedEmpForPhoto.value = emp;
+    photoModalOpen.value = true;
+};
 
 // Unit Switcher (Khusus Superadmin Yayasan)
 const switchUnit = (newUnitId) => {
@@ -511,6 +519,18 @@ const getInitials = (name) => {
                             {{ emp.status_label }}
                         </span>
 
+                        <!-- View Selfie Photo Button -->
+                        <button 
+                            v-if="emp.check_in_photo"
+                            @click="viewPhoto(emp)"
+                            type="button"
+                            class="px-2 py-1 rounded-xl text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition flex items-center gap-1 active:scale-95 cursor-pointer text-xs"
+                            title="Lihat Foto Selfie Masuk"
+                        >
+                            <CameraIcon class="w-3.5 h-3.5" />
+                            <span class="text-[10px] font-bold">Foto</span>
+                        </button>
+
                         <!-- WhatsApp Reminder Button for un-checked-in employees -->
                         <a 
                             v-if="emp.status === 'not_checked_in' && emp.phone"
@@ -543,6 +563,56 @@ const getInitials = (name) => {
                     <ShareIcon class="w-3.5 h-3.5" />
                     Salin Rekap WA
                 </button>
+            </div>
+        </div>
+
+        <!-- Photo Preview Modal -->
+        <div 
+            v-if="photoModalOpen" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in duration-150" 
+            @click.self="photoModalOpen = false"
+        >
+            <div class="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div>
+                        <h4 class="font-black text-slate-900 text-sm leading-tight">{{ selectedEmpForPhoto?.name }}</h4>
+                        <p class="text-[11px] text-slate-400 font-semibold mt-0.5">
+                            {{ selectedEmpForPhoto?.jabatan }} • Masuk {{ selectedEmpForPhoto?.check_in_time || '-' }}
+                        </p>
+                    </div>
+                    <button @click="photoModalOpen = false" class="p-1 rounded-full text-slate-400 hover:text-slate-600 transition">
+                        <XMarkIcon class="w-5 h-5" />
+                    </button>
+                </div>
+
+                <!-- Photo Image Preview -->
+                <div class="rounded-2xl overflow-hidden aspect-3/4 bg-slate-100 border border-slate-200 shadow-inner relative flex items-center justify-center">
+                    <img 
+                        v-if="selectedEmpForPhoto?.check_in_photo" 
+                        :src="`/storage/${selectedEmpForPhoto.check_in_photo}`" 
+                        :alt="selectedEmpForPhoto.name"
+                        class="w-full h-full object-cover" 
+                    />
+                    <div v-else class="text-slate-400 text-xs font-bold text-center p-4">
+                        Foto tidak tersedia
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-between text-xs pt-1">
+                    <span class="font-bold text-emerald-700 flex items-center gap-1">
+                        <CameraIcon class="w-4 h-4" />
+                        <span>Foto Selfie Masuk</span>
+                    </span>
+                    <a 
+                        v-if="selectedEmpForPhoto?.check_in_photo"
+                        :href="`/storage/${selectedEmpForPhoto.check_in_photo}`" 
+                        target="_blank" 
+                        class="text-teal-700 font-black hover:underline"
+                    >
+                        Buka Ukuran Asli ↗
+                    </a>
+                </div>
             </div>
         </div>
 
