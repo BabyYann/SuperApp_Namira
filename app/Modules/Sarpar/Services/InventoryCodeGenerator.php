@@ -36,7 +36,7 @@ class InventoryCodeGenerator
             $sequence = 1;
         }
         
-        return sprintf(
+        $code = sprintf(
             '%s-%s-%s-%d-%03d',
             $prefix,
             $unitCode,
@@ -44,5 +44,20 @@ class InventoryCodeGenerator
             $year,
             $sequence
         );
+
+        // Ensure absolute uniqueness in database
+        while (Inventory::where('code', $code)->exists()) {
+            $sequence++;
+            $code = sprintf(
+                '%s-%s-%s-%d-%03d',
+                $prefix,
+                $unitCode,
+                $catCode,
+                $year,
+                $sequence
+            );
+        }
+
+        return $code;
     }
 }

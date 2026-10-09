@@ -11,6 +11,7 @@ use App\Modules\Sarpar\Exports\InventoryExport;
 use App\Modules\Yayasan\Models\Unit;
 use App\Modules\Academic\Models\Classroom;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class InventoryController extends Controller
@@ -161,6 +162,8 @@ class InventoryController extends Controller
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola inventaris.');
         }
 
+        $isMultiMode = $request->input('distribution_mode') === 'multi';
+
         $validated = $request->validate([
             'category_id' => 'required|exists:sarpar_categories,id',
             'room_id' => 'nullable|exists:sarpar_rooms,id',
@@ -171,38 +174,113 @@ class InventoryController extends Controller
             'brand' => 'nullable|string|max:100',
             'model' => 'nullable|string|max:100',
             'year_acquired' => 'required|integer|min:2000|max:' . (date('Y') + 1),
-            'quantity' => 'required|integer|min:1',
+            'quantity' => $isMultiMode ? 'nullable|integer|min:1' : 'required|integer|min:1',
             'min_stock' => 'nullable|integer|min:0',
             'unit_price' => 'nullable|integer|min:0',
             'condition' => 'required|in:baik,rusak_ringan,rusak_berat',
             'photo' => 'required|image|max:2048',
             'notes' => 'nullable|string|max:1000',
+            'distribution_mode' => 'nullable|in:single,multi',
+            'allocations' => 'nullable',
         ]);
 
         $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
-        
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
-            if ($validated['room_id']) {
-                $room = Room::findOrFail($validated['room_id']);
-                if ($unitId && $room->unit_id !== $unitId) {
-                    abort(403, 'Akses Ditolak: Ruangan tidak sesuai dengan unit Anda.');
+
+        // Parse allocations if in multi-room distribution mode
+        $allocations = [];
+        if ($isMultiMode) {
+            $rawAlloc = $request->input('allocations');
+            if (is_string($rawAlloc)) {
+                $rawAlloc = json_decode($rawAlloc, true);
+            }
+            if (is_array($rawAlloc)) {
+                foreach ($rawAlloc as $alloc) {
+                    $target = $alloc['target'] ?? '';
+                    $qty = (int) ($alloc['quantity'] ?? 1);
+                    if ($qty < 1) continue;
+
+                    $cId = null;
+                    $rId = null;
+
+                    if (!empty($alloc['classroom_id'])) {
+                        $cId = (int) $alloc['classroom_id'];
+                    } elseif (!empty($alloc['room_id'])) {
+                        $rId = (int) $alloc['room_id'];
+                    } elseif (is_string($target) && str_starts_with($target, 'classroom:')) {
+                        $cId = (int) substr($target, 10);
+                    } elseif (is_string($target) && str_starts_with($target, 'room:')) {
+                        $rId = (int) substr($target, 5);
+                    }
+
+                    if ($cId || $rId) {
+                        $allocations[] = [
+                            'classroom_id' => $cId,
+                            'room_id' => $rId,
+                            'quantity' => $qty,
+                        ];
+                    }
                 }
             }
-            if ($validated['classroom_id']) {
-                $classroom = Classroom::findOrFail($validated['classroom_id']);
-                if ($unitId && $classroom->unit_id !== $unitId) {
-                    abort(403, 'Akses Ditolak: Kelas tidak sesuai dengan unit Anda.');
+
+            if (empty($allocations)) {
+                return redirect()->back()->withErrors([
+                    'allocations' => 'Tentukan minimal satu ruangan atau kelas untuk distribusi barang.'
+                ]);
+            }
+        }
+
+        // Determine unitId and validate access
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            if (!$isMultiMode) {
+                if ($validated['room_id']) {
+                    $room = Room::findOrFail($validated['room_id']);
+                    if ($unitId && $room->unit_id !== $unitId) {
+                        abort(403, 'Akses Ditolak: Ruangan tidak sesuai dengan unit Anda.');
+                    }
+                }
+                if ($validated['classroom_id']) {
+                    $classroom = Classroom::findOrFail($validated['classroom_id']);
+                    if ($unitId && $classroom->unit_id !== $unitId) {
+                        abort(403, 'Akses Ditolak: Kelas tidak sesuai dengan unit Anda.');
+                    }
+                }
+            } else {
+                foreach ($allocations as $al) {
+                    if ($al['room_id']) {
+                        $r = Room::findOrFail($al['room_id']);
+                        if ($unitId && $r->unit_id !== $unitId) {
+                            abort(403, 'Akses Ditolak: Ruangan tidak sesuai dengan unit Anda.');
+                        }
+                    }
+                    if ($al['classroom_id']) {
+                        $c = Classroom::findOrFail($al['classroom_id']);
+                        if ($unitId && $c->unit_id !== $unitId) {
+                            abort(403, 'Akses Ditolak: Kelas tidak sesuai dengan unit Anda.');
+                        }
+                    }
                 }
             }
         } else {
-            if ($validated['room_id']) {
-                $room = Room::findOrFail($validated['room_id']);
-                $unitId = $room->unit_id;
-            } elseif ($validated['classroom_id']) {
-                $classroom = Classroom::findOrFail($validated['classroom_id']);
-                $unitId = $classroom->unit_id;
-            } elseif (!$unitId) {
-                $unitId = Unit::first()?->id;
+            if (!$unitId) {
+                if ($isMultiMode && !empty($allocations)) {
+                    $first = $allocations[0];
+                    if ($first['room_id']) {
+                        $unitId = Room::find($first['room_id'])?->unit_id;
+                    } elseif ($first['classroom_id']) {
+                        $unitId = Classroom::find($first['classroom_id'])?->unit_id;
+                    }
+                } else {
+                    if ($validated['room_id']) {
+                        $room = Room::findOrFail($validated['room_id']);
+                        $unitId = $room->unit_id;
+                    } elseif ($validated['classroom_id']) {
+                        $classroom = Classroom::findOrFail($validated['classroom_id']);
+                        $unitId = $classroom->unit_id;
+                    }
+                }
+                if (!$unitId) {
+                    $unitId = Unit::first()?->id;
+                }
             }
         }
 
@@ -211,26 +289,114 @@ class InventoryController extends Controller
         try {
             $category = Category::findOrFail($validated['category_id']);
             
-            // Generate unique code
-            $code = InventoryCodeGenerator::generate(
-                $unit,
-                $category,
-                $validated['funding_source'],
-                $validated['year_acquired']
-            );
-
-            // Handle photo upload
+            // Handle photo upload (one file shared across batch records)
             $photoPath = $request->file('photo')->store('sarpar/inventories', 'public');
 
-            Inventory::create([
-                ...$validated,
-                'unit_id' => $unitId,
-                'code' => $code,
-                'status' => 'tersedia',
-                'photo' => $photoPath,
-            ]);
+            $createdCodes = [];
 
-            return redirect()->back()->with('success', 'Inventaris berhasil ditambahkan dengan kode: ' . $code);
+            DB::transaction(function () use ($isMultiMode, $allocations, $validated, $unit, $category, $photoPath, $unitId, &$createdCodes) {
+                if (!$isMultiMode) {
+                    // Single location mode
+                    $code = InventoryCodeGenerator::generate(
+                        $unit,
+                        $category,
+                        $validated['funding_source'],
+                        $validated['year_acquired']
+                    );
+
+                    Inventory::create([
+                        ...$validated,
+                        'unit_id' => $unitId,
+                        'code' => $code,
+                        'status' => 'tersedia',
+                        'photo' => $photoPath,
+                    ]);
+
+                    $createdCodes[] = $code;
+                } else {
+                    // Multi-room batch distribution mode
+                    foreach ($allocations as $alloc) {
+                        $classroomId = $alloc['classroom_id'];
+                        $roomId = $alloc['room_id'];
+                        $qty = $alloc['quantity'];
+
+                        if ($validated['item_type'] === 'asset') {
+                            // Fixed asset: each physical unit gets its own unique record & QR code
+                            for ($i = 0; $i < $qty; $i++) {
+                                $code = InventoryCodeGenerator::generate(
+                                    $unit,
+                                    $category,
+                                    $validated['funding_source'],
+                                    $validated['year_acquired']
+                                );
+
+                                Inventory::create([
+                                    'unit_id' => $unitId,
+                                    'category_id' => $validated['category_id'],
+                                    'room_id' => $roomId,
+                                    'classroom_id' => $classroomId,
+                                    'funding_source' => $validated['funding_source'],
+                                    'item_type' => 'asset',
+                                    'code' => $code,
+                                    'name' => $validated['name'],
+                                    'brand' => $validated['brand'] ?? null,
+                                    'model' => $validated['model'] ?? null,
+                                    'year_acquired' => $validated['year_acquired'],
+                                    'quantity' => 1,
+                                    'unit_price' => $validated['unit_price'] ?? null,
+                                    'condition' => $validated['condition'],
+                                    'status' => 'tersedia',
+                                    'photo' => $photoPath,
+                                    'notes' => $validated['notes'] ?? null,
+                                ]);
+
+                                $createdCodes[] = $code;
+                            }
+                        } else {
+                            // Consumable item: 1 record per location with allocated quantity
+                            $code = InventoryCodeGenerator::generate(
+                                $unit,
+                                $category,
+                                $validated['funding_source'],
+                                $validated['year_acquired']
+                            );
+
+                            Inventory::create([
+                                'unit_id' => $unitId,
+                                'category_id' => $validated['category_id'],
+                                'room_id' => $roomId,
+                                'classroom_id' => $classroomId,
+                                'funding_source' => $validated['funding_source'],
+                                'item_type' => 'consumable',
+                                'code' => $code,
+                                'name' => $validated['name'],
+                                'brand' => $validated['brand'] ?? null,
+                                'model' => $validated['model'] ?? null,
+                                'year_acquired' => $validated['year_acquired'],
+                                'quantity' => $qty,
+                                'min_stock' => $validated['min_stock'] ?? null,
+                                'unit_price' => $validated['unit_price'] ?? null,
+                                'condition' => $validated['condition'],
+                                'status' => 'tersedia',
+                                'photo' => $photoPath,
+                                'notes' => $validated['notes'] ?? null,
+                            ]);
+
+                            $createdCodes[] = $code;
+                        }
+                    }
+                }
+            });
+
+            if (count($createdCodes) === 1) {
+                return redirect()->back()->with('success', 'Inventaris berhasil ditambahkan dengan kode: ' . $createdCodes[0]);
+            } else {
+                $locationCount = count($allocations);
+                $totalUnits = count($createdCodes);
+                $firstCode = $createdCodes[0];
+                $lastCode = end($createdCodes);
+                return redirect()->back()->with('success', "Berhasil mendistribusikan {$totalUnits} unit barang ke {$locationCount} ruangan berbeda (Kode: {$firstCode} s/d {$lastCode})");
+            }
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menambah inventaris: ' . $e->getMessage());
         }

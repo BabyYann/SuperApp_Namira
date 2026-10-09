@@ -9,7 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { 
     PlusIcon, PencilSquareIcon, TrashIcon, CubeIcon, MagnifyingGlassIcon,
     FunnelIcon, ExclamationTriangleIcon, EyeIcon, PhotoIcon, ArchiveBoxIcon, ChevronDownIcon,
-    BuildingOfficeIcon, PrinterIcon, ArrowsRightLeftIcon
+    BuildingOfficeIcon, PrinterIcon, ArrowsRightLeftIcon, MapPinIcon, CheckCircleIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -105,6 +105,27 @@ const form = useForm({
     condition: 'baik',
     photo: null,
     notes: '',
+    distribution_mode: 'single',
+    allocations: [{ target: '', quantity: 1 }],
+});
+
+const addAllocationRow = () => {
+    form.allocations.push({ target: '', quantity: 1 });
+};
+
+const removeAllocationRow = (index) => {
+    if (form.allocations.length > 1) {
+        form.allocations.splice(index, 1);
+    }
+};
+
+const totalDistributedUnits = computed(() => {
+    if (form.distribution_mode !== 'multi') return form.quantity || 1;
+    return form.allocations.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
+});
+
+const validAllocationsCount = computed(() => {
+    return form.allocations.filter(item => item.target && (parseInt(item.quantity) || 0) > 0).length;
 });
 
 const deleteForm = useForm({});
@@ -134,6 +155,8 @@ const openCreateModal = () => {
     form.funding_source = 'YYS';
     form.item_type = 'asset';
     form.quantity = 1;
+    form.distribution_mode = 'single';
+    form.allocations = [{ target: '', quantity: 1 }];
     photoPreview.value = null;
     showModal.value = true;
 };
@@ -148,11 +171,15 @@ const openEditModal = (item) => {
     form.name = item.name;
     form.brand = item.brand || '';
     form.model = item.model || '';
+    form.year_acquired = item.year_acquired;
+    form.funding_source = item.funding_source;
     form.quantity = item.quantity;
     form.min_stock = item.min_stock || '';
     form.unit_price = item.unit_price || '';
     form.condition = item.condition;
     form.notes = item.notes || '';
+    form.distribution_mode = 'single';
+    form.allocations = [{ target: '', quantity: 1 }];
     photoPreview.value = item.photo ? `/storage/${item.photo}` : null;
     showModal.value = true;
 };
@@ -160,6 +187,8 @@ const openEditModal = (item) => {
 const closeModal = () => {
     showModal.value = false;
     form.reset();
+    form.distribution_mode = 'single';
+    form.allocations = [{ target: '', quantity: 1 }];
     photoPreview.value = null;
 };
 
@@ -179,6 +208,14 @@ const submit = () => {
             onSuccess: () => closeModal(),
         });
     } else {
+        if (form.distribution_mode === 'multi') {
+            const valid = form.allocations.filter(item => item.target && parseInt(item.quantity) > 0);
+            if (valid.length === 0) {
+                alert('Silakan pilih minimal 1 ruangan atau kelas dan tentukan jumlah unitnya.');
+                return;
+            }
+            form.quantity = totalDistributedUnits.value;
+        }
         form.post(route('sarpar.inventories.store'), {
             forceFormData: true,
             onSuccess: () => closeModal(),
@@ -676,17 +713,61 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                 </div>
                             </div>
 
+                            <!-- Mode Penempatan / Distribusi Ruangan (Hanya saat Tambah Baru) -->
+                            <div v-if="!isEditing" class="space-y-1.5 pt-1">
+                                <InputLabel value="Mode Distribusi Lokasi Ruangan" class="text-sm font-bold text-gray-700" />
+                                <div class="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+                                    <button 
+                                        type="button" 
+                                        @click="form.distribution_mode = 'single'"
+                                        :class="[
+                                            'flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer',
+                                            form.distribution_mode === 'single'
+                                                ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80'
+                                                : 'text-gray-500 hover:text-gray-800'
+                                        ]"
+                                    >
+                                        <BuildingOfficeIcon class="w-4 h-4 text-teal-600" />
+                                        <span>1 Ruangan (Standar)</span>
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        @click="form.distribution_mode = 'multi'"
+                                        :class="[
+                                            'flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer',
+                                            form.distribution_mode === 'multi'
+                                                ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80'
+                                                : 'text-gray-500 hover:text-gray-800'
+                                        ]"
+                                    >
+                                        <ArrowsRightLeftIcon class="w-4 h-4 text-indigo-600" />
+                                        <span>Multi-Ruangan (Distribusi Cepat)</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Baris Tahun, Jumlah, dan Harga -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                                 <div v-if="!isEditing">
                                     <InputLabel value="Tahun Perolehan *" class="text-sm font-bold text-gray-700" />
                                     <TextInput v-model="form.year_acquired" type="number" min="2000" :max="new Date().getFullYear() + 1" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 focus:border-namira-teal focus:ring-namira-teal rounded-xl bg-gray-50/50" required />
                                     <InputError :message="form.errors.year_acquired" class="mt-1" />
                                 </div>
-                                <div>
+
+                                <!-- Jumlah / Stok -->
+                                <div v-if="!isEditing && form.distribution_mode === 'multi'">
+                                    <InputLabel value="Total Unit Terhitung" class="text-sm font-bold text-teal-800" />
+                                    <div class="w-full mt-1.5 h-12 px-4 text-base rounded-xl bg-teal-50 border border-teal-200 text-teal-900 font-extrabold flex items-center justify-between">
+                                        <span>{{ totalDistributedUnits }} Unit</span>
+                                        <span class="text-[11px] bg-teal-200/70 text-teal-800 px-2.5 py-0.5 rounded-full font-bold">Otomatis</span>
+                                    </div>
+                                </div>
+                                <div v-else>
                                     <InputLabel value="Jumlah/Stok *" class="text-sm font-bold text-gray-700" />
                                     <TextInput v-model="form.quantity" type="number" min="1" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 focus:border-namira-teal focus:ring-namira-teal rounded-xl bg-gray-50/50" required />
                                     <InputError :message="form.errors.quantity" class="mt-1" />
                                 </div>
+
                                 <div v-if="form.item_type === 'consumable'">
                                     <InputLabel value="Stok Minimum" class="text-sm font-bold text-gray-700" />
                                     <TextInput v-model="form.min_stock" type="number" min="0" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 focus:border-namira-teal focus:ring-namira-teal rounded-xl bg-gray-50/50" placeholder="Alert jika di bawah" />
@@ -699,7 +780,8 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <!-- Mode Single Ruangan: Kondisi & Lokasi Biasa -->
+                            <div v-if="isEditing || form.distribution_mode === 'single'" class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <InputLabel value="Kondisi *" class="text-sm font-bold text-gray-700" />
                                     <select v-model="form.condition" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50">
@@ -723,6 +805,117 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                             <option v-for="room in rooms" :key="room.id" :value="room.id">{{ room.name }}</option>
                                         </optgroup>
                                     </select>
+                                </div>
+                            </div>
+
+                            <!-- Mode Multi Ruangan: Kondisi & Dynamic Allocation Table -->
+                            <div v-else-if="!isEditing && form.distribution_mode === 'multi'" class="space-y-5">
+                                <div>
+                                    <InputLabel value="Kondisi Awal Barang *" class="text-sm font-bold text-gray-700" />
+                                    <select v-model="form.condition" class="w-full mt-1.5 h-12 px-4 text-base border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50">
+                                        <option value="baik">Baik</option>
+                                        <option value="rusak_ringan">Rusak Ringan</option>
+                                        <option value="rusak_berat">Rusak Berat</option>
+                                    </select>
+                                    <InputError :message="form.errors.condition" class="mt-1" />
+                                </div>
+
+                                <!-- Dynamic Allocation Card -->
+                                <div class="space-y-3 p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div>
+                                            <h4 class="text-sm font-black text-slate-800 flex items-center gap-1.5">
+                                                <MapPinIcon class="w-4 h-4 text-teal-600" />
+                                                Alokasi Penempatan ke Ruangan & Kelas
+                                            </h4>
+                                            <p class="text-xs text-slate-500 mt-0.5">
+                                                Tentukan ruangan/kelas dan jumlah unit. Setiap unit fisik akan otomatis dibuatkan kode aset unik berbeda.
+                                            </p>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            @click="addAllocationRow"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 text-white hover:bg-teal-700 text-xs font-bold transition shadow-xs cursor-pointer self-start sm:self-auto"
+                                        >
+                                            <PlusIcon class="w-3.5 h-3.5" />
+                                            <span>Tambah Lokasi</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Rows List -->
+                                    <div class="space-y-2.5 pt-1">
+                                        <div 
+                                            v-for="(alloc, idx) in form.allocations" 
+                                            :key="idx"
+                                            class="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-white border border-slate-200 shadow-2xs"
+                                        >
+                                            <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-extrabold flex-shrink-0">
+                                                {{ idx + 1 }}
+                                            </span>
+
+                                            <!-- Select Ruangan / Kelas -->
+                                            <div class="flex-1 min-w-0">
+                                                <select 
+                                                    v-model="alloc.target" 
+                                                    class="w-full h-10 px-3 text-xs sm:text-sm border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 truncate"
+                                                    required
+                                                >
+                                                    <option value="">-- Pilih Ruangan atau Kelas --</option>
+                                                    <optgroup label="Ruang Kelas (Akademik)">
+                                                        <option v-for="c in classrooms" :key="'c-' + c.id" :value="'classroom:' + c.id">
+                                                            Kelas {{ c.name }}
+                                                        </option>
+                                                    </optgroup>
+                                                    <optgroup label="Ruangan Non-Kelas (Sarpras)">
+                                                        <option v-for="r in rooms" :key="'r-' + r.id" :value="'room:' + r.id">
+                                                            {{ r.name }}
+                                                        </option>
+                                                    </optgroup>
+                                                </select>
+                                            </div>
+
+                                            <!-- Qty Input -->
+                                            <div class="w-24 sm:w-28 flex items-center gap-1 flex-shrink-0">
+                                                <input 
+                                                    type="number" 
+                                                    min="1" 
+                                                    v-model.number="alloc.quantity" 
+                                                    class="w-full h-10 text-center font-bold text-xs sm:text-sm border-gray-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50" 
+                                                    placeholder="Qty" 
+                                                    required
+                                                />
+                                                <span class="text-[11px] text-gray-400 font-bold hidden sm:inline">Unit</span>
+                                            </div>
+
+                                            <!-- Delete Button -->
+                                            <button 
+                                                v-if="form.allocations.length > 1" 
+                                                type="button" 
+                                                @click="removeAllocationRow(idx)" 
+                                                class="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition flex-shrink-0 cursor-pointer"
+                                                title="Hapus baris ini"
+                                            >
+                                                <TrashIcon class="w-4 h-4" />
+                                            </button>
+                                            <div v-else class="w-8 flex-shrink-0"></div>
+                                        </div>
+                                    </div>
+                                    <InputError :message="form.errors.allocations" class="mt-1" />
+
+                                    <!-- Summary Footnote -->
+                                    <div class="pt-2 flex items-center justify-between text-xs text-slate-500 font-semibold border-t border-slate-200/60">
+                                        <span class="flex items-center gap-1 text-teal-800 font-bold">
+                                            <CheckCircleIcon class="w-4 h-4 text-teal-600" />
+                                            Total: {{ totalDistributedUnits }} unit ke {{ validAllocationsCount }} lokasi
+                                        </span>
+                                        <button 
+                                            type="button" 
+                                            @click="addAllocationRow" 
+                                            class="text-teal-700 hover:text-teal-900 font-bold hover:underline cursor-pointer"
+                                        >
+                                            + Tambah Ruangan Lain
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
