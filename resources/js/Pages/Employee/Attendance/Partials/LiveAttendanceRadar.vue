@@ -24,11 +24,33 @@ const activePeriod = ref('today'); // 'today' | 'week' | 'month'
 const switchUnit = (newUnitId) => {
     router.get(route('attendance.index'), {
         unit_id: newUnitId,
+        date: props.data?.date,
         tab: 'live',
     }, {
         preserveState: true,
         replace: true,
     });
+};
+
+// Date Switcher (Interactive Dropdown / Native Datepicker)
+const switchDate = (newDate) => {
+    if (!newDate) return;
+    router.get(route('attendance.index'), {
+        unit_id: props.data?.unit_id,
+        date: newDate,
+        tab: 'live',
+    }, {
+        preserveState: true,
+        replace: true,
+    });
+};
+
+const setPeriod = (period) => {
+    activePeriod.value = period;
+    if (period === 'today' && !props.data?.is_today) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        switchDate(todayStr);
+    }
 };
 
 // Percentage Calculator (1 decimal place e.g. 67.4%)
@@ -175,16 +197,29 @@ const getInitials = (name) => {
 <template>
     <div class="space-y-3 sm:space-y-4 pb-32 sm:pb-8">
 
-        <!-- 1. DATE SELECTOR CARD (Matches Reference) -->
-        <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-gray-100 shadow-sm flex items-center justify-between">
-            <div class="flex items-center gap-3">
+        <!-- 1. DATE SELECTOR CARD (Interactive Datepicker Dropdown) -->
+        <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-gray-100 shadow-sm flex items-center justify-between relative hover:border-gray-300 transition cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0 pointer-events-none">
                 <CalendarDaysIcon class="w-6 h-6 text-gray-800 flex-shrink-0" />
-                <div>
-                    <p class="text-[11px] font-medium text-gray-400">Hari ini</p>
-                    <h4 class="text-sm sm:text-base font-bold text-gray-900">{{ data?.date_formatted }}</h4>
+                <div class="min-w-0">
+                    <p class="text-[11px] font-medium text-gray-400">
+                        {{ data?.is_today ? 'Hari ini' : 'Tanggal Terpilih' }}
+                    </p>
+                    <h4 class="text-sm sm:text-base font-bold text-gray-900 truncate">
+                        {{ data?.date_formatted }}
+                    </h4>
                 </div>
             </div>
-            <ChevronDownIcon class="w-4 h-4 text-gray-700 flex-shrink-0" />
+            <ChevronDownIcon class="w-4 h-4 text-gray-700 flex-shrink-0 pointer-events-none" />
+
+            <!-- Invisible native date input overlay for instant native dropdown calendar -->
+            <input 
+                type="date" 
+                :value="data?.date"
+                @change="switchDate($event.target.value)"
+                class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                title="Pilih tanggal presensi"
+            />
         </div>
 
         <!-- 2. UNIT SELECTOR CARD (Dropdown for Superadmin, Static for Guru Biasa) -->
@@ -297,32 +332,32 @@ const getInitials = (name) => {
             </div>
         </div>
 
-        <!-- 4. STATISTIK KEHADIRAN (Donut Chart & Breakdown Table, Exact Match Reference) -->
-        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm space-y-4">
+        <!-- 4. STATISTIK KEHADIRAN (Donut Chart & Breakdown Table, Menyamping Side-by-Side) -->
+        <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-gray-100 shadow-sm space-y-4">
             <!-- Header with Timeframe Pills -->
             <div class="flex items-center justify-between">
                 <h3 class="text-base font-bold text-gray-900">Statistik Kehadiran</h3>
                 <div class="flex items-center border border-gray-200 rounded-xl overflow-hidden text-xs">
                     <button 
-                        @click="activePeriod = 'today'"
+                        @click="setPeriod('today')"
                         type="button" 
-                        class="px-3 py-1.5 font-bold transition cursor-pointer"
+                        class="px-2.5 sm:px-3 py-1 sm:py-1.5 font-bold transition cursor-pointer text-xs"
                         :class="activePeriod === 'today' ? 'bg-[#e6f4f1] text-[#00695c]' : 'text-gray-500 hover:text-gray-700 bg-white'"
                     >
                         Hari Ini
                     </button>
                     <button 
-                        @click="activePeriod = 'week'"
+                        @click="setPeriod('week')"
                         type="button" 
-                        class="px-3 py-1.5 transition cursor-pointer border-l border-gray-200"
+                        class="px-2.5 sm:px-3 py-1 sm:py-1.5 transition cursor-pointer border-l border-gray-200 text-xs"
                         :class="activePeriod === 'week' ? 'bg-[#e6f4f1] text-[#00695c] font-bold' : 'text-gray-500 hover:text-gray-700 bg-white'"
                     >
                         Minggu
                     </button>
                     <button 
-                        @click="activePeriod = 'month'"
+                        @click="setPeriod('month')"
                         type="button" 
-                        class="px-3 py-1.5 transition cursor-pointer border-l border-gray-200"
+                        class="px-2.5 sm:px-3 py-1 sm:py-1.5 transition cursor-pointer border-l border-gray-200 text-xs"
                         :class="activePeriod === 'month' ? 'bg-[#e6f4f1] text-[#00695c] font-bold' : 'text-gray-500 hover:text-gray-700 bg-white'"
                     >
                         Bulan
@@ -330,11 +365,11 @@ const getInitials = (name) => {
                 </div>
             </div>
 
-            <!-- Content: Donut Chart on Left, Breakdown Rows on Right -->
-            <div class="flex flex-col sm:flex-row items-center gap-6 pt-1">
-                <!-- SVG Donut Chart -->
-                <div class="relative w-44 h-44 flex-shrink-0 flex items-center justify-center">
-                    <svg class="w-44 h-44 transform -rotate-90 drop-shadow-xs" viewBox="0 0 160 160">
+            <!-- Content: Donut Chart on Left, Breakdown Rows on Right (Always Side-by-Side "Menyamping") -->
+            <div class="flex flex-row items-center gap-2.5 sm:gap-6 pt-1">
+                <!-- SVG Donut Chart (Always on the Left) -->
+                <div class="relative w-32 h-32 sm:w-44 sm:h-44 flex-shrink-0 flex items-center justify-center">
+                    <svg class="w-32 h-32 sm:w-44 sm:h-44 transform -rotate-90 drop-shadow-xs" viewBox="0 0 160 160">
                         <circle
                             cx="80"
                             cy="80"
@@ -363,32 +398,32 @@ const getInitials = (name) => {
 
                     <!-- Donut Center Text -->
                     <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                        <span class="text-2xl font-black text-gray-900 tracking-tight leading-none font-mono">
+                        <span class="text-lg sm:text-2xl font-black text-gray-900 tracking-tight leading-none font-mono">
                             {{ data?.stats?.attendance_percentage || 0 }}%
                         </span>
-                        <span class="text-xs font-semibold text-gray-500 mt-1">Kehadiran</span>
-                        <span class="text-[11px] font-normal text-gray-400 mt-0.5">
+                        <span class="text-[10px] sm:text-xs font-semibold text-gray-500 mt-0.5 sm:mt-1">Kehadiran</span>
+                        <span class="text-[9px] sm:text-[11px] font-normal text-gray-400 mt-0.5">
                             {{ data?.stats?.attendance_count || 0 }} dari {{ data?.stats?.total || 0 }}
                         </span>
                     </div>
                 </div>
 
-                <!-- 4 Breakdown Rows (Exact Match Reference) -->
-                <div class="w-full flex-1 space-y-3">
+                <!-- 4 Breakdown Rows (Always on the Right) -->
+                <div class="w-full flex-1 space-y-2 sm:space-y-3 min-w-0">
                     <div 
                         v-for="item in breakdownItems" 
                         :key="item.key"
                         @click="activeFilter = activeFilter === item.key ? 'all' : item.key"
-                        class="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition"
-                        :class="{ 'bg-slate-50 ring-1 ring-slate-300 font-bold': activeFilter === item.key }"
+                        class="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1 sm:p-1.5 rounded-lg transition"
+                        :class="{ 'bg-slate-50 ring-1 ring-slate-200 font-bold': activeFilter === item.key }"
                     >
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: item.color }"></span>
-                            <span class="text-gray-700 font-medium">{{ item.label }}</span>
+                        <div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                            <span class="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: item.color }"></span>
+                            <span class="text-gray-700 font-medium truncate text-[11px] sm:text-xs">{{ item.label }}</span>
                         </div>
-                        <div class="flex items-center gap-4">
-                            <span class="font-bold text-gray-900 font-mono w-6 text-right">{{ item.count }}</span>
-                            <span class="text-gray-400 font-medium font-mono w-12 text-right">{{ item.percentage }}%</span>
+                        <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                            <span class="font-bold text-gray-900 font-mono text-[11px] sm:text-xs w-4 sm:w-6 text-right">{{ item.count }}</span>
+                            <span class="text-gray-400 font-medium font-mono text-[11px] sm:text-xs w-9 sm:w-12 text-right">{{ item.percentage }}%</span>
                         </div>
                     </div>
                 </div>

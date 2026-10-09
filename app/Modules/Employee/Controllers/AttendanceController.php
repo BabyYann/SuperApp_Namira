@@ -508,7 +508,7 @@ class AttendanceController extends Controller
      */
     private function getLiveAttendanceData(Request $request, $user): array
     {
-        $today = Carbon::today();
+        $selectedDate = $request->input('date') ? Carbon::parse($request->input('date')) : Carbon::today();
         $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
         
         if ($isGlobalAdmin) {
@@ -558,18 +558,20 @@ class AttendanceController extends Controller
             ->orderBy('name')
             ->get();
 
-        $todayString = $today->toDateString();
+        $dateString = $selectedDate->toDateString();
         $todayAttendances = EmployeeAttendance::whereIn('user_id', $employees->pluck('id'))
-            ->where('date', $todayString)
+            ->where('date', $dateString)
             ->get()
             ->keyBy('user_id');
 
         \Carbon\Carbon::setLocale('id');
-        $dateFormatted = $today->translatedFormat('l, j F Y');
+        $dateFormatted = $selectedDate->translatedFormat('l, j F Y');
+        $isToday = $selectedDate->isToday();
 
         $liveAttendance = [
-            'date' => $todayString,
+            'date' => $dateString,
             'date_formatted' => $dateFormatted,
+            'is_today' => $isToday,
             'unit_name' => $activeUnit?->name ?? 'Semua Unit',
             'unit_code' => $activeUnit?->code ?? '-',
             'unit_id' => $unitId,

@@ -10,22 +10,10 @@
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-5 md:space-y-6">
             
-            <!-- MAIN TOP NAVIGATION: Presensi Siswa / Presensi Saya vs Presensi Karyawan (Matches Reference) -->
+            <!-- MAIN TOP NAVIGATION: Presensi Saya vs Presensi Karyawan -->
             <div class="flex items-center justify-center p-1 bg-slate-100 rounded-2xl max-w-md mx-auto border border-slate-200 shadow-xs">
-                <!-- If Super Admin Yayasan: Presensi Siswa links directly to student attendance (Matches reference mockup) -->
-                <Link
-                    v-if="liveAttendance?.is_global_admin"
-                    :href="route('yayasan.student-attendance.index')"
-                    class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
-                >
-                    <UserIcon class="w-4 h-4" />
-                    <span>Presensi Siswa</span>
-                </Link>
-
-                <!-- If Guru / Regular Staff: Presensi Saya toggles personal check-in form -->
                 <button
-                    v-else
-                    @click="mainTab = 'personal'"
+                    @click="setMainTab('personal')"
                     type="button"
                     class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
                     :class="mainTab === 'personal' ? 'bg-[#00584b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
@@ -35,7 +23,7 @@
                 </button>
 
                 <button
-                    @click="mainTab = 'live'"
+                    @click="setMainTab('live')"
                     type="button"
                     class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer"
                     :class="mainTab === 'live' ? 'bg-[#00584b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
@@ -490,6 +478,15 @@ const getMainInitialTab = () => {
 };
 
 const mainTab = ref(getMainInitialTab()); // 'personal' | 'live'
+
+const setMainTab = (tab) => {
+    mainTab.value = tab;
+    if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url.toString());
+    }
+};
 
 const getInitialTab = () => {
     if (typeof window !== 'undefined') {
