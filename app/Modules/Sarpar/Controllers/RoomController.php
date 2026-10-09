@@ -13,7 +13,12 @@ class RoomController extends Controller
 {
     public function index()
     {
-        $unitId = session('active_unit_id');
+        $user = auth()->user();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : (session('active_unit_id') ?: ($user?->unit_id ?: $user?->teacher_profile?->unit_id));
+        if (!$unitId && $isGlobalAdmin) {
+            $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+        }
 
         // Get sarpar rooms with inventory count
         $rooms = Room::withCount('inventories')
@@ -55,11 +60,16 @@ class RoomController extends Controller
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 
-        $unitId = session('active_unit_id');
+        $user = auth()->user();
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan']);
+        $unitId = session('active_unit_id') ?: ($user?->unit_id ?: $user?->teacher_profile?->unit_id);
+        if (!$unitId && $isGlobalAdmin) {
+            $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:100',
@@ -82,13 +92,13 @@ class RoomController extends Controller
 
     public function update(Request $request, Room $room)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 
-        $unitId = session('active_unit_id');
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            if ($room->unit_id !== $unitId) {
+        $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            if ($unitId && $room->unit_id !== $unitId) {
                 abort(403, 'Akses Ditolak: Unit tidak sesuai.');
             }
         }
@@ -111,13 +121,13 @@ class RoomController extends Controller
 
     public function destroy(Room $room)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 
-        $unitId = session('active_unit_id');
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            if ($room->unit_id !== $unitId) {
+        $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            if ($unitId && $room->unit_id !== $unitId) {
                 abort(403, 'Akses Ditolak: Unit tidak sesuai.');
             }
         }

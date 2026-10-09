@@ -18,8 +18,8 @@ class InventoryController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
-        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : session('active_unit_id');
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : (session('active_unit_id') ?: ($user?->unit_id ?: $user?->teacher_profile?->unit_id));
         if (!$unitId && $isGlobalAdmin) {
             $unitId = Unit::first()?->id;
         }
@@ -59,7 +59,7 @@ class InventoryController extends Controller
 
     public function export()
     {
-        $unitId = session('active_unit_id');
+        $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
         $filters = request()->only(['category_id', 'funding_source', 'item_type', 'status', 'condition']);
         $format = request('format', 'csv');
         
@@ -133,9 +133,9 @@ class InventoryController extends Controller
 
     public function show(Inventory $inventory)
     {
-        $unitId = session('active_unit_id');
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            if ($inventory->unit_id !== $unitId) {
+        $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            if ($unitId && $inventory->unit_id !== $unitId) {
                 abort(403, 'Akses Ditolak: Unit tidak sesuai.');
             }
         }
@@ -157,7 +157,7 @@ class InventoryController extends Controller
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola inventaris.');
         }
 
@@ -179,18 +179,18 @@ class InventoryController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $unitId = session('active_unit_id');
+        $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
         
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
             if ($validated['room_id']) {
                 $room = Room::findOrFail($validated['room_id']);
-                if ($room->unit_id !== $unitId) {
+                if ($unitId && $room->unit_id !== $unitId) {
                     abort(403, 'Akses Ditolak: Ruangan tidak sesuai dengan unit Anda.');
                 }
             }
             if ($validated['classroom_id']) {
                 $classroom = Classroom::findOrFail($validated['classroom_id']);
-                if ($classroom->unit_id !== $unitId) {
+                if ($unitId && $classroom->unit_id !== $unitId) {
                     abort(403, 'Akses Ditolak: Kelas tidak sesuai dengan unit Anda.');
                 }
             }
@@ -201,6 +201,8 @@ class InventoryController extends Controller
             } elseif ($validated['classroom_id']) {
                 $classroom = Classroom::findOrFail($validated['classroom_id']);
                 $unitId = $classroom->unit_id;
+            } elseif (!$unitId) {
+                $unitId = Unit::first()?->id;
             }
         }
 
@@ -236,13 +238,13 @@ class InventoryController extends Controller
 
     public function update(Request $request, Inventory $inventory)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola inventaris.');
         }
 
-        $unitId = session('active_unit_id');
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            if ($inventory->unit_id !== $unitId) {
+        $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            if ($unitId && $inventory->unit_id !== $unitId) {
                 abort(403, 'Akses Ditolak: Unit tidak sesuai.');
             }
         } else {
@@ -265,16 +267,16 @@ class InventoryController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
             if ($validated['room_id']) {
                 $room = Room::findOrFail($validated['room_id']);
-                if ($room->unit_id !== $unitId) {
+                if ($unitId && $room->unit_id !== $unitId) {
                     abort(403, 'Akses Ditolak: Ruangan tidak sesuai dengan unit Anda.');
                 }
             }
             if ($validated['classroom_id']) {
                 $classroom = Classroom::findOrFail($validated['classroom_id']);
-                if ($classroom->unit_id !== $unitId) {
+                if ($unitId && $classroom->unit_id !== $unitId) {
                     abort(403, 'Akses Ditolak: Kelas tidak sesuai dengan unit Anda.');
                 }
             }
@@ -298,13 +300,13 @@ class InventoryController extends Controller
 
     public function destroy(Inventory $inventory)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola inventaris.');
         }
 
-        $unitId = session('active_unit_id');
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            if ($inventory->unit_id !== $unitId) {
+        $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            if ($unitId && $inventory->unit_id !== $unitId) {
                 abort(403, 'Akses Ditolak: Unit tidak sesuai.');
             }
         }

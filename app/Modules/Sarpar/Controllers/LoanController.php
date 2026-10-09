@@ -16,8 +16,8 @@ class LoanController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan']);
-        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : session('active_unit_id');
+        $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : (session('active_unit_id') ?: ($user?->unit_id ?: $user?->teacher_profile?->unit_id));
         if (!$unitId && $isGlobalAdmin) {
             $unitId = \App\Modules\Yayasan\Models\Unit::first()?->id;
         }
@@ -66,7 +66,7 @@ class LoanController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mencatat peminjaman inventaris.');
         }
 
@@ -80,8 +80,11 @@ class LoanController extends Controller
 
         $inventory = Inventory::findOrFail($validated['inventory_id']);
         
-        if ($inventory->unit_id != session('active_unit_id')) {
-            abort(403);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+            if ($unitId && $inventory->unit_id != $unitId) {
+                abort(403, 'Akses Ditolak: Anda tidak dapat meminjamkan inventaris dari unit lain.');
+            }
         }
 
         if ($inventory->status !== 'tersedia') {
@@ -130,12 +133,15 @@ class LoanController extends Controller
      */
     public function return(Request $request, Loan $loan)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses pengembalian peminjaman.');
         }
 
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $loan->inventory->unit_id != session('active_unit_id')) {
-            abort(403, 'Akses Ditolak: Anda tidak dapat mengakses data peminjaman dari unit lain.');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+            if ($unitId && $loan->inventory->unit_id != $unitId) {
+                abort(403, 'Akses Ditolak: Anda tidak dapat mengakses data peminjaman dari unit lain.');
+            }
         }
 
         if ($loan->status !== 'borrowed' && $loan->status !== 'overdue') {
@@ -181,12 +187,15 @@ class LoanController extends Controller
      */
     public function markLost(Loan $loan)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses status hilang peminjaman.');
         }
 
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $loan->inventory->unit_id != session('active_unit_id')) {
-            abort(403, 'Akses Ditolak: Anda tidak dapat mengakses data peminjaman dari unit lain.');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+            if ($unitId && $loan->inventory->unit_id != $unitId) {
+                abort(403, 'Akses Ditolak: Anda tidak dapat mengakses data peminjaman dari unit lain.');
+            }
         }
 
         if ($loan->status === 'returned' || $loan->status === 'lost') {
@@ -208,8 +217,15 @@ class LoanController extends Controller
      */
     public function sendReminder(Loan $loan)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengirim pengingat peminjaman.');
+        }
+
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+            if ($unitId && $loan->inventory && $loan->inventory->unit_id != $unitId) {
+                abort(403, 'Akses Ditolak: Anda tidak dapat mengakses data peminjaman dari unit lain.');
+            }
         }
 
         $borrower = $loan->borrower;

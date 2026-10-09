@@ -22,8 +22,8 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
-            abort(403, 'Akses Ditolak: Hanya pihak Yayasan yang dapat mengelola kategori inventaris global.');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola kategori.');
         }
 
         $validated = $request->validate([
@@ -42,8 +42,8 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
-            abort(403, 'Akses Ditolak: Hanya pihak Yayasan yang dapat mengelola kategori inventaris global.');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola kategori.');
         }
 
         $validated = $request->validate([
@@ -62,8 +62,8 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
-            abort(403, 'Akses Ditolak: Hanya pihak Yayasan yang dapat menghapus kategori inventaris global.');
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk menghapus kategori.');
         }
 
         if ($category->inventories()->count() > 0) {

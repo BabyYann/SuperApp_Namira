@@ -18,8 +18,15 @@ class AssetActionController extends Controller
      */
     public function transfer(Request $request, Inventory $inventory)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses mutasi barang.');
+        }
+
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+            if ($unitId && $inventory->unit_id !== $unitId) {
+                abort(403, 'Akses Ditolak: Unit tidak sesuai.');
+            }
         }
 
         $validated = $request->validate([
@@ -63,8 +70,15 @@ class AssetActionController extends Controller
      */
     public function disposal(Request $request, Inventory $inventory)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses penghapusan barang.');
+        }
+
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+            if ($unitId && $inventory->unit_id !== $unitId) {
+                abort(403, 'Akses Ditolak: Unit tidak sesuai.');
+            }
         }
 
         $validated = $request->validate([

@@ -24,9 +24,9 @@ class UsageLogController extends Controller
 
         $inventory = Inventory::findOrFail($validated['inventory_id']);
 
-        $unitId = session('active_unit_id');
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            if ($inventory->unit_id !== $unitId) {
+        $unitId = session('active_unit_id') ?: (auth()->user()->unit_id ?: auth()->user()->teacher_profile?->unit_id);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan'])) {
+            if ($unitId && $inventory->unit_id !== $unitId) {
                 abort(403, 'Akses Ditolak: Unit tidak sesuai.');
             }
         }

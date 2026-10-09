@@ -108,9 +108,9 @@ test('NewsController: uses session active_unit_id', substr_count($c, "session('a
 
 // 13. Sarpar CategoryController
 $c = readController('app/Modules/Sarpar/Controllers/CategoryController.php');
-test('Sarpar CategoryController: store() blocks non-yayasan', str_contains($c, 'mengelola kategori inventaris global'));
-test('Sarpar CategoryController: update() blocks non-yayasan', (bool)preg_match('/public function update.*?mengelola kategori inventaris global/s', $c));
-test('Sarpar CategoryController: destroy() blocks non-yayasan', str_contains($c, 'menghapus kategori inventaris global'));
+test('Sarpar CategoryController: store() blocks unauthorized', str_contains($c, 'mengelola kategori'));
+test('Sarpar CategoryController: update() blocks unauthorized', (bool)preg_match('/public function update.*?mengelola kategori/s', $c));
+test('Sarpar CategoryController: destroy() blocks unauthorized', str_contains($c, 'menghapus kategori'));
 
 // - Output --------------------------------------------------------------------
 echo PHP_EOL;
