@@ -27,7 +27,17 @@ class AchievementController extends Controller
         }
 
         if ($request->level) {
-            $query->where('level', $request->level);
+            $filterLevel = $request->level;
+            $levelEquivs = [
+                'Sekolah' => ['Sekolah', 'sekolah'],
+                'Kecamatan' => ['Kecamatan', 'kecamatan'],
+                'Kabupaten/Kota' => ['Kabupaten/Kota', 'kabupaten', 'kabupaten/kota'],
+                'Provinsi' => ['Provinsi', 'provinsi'],
+                'Nasional' => ['Nasional', 'nasional'],
+                'Internasional' => ['Internasional', 'internasional'],
+            ];
+            $searchValues = $levelEquivs[$filterLevel] ?? [$filterLevel];
+            $query->whereIn('level', $searchValues);
         }
 
         if ($request->start_date) {
@@ -47,7 +57,7 @@ class AchievementController extends Controller
                 'student_name' => $a->student->full_name ?? 'Unknown',
                 'classroom' => $a->student->classroom->name ?? '-',
                 'title' => $a->title,
-                'level' => $a->level,
+                'level' => ($a->level === 'kabupaten' || $a->level === 'kabupaten/kota') ? 'Kabupaten/Kota' : ucfirst($a->level),
                 'description' => $a->description,
                 'proof_file' => $a->proof_file ? asset('storage/' . $a->proof_file) : null,
                 'creator_name' => $a->creator->name ?? 'System/Unknown',
@@ -142,7 +152,40 @@ class AchievementController extends Controller
         }
         $data['proof_file'] = $proofPath;
 
-        $achievement = Achievement::create($data);
+        // Normalize Level to clean display format
+        $levelMap = [
+            'sekolah' => 'Sekolah',
+            'kecamatan' => 'Kecamatan',
+            'kabupaten' => 'Kabupaten/Kota',
+            'kabupaten/kota' => 'Kabupaten/Kota',
+            'provinsi' => 'Provinsi',
+            'nasional' => 'Nasional',
+            'internasional' => 'Internasional',
+        ];
+        $inputLevel = trim($request->level);
+        $normalizedLevel = $levelMap[strtolower($inputLevel)] ?? $inputLevel;
+        $data['level'] = $normalizedLevel;
+
+        $achievement = null;
+        try {
+            $achievement = Achievement::create($data);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Fallback if production database has not run migration yet (still strictly enum)
+            if (str_contains($e->getMessage(), 'level') || str_contains($e->getMessage(), '1265')) {
+                $fallbackMap = [
+                    'Sekolah' => 'sekolah',
+                    'Kecamatan' => 'kecamatan',
+                    'Kabupaten/Kota' => 'kabupaten',
+                    'Provinsi' => 'provinsi',
+                    'Nasional' => 'nasional',
+                    'Internasional' => 'internasional',
+                ];
+                $data['level'] = $fallbackMap[$normalizedLevel] ?? strtolower($normalizedLevel);
+                $achievement = Achievement::create($data);
+            } else {
+                throw $e;
+            }
+        }
 
         $student = Student::with(['unit', 'classroom', 'user'])->find($request->student_id);
 
@@ -151,7 +194,7 @@ class AchievementController extends Controller
                 \App\Services\NotificationDispatcher::sendToUser(
                     $student->user,
                     '🏆 Prestasi Siswa Baru',
-                    "Selamat! Pencapaian prestasi: {$request->title} (Tingkat {$request->level}) pada {$request->date}.",
+                    "Selamat! Pencapaian prestasi: {$request->title} (Tingkat {$normalizedLevel}) pada {$request->date}.",
                     'counseling',
                     ['achievement_id' => $achievement->id]
                 );
@@ -160,7 +203,7 @@ class AchievementController extends Controller
                 ['wali_kelas', 'bk', 'admin_unit', 'kepala_sekolah'],
                 $achievement->unit_id,
                 '🏆 Prestasi Siswa Baru',
-                "Siswa {$student->full_name} ({$student->classroom->name}) meraih prestasi {$request->title} (Tingkat {$request->level}).",
+                "Siswa {$student->full_name} ({$student->classroom->name}) meraih prestasi {$request->title} (Tingkat {$normalizedLevel}).",
                 'counseling',
                 ['achievement_id' => $achievement->id]
             );
@@ -177,7 +220,7 @@ class AchievementController extends Controller
                     . "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: {$student->classroom->name}).\n\n"
                     . "Kabar gembira! Kami menginformasikan bahwa putra/putri Anda tercatat meraih prestasi berikut:\n"
                     . "• *Prestasi*: {$request->title}\n"
-                    . "• *Tingkat*: {$request->level}\n"
+                    . "• *Tingkat*: {$normalizedLevel}\n"
                     . "• *Tanggal*: {$dateFormatted}\n"
                     . (!empty($request->description) ? "• *Keterangan*: {$request->description}\n" : "") . "\n"
                     . "Selamat atas pencapaian yang diraih ananda. Semoga terus memotivasi untuk berkarya dan berprestasi! 🌟\n\n"
