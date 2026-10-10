@@ -13,8 +13,13 @@ import SarparBanner from '../Partials/SarparBanner.vue';
 
 const props = defineProps({
     inventory: Object,
+    canManage: {
+        type: Boolean,
+        default: false,
+    },
 });
 
+const hasImageError = ref(false);
 const showReportModal = ref(false);
 const showUsageModal = ref(false);
 
@@ -93,8 +98,8 @@ const getSourceBadge = (source) => source === 'BOS' ? 'bg-purple-100 text-purple
             <div class="lg:col-span-1 bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 p-6 space-y-6">
                 <!-- Photo -->
                 <div class="flex justify-center">
-                    <div v-if="inventory.photo" class="w-32 h-32 rounded-2xl overflow-hidden">
-                        <img :src="`/storage/${inventory.photo}`" class="w-full h-full object-cover" />
+                    <div v-if="inventory.photo && !hasImageError" class="w-32 h-32 rounded-2xl overflow-hidden shadow-xs border border-slate-100">
+                        <img :src="inventory.photo_url || `/storage/${inventory.photo}`" @error="hasImageError = true" class="w-full h-full object-cover" />
                     </div>
                     <div v-else class="w-32 h-32 bg-gradient-to-br from-namira-teal/10 to-teal-100 rounded-2xl flex items-center justify-center">
                         <PhotoIcon class="w-12 h-12 text-namira-teal/50" />

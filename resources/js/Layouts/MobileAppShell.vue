@@ -718,7 +718,8 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 5. SARANA & PRASARANA (SARPAR) -->
-                        <div v-if="isGlobalAdmin || hasRole(['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                        <!-- Full Management Menu for Admins & Coordinator -->
+                        <div v-if="isGlobalAdmin || hasRole(['koordinator_sarpar', 'admin_unit', 'super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah', 'staff_yayasan'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
                             <div class="flex items-center gap-2 px-1">
                                 <div class="w-2 h-2 rounded-full bg-orange-500"></div>
                                 <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
@@ -790,6 +791,39 @@ const isRouteActive = (pattern) => {
                                         <TagIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Kategori</span>
+                                </Link>
+                            </div>
+                        </div>
+
+                        <!-- Read-Only Menu for All Other Employees & Teachers -->
+                        <div v-else-if="!hasRole(['siswa', 'student'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-teal-500"></div>
+                                <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                                    Katalog Sarpras
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
+                                <Link 
+                                    :href="safeRoute('sarpar.inventories.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <CubeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Katalog Aset</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('sarpar.rooms.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-purple-50/70 border border-white ring-1 ring-purple-400/25 shadow-[0_8px_18px_-3px_rgba(147,51,234,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BuildingOfficeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-purple-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Daftar Ruang</span>
                                 </Link>
                             </div>
                         </div>

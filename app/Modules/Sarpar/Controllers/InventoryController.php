@@ -12,6 +12,7 @@ use App\Modules\Yayasan\Models\Unit;
 use App\Modules\Academic\Models\Classroom;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class InventoryController extends Controller
@@ -19,6 +20,7 @@ class InventoryController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $canManage = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah']);
         $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
         $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : (session('active_unit_id') ?: ($user?->unit_id ?: $user?->teacher_profile?->unit_id));
         if (!$unitId && $isGlobalAdmin) {
@@ -54,6 +56,7 @@ class InventoryController extends Controller
             'rooms' => $rooms,
             'classrooms' => $classrooms,
             'units' => $units,
+            'canManage' => $canManage,
             'filters' => request()->only(['search', 'category_id', 'funding_source', 'item_type', 'status', 'condition']),
         ]);
     }
@@ -151,8 +154,12 @@ class InventoryController extends Controller
             'usageLogs.user'
         ]);
 
+        $user = auth()->user();
+        $canManage = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah']);
+
         return Inertia::render('Sarpar/Inventories/Show', [
             'inventory' => $inventory,
+            'canManage' => $canManage,
         ]);
     }
 
@@ -178,7 +185,27 @@ class InventoryController extends Controller
             'min_stock' => 'nullable|integer|min:0',
             'unit_price' => 'nullable|integer|min:0',
             'condition' => 'required|in:baik,rusak_ringan,rusak_berat',
-            'photo' => 'required|image|max:2048',
+            'photo' => [
+                'required',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->hasFile('photo')) {
+                        $file = $request->file('photo');
+                        $ext = strtolower($file->getClientOriginalExtension());
+                        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+                            $fail('Format foto harus berupa JPG, PNG, atau WEBP.');
+                        }
+                        if ($file->getSize() > 10 * 1024 * 1024) {
+                            $fail('Ukuran foto maksimal 10MB.');
+                        }
+                    } elseif (is_string($value)) {
+                        if (!str_starts_with($value, 'data:image/')) {
+                            $fail('Format foto tidak valid.');
+                        }
+                    } else {
+                        $fail('Foto barang wajib dilampirkan.');
+                    }
+                }
+            ],
             'notes' => 'nullable|string|max:1000',
             'distribution_mode' => 'nullable|in:single,multi',
             'allocations' => 'nullable',
@@ -289,8 +316,21 @@ class InventoryController extends Controller
         try {
             $category = Category::findOrFail($validated['category_id']);
             
-            // Handle photo upload (one file shared across batch records)
-            $photoPath = $request->file('photo')->store('sarpar/inventories', 'public');
+            // Handle photo upload (supports uploaded file and compressed Base64, shared across batch records)
+            $photoPath = null;
+            if ($request->hasFile('photo')) {
+                $photoPath = $request->file('photo')->store('sarpar/inventories', 'public');
+            } elseif ($request->photo && is_string($request->photo) && str_starts_with($request->photo, 'data:image')) {
+                $image = $request->photo;
+                $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
+                $image = str_replace(' ', '+', $image);
+                $imageName = 'inv_' . uniqid() . '_' . time() . '.jpg';
+                if (!file_exists(storage_path('app/public/sarpar/inventories'))) {
+                    mkdir(storage_path('app/public/sarpar/inventories'), 0777, true);
+                }
+                Storage::disk('public')->put('sarpar/inventories/' . $imageName, base64_decode($image));
+                $photoPath = 'sarpar/inventories/' . $imageName;
+            }
 
             $createdCodes = [];
 
@@ -429,7 +469,24 @@ class InventoryController extends Controller
             'unit_price' => 'nullable|integer|min:0',
             'condition' => 'required|in:baik,rusak_ringan,rusak_berat',
             'status' => 'required|in:tersedia,dipinjam,diperbaiki,dihapus',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!$value) return;
+                    if ($request->hasFile('photo')) {
+                        $file = $request->file('photo');
+                        $ext = strtolower($file->getClientOriginalExtension());
+                        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+                            $fail('Format foto harus berupa JPG, PNG, atau WEBP.');
+                        }
+                        if ($file->getSize() > 10 * 1024 * 1024) {
+                            $fail('Ukuran foto maksimal 10MB.');
+                        }
+                    } elseif (is_string($value) && str_starts_with($value, 'data:image/')) {
+                        // valid base64
+                    }
+                }
+            ],
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -449,12 +506,27 @@ class InventoryController extends Controller
         }
 
         try {
-            // Handle photo upload
+            // Handle photo upload (supports uploaded file and compressed Base64)
             if ($request->hasFile('photo')) {
-                if ($inventory->photo) {
-                    \Storage::disk('public')->delete($inventory->photo);
+                if ($inventory->photo && Storage::disk('public')->exists($inventory->photo)) {
+                    Storage::disk('public')->delete($inventory->photo);
                 }
                 $validated['photo'] = $request->file('photo')->store('sarpar/inventories', 'public');
+            } elseif ($request->photo && is_string($request->photo) && str_starts_with($request->photo, 'data:image')) {
+                if ($inventory->photo && Storage::disk('public')->exists($inventory->photo)) {
+                    Storage::disk('public')->delete($inventory->photo);
+                }
+                $image = $request->photo;
+                $image = preg_replace('/^data:image\/\w+;base64,/', '', $image);
+                $image = str_replace(' ', '+', $image);
+                $imageName = 'inv_' . uniqid() . '_' . time() . '.jpg';
+                if (!file_exists(storage_path('app/public/sarpar/inventories'))) {
+                    mkdir(storage_path('app/public/sarpar/inventories'), 0777, true);
+                }
+                Storage::disk('public')->put('sarpar/inventories/' . $imageName, base64_decode($image));
+                $validated['photo'] = 'sarpar/inventories/' . $imageName;
+            } else {
+                unset($validated['photo']);
             }
 
             $inventory->update($validated);

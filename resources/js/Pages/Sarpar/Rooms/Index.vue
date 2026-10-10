@@ -15,6 +15,10 @@ import SarparBanner from '../Partials/SarparBanner.vue';
 const props = defineProps({
     rooms: Array,
     classrooms: Array,
+    canManage: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const showModal = ref(false);
@@ -36,7 +40,7 @@ const deleteForm = useForm({});
 
 // Combined locations
 const allLocations = computed(() => {
-    const roomsList = props.rooms.map(r => ({...r, type: 'room', editable: true}));
+    const roomsList = props.rooms.map(r => ({...r, type: 'room', editable: props.canManage && (r.editable !== false)}));
     const classroomsList = props.classrooms.map(c => ({...c, type: 'classroom', editable: false}));
     
     if (activeTab.value === 'rooms') return roomsList;
@@ -121,12 +125,16 @@ const deleteItem = () => {
                                 <h1 class="text-xl font-black leading-tight">Data Ruangan & Lokasi</h1>
                             </div>
                             <button
+                                v-if="canManage"
                                 @click="openCreateModal"
                                 class="px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
                             >
                                 <PlusIcon class="w-4 h-4 stroke-[2.5]" />
                                 <span>Tambah</span>
                             </button>
+                            <span v-else class="px-2.5 py-1 bg-white/15 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold rounded-lg">
+                                Mode Lihat
+                            </span>
                         </div>
 
                         <!-- Quick Stats Grid (3 Columns) -->
@@ -251,7 +259,7 @@ const deleteItem = () => {
                         </button>
                     </div>
 
-                    <button @click="openCreateModal" class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                    <button v-if="canManage" @click="openCreateModal" class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all flex items-center gap-2">
                         <PlusIcon class="w-5 h-5" /><span>Tambah Ruangan</span>
                     </button>
                 </div>

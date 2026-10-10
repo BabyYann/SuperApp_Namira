@@ -14,6 +14,7 @@ class RoomController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $canManage = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah']);
         $isGlobalAdmin = $user && $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
         $unitId = $isGlobalAdmin ? (request('unit_id') ?: session('active_unit_id')) : (session('active_unit_id') ?: ($user?->unit_id ?: $user?->teacher_profile?->unit_id));
         if (!$unitId && $isGlobalAdmin) {
@@ -26,9 +27,9 @@ class RoomController extends Controller
             ->orderBy('building')
             ->orderBy('name')
             ->get()
-            ->map(function ($room) {
+            ->map(function ($room) use ($canManage) {
                 $room->type = 'room';
-                $room->editable = true;
+                $room->editable = $canManage;
                 return $room;
             });
 
@@ -55,6 +56,7 @@ class RoomController extends Controller
         return Inertia::render('Sarpar/Rooms/Index', [
             'rooms' => $rooms,
             'classrooms' => $classrooms,
+            'canManage' => $canManage,
         ]);
     }
 

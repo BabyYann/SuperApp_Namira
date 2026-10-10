@@ -20,6 +20,10 @@ const props = defineProps({
     classrooms: Array,
     units: Array,
     filters: Object,
+    canManage: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const showModal = ref(false);
@@ -28,6 +32,13 @@ const showDeleteConfirm = ref(false);
 const itemToDelete = ref(null);
 const showFilters = ref(false);
 const photoPreview = ref(null);
+const isCompressing = ref(false);
+const photoSizeInfo = ref('');
+const imageErrors = ref(new Set());
+
+const onImageError = (id) => {
+    imageErrors.value.add(id);
+};
 const showExportMenu = ref(false);
 
 // Transfer Modal State
@@ -148,6 +159,48 @@ watch(searchQuery, () => {
     searchTimeout = setTimeout(() => applyFilters(), 500);
 });
 
+const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 1280;
+
+                if (width > height && width > maxDim) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+
+                const head = 'data:image/jpeg;base64,';
+                const base64Length = compressedDataUrl.length - head.length;
+                const sizeInBytes = Math.round((base64Length * 3) / 4);
+                const sizeInKB = Math.round(sizeInBytes / 1024);
+                photoSizeInfo.value = `${sizeInKB} KB`;
+
+                resolve(compressedDataUrl);
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+};
+
 const openCreateModal = () => {
     isEditing.value = false;
     form.reset();
@@ -159,6 +212,7 @@ const openCreateModal = () => {
     form.distribution_mode = 'single';
     form.allocations = [{ target: '', quantity: 1 }];
     photoPreview.value = null;
+    photoSizeInfo.value = '';
     showModal.value = true;
 };
 
@@ -181,7 +235,8 @@ const openEditModal = (item) => {
     form.notes = item.notes || '';
     form.distribution_mode = 'single';
     form.allocations = [{ target: '', quantity: 1 }];
-    photoPreview.value = item.photo ? `/storage/${item.photo}` : null;
+    photoPreview.value = item.photo_url || (item.photo ? `/storage/${item.photo}` : null);
+    photoSizeInfo.value = '';
     showModal.value = true;
 };
 
@@ -191,13 +246,26 @@ const closeModal = () => {
     form.distribution_mode = 'single';
     form.allocations = [{ target: '', quantity: 1 }];
     photoPreview.value = null;
+    photoSizeInfo.value = '';
 };
 
-const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedBase64 = await compressImage(file);
+        form.photo = compressedBase64;
+        photoPreview.value = compressedBase64;
+    } catch (err) {
+        console.error('Compress error:', err);
         form.photo = file;
         photoPreview.value = URL.createObjectURL(file);
+        photoSizeInfo.value = `${Math.round(file.size / 1024)} KB`;
+    } finally {
+        isCompressing.value = false;
+        if (e.target) e.target.value = '';
     }
 };
 
@@ -291,12 +359,16 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                 <h1 class="text-xl font-black leading-tight">Data Inventaris</h1>
                             </div>
                             <button
+                                v-if="canManage"
                                 @click="openCreateModal"
                                 class="px-3 py-2 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 active:scale-95 transition"
                             >
                                 <PlusIcon class="w-4 h-4 stroke-[2.5]" />
                                 <span>Tambah</span>
                             </button>
+                            <span v-else class="px-2.5 py-1 bg-white/15 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold rounded-lg">
+                                Mode Lihat
+                            </span>
                         </div>
 
                         <!-- Quick Stats Cards (4 Column Grid) -->
@@ -323,6 +395,17 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                 </p>
                                 <p class="text-[8px] text-red-200 font-bold mt-1 uppercase">Stok Menipis</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Read-Only Notice for Non-Managers -->
+                <div v-if="!canManage" class="px-4">
+                    <div class="bg-teal-50 border border-teal-200/80 rounded-2xl p-3 text-xs text-teal-900 flex items-center gap-2.5 shadow-xs">
+                        <CubeIcon class="w-5 h-5 text-teal-600 shrink-0" />
+                        <div class="min-w-0 flex-1 leading-snug">
+                            <p class="font-extrabold text-teal-900">Katalog Sarana & Prasarana</p>
+                            <p class="text-[11px] text-teal-700">Daftar inventaris sekolah untuk diketahui dan dijaga bersama seluruh warga sekolah.</p>
                         </div>
                     </div>
                 </div>
@@ -405,7 +488,7 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                     >
                         <div class="flex items-center gap-3">
                             <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                                <img v-if="item.photo" :src="`/storage/${item.photo}`" class="w-full h-full object-cover" />
+                                <img v-if="item.photo && !imageErrors.has(item.id)" :src="item.photo_url || `/storage/${item.photo}`" @error="onImageError(item.id)" class="w-full h-full object-cover" />
                                 <PhotoIcon v-else class="w-6 h-6 text-slate-300" />
                             </div>
                             <div class="min-w-0 flex-1">
@@ -449,11 +532,11 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                 <EyeIcon class="w-3.5 h-3.5" />
                                 <span>Detail</span>
                             </Link>
-                            <button @click="openEditModal(item)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition flex items-center gap-1">
+                            <button v-if="canManage" @click="openEditModal(item)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition flex items-center gap-1">
                                 <PencilSquareIcon class="w-3.5 h-3.5" />
                                 <span>Edit</span>
                             </button>
-                            <button @click="confirmDelete(item)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 transition flex items-center gap-1">
+                            <button v-if="canManage" @click="confirmDelete(item)" class="px-3 py-1.5 rounded-xl text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 transition flex items-center gap-1">
                                 <TrashIcon class="w-3.5 h-3.5" />
                                 <span>Hapus</span>
                             </button>
@@ -533,9 +616,18 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                         <span>Cetak Stiker QR</span>
                     </a>
 
-                    <button @click="openCreateModal" class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all flex items-center gap-2 active:scale-95 h-[46px]">
+                    <button v-if="canManage" @click="openCreateModal" class="px-6 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all flex items-center gap-2 active:scale-95 h-[46px]">
                         <PlusIcon class="w-5 h-5" /><span>Tambah Barang</span>
                     </button>
+                </div>
+
+                <!-- Read Only Notice for Non-Managers -->
+                <div v-if="!canManage" class="bg-teal-50 border border-teal-200/80 rounded-2xl p-4 text-sm text-teal-900 flex items-center gap-3 shadow-xs">
+                    <CubeIcon class="w-6 h-6 text-teal-600 shrink-0" />
+                    <div class="min-w-0 flex-1">
+                        <p class="font-extrabold text-teal-900 text-sm">Katalog Sarana & Prasarana Sekolah (Mode Lihat)</p>
+                        <p class="text-xs text-teal-700 mt-0.5">Menampilkan seluruh data sarana dan prasarana sekolah untuk diketahui dan dijaga bersama oleh seluruh warga sekolah.</p>
+                    </div>
                 </div>
 
                 <!-- Filters Panel -->
@@ -611,7 +703,7 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                     </td>
                                     <td class="p-4">
                                         <div class="flex items-center gap-3">
-                                            <img v-if="item.photo" :src="`/storage/${item.photo}`" class="w-10 h-10 rounded-lg object-cover" />
+                                            <img v-if="item.photo && !imageErrors.has(item.id)" :src="item.photo_url || `/storage/${item.photo}`" @error="onImageError(item.id)" class="w-10 h-10 rounded-lg object-cover" />
                                             <div v-else class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                                                 <PhotoIcon class="w-5 h-5 text-gray-400" />
                                             </div>
@@ -637,10 +729,10 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                     <td class="p-4">
                                         <div class="flex justify-end gap-1.5">
                                             <a :href="route('sarpar.inventories.print-stickers', { ids: item.id })" target="_blank" title="Cetak Stiker QR" class="p-2 rounded-xl text-indigo-600 hover:bg-indigo-50 transition-colors"><PrinterIcon class="w-4 h-4" /></a>
-                                            <button @click="openTransferModal(item)" title="Mutasi Barang" class="p-2 rounded-xl text-blue-600 hover:bg-blue-50 transition-colors"><ArrowsRightLeftIcon class="w-4 h-4" /></button>
+                                            <button v-if="canManage" @click="openTransferModal(item)" title="Mutasi Barang" class="p-2 rounded-xl text-blue-600 hover:bg-blue-50 transition-colors"><ArrowsRightLeftIcon class="w-4 h-4" /></button>
                                             <Link :href="route('sarpar.inventories.show', item.id)" title="Detail" class="p-2 rounded-xl text-slate-500 hover:text-namira-teal hover:bg-teal-50 transition-colors"><EyeIcon class="w-4 h-4" /></Link>
-                                            <button @click="openEditModal(item)" title="Edit" class="p-2 rounded-xl text-amber-600 hover:bg-amber-50 transition-colors"><PencilSquareIcon class="w-4 h-4" /></button>
-                                            <button @click="openDisposalModal(item)" title="Penghapusan / Afkir" class="p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"><TrashIcon class="w-4 h-4" /></button>
+                                            <button v-if="canManage" @click="openEditModal(item)" title="Edit" class="p-2 rounded-xl text-amber-600 hover:bg-amber-50 transition-colors"><PencilSquareIcon class="w-4 h-4" /></button>
+                                            <button v-if="canManage" @click="openDisposalModal(item)" title="Penghapusan / Afkir" class="p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"><TrashIcon class="w-4 h-4" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -672,17 +764,21 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                                 <div class="mt-2 flex items-center gap-4">
                                     <div v-if="photoPreview" class="relative">
                                         <img :src="photoPreview" class="w-24 h-24 rounded-xl object-cover" />
-                                        <button type="button" @click="photoPreview = null; form.photo = null;" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs font-bold">×</button>
+                                        <button type="button" @click="photoPreview = null; form.photo = null; photoSizeInfo = '';" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs font-bold flex items-center justify-center">×</button>
+                                        <span v-if="photoSizeInfo" class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                                            {{ photoSizeInfo }}
+                                        </span>
                                     </div>
                                     <div v-else class="w-24 h-24 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-400">
                                         <PhotoIcon class="w-8 h-8" />
                                     </div>
                                     <div>
-                                        <label class="cursor-pointer px-4 py-2 bg-namira-teal/10 text-namira-teal font-bold rounded-xl hover:bg-namira-teal/20">
-                                            Pilih Foto
-                                            <input type="file" accept="image/*" @change="handlePhotoChange" class="hidden" />
+                                        <label class="cursor-pointer px-4 py-2 bg-namira-teal/10 text-namira-teal font-bold rounded-xl hover:bg-namira-teal/20 inline-flex items-center gap-1.5 transition">
+                                            <span v-if="isCompressing" class="inline-block animate-spin mr-1">⌛</span>
+                                            <span>{{ isCompressing ? 'Mengompres Foto...' : (photoPreview ? 'Ganti Foto' : 'Pilih Foto') }}</span>
+                                            <input type="file" accept="image/*" @change="handlePhotoChange" :disabled="isCompressing" class="hidden" />
                                         </label>
-                                        <p class="text-xs text-gray-400 mt-1">Max 2MB, JPG/PNG</p>
+                                        <p class="text-xs text-gray-400 mt-1">Otomatis dioptimalkan (max 10MB)</p>
                                     </div>
                                 </div>
                                 <InputError :message="form.errors.photo" class="mt-1" />

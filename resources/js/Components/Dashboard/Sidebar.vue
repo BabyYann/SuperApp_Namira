@@ -25,6 +25,7 @@ const expandedGroups = ref({
     'employee': true,
     'counseling': true,
     'sarpar': true,
+    'sarpar_readonly': true,
     'spmb': true,
     'spmb_panitia': true,
 });
@@ -535,7 +536,7 @@ const filteredMenuGroups = computed(() => {
     // If Admin/Yayasan, show everything + Personal Employee Menu + Counseling + Sarpar
     if (page.props.auth.user.email === 'admin@namira.school' || 
         hasRole('admin') || 
-        hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
+        hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb', 'staff_yayasan'])) {
         
         const isGlobalAdmin = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
         const isFinanceStaff = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'finance', 'staff_admin_keuangan']);
@@ -892,6 +893,28 @@ const filteredMenuGroups = computed(() => {
     // G. PANITIA SPMB (Jika guru / pegawai ditugaskan sebagai Panitia SPMB)
     if (hasRole('panitia_spmb')) {
         groups.push(spmbMenu);
+    }
+
+    // H. KATALOG SARPRAS (Untuk seluruh guru / pegawai yang bukan koordinator sarpras)
+    if (!hasRole('siswa') && !hasRole('student') && isFeatureEnabled('feature_sarpar') && !hasRole('koordinator_sarpar')) {
+        groups.push({
+            title: 'Katalog Sarpras',
+            key: 'sarpar_readonly',
+            items: [
+                { 
+                    label: 'Katalog Inventaris', 
+                    route: 'sarpar.inventories.index', 
+                    active: 'sarpar.inventories.*',
+                    icon: CubeIcon 
+                },
+                { 
+                    label: 'Daftar Ruangan', 
+                    route: 'sarpar.rooms.index', 
+                    active: 'sarpar.rooms.*',
+                    icon: BuildingOffice2Icon 
+                },
+            ]
+        });
     }
 
     // Add Common Menu for All Employees (including logic flow)

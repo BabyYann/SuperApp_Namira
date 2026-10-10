@@ -41,7 +41,7 @@ class Inventory extends Model
         'min_stock' => 'integer',
     ];
 
-    protected $appends = ['location_name', 'is_low_stock'];
+    protected $appends = ['location_name', 'is_low_stock', 'photo_url'];
 
     // Relations
     public function unit()
@@ -97,6 +97,17 @@ class Inventory extends Model
             return false;
         }
         return $this->quantity <= $this->min_stock;
+    }
+
+    public function getPhotoUrlAttribute()
+    {
+        if (!$this->photo) {
+            return null;
+        }
+        if (str_starts_with($this->photo, 'http://') || str_starts_with($this->photo, 'https://')) {
+            return $this->photo;
+        }
+        return asset('storage/' . $this->photo);
     }
 
     public function getConditionLabelAttribute()
