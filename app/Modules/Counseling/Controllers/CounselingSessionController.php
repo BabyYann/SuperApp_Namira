@@ -54,7 +54,7 @@ class CounselingSessionController extends Controller
                 'status' => $s->status,
                 'violation' => $s->violation ? $s->violation->category->name : null,
                 'notes_preview' => \Illuminate\Support\Str::limit($s->notes, 50),
-                'can_action' => Auth::user()->hasAnyRole(['super_admin_yayasan', 'admin_unit']) || $s->counselor_id === Auth::id(),
+                'can_action' => Auth::user()->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'koordinator_kesiswaan']) || $s->counselor_id === Auth::id(),
             ]);
 
         return Inertia::render('Counseling/Session/Index', [
@@ -181,7 +181,7 @@ class CounselingSessionController extends Controller
     public function update(Request $request, CounselingSession $session)
     {
         // Authorization Check
-        if (!Auth::user()->hasAnyRole(['super_admin_yayasan', 'admin_unit']) && $session->counselor_id !== Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'koordinator_kesiswaan']) && $session->counselor_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -228,7 +228,7 @@ class CounselingSessionController extends Controller
     public function destroy(CounselingSession $session)
     {
         // Authorization Check
-        if (!Auth::user()->hasAnyRole(['super_admin_yayasan', 'admin_unit']) && $session->counselor_id !== Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'koordinator_kesiswaan']) && $session->counselor_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
 

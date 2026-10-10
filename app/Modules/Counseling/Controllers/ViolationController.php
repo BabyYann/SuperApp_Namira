@@ -59,7 +59,7 @@ class ViolationController extends Controller
             ]);
 
         $user = auth()->user();
-        $canDelete = $user->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'admin_yayasan', 'bk']);
+        $canDelete = $user->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'admin_yayasan', 'bk', 'koordinator_kesiswaan']);
 
         return Inertia::render('Counseling/Violation/Index', [
             'violations' => $violations,
@@ -208,7 +208,7 @@ class ViolationController extends Controller
 
     public function destroy(Violation $violation)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'bk'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'bk', 'koordinator_kesiswaan'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk menghapus data pelanggaran.');
         }
 

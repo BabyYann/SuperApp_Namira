@@ -32,7 +32,7 @@ class ViolationCategoryController extends Controller
 
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'bk'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'bk', 'koordinator_kesiswaan'])) {
             abort(403, 'Akses Ditolak: Hanya Guru BK atau Admin yang dapat mengelola Kategori Pelanggaran.');
         }
 
@@ -54,7 +54,7 @@ class ViolationCategoryController extends Controller
 
     public function update(Request $request, ViolationCategory $category)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'bk'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'bk', 'koordinator_kesiswaan'])) {
             abort(403, 'Akses Ditolak: Hanya Guru BK atau Admin yang dapat mengelola Kategori Pelanggaran.');
         }
 
@@ -76,7 +76,7 @@ class ViolationCategoryController extends Controller
 
     public function destroy(ViolationCategory $category)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'bk'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'bk', 'koordinator_kesiswaan'])) {
             abort(403, 'Akses Ditolak: Hanya Guru BK atau Admin yang dapat menghapus Kategori Pelanggaran.');
         }
 

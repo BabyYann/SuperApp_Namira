@@ -534,7 +534,7 @@ class AttendanceController extends Controller
         $employeeRoleNames = [
             'teacher', 'staff', 'admin_unit', 'staff_unit',
             'wali_kelas', 'bk', 'guru', 'finance', 'kepala_sekolah',
-            'koordinator_kurikulum', 'koordinator_sarpar', 'koordinator_keuangan', 'koordinator_tahfidz'
+            'koordinator_kurikulum', 'koordinator_sarpar', 'koordinator_kesiswaan', 'koordinator_keuangan', 'koordinator_tahfidz'
         ];
 
         $roleUserIds = \DB::table('model_has_roles')

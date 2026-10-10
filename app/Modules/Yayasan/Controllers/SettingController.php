@@ -37,7 +37,7 @@ class SettingController extends Controller
         }
 
         $availableRoles = Role::whereIn('name', [
-            'admin_unit', 'koordinator_kurikulum', 'wali_kelas', 'staff_admin_keuangan', 'koordinator_sarpar', 'teacher', 'siswa', 'bk'
+            'admin_unit', 'koordinator_kurikulum', 'koordinator_kesiswaan', 'wali_kelas', 'staff_admin_keuangan', 'koordinator_sarpar', 'teacher', 'siswa', 'bk'
         ])->get()->map(function($role) {
             return [
                 'name' => $role->name,

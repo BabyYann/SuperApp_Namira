@@ -783,10 +783,10 @@ const filteredMenuGroups = computed(() => {
         });
     }
 
-    // E. BIMBINGAN KONSELING (Guru / BK / Wali Kelas / Admin)
-    if ((hasRole('teacher') || hasRole('bk') || hasRole('wali_kelas') || hasRole('admin_unit') || hasRole('super_admin_yayasan') || hasRole('admin_yayasan')) && isFeatureEnabled('feature_counseling')) {
+    // E. BIMBINGAN KONSELING & KESISWAAN (Guru / BK / Wali Kelas / Koordinator Kesiswaan / Admin)
+    if ((hasRole('teacher') || hasRole('bk') || hasRole('wali_kelas') || hasRole('koordinator_kesiswaan') || hasRole('admin_unit') || hasRole('super_admin_yayasan') || hasRole('admin_yayasan')) && isFeatureEnabled('feature_counseling')) {
         groups.push({
-            title: 'Bimbingan Konseling',
+            title: 'Kesiswaan & BK',
             key: 'counseling_staff',
             items: [
                 { 
@@ -810,8 +810,8 @@ const filteredMenuGroups = computed(() => {
             ]
         });
         
-        // BK Special Menu
-        if (hasRole('bk')) {
+        // BK & Koordinator Kesiswaan Special Menu
+        if (hasRole('bk') || hasRole('koordinator_kesiswaan')) {
              groups[groups.length - 1].items.push({ 
                 label: 'Kategori Pelanggaran', 
                 route: 'counseling.categories.index', 

@@ -64,7 +64,7 @@ class AchievementController extends Controller
             ]);
 
         $user = auth()->user();
-        $canDelete = $user->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'admin_yayasan', 'bk']);
+        $canDelete = $user->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'admin_yayasan', 'bk', 'koordinator_kesiswaan']);
 
         return Inertia::render('Counseling/Achievement/Index', [
             'achievements' => $achievements,
@@ -200,7 +200,7 @@ class AchievementController extends Controller
                 );
             }
             \App\Services\NotificationDispatcher::sendToRoles(
-                ['wali_kelas', 'bk', 'admin_unit', 'kepala_sekolah'],
+                ['wali_kelas', 'bk', 'admin_unit', 'kepala_sekolah', 'koordinator_kesiswaan'],
                 $achievement->unit_id,
                 '🏆 Prestasi Siswa Baru',
                 "Siswa {$student->full_name} ({$student->classroom->name}) meraih prestasi {$request->title} (Tingkat {$normalizedLevel}).",
@@ -242,7 +242,7 @@ class AchievementController extends Controller
         
         // Permission Check
         $user = auth()->user();
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'admin_yayasan', 'bk'])) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_unit', 'admin_yayasan', 'bk', 'koordinator_kesiswaan'])) {
             abort(403, 'Anda tidak memiliki hak akses untuk menghapus data ini.');
         }
 

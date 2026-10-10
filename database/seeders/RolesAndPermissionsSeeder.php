@@ -39,6 +39,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'staff_admin_keuangan', // Finance Role
             'finance', // Alias if needed
             'koordinator_sarpar', // Sarpar Module Role
+            'koordinator_kesiswaan', // Student Affairs Coordinator Role
             'humas_unit', // Public Relations Role
             'bk', // Guidance Counseling Role
         ];

@@ -64,7 +64,7 @@ class DashboardController extends Controller
 
         $isTeacher = in_array($roles[0] ?? '', ['teacher', 'guru']);
         $isStudent = in_array($roles[0] ?? '', ['siswa', 'student']);
-        $isStaff = in_array($roles[0] ?? '', ['finance', 'staff_admin_keuangan', 'humas_unit', 'koordinator_sarpar', 'koordinator_kurikulum']);
+        $isStaff = in_array($roles[0] ?? '', ['finance', 'staff_admin_keuangan', 'humas_unit', 'koordinator_sarpar', 'koordinator_kurikulum', 'koordinator_kesiswaan']);
 
         if ($isGlobalAdmin || $isUnitAdmin) {
             $data['stats'] = $this->getAdminStats($unitId, $academicYearId);
