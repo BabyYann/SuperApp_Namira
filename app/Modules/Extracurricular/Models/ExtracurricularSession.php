@@ -68,7 +68,7 @@ class ExtracurricularSession extends Model
             return [];
         }
 
-        $paths = is_array($this->photo_paths) ? $this->photo_paths : json_decode($this->photo_paths, true) ?: [];
+        $paths = is_array($this->photo_paths) ? $this->photo_paths : (json_decode($this->photo_paths, true) ?: []);
 
         return array_map(function ($p) {
             if (str_starts_with($p, 'http://') || str_starts_with($p, 'https://')) {
