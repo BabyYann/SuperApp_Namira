@@ -252,6 +252,17 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Jurnal</span>
                 </Link>
 
+                <!-- Pelatih Ekskul: Kegiatan Ekskul -->
+                <Link 
+                    v-else-if="hasRole('pelatih_ekskul')"
+                    :href="safeRoute('extracurricular.index')"
+                    class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
+                    :class="isRouteActive('extracurricular.*') ? 'text-teal-700 font-bold' : 'text-slate-400 hover:text-slate-600'"
+                >
+                    <SparklesIcon class="w-6 h-6 transition-transform" />
+                    <span class="text-[10px] font-bold tracking-tight">Ekskul</span>
+                </Link>
+
                 <!-- Humas: Berita -->
                 <Link 
                     v-else-if="hasRole('humas_unit')"
@@ -552,7 +563,7 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 2. KESISWAAN & BIMBINGAN KONSELING -->
-                        <div v-if="!isDaycare && (isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas', 'kepala_sekolah', 'admin_unit', 'koordinator_kesiswaan']))" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                        <div v-if="!isDaycare && (isGlobalAdmin || hasRole(['bk', 'counseling', 'wali_kelas', 'kepala_sekolah', 'admin_unit', 'koordinator_kesiswaan', 'pelatih_ekskul', 'teacher']))" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
                             <div class="flex items-center gap-2 px-1">
                                 <div class="w-2 h-2 rounded-full bg-pink-500"></div>
                                 <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
@@ -560,6 +571,17 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
+                                <Link 
+                                    :href="safeRoute('extracurricular.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <SparklesIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Ekskul</span>
+                                </Link>
+
                                 <Link 
                                     :href="safeRoute('counseling.sessions.index')" 
                                     @click="showDrawer = false"

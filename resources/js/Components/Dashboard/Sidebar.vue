@@ -24,6 +24,7 @@ const expandedGroups = ref({
     'finance': true,
     'employee': true,
     'counseling': true,
+    'extracurricular': true,
     'sarpar': true,
     'sarpar_readonly': true,
     'spmb': true,
@@ -402,6 +403,20 @@ const filteredMenuGroups = computed(() => {
         ]
     };
 
+    // Ekstrakurikuler Menu
+    const extracurricularMenu = {
+        title: 'Ekstrakurikuler',
+        key: 'extracurricular',
+        items: [
+            { 
+                label: 'Katalog & Kegiatan', 
+                route: 'extracurricular.index', 
+                active: 'extracurricular.*',
+                icon: SparklesIcon 
+            },
+        ]
+    };
+
     // Sarpar Menu (for Admin & Koordinator)
     const sarparMenu = {
         title: 'Sarana Prasarana',
@@ -579,6 +594,7 @@ const filteredMenuGroups = computed(() => {
         }
         if (isFeatureEnabled('feature_sarpar')) adminGroups.push(sarparMenu);
         if (isFeatureEnabled('feature_counseling')) adminGroups.push(counselingMenu);
+        if (isFeatureEnabled('feature_extracurricular')) adminGroups.push(extracurricularMenu);
         adminGroups.push(humasMenu);
 
         if (isTeacher) {
@@ -822,7 +838,25 @@ const filteredMenuGroups = computed(() => {
         }
     }
 
-    // F. KOORDINATOR SARPAR
+    // F. EKSTRAKURIKULER (Pelatih Ekskul / Guru / Wali Kelas / Kesiswaan)
+    if (hasRole('pelatih_ekskul') && isFeatureEnabled('feature_extracurricular')) {
+        groups.push({
+            title: 'Ekstrakurikuler',
+            key: 'extracurricular_coach',
+            items: [
+                { 
+                    label: 'Ekskul Binaan Saya', 
+                    route: 'extracurricular.index', 
+                    active: 'extracurricular.*',
+                    icon: SparklesIcon 
+                },
+            ]
+        });
+    } else if ((isTeacher || hasRole('wali_kelas') || hasRole('koordinator_kesiswaan')) && isFeatureEnabled('feature_extracurricular')) {
+        groups.push(extracurricularMenu);
+    }
+
+    // G. KOORDINATOR SARPAR
     if (hasRole('koordinator_sarpar') && isFeatureEnabled('feature_sarpar')) {
         groups.push({
             title: 'Sarana Prasarana',

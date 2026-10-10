@@ -21,10 +21,16 @@ import {
     BanknotesIcon,
     BookOpenIcon,
     ArrowPathIcon,
+    UserGroupIcon,
+    PhotoIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     student: Object,
+    extracurriculars: {
+        type: Array,
+        default: () => []
+    },
     activeBill: Object,
     schedule: Array,
     todayDate: String,
@@ -357,6 +363,94 @@ onMounted(() => {
 
                 <div v-else class="py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
                     <p class="text-xs text-slate-400 font-bold">Tidak ada jadwal kegiatan belajar mengajar hari ini.</p>
+                </div>
+            </div>
+
+            <!-- 4.5. EKSTRAKURIKULER SAYA -->
+            <div v-if="extracurriculars && extracurriculars.length > 0" class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-teal-50 text-namira-teal rounded-xl">
+                            <UserGroupIcon class="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-slate-800 text-base">Ekstrakurikuler Saya</h3>
+                            <p class="text-xs text-slate-400">Kegiatan minat & bakat yang aktif kamu ikuti</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">
+                        {{ extracurriculars.length }} Ekskul Aktif
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div 
+                        v-for="item in extracurriculars" 
+                        :key="item.id"
+                        class="p-4 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white hover:border-teal-200 transition-all space-y-3"
+                    >
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                                    {{ item.category }}
+                                </span>
+                                <h4 class="font-extrabold text-slate-800 text-base mt-1">{{ item.name }}</h4>
+                            </div>
+                            <span v-if="item.grade" class="px-2 py-1 rounded-lg text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Nilai: {{ item.grade }}
+                            </span>
+                        </div>
+
+                        <div class="space-y-1 text-xs text-slate-600">
+                            <div class="flex items-center gap-1.5">
+                                <ClockIcon class="w-4 h-4 text-slate-400 shrink-0" />
+                                <span>{{ item.schedule }}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <MapPinIcon class="w-4 h-4 text-slate-400 shrink-0" />
+                                <span>{{ item.location }}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <UserIcon class="w-4 h-4 text-slate-400 shrink-0" />
+                                <span>Pelatih: <strong class="text-slate-700">{{ item.coach }}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Info Sesi Terakhir -->
+                        <div v-if="item.last_session" class="pt-2 border-t border-slate-100 space-y-2">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400">Pertemuan {{ item.last_session.date }}:</span>
+                                <span 
+                                    class="font-bold px-2 py-0.5 rounded uppercase text-[10px]"
+                                    :class="{
+                                        'bg-emerald-100 text-emerald-700': item.last_session.status === 'hadir',
+                                        'bg-blue-100 text-blue-700': item.last_session.status === 'izin',
+                                        'bg-amber-100 text-amber-700': item.last_session.status === 'sakit',
+                                        'bg-rose-100 text-rose-700': item.last_session.status === 'alpha'
+                                    }"
+                                >
+                                    {{ item.last_session.status }}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-700 font-medium italic line-clamp-1">"{{ item.last_session.topic }}"</p>
+                            
+                            <!-- Foto Dokumentasi Terakhir -->
+                            <div v-if="item.last_session.photos && item.last_session.photos.length > 0" class="flex gap-1.5 overflow-x-auto pt-1">
+                                <img 
+                                    v-for="(photo, pIdx) in item.last_session.photos" 
+                                    :key="pIdx"
+                                    :src="photo" 
+                                    alt="Dokumentasi Ekskul"
+                                    class="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0 hover:opacity-90"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Predikat Deskripsi Rapor -->
+                        <p v-if="item.grade_description" class="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                            <strong>Catatan Rapor:</strong> {{ item.grade_description }}
+                        </p>
+                    </div>
                 </div>
             </div>
 

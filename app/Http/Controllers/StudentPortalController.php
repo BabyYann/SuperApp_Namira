@@ -191,16 +191,44 @@ class StudentPortalController extends Controller
             ];
         }
 
-        // 10. Latest Pickup Request (to calculate cooldown on frontend)
-        $lastPickup = null;
+        // 11. Extracurriculars of this student
+        $myExtracurriculars = [];
         if ($student) {
-            $lastPickup = StudentPickupRequest::where('student_id', $student->id)
-                ->latest('requested_at')
-                ->first();
+            $myExtracurriculars = \App\Modules\Extracurricular\Models\ExtracurricularMember::where('student_id', $student->id)
+                ->where('status', 'active')
+                ->with([
+                    'extracurricular.room',
+                    'extracurricular.instructors.user',
+                    'grade'
+                ])
+                ->get()
+                ->map(function ($m) use ($student) {
+                    $act = $m->extracurricular;
+                    $lastSession = $act ? $act->sessions()->first() : null;
+                    $myAttendance = $lastSession ? $lastSession->attendances()->where('student_id', $student->id)->first() : null;
+
+                    return [
+                        'id' => $act?->id,
+                        'name' => $act?->name,
+                        'category' => $act?->category_label,
+                        'schedule' => $act?->formatted_schedule,
+                        'location' => $act?->room?->name ?: $act?->location_name ?: 'Kampus',
+                        'coach' => $act?->instructors->pluck('user.name')->join(', ') ?: 'Pelatih',
+                        'grade' => $m->grade?->predicate,
+                        'grade_description' => $m->grade?->description,
+                        'last_session' => $lastSession ? [
+                            'date' => $lastSession->date->format('d M Y'),
+                            'topic' => $lastSession->topic,
+                            'status' => $myAttendance?->status ?: 'hadir',
+                            'photos' => $lastSession->photo_urls,
+                        ] : null,
+                    ];
+                });
         }
 
         return Inertia::render('Student/Dashboard', [
             'student'      => $student,
+            'extracurriculars' => $myExtracurriculars,
             'activeBill'   => $activeBill,
             'schedule'     => $todaysSchedule,
             'todayDate'    => Carbon::now()->locale('id')->isoFormat('dddd, D MMMM Y'),

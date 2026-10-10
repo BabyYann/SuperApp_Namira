@@ -42,6 +42,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'koordinator_kesiswaan', // Student Affairs Coordinator Role
             'humas_unit', // Public Relations Role
             'bk', // Guidance Counseling Role
+            'pelatih_ekskul', // Extracurricular Coach / Instructor Role
         ];
 
         foreach ($unitRoles as $roleName) {

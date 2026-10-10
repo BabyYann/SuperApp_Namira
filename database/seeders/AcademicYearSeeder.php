@@ -11,7 +11,7 @@ class AcademicYearSeeder extends Seeder
     {
         AcademicYear::firstOrCreate(
             ['name' => '2025/2026'],
-            ['semester' => 'Ganjil', 'is_active' => true]
+            ['semester' => 'ganjil', 'is_active' => true]
         );
     }
 }
