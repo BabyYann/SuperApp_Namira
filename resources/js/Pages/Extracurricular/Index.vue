@@ -629,7 +629,7 @@ const getCategoryColor = (cat) => {
                                 >
                                     <option value="">-- Pilih Ruangan / Sarpras --</option>
                                     <option v-for="room in rooms" :key="room.id" :value="room.id">
-                                        {{ room.name }} ({{ room.location || 'Kampus' }})
+                                        {{ room.name }} ({{ room.building ? (room.building + (room.floor ? ' Lt.' + room.floor : '')) : 'Kampus' }})
                                     </option>
                                 </select>
                             </div>

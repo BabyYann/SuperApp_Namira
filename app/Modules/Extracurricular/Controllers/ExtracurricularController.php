@@ -46,7 +46,7 @@ class ExtracurricularController extends Controller
         $query = Extracurricular::query()
             ->with([
                 'unit:id,name,code',
-                'room:id,name,location',
+                'room:id,name,building,floor',
                 'instructors.user:id,name,phone,profile_photo',
                 'academicYear:id,name,semester',
             ])
@@ -111,7 +111,7 @@ class ExtracurricularController extends Controller
         if ($unitId) {
             $rooms->where('unit_id', $unitId);
         }
-        $rooms = $rooms->orderBy('name')->get(['id', 'name', 'location']);
+        $rooms = $rooms->orderBy('name')->get(['id', 'name', 'building', 'floor']);
 
         // Users available for instructors
         $availableInstructors = User::whereHas('roles', function ($r) {
@@ -232,7 +232,7 @@ class ExtracurricularController extends Controller
 
         $activity = Extracurricular::with([
             'unit:id,name,code',
-            'room:id,name,location',
+            'room:id,name,building,floor',
             'academicYear:id,name,semester',
             'instructors.user:id,name,email,phone,profile_photo',
             'activeMembers.student.classroom:id,name,level',
@@ -265,7 +265,7 @@ class ExtracurricularController extends Controller
         if ($unitId) {
             $rooms->where('unit_id', $unitId);
         }
-        $rooms = $rooms->orderBy('name')->get(['id', 'name', 'location']);
+        $rooms = $rooms->orderBy('name')->get(['id', 'name', 'building', 'floor']);
 
         // Available teachers / coaches
         $availableInstructors = User::whereHas('roles', function ($r) {
