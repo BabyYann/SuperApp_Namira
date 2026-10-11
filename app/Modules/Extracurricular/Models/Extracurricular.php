@@ -101,6 +101,9 @@ class Extracurricular extends Model
         if (str_starts_with($this->cover_image, 'http://') || str_starts_with($this->cover_image, 'https://')) {
             return $this->cover_image;
         }
+        if (str_starts_with($this->cover_image, 'images/') || str_starts_with($this->cover_image, '/images/')) {
+            return asset(ltrim($this->cover_image, '/'));
+        }
         return asset('storage/' . $this->cover_image);
     }
 
