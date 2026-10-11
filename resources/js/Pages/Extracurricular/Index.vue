@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
@@ -11,6 +11,7 @@ import {
     MapPinIcon,
     UserGroupIcon,
     AcademicCapIcon,
+    UserIcon,
     ChevronRightIcon,
     XMarkIcon,
     PencilSquareIcon,
@@ -18,10 +19,17 @@ import {
     PhotoIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
-    ShieldCheckIcon,
-    FunnelIcon,
+    AdjustmentsHorizontalIcon,
+    BuildingLibraryIcon,
+    EllipsisVerticalIcon,
+    ArrowRightIcon,
+    CheckIcon,
 } from '@heroicons/vue/24/outline';
-import { SparklesIcon as SparklesIconSolid } from '@heroicons/vue/24/solid';
+import { 
+    SparklesIcon as SparklesIconSolid, 
+    HeartIcon as HeartIconSolid 
+} from '@heroicons/vue/24/solid';
+import { HeartIcon as HeartIconOutline } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     activities: { type: Array, default: () => [] },
@@ -40,6 +48,46 @@ const props = defineProps({
 const searchQuery = ref(props.filters.search || '');
 const selectedCategory = ref(props.filters.category || 'all');
 const selectedDay = ref(props.filters.day || 'all');
+const showOnlyFavorites = ref(false);
+const activeMenuId = ref(null);
+
+// Favorites persisted in localStorage
+const favorites = ref(new Set());
+onMounted(() => {
+    try {
+        const stored = localStorage.getItem('namira_ekskul_favorites');
+        if (stored) {
+            favorites.value = new Set(JSON.parse(stored));
+        }
+    } catch (e) {
+        console.error('Failed to load favorites', e);
+    }
+
+    const handleClickOutside = (e) => {
+        if (!e.target.closest('.card-action-menu-container')) {
+            activeMenuId.value = null;
+        }
+    };
+    window.addEventListener('click', handleClickOutside);
+    onUnmounted(() => window.removeEventListener('click', handleClickOutside));
+});
+
+const toggleFavorite = (id) => {
+    if (favorites.value.has(id)) {
+        favorites.value.delete(id);
+    } else {
+        favorites.value.add(id);
+    }
+    try {
+        localStorage.setItem('namira_ekskul_favorites', JSON.stringify([...favorites.value]));
+    } catch (e) {
+        console.error('Failed to save favorites', e);
+    }
+};
+
+const toggleActionMenu = (id) => {
+    activeMenuId.value = activeMenuId.value === id ? null : id;
+};
 
 // Modals
 const showModal = ref(false);
@@ -51,16 +99,31 @@ const photoSizeInfo = ref('');
 const fileInput = ref(null);
 
 const categories = [
-    { key: 'all', label: 'Semua Kategori' },
-    { key: 'olahraga', label: 'Olahraga & Atletik' },
+    { key: 'all', label: 'Semua' },
+    { key: 'olahraga', label: 'Olahraga' },
     { key: 'seni_budaya', label: 'Seni & Budaya' },
-    { key: 'keagamaan', label: 'Keagamaan & Karakter' },
+    { key: 'keagamaan', label: 'Keagamaan' },
     { key: 'sains_teknologi', label: 'Sains & Teknologi' },
-    { key: 'kepanduan', label: 'Kepanduan & Bela Diri' },
+    { key: 'kepanduan', label: 'Bela Diri' },
     { key: 'lainnya', label: 'Lainnya' },
 ];
 
 const daysList = ['Semua Hari', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+
+const availableGradeLevels = [
+    { value: '1', label: 'Kelas 1' },
+    { value: '2', label: 'Kelas 2' },
+    { value: '3', label: 'Kelas 3' },
+    { value: '4', label: 'Kelas 4' },
+    { value: '5', label: 'Kelas 5' },
+    { value: '6', label: 'Kelas 6' },
+];
+
+const genderOptions = [
+    { value: 'all', title: 'Semua Siswa', subtitle: 'Putra & Putri' },
+    { value: 'male_only', title: 'Khusus Ikhwan', subtitle: 'Putra Saja' },
+    { value: 'female_only', title: 'Khusus Akhwat', subtitle: 'Putri Saja' },
+];
 
 // Form
 const form = useForm({
@@ -75,7 +138,7 @@ const form = useForm({
     max_quota: 30,
     is_mandatory: false,
     gender_restriction: 'all',
-    target_levels: [],
+    target_levels: ['1', '2', '3', '4', '5', '6'],
     description: '',
     cover_image: null,
     instructor_ids: [],
@@ -93,13 +156,15 @@ const filteredActivities = computed(() => {
     return props.activities.filter((item) => {
         const matchesCategory = selectedCategory.value === 'all' || item.category === selectedCategory.value;
         const matchesDay = selectedDay.value === 'all' || selectedDay.value === 'Semua Hari' || item.day_of_week === selectedDay.value;
+        const matchesFav = !showOnlyFavorites.value || favorites.value.has(item.id);
         const q = searchQuery.value.toLowerCase().trim();
         const matchesSearch = !q || 
             item.name.toLowerCase().includes(q) || 
             (item.description && item.description.toLowerCase().includes(q)) ||
-            (item.location_name && item.location_name.toLowerCase().includes(q));
+            (item.location_name && item.location_name.toLowerCase().includes(q)) ||
+            (item.instructors && item.instructors.some(i => i.user?.name?.toLowerCase().includes(q)));
 
-        return matchesCategory && matchesDay && matchesSearch;
+        return matchesCategory && matchesDay && matchesFav && matchesSearch;
     });
 });
 
@@ -136,7 +201,7 @@ const compressImage = (file) => {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.72);
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
                 resolve(compressedBase64);
             };
             img.onerror = (err) => reject(err);
@@ -146,7 +211,7 @@ const compressImage = (file) => {
 };
 
 const handlePhotoSelect = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     isCompressing.value = true;
@@ -154,15 +219,14 @@ const handlePhotoSelect = async (e) => {
         const originalSizeKB = Math.round(file.size / 1024);
         const compressedBase64 = await compressImage(file);
         
-        // Approximate Base64 size in KB
         const compressedSizeKB = Math.round((compressedBase64.length * 3) / 4 / 1024);
-        photoSizeInfo.value = `${compressedSizeKB} KB (dari ${originalSizeKB} KB)`;
+        photoSizeInfo.value = `${compressedSizeKB} KB (dihemat dari ${originalSizeKB} KB)`;
         
         photoPreview.value = compressedBase64;
         form.cover_image = compressedBase64;
     } catch (err) {
         console.error('Image compression failed:', err);
-        photoSizeInfo.value = 'Kompresi gagal, menggunakan file asli';
+        photoSizeInfo.value = 'Kompresi otomatis gagal, memakai file asli';
         form.cover_image = file;
     } finally {
         isCompressing.value = false;
@@ -176,6 +240,23 @@ const removePhoto = () => {
     if (fileInput.value) fileInput.value.value = '';
 };
 
+const toggleGradeLevel = (val) => {
+    const idx = form.target_levels.indexOf(val);
+    if (idx > -1) {
+        form.target_levels.splice(idx, 1);
+    } else {
+        form.target_levels.push(val);
+    }
+};
+
+const selectAllGradeLevels = () => {
+    form.target_levels = availableGradeLevels.map(g => g.value);
+};
+
+const resetGradeLevels = () => {
+    form.target_levels = [];
+};
+
 const openCreateModal = () => {
     isEditing.value = false;
     editingActivityId.value = null;
@@ -183,6 +264,8 @@ const openCreateModal = () => {
     form.clearErrors();
     photoPreview.value = null;
     photoSizeInfo.value = '';
+    form.target_levels = ['1', '2', '3', '4', '5', '6'];
+    form.status = 'active';
     if (props.units && props.units.length > 0) {
         form.unit_id = props.units[0].id;
     }
@@ -192,6 +275,7 @@ const openCreateModal = () => {
 const openEditModal = (activity) => {
     isEditing.value = true;
     editingActivityId.value = activity.id;
+    activeMenuId.value = null;
     form.clearErrors();
     form.unit_id = activity.unit_id || '';
     form.name = activity.name;
@@ -204,12 +288,12 @@ const openEditModal = (activity) => {
     form.max_quota = activity.max_quota || 30;
     form.is_mandatory = activity.is_mandatory || false;
     form.gender_restriction = activity.gender_restriction || 'all';
-    form.target_levels = activity.target_levels || [];
+    form.target_levels = Array.isArray(activity.target_levels) ? activity.target_levels : ['1', '2', '3', '4', '5', '6'];
     form.description = activity.description || '';
     form.status = activity.status || 'active';
     form.cover_image = null;
     photoPreview.value = activity.cover_image_url || null;
-    photoSizeInfo.value = activity.cover_image_url ? 'Foto Terpasang' : '';
+    photoSizeInfo.value = activity.cover_image_url ? 'Foto sampul aktif' : '';
     showModal.value = true;
 };
 
@@ -234,7 +318,8 @@ const submitForm = () => {
 };
 
 const confirmDelete = (activity) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus ekstrakurikuler "${activity.name}"? Data anggota dan sesi akan diarsipkan.`)) {
+    activeMenuId.value = null;
+    if (confirm(`Apakah Anda yakin ingin menghapus ekstrakurikuler "${activity.name}"? Data anggota dan riwayat presensi akan diarsipkan.`)) {
         router.delete(route('extracurricular.destroy', activity.id), {
             preserveScroll: true,
         });
@@ -243,154 +328,212 @@ const confirmDelete = (activity) => {
 
 const getCategoryColor = (cat) => {
     switch (cat) {
-        case 'olahraga': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-        case 'seni_budaya': return 'bg-purple-50 text-purple-700 border-purple-200';
-        case 'keagamaan': return 'bg-amber-50 text-amber-700 border-amber-200';
-        case 'sains_teknologi': return 'bg-sky-50 text-sky-700 border-sky-200';
-        case 'kepanduan': return 'bg-orange-50 text-orange-700 border-orange-200';
-        default: return 'bg-slate-50 text-slate-700 border-slate-200';
+        case 'olahraga': return 'bg-emerald-50 text-emerald-800 border-emerald-200/80';
+        case 'seni_budaya': return 'bg-purple-50 text-purple-800 border-purple-200/80';
+        case 'keagamaan': return 'bg-amber-50 text-amber-800 border-amber-200/80';
+        case 'sains_teknologi': return 'bg-sky-50 text-sky-800 border-sky-200/80';
+        case 'kepanduan': return 'bg-orange-50 text-orange-800 border-orange-200/80';
+        default: return 'bg-slate-50 text-slate-800 border-slate-200/80';
     }
+};
+
+const getQuotaPercentage = (item) => {
+    if (!item.max_quota || item.max_quota <= 0) return 0;
+    return Math.min(100, Math.round(((item.active_members_count || 0) / item.max_quota) * 100));
+};
+
+const getProgressBarColor = (percentage) => {
+    if (percentage >= 100) return 'bg-rose-500';
+    if (percentage >= 85) return 'bg-amber-500';
+    return 'bg-[#00796B]';
 };
 </script>
 
 <template>
     <AuthenticatedLayout>
-        <Head title="Ekstrakurikuler & Pengembangan Bakat" />
+        <Head title="Katalog Ekstrakurikuler" />
 
-        <div class="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
             
-            <!-- Top Hero Banner -->
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-800 via-teal-700 to-emerald-700 text-white p-6 sm:p-8 shadow-xl shadow-teal-900/10">
-                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <!-- TOP HERO BANNER (Pixel Perfect Matching Mockup 1 & 2) -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-50 via-teal-50/70 to-emerald-100/40 border border-emerald-100/80 p-5 sm:p-7 shadow-xs">
+                <!-- Decorative Soft Wave/Blur -->
+                <div class="absolute -right-12 -top-12 w-64 h-64 bg-teal-200/30 rounded-full blur-3xl pointer-events-none"></div>
+
                 <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div class="space-y-2">
+                    <div class="space-y-2.5 max-w-xl">
+                        <!-- Pill Badge -->
                         <div class="flex items-center gap-2">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white/20 backdrop-blur-md text-teal-100 border border-white/20">
-                                <SparklesIconSolid class="w-3.5 h-3.5 text-amber-300" />
-                                Kesiswaan & Bakat Minat
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-100/90 text-teal-800 border border-teal-200/60 shadow-xs">
+                                <SparklesIconSolid class="w-3.5 h-3.5 text-teal-600" />
+                                <span>Ekstrakurikuler</span>
                             </span>
-                            <span v-if="activeYear" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-100 border border-emerald-400/20">
+                            <span v-if="activeYear" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100/80 text-emerald-800 border border-emerald-200">
                                 TA {{ activeYear.name }} ({{ activeYear.semester }})
                             </span>
                         </div>
-                        <h1 class="text-2xl sm:text-3xl font-black tracking-tight">
-                            Ekstrakurikuler Sekolah
+
+                        <!-- Banner Headline -->
+                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-800 tracking-tight leading-tight">
+                            Pusat Pembinaan Bakat & Minat Siswa
                         </h1>
-                        <p class="text-teal-100/90 text-sm sm:text-base max-w-2xl leading-relaxed">
-                            Pusat manajemen kegiatan ekstrakurikuler, pembinaan pelatih, absensi kehadiran siswa, dan dokumentasi aktivitas bakat minat di unit satuan pendidikan.
+
+                        <!-- Subtitle -->
+                        <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                            Kelola kegiatan, pantau perkembangan, dan dukung potensi terbaik mereka.
                         </p>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3">
-                        <button
-                            v-if="canManage"
-                            @click="openCreateModal"
-                            type="button"
-                            class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-teal-800 hover:bg-teal-50 font-bold text-sm shadow-md shadow-black/10 transition-all transform active:scale-95"
-                        >
-                            <PlusIcon class="w-5 h-5 stroke-[2.5]" />
-                            <span>Tambah Ekskul</span>
-                        </button>
+                    <!-- Banner Illustration (Optimized WebP) -->
+                    <div class="shrink-0 flex justify-end md:justify-center">
+                        <img
+                            src="/images/banners/extracurricular_hero.webp"
+                            alt="Ilustrasi Bakat Minat Siswa"
+                            class="h-28 sm:h-36 md:h-40 w-auto object-contain select-none pointer-events-none drop-shadow-sm"
+                            loading="eager"
+                        />
                     </div>
                 </div>
             </div>
 
-            <!-- Stats Overview Cards -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
-                        <SparklesIcon class="w-6 h-6 stroke-[2.2]" />
+            <!-- 4 STAT METRICS OVERVIEW CARDS (Matching Mockup 2) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+                <!-- Total Kegiatan -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:border-teal-200 transition-colors">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100/60">
+                        <SparklesIcon class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-slate-800">{{ stats.total_activities || 0 }}</div>
-                        <div class="text-xs font-semibold text-slate-500">Cabang Ekskul</div>
+                        <div class="text-xl sm:text-2xl font-black text-slate-800">{{ stats.total_activities || 0 }}</div>
+                        <div class="text-xs font-semibold text-slate-500">Total Kegiatan</div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
-                        <AcademicCapIcon class="w-6 h-6 stroke-[2.2]" />
+                <!-- Anggota Terdaftar -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:border-sky-200 transition-colors">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0 border border-sky-100/60">
+                        <AcademicCapIcon class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-slate-800">{{ stats.total_members || 0 }}</div>
-                        <div class="text-xs font-semibold text-slate-500">Siswa Terdaftar</div>
+                        <div class="text-xl sm:text-2xl font-black text-slate-800">{{ stats.total_members || 0 }}</div>
+                        <div class="text-xs font-semibold text-slate-500">Anggota Terdaftar</div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-                        <CalendarDaysIcon class="w-6 h-6 stroke-[2.2]" />
+                <!-- Sesi Bulan Ini -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:border-amber-200 transition-colors">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-100/60">
+                        <CalendarDaysIcon class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-slate-800">{{ stats.total_sessions_month || 0 }}</div>
-                        <div class="text-xs font-semibold text-slate-500">Sesi Latihan Bulan Ini</div>
+                        <div class="text-xl sm:text-2xl font-black text-slate-800">{{ stats.total_sessions_month || 0 }}</div>
+                        <div class="text-xs font-semibold text-slate-500">Sesi Bulan Ini</div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
-                        <UserGroupIcon class="w-6 h-6 stroke-[2.2]" />
+                <!-- Pelatih & Pembina -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:border-purple-200 transition-colors">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 border border-purple-100/60">
+                        <UserIcon class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
                     </div>
                     <div>
-                        <div class="text-2xl font-black text-slate-800">{{ stats.total_instructors || 0 }}</div>
-                        <div class="text-xs font-semibold text-slate-500">Pelatih / Pembina</div>
+                        <div class="text-xl sm:text-2xl font-black text-slate-800">{{ stats.total_instructors || 0 }}</div>
+                        <div class="text-xs font-semibold text-slate-500">Pelatih & Pembina</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Filters & Search Bar -->
-            <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-4">
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
+            <!-- SEARCH, ACTION BUTTON & FILTER PILLS (Matching Mockup 2) -->
+            <div class="space-y-3.5">
+                <!-- Search & Add Ekskul Bar -->
+                <div class="flex items-center gap-2.5 sm:gap-3">
                     <!-- Search Input -->
                     <div class="relative flex-1">
-                        <MagnifyingGlassIcon class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <MagnifyingGlassIcon class="w-4 h-4 sm:w-5 sm:h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             v-model="searchQuery"
                             type="text"
-                            placeholder="Cari nama ekstrakurikuler, pelatih, atau lokasi..."
-                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all placeholder:text-slate-400"
+                            placeholder="Cari nama ekskul, pelatih, atau lokasi..."
+                            class="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all placeholder:text-slate-400 shadow-xs"
                         />
+                        <button
+                            v-if="searchQuery"
+                            @click="searchQuery = ''"
+                            type="button"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                            <XMarkIcon class="w-4 h-4" />
+                        </button>
                     </div>
 
-                    <!-- Day Filter -->
-                    <div class="flex items-center gap-2 shrink-0">
-                        <label class="text-xs font-bold text-slate-600 hidden sm:inline">Hari:</label>
-                        <select
-                            v-model="selectedDay"
-                            class="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
-                        >
-                            <option v-for="day in daysList" :key="day" :value="day === 'Semua Hari' ? 'all' : day">
-                                {{ day }}
-                            </option>
-                        </select>
-                    </div>
+                    <!-- Favorites Toggle Filter Button -->
+                    <button
+                        @click="showOnlyFavorites = !showOnlyFavorites"
+                        type="button"
+                        class="p-2.5 rounded-xl border transition-colors shrink-0 shadow-xs flex items-center justify-center"
+                        :class="showOnlyFavorites 
+                            ? 'bg-rose-50 border-rose-300 text-rose-600' 
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'"
+                        title="Tampilkan Favorit"
+                    >
+                        <HeartIconSolid v-if="showOnlyFavorites" class="w-5 h-5 text-rose-500" />
+                        <HeartIconOutline v-else class="w-5 h-5 text-slate-500" />
+                    </button>
+
+                    <!-- Tambah Ekskul Baru Button -->
+                    <button
+                        v-if="canManage"
+                        @click="openCreateModal"
+                        type="button"
+                        class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-95 shrink-0"
+                    >
+                        <PlusIcon class="w-4 h-4 stroke-[3]" />
+                        <span class="hidden sm:inline">Tambah Ekskul Baru</span>
+                        <span class="sm:hidden">Tambah</span>
+                    </button>
                 </div>
 
-                <!-- Category Pills -->
-                <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <!-- Category Pills (Horizontal Scrollable) -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none select-none">
                     <button
                         v-for="cat in categories"
                         :key="cat.key"
                         @click="selectedCategory = cat.key"
                         type="button"
-                        class="px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-150 border"
+                        class="px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-150 border shrink-0"
                         :class="selectedCategory === cat.key
-                            ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'"
+                            ? 'bg-[#00796B] text-white border-[#00796B] shadow-xs'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
                     >
                         {{ cat.label }}
                     </button>
                 </div>
+
+                <!-- Day Pills (Horizontal Scrollable) -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none select-none">
+                    <button
+                        v-for="day in daysList"
+                        :key="day"
+                        @click="selectedDay = day === 'Semua Hari' ? 'all' : day"
+                        type="button"
+                        class="px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-150 border shrink-0"
+                        :class="(selectedDay === day || (selectedDay === 'all' && day === 'Semua Hari'))
+                            ? 'bg-slate-800 text-white border-slate-800 shadow-xs font-bold'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'"
+                    >
+                        {{ day }}
+                    </button>
+                </div>
             </div>
 
-            <!-- Activity Cards Grid -->
+            <!-- ACTIVITY CARDS GRID (Matching Mockup 2 Card Structure) -->
             <div v-if="filteredActivities.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div
                     v-for="item in filteredActivities"
                     :key="item.id"
-                    class="bg-white rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-md hover:border-teal-200 transition-all duration-200 overflow-hidden flex flex-col group"
+                    class="bg-white rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-teal-300 transition-all duration-200 overflow-hidden flex flex-col group relative"
                 >
-                    <!-- Card Top Image / Cover Area -->
+                    <!-- Card Top Media / Cover Area (16:9 Aspect) -->
                     <div class="relative h-44 bg-slate-100 overflow-hidden">
                         <img
                             v-if="item.cover_image_url && !imageErrors.has(item.id)"
@@ -399,105 +542,162 @@ const getCategoryColor = (cat) => {
                             @error="onImageError(item.id)"
                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div v-else class="w-full h-full bg-gradient-to-tr from-teal-800 to-emerald-600 flex flex-col items-center justify-center p-4 text-white">
-                            <SparklesIcon class="w-12 h-12 text-white/50 mb-1" />
-                            <span class="text-sm font-black tracking-wide uppercase text-white/80">{{ item.name }}</span>
+                        <div v-else class="w-full h-full bg-gradient-to-tr from-teal-900 via-teal-800 to-emerald-700 flex flex-col items-center justify-center p-4 text-white text-center">
+                            <SparklesIcon class="w-10 h-10 text-teal-200/60 mb-1" />
+                            <span class="text-sm font-black tracking-wide uppercase text-white/90">{{ item.name }}</span>
+                            <span class="text-[11px] text-teal-200/80 mt-0.5">{{ item.category_label }}</span>
                         </div>
 
-                        <!-- Badges Overlay -->
-                        <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center">
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/95 backdrop-blur-md shadow-xs border" :class="getCategoryColor(item.category)">
+                        <!-- Top-Left Badges: Category & Mandatory -->
+                        <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center z-10">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/95 backdrop-blur-md shadow-xs border" :class="getCategoryColor(item.category)">
                                 {{ item.category_label }}
                             </span>
-                            <span v-if="item.is_mandatory" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-xs">
+                            <span v-if="item.is_mandatory" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-xs">
                                 Wajib
                             </span>
                         </div>
 
-                        <!-- Status Badge -->
-                        <div class="absolute top-3 right-3">
-                            <span
-                                class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-xs"
-                                :class="item.status === 'active' 
-                                    ? 'bg-emerald-500 text-white border-emerald-400' 
-                                    : 'bg-slate-500 text-white border-slate-400'"
-                            >
-                                {{ item.status === 'active' ? 'Aktif' : 'Nonaktif' }}
-                            </span>
-                        </div>
-
-                        <!-- Quota Progress Bar at Bottom of Image -->
-                        <div class="absolute bottom-0 inset-x-0 bg-slate-900/60 backdrop-blur-xs px-3 py-1 flex items-center justify-between text-[11px] text-white font-semibold">
-                            <div class="flex items-center gap-1.5">
-                                <UserGroupIcon class="w-3.5 h-3.5 text-teal-300" />
-                                <span>{{ item.active_members_count || 0 }} / {{ item.max_quota }} Siswa</span>
-                            </div>
-                            <span class="text-teal-200 text-[10px]">
-                                {{ Math.round(((item.active_members_count || 0) / item.max_quota) * 100) }}% Kuota
-                            </span>
-                        </div>
+                        <!-- Top-Right Favorite Heart Button -->
+                        <button
+                            @click.stop="toggleFavorite(item.id)"
+                            type="button"
+                            class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md shadow-xs border border-slate-200/80 flex items-center justify-center transition-transform active:scale-90 z-10"
+                            :title="favorites.has(item.id) ? 'Hapus dari favorit' : 'Tambah ke favorit'"
+                        >
+                            <HeartIconSolid v-if="favorites.has(item.id)" class="w-4 h-4 text-rose-500" />
+                            <HeartIconOutline v-else class="w-4 h-4 text-slate-400 hover:text-rose-500" />
+                        </button>
                     </div>
 
                     <!-- Card Body -->
                     <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-                        <div class="space-y-2.5">
-                            <h3 class="font-black text-lg text-slate-800 leading-snug group-hover:text-teal-700 transition-colors">
-                                {{ item.name }}
-                            </h3>
-                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                                {{ item.description || 'Kegiatan ekstrakurikuler pembinaan minat bakat siswa secara berkala.' }}
-                            </p>
-
-                            <!-- Meta Info Grid -->
-                            <div class="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
-                                <div class="flex items-center gap-2 text-slate-600">
-                                    <ClockIcon class="w-4 h-4 text-teal-600 shrink-0" />
-                                    <span class="font-semibold">{{ item.formatted_schedule }}</span>
-                                </div>
-                                <div class="flex items-center gap-2 text-slate-600">
-                                    <MapPinIcon class="w-4 h-4 text-rose-500 shrink-0" />
-                                    <span class="truncate">{{ item.room?.name || item.location_name || 'Area Kampus Sekolah' }}</span>
-                                </div>
-                                <div class="flex items-center gap-2 text-slate-600">
-                                    <UserGroupIcon class="w-4 h-4 text-indigo-500 shrink-0" />
-                                    <span class="truncate">
-                                        Pelatih: 
-                                        <span class="font-bold text-slate-800">
-                                            {{ item.instructors?.length > 0 ? item.instructors.map(i => i.user?.name).join(', ') : 'Belum ditentukan' }}
+                        <div class="space-y-3">
+                            <!-- Title Row & 3-Dots Action Menu -->
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <h3 class="font-black text-base sm:text-lg text-slate-800 leading-snug group-hover:text-teal-700 transition-colors line-clamp-1">
+                                        {{ item.name }}
+                                    </h3>
+                                    
+                                    <!-- School Unit Badge -->
+                                    <div class="flex items-center gap-1.5 mt-1">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-100">
+                                            <BuildingLibraryIcon class="w-3 h-3 text-emerald-600" />
+                                            <span>{{ item.unit?.name || 'SD NAMIRA' }}</span>
                                         </span>
+                                        <span v-if="item.status === 'inactive'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600">
+                                            Nonaktif
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- 3-Dots Action Popover (Edit & Delete) -->
+                                <div v-if="item.can_edit" class="relative card-action-menu-container shrink-0">
+                                    <button
+                                        @click.stop="toggleActionMenu(item.id)"
+                                        type="button"
+                                        class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                        title="Opsi Kegiatan"
+                                    >
+                                        <EllipsisVerticalIcon class="w-5 h-5" />
+                                    </button>
+
+                                    <!-- Action Dropdown Menu -->
+                                    <div
+                                        v-if="activeMenuId === item.id"
+                                        class="absolute right-0 top-full mt-1 w-44 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-30 animate-in fade-in zoom-in-95"
+                                    >
+                                        <button
+                                            @click="openEditModal(item)"
+                                            type="button"
+                                            class="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                        >
+                                            <PencilSquareIcon class="w-4 h-4 text-teal-600" />
+                                            <span>Edit Ekstrakurikuler</span>
+                                        </button>
+                                        <button
+                                            v-if="canManage"
+                                            @click="confirmDelete(item)"
+                                            type="button"
+                                            class="w-full px-3.5 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                                        >
+                                            <TrashIcon class="w-4 h-4 text-rose-500" />
+                                            <span>Hapus Kegiatan</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Meta Details (Jadwal & Lokasi) -->
+                            <div class="space-y-1.5 text-xs text-slate-600 pt-1">
+                                <!-- Jadwal Latihan -->
+                                <div class="flex items-center gap-2">
+                                    <ClockIcon class="w-4 h-4 text-[#00796B] shrink-0" />
+                                    <span class="font-semibold text-slate-700">
+                                        Setiap {{ item.day_of_week }}, {{ item.start_time }} - {{ item.end_time }} WIB
                                     </span>
+                                </div>
+
+                                <!-- Lokasi / Ruangan -->
+                                <div class="flex items-center gap-2">
+                                    <MapPinIcon class="w-4 h-4 text-rose-500 shrink-0" />
+                                    <span class="truncate">
+                                        {{ item.room?.name || item.location_name || 'Area Kampus Sekolah' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Coach / Instructor Row -->
+                            <div class="flex items-center gap-2.5 pt-2 border-t border-slate-100">
+                                <div class="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs shrink-0 border border-teal-200">
+                                    {{ (item.instructors?.[0]?.user?.name || 'P').charAt(0).toUpperCase() }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-xs font-bold text-slate-800 truncate">
+                                        {{ item.instructors?.[0]?.user?.name || 'Belum ditugaskan' }}
+                                    </div>
+                                    <div class="text-[10px] text-slate-500">
+                                        {{ item.instructors?.[0]?.role_title || 'Pelatih Utama' }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quota Counter & Progress Bar -->
+                            <div class="space-y-1.5 pt-1">
+                                <div class="flex items-center justify-between text-xs font-semibold">
+                                    <span class="text-slate-700 font-bold">
+                                        {{ item.active_members_count || 0 }}/{{ item.max_quota }} Siswa
+                                    </span>
+                                    <span
+                                        :class="(item.active_members_count || 0) >= item.max_quota ? 'text-rose-600 font-bold' : 'text-slate-500'"
+                                    >
+                                        {{ (item.active_members_count || 0) >= item.max_quota 
+                                            ? 'Kuota Penuh' 
+                                            : `Sisa ${Math.max(0, item.max_quota - (item.active_members_count || 0))} Kursi` }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Visual Bar -->
+                                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                    <div
+                                        class="h-full rounded-full transition-all duration-300"
+                                        :class="getProgressBarColor(getQuotaPercentage(item))"
+                                        :style="{ width: `${getQuotaPercentage(item)}%` }"
+                                    ></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Card Footer Actions -->
-                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <!-- Card Action Button: Kelola Kegiatan → -->
+                        <div class="pt-2">
                             <Link
                                 :href="route('extracurricular.show', item.id)"
-                                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-xs transition-all active:scale-95"
+                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-xs sm:text-sm shadow-xs transition-all active:scale-[0.98]"
                             >
-                                <span>Buka Sesi & Presensi</span>
-                                <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                                <span>Kelola Kegiatan</span>
+                                <ArrowRightIcon class="w-4 h-4 stroke-[2.5]" />
                             </Link>
-
-                            <div v-if="canManage" class="flex items-center gap-1">
-                                <button
-                                    @click="openEditModal(item)"
-                                    type="button"
-                                    class="p-2 rounded-xl text-slate-500 hover:text-teal-700 hover:bg-teal-50 border border-slate-200 transition-colors"
-                                    title="Edit Ekskul"
-                                >
-                                    <PencilSquareIcon class="w-4 h-4" />
-                                </button>
-                                <button
-                                    @click="confirmDelete(item)"
-                                    type="button"
-                                    class="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition-colors"
-                                    title="Hapus Ekskul"
-                                >
-                                    <TrashIcon class="w-4 h-4" />
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -505,12 +705,12 @@ const getCategoryColor = (cat) => {
 
             <!-- Empty State -->
             <div v-else class="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs space-y-4">
-                <div class="w-16 h-16 rounded-full bg-teal-50 text-teal-600 mx-auto flex items-center justify-center">
+                <div class="w-16 h-16 rounded-full bg-teal-50 text-teal-700 mx-auto flex items-center justify-center border border-teal-100">
                     <SparklesIcon class="w-8 h-8 stroke-[2]" />
                 </div>
                 <div class="space-y-1">
                     <h3 class="font-black text-lg text-slate-800">Tidak Ada Kegiatan Ekstrakurikuler</h3>
-                    <p class="text-sm text-slate-500 max-w-md mx-auto">
+                    <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
                         Belum ada kegiatan ekstrakurikuler yang sesuai dengan kriteria filter atau pencarian Anda.
                     </p>
                 </div>
@@ -518,30 +718,32 @@ const getCategoryColor = (cat) => {
                     v-if="canManage"
                     @click="openCreateModal"
                     type="button"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-700 text-white font-bold text-xs hover:bg-teal-800 transition-all shadow-xs"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00796B] text-white font-bold text-xs hover:bg-[#00695C] transition-all shadow-xs"
                 >
                     <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                    <span>Buat Ekstrakurikuler Sekarang</span>
+                    <span>Tambah Ekskul Sekarang</span>
                 </button>
             </div>
         </div>
 
-        <!-- Modal Tambah / Edit Ekstrakurikuler -->
+        <!-- ========================================================================================= -->
+        <!-- MODAL TAMBAH & EDIT EKSTRAKURIKULER (Pixel Perfect Matching Mockup 3 Segmented Sections) -->
+        <!-- ========================================================================================= -->
         <Teleport to="body">
-            <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-                <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+                <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
                     
                     <!-- Modal Header -->
-                    <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between shrink-0">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-teal-100/80 text-teal-800 flex items-center justify-center font-bold">
+                            <div class="w-10 h-10 rounded-2xl bg-teal-50 text-[#00796B] border border-teal-100 flex items-center justify-center font-bold">
                                 <SparklesIcon class="w-5 h-5 stroke-[2.2]" />
                             </div>
                             <div>
                                 <h3 class="font-black text-slate-800 text-base sm:text-lg">
-                                    {{ isEditing ? 'Edit Ekstrakurikuler' : 'Tambah Ekstrakurikuler Baru' }}
+                                    {{ isEditing ? 'Edit Ekstrakurikuler' : 'Tambah Ekstrakurikuler' }}
                                 </h3>
-                                <p class="text-xs text-slate-500">Lengkapi data cabang kegiatan dan jadwal pembinaan.</p>
+                                <p class="text-xs text-slate-500">Lengkapi data kegiatan di bawah ini.</p>
                             </div>
                         </div>
                         <button
@@ -552,59 +754,244 @@ const getCategoryColor = (cat) => {
                         </button>
                     </div>
 
-                    <!-- Modal Body -->
-                    <form @submit.prevent="submitForm" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                    <!-- Modal Body (4 Segmented Numbered Sections) -->
+                    <form @submit.prevent="submitForm" class="p-6 space-y-7 overflow-y-auto flex-1 text-slate-800">
                         
-                        <!-- Unit Sekolah (Khusus Global Admin Yayasan) -->
-                        <div v-if="props.isGlobalAdmin && props.units && props.units.length > 0">
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Unit Sekolah *</label>
-                            <select
-                                v-model="form.unit_id"
-                                required
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white font-medium"
-                            >
-                                <option v-for="u in units" :key="u.id" :value="u.id">
-                                    {{ u.name }} ({{ u.code || 'Unit' }})
-                                </option>
-                            </select>
-                            <div v-if="form.errors.unit_id" class="text-rose-500 text-xs mt-1">{{ form.errors.unit_id }}</div>
-                        </div>
-
-                        <!-- Nama & Kategori -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Nama Kegiatan *</label>
-                                <input
-                                    v-model="form.name"
-                                    type="text"
-                                    required
-                                    placeholder="Contoh: Futsal, Tari Tradisional, Robotika"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                                />
-                                <div v-if="form.errors.name" class="text-rose-500 text-xs mt-1">{{ form.errors.name }}</div>
+                        <!-- ================= SECTION 1: INFORMASI DASAR ================= -->
+                        <div class="space-y-4">
+                            <!-- Section Title with Number Badge -->
+                            <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                                <div class="w-7 h-7 rounded-full bg-[#00796B] text-white flex items-center justify-center text-xs font-black shrink-0">
+                                    1
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-sm sm:text-base leading-tight">Informasi Dasar</h4>
+                                    <p class="text-[11px] text-slate-500">Masukkan informasi umum kegiatan.</p>
+                                </div>
                             </div>
 
+                            <!-- Nama Kegiatan & Kategori -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Kegiatan *</label>
+                                    <input
+                                        v-model="form.name"
+                                        type="text"
+                                        required
+                                        placeholder="Contoh: Futsal SD"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder:text-slate-400"
+                                    />
+                                    <div v-if="form.errors.name" class="text-rose-500 text-xs mt-1">{{ form.errors.name }}</div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Kategori Ekskul *</label>
+                                    <select
+                                        v-model="form.category"
+                                        required
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                                    >
+                                        <option value="olahraga">Olahraga</option>
+                                        <option value="seni_budaya">Seni & Budaya</option>
+                                        <option value="keagamaan">Keagamaan</option>
+                                        <option value="sains_teknologi">Sains & Teknologi</option>
+                                        <option value="kepanduan">Bela Diri</option>
+                                        <option value="lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Deskripsi Kegiatan with Char Counter -->
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Kategori *</label>
-                                <select
-                                    v-model="form.category"
-                                    required
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-slate-700">Deskripsi Kegiatan</label>
+                                    <span class="text-[11px] text-slate-400">{{ (form.description || '').length }}/500</span>
+                                </div>
+                                <textarea
+                                    v-model="form.description"
+                                    rows="3"
+                                    maxlength="500"
+                                    placeholder="Jelaskan tentang kegiatan ini, target kemampuan, atau silabus singkat..."
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder:text-slate-400"
+                                ></textarea>
+                            </div>
+
+                            <!-- Foto Cover Upload Dropzone -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Foto Cover</label>
+                                
+                                <div
+                                    @click="fileInput?.click()"
+                                    class="border-2 border-dashed border-slate-200 hover:border-teal-400 bg-slate-50/60 hover:bg-teal-50/20 rounded-2xl p-4 sm:p-5 text-center cursor-pointer transition-all group"
                                 >
-                                    <option value="olahraga">Olahraga & Atletik</option>
-                                    <option value="seni_budaya">Seni & Budaya</option>
-                                    <option value="keagamaan">Keagamaan & Karakter</option>
-                                    <option value="sains_teknologi">Sains & Teknologi</option>
-                                    <option value="kepanduan">Kepanduan & Bela Diri</option>
-                                    <option value="lainnya">Lainnya</option>
-                                </select>
+                                    <input
+                                        ref="fileInput"
+                                        type="file"
+                                        accept="image/*"
+                                        class="hidden"
+                                        @change="handlePhotoSelect"
+                                    />
+
+                                    <!-- If Preview Available -->
+                                    <div v-if="photoPreview" class="flex flex-col sm:flex-row items-center gap-4 text-left">
+                                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                                            <img :src="photoPreview" alt="Cover Preview" class="w-full h-full object-cover" />
+                                        </div>
+                                        <div class="space-y-1 min-w-0 flex-1">
+                                            <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                                <CheckCircleIcon class="w-4 h-4 text-emerald-600" />
+                                                <span>Foto berhasil dipilih</span>
+                                            </div>
+                                            <p v-if="photoSizeInfo" class="text-[11px] text-emerald-700 font-medium">
+                                                {{ photoSizeInfo }}
+                                            </p>
+                                            <div class="flex items-center gap-3 pt-1">
+                                                <span class="text-xs text-teal-700 font-semibold hover:underline">Klik untuk ganti foto</span>
+                                                <button
+                                                    @click.stop="removePhoto"
+                                                    type="button"
+                                                    class="text-xs text-rose-500 font-semibold hover:underline"
+                                                >
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Empty Upload State -->
+                                    <div v-else class="flex flex-col items-center justify-center py-2 space-y-1.5">
+                                        <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <PhotoIcon class="w-5 h-5" />
+                                        </div>
+                                        <div class="text-xs font-bold text-slate-700">
+                                            Klik untuk unggah foto <span class="font-normal text-slate-500">atau seret ke sini</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-400">
+                                            PNG, JPG maks. 5 MB (otomatis terkompresi)
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Jadwal: Hari & Jam -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- ================= SECTION 2: UNIT & TARGET PESERTA ================= -->
+                        <div class="space-y-4">
+                            <!-- Section Title with Number Badge -->
+                            <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                                <div class="w-7 h-7 rounded-full bg-[#00796B] text-white flex items-center justify-center text-xs font-black shrink-0">
+                                    2
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-sm sm:text-base leading-tight">Unit & Target Peserta</h4>
+                                    <p class="text-[11px] text-slate-500">Tentukan unit sekolah dan sasaran peserta yang dapat bergabung.</p>
+                                </div>
+                            </div>
+
+                            <!-- Unit Sekolah -->
+                            <div v-if="props.units && props.units.length > 0">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Unit Sekolah *</label>
+                                <div class="relative">
+                                    <BuildingLibraryIcon class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <select
+                                        v-model="form.unit_id"
+                                        required
+                                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white font-medium"
+                                    >
+                                        <option v-for="u in units" :key="u.id" :value="u.id">
+                                            {{ u.name }} ({{ u.code || 'Unit' }})
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Target Tingkat / Jenjang Kelas -->
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Hari Pelaksanaan *</label>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-slate-700">Target Tingkat / Jenjang Kelas *</label>
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            @click="selectAllGradeLevels"
+                                            type="button"
+                                            class="text-[11px] text-[#00796B] font-semibold hover:underline"
+                                        >
+                                            Pilih Semua
+                                        </button>
+                                        <span class="text-slate-300 text-xs">|</span>
+                                        <button
+                                            @click="resetGradeLevels"
+                                            type="button"
+                                            class="text-[11px] text-slate-500 font-semibold hover:underline"
+                                        >
+                                            Reset
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Kelas Checkbox Pills Grid -->
+                                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                    <button
+                                        v-for="g in availableGradeLevels"
+                                        :key="g.value"
+                                        @click="toggleGradeLevel(g.value)"
+                                        type="button"
+                                        class="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5"
+                                        :class="form.target_levels.includes(g.value)
+                                            ? 'bg-teal-50 text-teal-800 border-teal-600 shadow-xs ring-1 ring-teal-500'
+                                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                                    >
+                                        <CheckIcon v-if="form.target_levels.includes(g.value)" class="w-3.5 h-3.5 stroke-[3] text-[#00796B]" />
+                                        <span>{{ g.label }}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Batasan Gender (3 Card Selectors Matching Mockup 3) -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Batasan Gender</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    <button
+                                        v-for="opt in genderOptions"
+                                        :key="opt.value"
+                                        @click="form.gender_restriction = opt.value"
+                                        type="button"
+                                        class="p-3 rounded-2xl border text-left transition-all"
+                                        :class="form.gender_restriction === opt.value
+                                            ? 'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500 shadow-xs'
+                                            : 'border-slate-200 bg-white hover:border-slate-300'"
+                                    >
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-bold" :class="form.gender_restriction === opt.value ? 'text-teal-900' : 'text-slate-800'">
+                                                {{ opt.title }}
+                                            </span>
+                                            <span
+                                                class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0"
+                                                :class="form.gender_restriction === opt.value ? 'border-teal-600 bg-teal-600' : 'border-slate-300'"
+                                            >
+                                                <span v-if="form.gender_restriction === opt.value" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                            </span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 mt-0.5">{{ opt.subtitle }}</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ================= SECTION 3: JADWAL & LOKASI ================= -->
+                        <div class="space-y-4">
+                            <!-- Section Title with Number Badge -->
+                            <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                                <div class="w-7 h-7 rounded-full bg-[#00796B] text-white flex items-center justify-center text-xs font-black shrink-0">
+                                    3
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-sm sm:text-base leading-tight">Jadwal & Lokasi</h4>
+                                    <p class="text-[11px] text-slate-500">Atur jadwal latihan dan lokasi pelaksanaan.</p>
+                                </div>
+                            </div>
+
+                            <!-- Hari Latihan -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Hari Latihan *</label>
                                 <select
                                     v-model="form.day_of_week"
                                     required
@@ -620,169 +1007,160 @@ const getCategoryColor = (cat) => {
                                 </select>
                             </div>
 
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Jam Mulai *</label>
-                                <input
-                                    v-model="form.start_time"
-                                    type="time"
-                                    required
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                                />
+                            <!-- Jam Mulai & Jam Selesai -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Jam Mulai *</label>
+                                    <div class="relative">
+                                        <ClockIcon class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            v-model="form.start_time"
+                                            type="time"
+                                            required
+                                            class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Jam Selesai *</label>
+                                    <div class="relative">
+                                        <ClockIcon class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            v-model="form.end_time"
+                                            type="time"
+                                            required
+                                            class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Jam Selesai *</label>
-                                <input
-                                    v-model="form.end_time"
-                                    type="time"
-                                    required
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                                />
+                            <!-- Lokasi / Ruangan Sarpras & Keterangan Tambahan -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Lokasi / Ruangan</label>
+                                    <select
+                                        v-model="form.room_id"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                                    >
+                                        <option value="">-- Pilih Ruangan / Sarpras --</option>
+                                        <option v-for="room in rooms" :key="room.id" :value="room.id">
+                                            {{ room.name }} ({{ room.building ? (room.building + (room.floor ? ' Lt.' + room.floor : '')) : 'Kampus' }})
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Keterangan Lokasi Tambahan</label>
+                                    <input
+                                        v-model="form.location_name"
+                                        type="text"
+                                        placeholder="Contoh: Lapangan Utama / Aula Lt. 2"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder:text-slate-400"
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Lokasi Sarpras & Kuota -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- ================= SECTION 4: KUOTA & STATUS ================= -->
+                        <div class="space-y-4">
+                            <!-- Section Title with Number Badge -->
+                            <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                                <div class="w-7 h-7 rounded-full bg-[#00796B] text-white flex items-center justify-center text-xs font-black shrink-0">
+                                    4
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-sm sm:text-base leading-tight">Kuota & Status</h4>
+                                    <p class="text-[11px] text-slate-500">Tentukan kapasitas peserta dan status kegiatan.</p>
+                                </div>
+                            </div>
+
+                            <!-- Kuota Maksimal Siswa -->
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Ruangan / Lokasi Sarpras</label>
-                                <select
-                                    v-model="form.room_id"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Kuota Maksimal Siswa *</label>
+                                <div class="relative max-w-xs">
+                                    <input
+                                        v-model.number="form.max_quota"
+                                        type="number"
+                                        min="1"
+                                        max="500"
+                                        required
+                                        class="w-full px-3.5 py-2.5 pr-14 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-semibold text-slate-800"
+                                    />
+                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                                        siswa
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Status Toggle (Aktif / Nonaktif) -->
+                            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                                <div class="space-y-0.5">
+                                    <div class="text-xs font-bold text-slate-800">Status Kegiatan</div>
+                                    <div class="text-[11px] text-slate-500">
+                                        Kegiatan aktif dapat menerima pendaftaran siswa baru.
+                                    </div>
+                                </div>
+
+                                <button
+                                    @click="form.status = form.status === 'active' ? 'inactive' : 'active'"
+                                    type="button"
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden"
+                                    :class="form.status === 'active' ? 'bg-[#00796B]' : 'bg-slate-300'"
                                 >
-                                    <option value="">-- Pilih Ruangan / Sarpras --</option>
-                                    <option v-for="room in rooms" :key="room.id" :value="room.id">
-                                        {{ room.name }} ({{ room.building ? (room.building + (room.floor ? ' Lt.' + room.floor : '')) : 'Kampus' }})
+                                    <span
+                                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                                        :class="form.status === 'active' ? 'translate-x-5' : 'translate-x-0'"
+                                    />
+                                </button>
+                            </div>
+
+                            <!-- Sifat Ekskul Wajib -->
+                            <div class="p-3.5 rounded-2xl border border-slate-200 bg-white flex items-center gap-3">
+                                <input
+                                    v-model="form.is_mandatory"
+                                    type="checkbox"
+                                    id="modal_mandatory_cb"
+                                    class="w-4 h-4 text-[#00796B] rounded-sm border-slate-300 focus:ring-teal-500"
+                                />
+                                <label for="modal_mandatory_cb" class="text-xs font-semibold text-slate-700 cursor-pointer">
+                                    Wajib Diikuti Semua Siswa (seperti Pramuka)
+                                </label>
+                            </div>
+
+                            <!-- Optional Initial Instructor Selection (Saat Tambah Baru) -->
+                            <div v-if="!isEditing && availableInstructors && availableInstructors.length > 0">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tugaskan Pelatih Awal (Opsional)</label>
+                                <select
+                                    v-model="form.instructor_ids"
+                                    multiple
+                                    class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white h-24"
+                                >
+                                    <option v-for="coach in availableInstructors" :key="coach.id" :value="coach.id">
+                                        {{ coach.name }} ({{ coach.phone || 'No HP -' }})
                                     </option>
                                 </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Lokasi Keterangan (Opsional)</label>
-                                <input
-                                    v-model="form.location_name"
-                                    type="text"
-                                    placeholder="Misal: Lapangan Utama / Aula Al-Ikhlas"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                                />
+                                <p class="text-[11px] text-slate-400 mt-1">Tahan tombol Ctrl untuk memilih lebih dari 1. Pelatih juga dapat ditugaskan kapan saja di halaman detail.</p>
                             </div>
                         </div>
 
-                        <!-- Kuota & Pembatasan -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Batas Kuota Siswa *</label>
-                                <input
-                                    v-model.number="form.max_quota"
-                                    type="number"
-                                    min="1"
-                                    max="500"
-                                    required
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Batasan Gender</label>
-                                <select
-                                    v-model="form.gender_restriction"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
-                                >
-                                    <option value="all">Semua Siswa</option>
-                                    <option value="male_only">Khusus Putra (Ikhwan)</option>
-                                    <option value="female_only">Khusus Putri (Akhwat)</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Sifat Ekskul</label>
-                                <div class="flex items-center gap-2 pt-2">
-                                    <input
-                                        v-model="form.is_mandatory"
-                                        type="checkbox"
-                                        id="mandatory_cb"
-                                        class="w-4 h-4 text-teal-600 rounded-sm border-slate-300 focus:ring-teal-500"
-                                    />
-                                    <label for="mandatory_cb" class="text-xs font-semibold text-slate-700 cursor-pointer">
-                                        Wajib (seperti Pramuka)
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Penugasan Pelatih Awal (Jika Tambah Baru) -->
-                        <div v-if="!isEditing">
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Tugaskan Pelatih / Pembina Awal</label>
-                            <select
-                                v-model="form.instructor_ids"
-                                multiple
-                                class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white h-24"
-                            >
-                                <option v-for="coach in availableInstructors" :key="coach.id" :value="coach.id">
-                                    {{ coach.name }} ({{ coach.phone || 'No HP -' }})
-                                </option>
-                            </select>
-                            <p class="text-[11px] text-slate-400 mt-1">Tahan tombol Ctrl (Windows) untuk memilih lebih dari 1 pelatih. Akun pelatih luar juga dapat dibuat nanti di halaman detail.</p>
-                        </div>
-
-                        <!-- Deskripsi -->
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Deskripsi Kegiatan</label>
-                            <textarea
-                                v-model="form.description"
-                                rows="3"
-                                placeholder="Jelaskan tujuan, silabus singkat, atau target kompetisi kegiatan ekstrakurikuler ini..."
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                            ></textarea>
-                        </div>
-
-                        <!-- Foto Sampul (Canvas Auto-Compression) -->
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Foto Sampul Ekskul (Otomatis Terkompresi)</label>
-                            <div class="flex items-center gap-4">
-                                <div class="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0 relative">
-                                    <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover" />
-                                    <PhotoIcon v-else class="w-8 h-8 text-slate-300" />
-                                    <div v-if="isCompressing" class="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                        <div class="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
-                                    </div>
-                                </div>
-
-                                <div class="space-y-1.5 flex-1">
-                                    <input
-                                        ref="fileInput"
-                                        type="file"
-                                        accept="image/*"
-                                        @change="handlePhotoSelect"
-                                        class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
-                                    />
-                                    <div v-if="photoSizeInfo" class="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
-                                        <CheckCircleIcon class="w-4 h-4 text-emerald-600" />
-                                        <span>{{ photoSizeInfo }}</span>
-                                        <button @click="removePhoto" type="button" class="ml-2 text-rose-500 hover:underline">Hapus</button>
-                                    </div>
-                                    <p class="text-[11px] text-slate-400">
-                                        Resolusi kamera HP otomatis dikompresi ke 1280px agar upload instan dan hemat memori server.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Modal Actions -->
-                        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                        <!-- Modal Actions Footer -->
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3 sticky bottom-0 bg-white pb-2">
                             <button
                                 @click="showModal = false"
                                 type="button"
-                                class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs"
+                                class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs sm:text-sm"
                             >
                                 Batal
                             </button>
                             <button
                                 type="submit"
                                 :disabled="form.processing || isCompressing"
-                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-700 text-white font-bold text-xs hover:bg-teal-800 shadow-xs transition-all disabled:opacity-50"
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
                             >
                                 <span v-if="form.processing">Menyimpan...</span>
-                                <span v-else>{{ isEditing ? 'Simpan Perubahan' : 'Buat Ekstrakurikuler' }}</span>
+                                <span v-else>{{ isEditing ? 'Simpan Perubahan' : 'Simpan Kegiatan' }}</span>
                             </button>
                         </div>
                     </form>
