@@ -118,6 +118,8 @@ class ExtracurricularController extends Controller
             $r->whereIn('name', ['pelatih_ekskul', 'teacher', 'staff_unit']);
         })->orderBy('name')->get(['id', 'name', 'phone']);
 
+        $units = Unit::orderBy('id')->get(['id', 'name', 'code']);
+
         return Inertia::render('Extracurricular/Index', [
             'activities' => $activities,
             'stats' => [
@@ -127,9 +129,11 @@ class ExtracurricularController extends Controller
                 'total_instructors' => $totalInstructors,
             ],
             'rooms' => $rooms,
+            'units' => $units,
             'availableInstructors' => $availableInstructors,
             'filters' => $request->only(['category', 'day', 'search']),
             'canManage' => $canManage,
+            'isGlobalAdmin' => $isGlobalAdmin,
             'isCoach' => $isCoach,
             'activeYear' => $activeYear,
         ]);
@@ -141,13 +145,17 @@ class ExtracurricularController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        $unitId = session('active_unit_id') ?? $user->teacher_profile?->unit_id;
+        $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
+        $unitId = ($isGlobalAdmin && $request->filled('unit_id'))
+            ? (int) $request->unit_id
+            : (session('active_unit_id') ?? $user->teacher_profile?->unit_id ?? Unit::first()?->id ?? 1);
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'koordinator_kesiswaan'])) {
             abort(403, 'Anda tidak memiliki hak akses untuk menambah ekstrakurikuler.');
         }
 
         $validated = $request->validate([
+            'unit_id' => 'nullable|exists:units,id',
             'name' => 'required|string|max:150',
             'category' => 'required|string|in:olahraga,seni_budaya,keagamaan,sains_teknologi,kepanduan,lainnya',
             'day_of_week' => 'required|string|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
@@ -177,7 +185,7 @@ class ExtracurricularController extends Controller
         DB::beginTransaction();
         try {
             $activity = Extracurricular::create([
-                'unit_id' => $unitId ?? 1,
+                'unit_id' => $unitId,
                 'academic_year_id' => $activeYear?->id,
                 'name' => $validated['name'],
                 'category' => $validated['category'],
@@ -208,8 +216,11 @@ class ExtracurricularController extends Controller
 
                     // Assign role pelatih_ekskul to the user if they don't have it
                     $coachUser = User::find($coachUserId);
-                    if ($coachUser && !$coachUser->hasRole('pelatih_ekskul')) {
-                        $coachUser->assignRole('pelatih_ekskul');
+                    if ($coachUser) {
+                        setPermissionsTeamId($activity->unit_id);
+                        if (!$coachUser->hasRole('pelatih_ekskul')) {
+                            $coachUser->assignRole('pelatih_ekskul');
+                        }
                     }
                 }
             }
@@ -252,18 +263,39 @@ class ExtracurricularController extends Controller
         ]);
 
         $isInstructor = $activity->instructors->contains('user_id', $user->id);
+        $targetUnitId = $activity->unit_id ?? $unitId;
 
         // Classrooms in the same unit for bulk adding students
         $classrooms = \App\Modules\Academic\Models\Classroom::query();
-        if ($unitId) {
-            $classrooms->where('unit_id', $unitId);
+        if ($targetUnitId) {
+            $classrooms->where('unit_id', $targetUnitId);
         }
         $classrooms = $classrooms->orderBy('level')->orderBy('name')->get(['id', 'name', 'level']);
 
+        // Students in the unit for quick enrollment
+        $students = \App\Modules\Academic\Models\Student::query();
+        if ($targetUnitId) {
+            $students->where('unit_id', $targetUnitId);
+        }
+        $students = $students->select('id', 'full_name', 'classroom_id', 'nis', 'nisn', 'gender')
+            ->orderBy('full_name')
+            ->get()
+            ->map(function ($s) {
+                return [
+                    'id' => $s->id,
+                    'classroom_id' => $s->classroom_id,
+                    'full_name' => $s->full_name,
+                    'nis' => $s->nis,
+                    'nisn' => $s->nisn,
+                    'gender' => $s->gender,
+                    'label' => $s->full_name . ($s->nis ? " ({$s->nis})" : ''),
+                ];
+            });
+
         // Rooms for location selection
         $rooms = Room::query();
-        if ($unitId) {
-            $rooms->where('unit_id', $unitId);
+        if ($targetUnitId) {
+            $rooms->where('unit_id', $targetUnitId);
         }
         $rooms = $rooms->orderBy('name')->get(['id', 'name', 'building', 'floor']);
 
@@ -275,6 +307,7 @@ class ExtracurricularController extends Controller
         return Inertia::render('Extracurricular/Show', [
             'activity' => $activity,
             'classrooms' => $classrooms,
+            'students' => $students,
             'rooms' => $rooms,
             'availableInstructors' => $availableInstructors,
             'canManage' => $canManage,

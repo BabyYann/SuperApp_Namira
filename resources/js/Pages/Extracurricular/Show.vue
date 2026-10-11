@@ -34,6 +34,7 @@ import {
 const props = defineProps({
     activity: { type: Object, required: true },
     classrooms: { type: Array, default: () => [] },
+    students: { type: Array, default: () => [] },
     rooms: { type: Array, default: () => [] },
     availableInstructors: { type: Array, default: () => [] },
     canManage: { type: Boolean, default: false },
@@ -54,13 +55,95 @@ const showSessionModal = ref(false);
 const showZoomPhotoModal = ref(false);
 const zoomedPhotoUrl = ref('');
 
+// Member Modal Filtering & Checkbox Selection State
+const memberModalClassFilter = ref('all');
+const memberModalSearch = ref('');
+
 // Forms
 const memberForm = useForm({
-    mode: 'single', // 'single' | 'classroom_bulk'
+    student_ids: [],
     student_id: '',
-    classroom_id: '',
     notes: '',
 });
+
+// Enrolled student set & remaining quota
+const enrolledStudentIds = computed(() => {
+    return new Set((props.activity.active_members || []).map((m) => m.student_id));
+});
+
+const remainingQuota = computed(() => {
+    const max = props.activity.max_quota || 30;
+    const current = (props.activity.active_members || []).length;
+    return Math.max(0, max - current);
+});
+
+const isGenderEligible = (gender) => {
+    const restriction = props.activity.gender_restriction;
+    if (!restriction || restriction === 'all') return true;
+    if (restriction === 'male_only') return String(gender).toLowerCase() === 'l';
+    if (restriction === 'female_only') return String(gender).toLowerCase() === 'p';
+    return true;
+};
+
+const availableStudentsForModal = computed(() => {
+    const list = props.students || [];
+    return list.filter((s) => {
+        if (memberModalClassFilter.value !== 'all' && String(s.classroom_id) !== String(memberModalClassFilter.value)) {
+            return false;
+        }
+        if (memberModalSearch.value) {
+            const q = memberModalSearch.value.toLowerCase().trim();
+            const matches = (s.full_name && s.full_name.toLowerCase().includes(q)) || 
+                            (s.nis && String(s.nis).includes(q)) || 
+                            (s.nisn && String(s.nisn).includes(q));
+            if (!matches) return false;
+        }
+        return true;
+    });
+});
+
+const selectableStudentsInModal = computed(() => {
+    return availableStudentsForModal.value.filter((s) => {
+        return !enrolledStudentIds.value.has(s.id) && isGenderEligible(s.gender);
+    });
+});
+
+const isAllModalStudentsSelected = computed(() => {
+    const selectable = selectableStudentsInModal.value;
+    if (selectable.length === 0) return false;
+    return selectable.every((s) => memberForm.student_ids.includes(s.id));
+});
+
+const toggleSelectAllStudents = () => {
+    const selectable = selectableStudentsInModal.value;
+    if (isAllModalStudentsSelected.value) {
+        const visibleIds = new Set(selectable.map((s) => s.id));
+        memberForm.student_ids = memberForm.student_ids.filter((id) => !visibleIds.has(id));
+    } else {
+        const currentSelected = new Set(memberForm.student_ids);
+        selectable.forEach((s) => {
+            currentSelected.add(s.id);
+        });
+        memberForm.student_ids = Array.from(currentSelected);
+    }
+};
+
+const toggleStudentSelection = (studentId) => {
+    const idx = memberForm.student_ids.indexOf(studentId);
+    if (idx > -1) {
+        memberForm.student_ids.splice(idx, 1);
+    } else {
+        memberForm.student_ids.push(studentId);
+    }
+};
+
+const openAddMemberModal = () => {
+    memberForm.reset();
+    memberForm.clearErrors();
+    memberModalClassFilter.value = 'all';
+    memberModalSearch.value = '';
+    showAddMemberModal.value = true;
+};
 
 const coachForm = useForm({
     mode: 'existing', // 'existing' | 'create_new'
@@ -575,7 +658,7 @@ const zoomPhoto = (url) => {
 
                     <button
                         v-if="canManage || isInstructor"
-                        @click="showAddMemberModal = true"
+                        @click="openAddMemberModal"
                         type="button"
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-xs transition-all active:scale-95"
                     >
@@ -1061,75 +1144,149 @@ const zoomPhoto = (url) => {
         <!-- MODAL 2: TAMBAH ANGGOTA SISWA -->
         <Teleport to="body">
             <div v-if="showAddMemberModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-                <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                     <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                        <h3 class="font-black text-slate-800 text-base">Tambah Anggota Siswa</h3>
+                        <div>
+                            <h3 class="font-black text-slate-800 text-base">Pendaftaran Anggota Siswa</h3>
+                            <p class="text-xs text-slate-500">
+                                Sisa Kuota: <strong class="text-teal-700">{{ remainingQuota }}</strong> dari {{ activity.max_quota }} kursi
+                            </p>
+                        </div>
                         <button @click="showAddMemberModal = false" class="p-2 text-slate-400 hover:text-slate-600">
                             <XMarkIcon class="w-5 h-5" />
                         </button>
                     </div>
 
                     <form @submit.prevent="submitMember" class="p-6 space-y-4">
-                        <!-- Mode Selection -->
-                        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl text-xs font-bold">
-                            <button
-                                type="button"
-                                @click="memberForm.mode = 'single'"
-                                class="py-2 rounded-xl transition-all"
-                                :class="memberForm.mode === 'single' ? 'bg-white text-teal-800 shadow-xs' : 'text-slate-500'"
-                            >
-                                Pilih 1 Siswa
-                            </button>
-                            <button
-                                type="button"
-                                @click="memberForm.mode = 'classroom_bulk'"
-                                class="py-2 rounded-xl transition-all"
-                                :class="memberForm.mode === 'classroom_bulk' ? 'bg-white text-teal-800 shadow-xs' : 'text-slate-500'"
-                            >
-                                Masal 1 Kelas
-                            </button>
+                        <!-- Filter & Search Controls -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Filter Rombel / Kelas</label>
+                                <select
+                                    v-model="memberModalClassFilter"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-teal-500 bg-white"
+                                >
+                                    <option value="all">Semua Kelas</option>
+                                    <option v-for="c in classrooms" :key="c.id" :value="c.id">
+                                        Kelas {{ c.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Pencarian Siswa</label>
+                                <div class="relative">
+                                    <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                                    <input
+                                        v-model="memberModalSearch"
+                                        type="text"
+                                        placeholder="Ketik nama atau NIS..."
+                                        class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-teal-500"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Mode Classroom Bulk -->
-                        <div v-if="memberForm.mode === 'classroom_bulk'">
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Kelas *</label>
-                            <select
-                                v-model="memberForm.classroom_id"
-                                required
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500 bg-white"
+                        <!-- Selection Header Bar -->
+                        <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                            <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                                <input
+                                    type="checkbox"
+                                    :checked="isAllModalStudentsSelected"
+                                    :disabled="selectableStudentsInModal.length === 0"
+                                    @change="toggleSelectAllStudents"
+                                    class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300"
+                                />
+                                <span>Pilih Semua yang Tampil ({{ selectableStudentsInModal.length }})</span>
+                            </label>
+
+                            <span class="font-extrabold px-2.5 py-1 rounded-full text-[11px]" :class="memberForm.student_ids.length > 0 ? 'bg-teal-100 text-teal-800' : 'bg-slate-200 text-slate-600'">
+                                {{ memberForm.student_ids.length }} Dipilih
+                            </span>
+                        </div>
+
+                        <!-- Scrollable Student Checklist -->
+                        <div class="max-h-64 overflow-y-auto space-y-1.5 border border-slate-100 rounded-2xl p-2 bg-slate-50/50">
+                            <div
+                                v-for="s in availableStudentsForModal"
+                                :key="s.id"
+                                @click="!enrolledStudentIds.has(s.id) && isGenderEligible(s.gender) && toggleStudentSelection(s.id)"
+                                class="flex items-center justify-between p-2.5 rounded-xl border transition-all select-none"
+                                :class="[
+                                    enrolledStudentIds.has(s.id)
+                                        ? 'bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed'
+                                        : !isGenderEligible(s.gender)
+                                        ? 'bg-rose-50/50 border-rose-100 opacity-60 cursor-not-allowed'
+                                        : memberForm.student_ids.includes(s.id)
+                                        ? 'bg-teal-50 border-teal-300 text-teal-900 cursor-pointer shadow-xs'
+                                        : 'bg-white border-slate-200/80 hover:border-slate-300 cursor-pointer text-slate-700'
+                                ]"
                             >
-                                <option value="">-- Pilih Kelas --</option>
-                                <option v-for="c in classrooms" :key="c.id" :value="c.id">
-                                    Kelas {{ c.name }}
-                                </option>
-                            </select>
-                            <p class="text-[11px] text-slate-400 mt-1">
-                                Seluruh siswa dalam kelas ini akan didaftarkan sekaligus ke ekstrakurikuler.
-                            </p>
+                                <div class="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        :value="s.id"
+                                        :checked="memberForm.student_ids.includes(s.id)"
+                                        :disabled="enrolledStudentIds.has(s.id) || !isGenderEligible(s.gender)"
+                                        @click.stop="toggleStudentSelection(s.id)"
+                                        class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300"
+                                    />
+                                    <div>
+                                        <div class="font-extrabold text-xs flex items-center gap-1.5">
+                                            <span>{{ s.full_name }}</span>
+                                            <span 
+                                                class="px-1.5 py-0.2 rounded text-[9px] font-black uppercase"
+                                                :class="s.gender === 'L' || s.gender === 'l' ? 'bg-sky-100 text-sky-700' : 'bg-pink-100 text-pink-700'"
+                                            >
+                                                {{ s.gender === 'L' || s.gender === 'l' ? 'L' : 'P' }}
+                                            </span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-400">
+                                            NIS: {{ s.nis || '-' }} <span v-if="s.nisn">• NISN: {{ s.nisn }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <span v-if="enrolledStudentIds.has(s.id)" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">
+                                        Sudah Anggota
+                                    </span>
+                                    <span v-else-if="!isGenderEligible(s.gender)" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                                        Khusus {{ activity.gender_restriction === 'male_only' ? 'Ikhwan' : 'Akhwat' }}
+                                    </span>
+                                    <span v-else-if="memberForm.student_ids.includes(s.id)" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-200 text-teal-800">
+                                        Terpilih ✓
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div v-if="availableStudentsForModal.length === 0" class="py-8 text-center text-xs text-slate-400 font-bold">
+                                Tidak ada siswa yang sesuai kriteria pencarian.
+                            </div>
                         </div>
 
-                        <!-- Mode Single Student -->
-                        <div v-else>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">ID / Nama Siswa *</label>
-                            <input
-                                v-model="memberForm.student_id"
-                                type="number"
-                                required
-                                placeholder="Masukkan ID Siswa..."
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500"
-                            />
-                            <p class="text-[11px] text-slate-400 mt-1">
-                                Untuk kemudahan pendaftaran perorangan atau gunakan mode masal kelas di atas.
-                            </p>
-                        </div>
+                        <!-- Footer Actions -->
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs text-slate-500 font-medium">
+                                <span v-if="memberForm.student_ids.length > remainingQuota" class="text-amber-600 font-bold">
+                                    ⚠️ Pilihan melebihi sisa kuota ({{ remainingQuota }} kursi).
+                                </span>
+                                <span v-else>
+                                    {{ memberForm.student_ids.length }} siswa akan didaftarkan.
+                                </span>
+                            </span>
 
-                        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-                            <button @click="showAddMemberModal = false" type="button" class="px-5 py-2 rounded-xl border border-slate-200 text-xs font-bold">
-                                Batal
-                            </button>
-                            <button type="submit" :disabled="memberForm.processing" class="px-6 py-2 rounded-xl bg-teal-700 text-white text-xs font-bold">
-                                Tambahkan Anggota
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button @click="showAddMemberModal = false" type="button" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    :disabled="memberForm.processing || memberForm.student_ids.length === 0"
+                                    class="px-5 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs"
+                                >
+                                    Tambahkan {{ memberForm.student_ids.length ? `(${memberForm.student_ids.length}) Siswa` : 'Anggota' }}
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

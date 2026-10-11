@@ -45,6 +45,16 @@ Route::get('/dashboard', function () {
         return redirect()->route('yayasan.dashboard');
     }
 
+    $isCoach = \DB::table('model_has_roles')
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->where('model_has_roles.model_id', $user->id)
+        ->where('roles.name', 'pelatih_ekskul')
+        ->exists();
+
+    if ($isCoach) {
+        return redirect()->route('extracurricular.index');
+    }
+
     $isSpmbApplicant = \DB::table('spmb_applicants')
         ->where('user_id', $user->id)
         ->exists();

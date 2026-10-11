@@ -48,7 +48,8 @@ class ExtracurricularInstructorController extends Controller
                     'password' => Hash::make($validated['password']),
                 ]);
 
-                // Assign pelatih_ekskul role
+                // Assign pelatih_ekskul role scoped to the activity's unit
+                setPermissionsTeamId($activity->unit_id);
                 $newUser->assignRole('pelatih_ekskul');
 
                 // Assign to extracurricular
@@ -82,6 +83,7 @@ class ExtracurricularInstructorController extends Controller
                 }
 
                 $coachUser = User::findOrFail($validated['user_id']);
+                setPermissionsTeamId($activity->unit_id);
                 if (!$coachUser->hasRole('pelatih_ekskul')) {
                     $coachUser->assignRole('pelatih_ekskul');
                 }

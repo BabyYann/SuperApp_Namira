@@ -30,8 +30,10 @@ const props = defineProps({
     availableInstructors: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
     canManage: { type: Boolean, default: false },
+    isGlobalAdmin: { type: Boolean, default: false },
     isCoach: { type: Boolean, default: false },
     activeYear: { type: Object, default: () => null },
+    units: { type: Array, default: () => [] },
 });
 
 // Search & Filter State
@@ -62,6 +64,7 @@ const daysList = ['Semua Hari', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sa
 
 // Form
 const form = useForm({
+    unit_id: '',
     name: '',
     category: 'olahraga',
     day_of_week: 'Jumat',
@@ -180,6 +183,9 @@ const openCreateModal = () => {
     form.clearErrors();
     photoPreview.value = null;
     photoSizeInfo.value = '';
+    if (props.units && props.units.length > 0) {
+        form.unit_id = props.units[0].id;
+    }
     showModal.value = true;
 };
 
@@ -187,6 +193,7 @@ const openEditModal = (activity) => {
     isEditing.value = true;
     editingActivityId.value = activity.id;
     form.clearErrors();
+    form.unit_id = activity.unit_id || '';
     form.name = activity.name;
     form.category = activity.category;
     form.day_of_week = activity.day_of_week || 'Jumat';
@@ -548,6 +555,21 @@ const getCategoryColor = (cat) => {
                     <!-- Modal Body -->
                     <form @submit.prevent="submitForm" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                         
+                        <!-- Unit Sekolah (Khusus Global Admin Yayasan) -->
+                        <div v-if="props.isGlobalAdmin && props.units && props.units.length > 0">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Unit Sekolah *</label>
+                            <select
+                                v-model="form.unit_id"
+                                required
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white font-medium"
+                            >
+                                <option v-for="u in units" :key="u.id" :value="u.id">
+                                    {{ u.name }} ({{ u.code || 'Unit' }})
+                                </option>
+                            </select>
+                            <div v-if="form.errors.unit_id" class="text-rose-500 text-xs mt-1">{{ form.errors.unit_id }}</div>
+                        </div>
+
                         <!-- Nama & Kategori -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
