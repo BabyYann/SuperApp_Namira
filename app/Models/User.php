@@ -96,25 +96,53 @@ class User extends Authenticatable implements CanResetPassword
     {
         // 0. Check User's own profile photo (for admin/staff)
         if (!empty($this->profile_photo)) {
-            return asset('storage/' . $this->profile_photo);
+            $path = $this->profile_photo;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+            if (str_starts_with($path, '/storage/') || str_starts_with($path, 'storage/')) {
+                return asset(ltrim($path, '/'));
+            }
+            return asset('storage/' . $path);
         }
 
         // 1. Check Student Profile
-        $student = $this->hasOne(\App\Modules\Academic\Models\Student::class)->first();
+        $student = $this->relationLoaded('student') ? $this->student : $this->hasOne(\App\Modules\Academic\Models\Student::class)->first();
         if ($student && !empty($student->photo)) {
-            return asset('storage/' . $student->photo);
+            $path = $student->photo;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+            if (str_starts_with($path, '/storage/') || str_starts_with($path, 'storage/')) {
+                return asset(ltrim($path, '/'));
+            }
+            return asset('storage/' . $path);
         }
 
         // 2. Check Teacher Profile
-        $teacher = $this->teacher_profile()->first();
+        $teacher = $this->relationLoaded('teacher_profile') ? $this->teacher_profile : $this->teacher_profile()->first();
         if ($teacher && !empty($teacher->photo)) {
-             return asset('storage/' . $teacher->photo);
+            $path = $teacher->photo;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+            if (str_starts_with($path, '/storage/') || str_starts_with($path, 'storage/')) {
+                return asset(ltrim($path, '/'));
+            }
+            return asset('storage/' . $path);
         }
 
         // 3. Check Staff Profile
-        $staff = $this->staff()->first();
+        $staff = $this->relationLoaded('staff') ? $this->staff : $this->staff()->first();
         if ($staff && !empty($staff->photo)) {
-             return asset('storage/' . $staff->photo);
+            $path = $staff->photo;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+            if (str_starts_with($path, '/storage/') || str_starts_with($path, 'storage/')) {
+                return asset(ltrim($path, '/'));
+            }
+            return asset('storage/' . $path);
         }
 
         // 4. Fallback to UI Avatars

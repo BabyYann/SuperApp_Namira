@@ -55,6 +55,37 @@ const displayInstructors = computed(() => {
     return props.availableInstructors || [];
 });
 
+// Avatar resolution & error handling
+const failedAvatarKeys = ref(new Set());
+const getCoachAvatarUrl = (userOrCoach) => {
+    if (!userOrCoach) return null;
+    const user = userOrCoach.user || userOrCoach;
+    const url = user.profile_photo_url || user.profile_photo || user.avatar || user.photo || user.teacher_profile?.photo || user.staff?.photo || userOrCoach.photo;
+    if (!url) return null;
+    if (typeof url === 'string' && url.includes('ui-avatars.com')) {
+        return null;
+    }
+    if (typeof url === 'string') {
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+            return url;
+        }
+        if (url.startsWith('/storage/')) {
+            return url;
+        }
+        if (url.startsWith('storage/')) {
+            return `/${url}`;
+        }
+        if (url.startsWith('/')) {
+            return url;
+        }
+        return `/storage/${url}`;
+    }
+    return null;
+};
+const onAvatarLoadError = (key) => {
+    failedAvatarKeys.value.add(key);
+};
+
 // Active Tab ('sessions' | 'members' | 'overview' | 'grades') - Default 'sessions' per reference
 const activeTab = ref('sessions');
 
@@ -820,8 +851,9 @@ const zoomPhoto = (url) => {
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
                                 <img
-                                    v-if="leadCoach.user?.profile_photo || leadCoach.user?.avatar"
-                                    :src="leadCoach.user.profile_photo || leadCoach.user.avatar"
+                                    v-if="getCoachAvatarUrl(leadCoach) && !failedAvatarKeys.has('lead-' + leadCoach.id)"
+                                    :src="getCoachAvatarUrl(leadCoach)"
+                                    @error="onAvatarLoadError('lead-' + leadCoach.id)"
                                     class="w-full h-full object-cover"
                                     alt="Pelatih"
                                 />
@@ -850,7 +882,12 @@ const zoomPhoto = (url) => {
                                     class="w-7 h-7 rounded-full border border-white bg-slate-200 overflow-hidden flex items-center justify-center text-[9px] font-bold text-slate-700 shadow-2xs"
                                     :title="coach.user?.name"
                                 >
-                                    <img v-if="coach.user?.profile_photo" :src="coach.user.profile_photo" class="w-full h-full object-cover" />
+                                    <img
+                                        v-if="getCoachAvatarUrl(coach) && !failedAvatarKeys.has('other-' + coach.id)"
+                                        :src="getCoachAvatarUrl(coach)"
+                                        @error="onAvatarLoadError('other-' + coach.id)"
+                                        class="w-full h-full object-cover"
+                                    />
                                     <span v-else>{{ coach.user?.name ? coach.user.name.charAt(0) : (cidx + 1) }}</span>
                                 </div>
 
@@ -1340,7 +1377,13 @@ const zoomPhoto = (url) => {
                             >
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-8 h-8 rounded-full bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
-                                        <img v-if="inst.user?.profile_photo" :src="inst.user.profile_photo" class="w-full h-full object-cover" />
+                                        <img
+                                            v-if="getCoachAvatarUrl(inst) && !failedAvatarKeys.has('list-' + inst.id)"
+                                            :src="getCoachAvatarUrl(inst)"
+                                            @error="onAvatarLoadError('list-' + inst.id)"
+                                            class="w-full h-full object-cover"
+                                            alt="Pelatih"
+                                        />
                                         <span v-else>{{ inst.user?.name?.charAt(0) || 'P' }}</span>
                                     </div>
                                     <div>

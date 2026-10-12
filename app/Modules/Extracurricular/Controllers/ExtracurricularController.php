@@ -253,6 +253,8 @@ class ExtracurricularController extends Controller
             'room:id,name,building,floor',
             'academicYear:id,name,semester',
             'instructors.user:id,name,email,phone,profile_photo',
+            'instructors.user.teacher_profile:id,user_id,photo',
+            'instructors.user.staff:id,user_id,photo',
             'activeMembers.student.classroom:id,name,level',
             'grades',
             'sessions' => function ($q) {
