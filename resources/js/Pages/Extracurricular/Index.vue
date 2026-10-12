@@ -33,6 +33,7 @@ const props = defineProps({
     activities: { type: Array, default: () => [] },
     stats: { type: Object, default: () => ({}) },
     rooms: { type: Array, default: () => [] },
+    classrooms: { type: Array, default: () => [] },
     availableInstructors: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
     canManage: { type: Boolean, default: true },
@@ -251,6 +252,89 @@ const form = useForm({
     status: 'active',
 });
 
+// Location Type Selector: 'outdoor' | 'classroom' | 'sarpras' | 'external'
+const locationType = ref('outdoor');
+const outdoorPreset = ref('Lapangan Utama');
+const selectedClassroomId = ref('');
+
+const outdoorPresets = [
+    'Lapangan Utama',
+    'Lapangan Futsal Outdoor',
+    'Lapangan Basket Outdoor',
+    'Halaman Upacara Sekolah',
+    'Masjid / Musholla Sekolah',
+    'Area Terbuka / Selasar',
+];
+
+const filteredClassrooms = computed(() => {
+    const list = props.classrooms || [];
+    if (!form.unit_id) return list;
+    return list.filter(c => !c.unit_id || String(c.unit_id) === String(form.unit_id));
+});
+
+const filteredRooms = computed(() => {
+    const list = props.rooms || [];
+    if (!form.unit_id) return list;
+    return list.filter(r => !r.unit_id || String(r.unit_id) === String(form.unit_id));
+});
+
+const setLocationType = (type) => {
+    locationType.value = type;
+    if (type === 'outdoor') {
+        form.room_id = '';
+        outdoorPreset.value = 'Lapangan Utama';
+        form.location_name = 'Lapangan Utama';
+    } else if (type === 'classroom') {
+        form.room_id = '';
+        if (filteredClassrooms.value.length > 0) {
+            selectedClassroomId.value = filteredClassrooms.value[0].id;
+            form.location_name = `Ruang Kelas ${filteredClassrooms.value[0].name}`;
+        } else {
+            selectedClassroomId.value = '';
+            form.location_name = 'Ruang Kelas';
+        }
+    } else if (type === 'sarpras') {
+        if (filteredRooms.value.length > 0) {
+            form.room_id = filteredRooms.value[0].id;
+            const r = filteredRooms.value[0];
+            form.location_name = r.name + (r.building ? ` (${r.building})` : '');
+        } else {
+            form.room_id = '';
+            form.location_name = '';
+        }
+    } else if (type === 'external') {
+        form.room_id = '';
+        form.location_name = '';
+    }
+};
+
+const onSelectClassroom = (e) => {
+    const clsId = e.target.value;
+    selectedClassroomId.value = clsId;
+    const cls = filteredClassrooms.value.find(c => String(c.id) === String(clsId));
+    if (cls) {
+        form.location_name = `Ruang Kelas ${cls.name}`;
+    }
+};
+
+const onSelectRoom = (e) => {
+    const rmId = e.target.value;
+    form.room_id = rmId;
+    const rm = filteredRooms.value.find(r => String(r.id) === String(rmId));
+    if (rm) {
+        form.location_name = rm.name + (rm.building ? ` (${rm.building})` : '');
+    }
+};
+
+const onSelectOutdoorPreset = (val) => {
+    outdoorPreset.value = val;
+    if (val !== 'custom') {
+        form.location_name = val;
+    } else {
+        form.location_name = '';
+    }
+};
+
 // Filtered activities computed
 const filteredActivities = computed(() => {
     return allActivities.value.filter((item) => {
@@ -368,6 +452,11 @@ const openCreateModal = () => {
     if (props.units && props.units.length > 0) {
         form.unit_id = props.units.find(u => u.name.includes('SD'))?.id || props.units[0].id;
     }
+    locationType.value = 'outdoor';
+    outdoorPreset.value = 'Lapangan Utama';
+    selectedClassroomId.value = '';
+    form.room_id = '';
+    form.location_name = 'Lapangan Utama';
     showModal.value = true;
 };
 
@@ -393,6 +482,28 @@ const openEditModal = (activity) => {
     form.cover_image = null;
     photoPreview.value = activity.cover_image_url || null;
     photoSizeInfo.value = activity.cover_image_url ? 'Foto sampul aktif' : '';
+
+    // Initialize location type
+    if (activity.room_id) {
+        locationType.value = 'sarpras';
+    } else if (activity.location_name) {
+        const loc = activity.location_name;
+        const matchClass = (props.classrooms || []).find(c => loc.toLowerCase().includes(c.name.toLowerCase()));
+        if (matchClass || loc.toLowerCase().includes('kelas')) {
+            locationType.value = 'classroom';
+            selectedClassroomId.value = matchClass ? matchClass.id : '';
+        } else if (outdoorPresets.includes(loc) || loc.toLowerCase().includes('lapangan') || loc.toLowerCase().includes('masjid') || loc.toLowerCase().includes('halaman') || loc.toLowerCase().includes('selasar')) {
+            locationType.value = 'outdoor';
+            outdoorPreset.value = outdoorPresets.includes(loc) ? loc : 'custom';
+        } else {
+            locationType.value = 'external';
+        }
+    } else {
+        locationType.value = 'outdoor';
+        outdoorPreset.value = 'Lapangan Utama';
+        form.location_name = 'Lapangan Utama';
+    }
+
     showModal.value = true;
 };
 
@@ -1062,28 +1173,151 @@ const getLinkDestination = (item) => {
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Lokasi / Ruangan</label>
-                                    <select
-                                        v-model="form.room_id"
-                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                            <!-- Pilihan Tipe Lokasi Kegiatan -->
+                            <div class="space-y-2.5 pt-1">
+                                <label class="block text-xs font-bold text-slate-700">Tipe Tempat / Lokasi Kegiatan *</label>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    <!-- 1. Lapangan / Outdoor Sekolah -->
+                                    <button
+                                        type="button"
+                                        @click="setLocationType('outdoor')"
+                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1"
+                                        :class="locationType === 'outdoor'
+                                            ? 'border-teal-600 bg-teal-50/80 text-teal-900 font-bold ring-1 ring-teal-500 shadow-xs'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 font-medium'"
                                     >
-                                        <option value="">-- Pilih Ruangan / Sarpras --</option>
-                                        <option v-for="room in rooms" :key="room.id" :value="room.id">
-                                            {{ room.name }} ({{ room.building ? (room.building + (room.floor ? ' Lt.' + room.floor : '')) : 'Kampus' }})
-                                        </option>
-                                    </select>
+                                        <span class="text-base">🌳</span>
+                                        <span class="text-[11px] sm:text-xs">Lapangan / Outdoor</span>
+                                    </button>
+
+                                    <!-- 2. Ruang Kelas Unit -->
+                                    <button
+                                        type="button"
+                                        @click="setLocationType('classroom')"
+                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1"
+                                        :class="locationType === 'classroom'
+                                            ? 'border-teal-600 bg-teal-50/80 text-teal-900 font-bold ring-1 ring-teal-500 shadow-xs'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 font-medium'"
+                                    >
+                                        <span class="text-base">🏫</span>
+                                        <span class="text-[11px] sm:text-xs">Ruang Kelas</span>
+                                    </button>
+
+                                    <!-- 3. Ruangan Sarpras -->
+                                    <button
+                                        type="button"
+                                        @click="setLocationType('sarpras')"
+                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1"
+                                        :class="locationType === 'sarpras'
+                                            ? 'border-teal-600 bg-teal-50/80 text-teal-900 font-bold ring-1 ring-teal-500 shadow-xs'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 font-medium'"
+                                    >
+                                        <span class="text-base">🏢</span>
+                                        <span class="text-[11px] sm:text-xs">Sarpras / Lab / Aula</span>
+                                    </button>
+
+                                    <!-- 4. Luar Sekolah / Eksternal -->
+                                    <button
+                                        type="button"
+                                        @click="setLocationType('external')"
+                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1"
+                                        :class="locationType === 'external'
+                                            ? 'border-teal-600 bg-teal-50/80 text-teal-900 font-bold ring-1 ring-teal-500 shadow-xs'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 font-medium'"
+                                    >
+                                        <span class="text-base">📍</span>
+                                        <span class="text-[11px] sm:text-xs">Luar Sekolah</span>
+                                    </button>
                                 </div>
 
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Keterangan Lokasi Tambahan</label>
-                                    <input
-                                        v-model="form.location_name"
-                                        type="text"
-                                        placeholder="Contoh: Lapangan Utama / Aula Lt. 2"
-                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder:text-slate-400"
-                                    />
+                                <!-- Dynamic Location Details Card -->
+                                <div class="bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200/80 space-y-2.5">
+                                    <!-- A. Lapangan / Outdoor Presets -->
+                                    <div v-if="locationType === 'outdoor'" class="space-y-2">
+                                        <label class="block text-xs font-bold text-slate-700">Pilih Area Lapangan / Outdoor Sekolah</label>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            <button
+                                                v-for="preset in outdoorPresets"
+                                                :key="preset"
+                                                type="button"
+                                                @click="onSelectOutdoorPreset(preset)"
+                                                class="px-2.5 py-1.5 rounded-xl text-xs transition-all border font-medium"
+                                                :class="outdoorPreset === preset && form.location_name === preset
+                                                    ? 'bg-teal-700 text-white border-teal-700 font-bold shadow-xs'
+                                                    : 'bg-white text-slate-700 border-slate-200 hover:border-teal-300'"
+                                            >
+                                                {{ preset }}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="onSelectOutdoorPreset('custom')"
+                                                class="px-2.5 py-1.5 rounded-xl text-xs transition-all border font-medium"
+                                                :class="outdoorPreset === 'custom'
+                                                    ? 'bg-teal-700 text-white border-teal-700 font-bold shadow-xs'
+                                                    : 'bg-white text-slate-700 border-slate-200 hover:border-teal-300'"
+                                            >
+                                                + Area Lainnya
+                                            </button>
+                                        </div>
+                                        <div v-if="outdoorPreset === 'custom'" class="pt-1">
+                                            <input
+                                                v-model="form.location_name"
+                                                type="text"
+                                                placeholder="Contoh: Lapangan Rumput Samping / Selasar Barat"
+                                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white placeholder:text-slate-400"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- B. Ruang Kelas Dropdown -->
+                                    <div v-else-if="locationType === 'classroom'" class="space-y-1.5">
+                                        <label class="block text-xs font-bold text-slate-700">Pilih Ruang Kelas Pembelajaran</label>
+                                        <select
+                                            :value="selectedClassroomId"
+                                            @change="onSelectClassroom"
+                                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                                        >
+                                            <option value="">-- Pilih Ruang Kelas --</option>
+                                            <option v-for="cls in filteredClassrooms" :key="cls.id" :value="cls.id">
+                                                Ruang Kelas {{ cls.name }} (Jenjang {{ cls.level }})
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <!-- C. Ruang Sarpras Dropdown -->
+                                    <div v-else-if="locationType === 'sarpras'" class="space-y-1.5">
+                                        <label class="block text-xs font-bold text-slate-700">Pilih Ruangan / Fasilitas Sarpras</label>
+                                        <select
+                                            :value="form.room_id"
+                                            @change="onSelectRoom"
+                                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                                        >
+                                            <option value="">-- Pilih Ruangan / Sarpras --</option>
+                                            <option v-for="room in filteredRooms" :key="room.id" :value="room.id">
+                                                {{ room.name }} ({{ room.building ? (room.building + (room.floor ? ' Lt.' + room.floor : '')) : 'Kampus' }})
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <!-- D. Luar Sekolah Input -->
+                                    <div v-else-if="locationType === 'external'" class="space-y-1.5">
+                                        <label class="block text-xs font-bold text-slate-700">Nama Lokasi di Luar Sekolah / Tempat Eksternal</label>
+                                        <input
+                                            v-model="form.location_name"
+                                            type="text"
+                                            required
+                                            placeholder="Contoh: Kolam Renang Tirta Indah / GOR Kota Kraksaan / Stadion"
+                                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white placeholder:text-slate-400"
+                                        />
+                                    </div>
+
+                                    <!-- Summary Banner of Final Location -->
+                                    <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                                        <span class="text-slate-500 font-medium">Lokasi Tampil:</span>
+                                        <span class="font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">
+                                            📍 {{ form.location_name || 'Belum ditentukan' }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

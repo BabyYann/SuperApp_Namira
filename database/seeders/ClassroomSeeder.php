@@ -35,7 +35,6 @@ class ClassroomSeeder extends Seeder
                     $classroom = Classroom::firstOrCreate(
                         [
                             'unit_id' => $unitSD->id,
-                            'academic_year_id' => $academicYear->id,
                             'name' => $className,
                         ],
                         [
@@ -73,7 +72,6 @@ class ClassroomSeeder extends Seeder
                     $classroom = Classroom::firstOrCreate(
                         [
                             'unit_id' => $unitSMP->id,
-                            'academic_year_id' => $academicYear->id,
                             'name' => $className,
                         ],
                         [

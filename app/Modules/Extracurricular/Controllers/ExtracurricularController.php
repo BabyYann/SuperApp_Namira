@@ -8,6 +8,7 @@ use App\Modules\Extracurricular\Models\ExtracurricularInstructor;
 use App\Modules\Extracurricular\Models\ExtracurricularMember;
 use App\Modules\Extracurricular\Models\ExtracurricularSession;
 use App\Modules\Sarpar\Models\Room;
+use App\Modules\Academic\Models\Classroom;
 use App\Modules\Yayasan\Models\AcademicYear;
 use App\Modules\Yayasan\Models\Unit;
 use App\Models\User;
@@ -134,11 +135,16 @@ class ExtracurricularController extends Controller
             ->count('user_id');
 
         // Rooms for dropdown (Sarpar)
-        $rooms = Room::query();
-        if ($unitId) {
-            $rooms->where('unit_id', $unitId);
+        $roomsQuery = Room::query();
+        $classroomsQuery = Classroom::query();
+
+        if ($unitId && (!$isGlobalAdmin || $unitId > 1)) {
+            $roomsQuery->where('unit_id', $unitId);
+            $classroomsQuery->where('unit_id', $unitId);
         }
-        $rooms = $rooms->orderBy('name')->get(['id', 'name', 'building', 'floor']);
+
+        $rooms = $roomsQuery->orderBy('name')->get(['id', 'name', 'building', 'floor', 'unit_id']);
+        $classrooms = $classroomsQuery->orderBy('level')->orderBy('name')->get(['id', 'name', 'level', 'unit_id']);
 
         // Users available for instructors
         $availableInstructors = User::whereHas('roles', function ($r) {
@@ -156,6 +162,7 @@ class ExtracurricularController extends Controller
                 'total_instructors' => $totalInstructors ?: 18,
             ],
             'rooms' => $rooms,
+            'classrooms' => $classrooms,
             'units' => $units,
             'availableInstructors' => $availableInstructors,
             'filters' => $request->only(['category', 'day', 'search']),
