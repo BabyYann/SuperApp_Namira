@@ -1343,7 +1343,7 @@ const getLinkDestination = (item) => {
                                     class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white h-24"
                                 >
                                     <option v-for="coach in availableInstructors" :key="coach.id" :value="coach.id">
-                                        {{ coach.name }} ({{ coach.phone || 'No HP -' }})
+                                        {{ coach.label || coach.name }}
                                     </option>
                                 </select>
                                 <p class="text-[11px] text-slate-400 mt-1">Tahan tombol Ctrl untuk memilih lebih dari 1.</p>

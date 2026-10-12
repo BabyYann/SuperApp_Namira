@@ -122,9 +122,7 @@ class ExtracurricularController extends Controller
         $classrooms = $classroomsQuery->orderBy('level')->orderBy('name')->get(['id', 'name', 'level', 'unit_id']);
 
         // Users available for instructors
-        $availableInstructors = User::whereHas('roles', function ($r) {
-            $r->whereIn('name', ['pelatih_ekskul', 'teacher', 'staff_unit']);
-        })->orderBy('name')->get(['id', 'name', 'phone']);
+        $availableInstructors = $this->getAvailableInstructors();
 
         $units = Unit::orderBy('id')->get(['id', 'name', 'code']);
 
@@ -330,9 +328,7 @@ class ExtracurricularController extends Controller
         $rooms = $rooms->orderBy('name')->get(['id', 'name', 'building', 'floor']);
 
         // Available teachers / coaches
-        $availableInstructors = User::whereHas('roles', function ($r) {
-            $r->whereIn('name', ['pelatih_ekskul', 'teacher', 'staff_unit']);
-        })->orderBy('name')->get(['id', 'name', 'phone']);
+        $availableInstructors = $this->getAvailableInstructors();
 
         return Inertia::render('Extracurricular/Show', [
             'activity' => $activity,
@@ -435,5 +431,38 @@ class ExtracurricularController extends Controller
             return $fileName;
         }
         return null;
+    }
+
+    /**
+     * Get available instructors (teachers, coaches, school staff) across the school system.
+     */
+    private function getAvailableInstructors()
+    {
+        return User::select('users.id', 'users.name', 'users.phone', 'roles.name as role_name')
+            ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->whereIn('roles.name', ['pelatih_ekskul', 'teacher', 'staff_unit', 'guru', 'kepala_sekolah', 'koordinator_kesiswaan'])
+            ->distinct()
+            ->orderBy('users.name')
+            ->get()
+            ->unique('id')
+            ->map(function ($u) {
+                $roleLabel = match ($u->role_name) {
+                    'pelatih_ekskul' => 'Pelatih Ekskul',
+                    'teacher', 'guru' => 'Guru',
+                    'staff_unit' => 'Staf Unit',
+                    'kepala_sekolah' => 'Kepala Sekolah',
+                    'koordinator_kesiswaan' => 'Kesiswaan',
+                    default => 'Guru / Staf',
+                };
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'phone' => $u->phone,
+                    'role_label' => $roleLabel,
+                    'label' => "{$u->name} ({$roleLabel})" . ($u->phone ? " - {$u->phone}" : ''),
+                ];
+            })
+            ->values();
     }
 }

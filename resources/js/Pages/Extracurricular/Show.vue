@@ -2116,9 +2116,9 @@ const zoomPhoto = (url) => {
                                 required
                                 class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-teal-500 bg-white"
                             >
-                                <option value="">-- Pilih Guru / Staf --</option>
+                                <option value="">-- Pilih Guru / Pelatih / Staf --</option>
                                 <option v-for="c in availableInstructors" :key="c.id" :value="c.id">
-                                    {{ c.name }} ({{ c.phone || 'No HP -' }})
+                                    {{ c.label || `${c.name} (${c.phone || 'No HP -'})` }}
                                 </option>
                             </select>
                         </div>
