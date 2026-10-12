@@ -44,9 +44,6 @@ class ExtracurricularMember extends Model
 
     public function grade()
     {
-        return $this->hasOne(ExtracurricularGrade::class, 'student_id', 'student_id')
-            ->whereColumn('extracurricular_id', 'extracurricular_members.extracurricular_id')
-            ->whereColumn('academic_year_id', 'extracurricular_members.academic_year_id')
-            ->whereColumn('semester', 'extracurricular_members.semester');
+        return $this->hasOne(ExtracurricularGrade::class, 'student_id', 'student_id');
     }
 }

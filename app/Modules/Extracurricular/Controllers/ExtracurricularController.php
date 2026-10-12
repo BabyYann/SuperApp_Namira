@@ -256,12 +256,18 @@ class ExtracurricularController extends Controller
             'academicYear:id,name,semester',
             'instructors.user:id,name,email,phone,profile_photo',
             'activeMembers.student.classroom:id,name,level',
-            'activeMembers.grade',
+            'grades',
             'sessions' => function ($q) {
                 $q->with(['instructor:id,name,phone', 'attendances.student:id,full_name,nisn'])
                   ->orderBy('date', 'desc');
             },
         ])->findOrFail($id);
+
+        // Map grades onto activeMembers for Rapor Semester
+        $gradesByStudent = $activity->grades->keyBy('student_id');
+        foreach ($activity->activeMembers as $member) {
+            $member->setRelation('grade', $gradesByStudent->get($member->student_id));
+        }
 
         $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'pembina_yayasan']);
         $canManage = $user->hasAnyRole([

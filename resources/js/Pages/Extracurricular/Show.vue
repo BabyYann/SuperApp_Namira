@@ -668,64 +668,62 @@ const zoomPhoto = (url) => {
             </div>
 
             <!-- 2. Hero Overview Card (Identical Proportion to Reference Mockup) -->
-            <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5">
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
                 
                 <!-- Card Header Row -->
                 <div class="flex items-start justify-between gap-2.5">
-                    <div class="flex items-start gap-3 min-w-0">
+                    <div class="flex items-start gap-3.5 min-w-0">
                         <!-- Activity Icon Box -->
-                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-teal-50 border border-teal-100/70 flex items-center justify-center text-teal-600 shrink-0 overflow-hidden shadow-2xs">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-teal-50/80 border border-teal-100/70 flex items-center justify-center text-teal-600 shrink-0 overflow-hidden shadow-2xs">
                             <img
                                 v-if="activity.cover_image_url"
                                 :src="activity.cover_image_url"
                                 class="w-full h-full object-cover"
                                 alt="Cover"
                             />
-                            <!-- Dedicated Athletic Runner SVG for Sport / Futsal -->
+                            <!-- Dedicated Athletic Runner SVG for Sport / Futsal matching Mockup -->
                             <svg
                                 v-else-if="activity.category === 'olahraga' || activity.name.toLowerCase().includes('futsal') || activity.name.toLowerCase().includes('bola') || activity.name.toLowerCase().includes('basket') || activity.name.toLowerCase().includes('badminton') || activity.name.toLowerCase().includes('renang')"
-                                class="w-8 h-8 text-teal-600"
+                                class="w-10 h-10 sm:w-12 sm:h-12 text-teal-600"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
-                                stroke-width="2.3"
+                                stroke-width="2.6"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                             >
-                                <circle cx="16.5" cy="4.5" r="2" />
-                                <path d="M6 10l3.5-1 3 2" />
-                                <path d="M16 11.5l3.5.5-2 3" />
-                                <path d="M12.5 9l-1 5" />
-                                <path d="M11.5 14l2.5 2.5 2-.5" />
-                                <path d="M9.5 15l-3 2v4" />
+                                <circle cx="16" cy="4.5" r="2.2" fill="currentColor" stroke="none" />
+                                <path d="M7 9.5l3.5-1 3 2.5" />
+                                <path d="M15.5 11l3.5.5-2 3.5" />
+                                <path d="M13.5 11l-2 4.5" />
+                                <path d="M11.5 15.5l2.5 2.5 2-.5" />
+                                <path d="M9.5 16l-3 2v3.5" />
                             </svg>
-                            <UserGroupIcon v-else class="w-8 h-8 text-teal-600 stroke-[1.8]" />
+                            <UserGroupIcon v-else class="w-9 h-9 text-teal-600 stroke-[1.8]" />
                         </div>
 
                         <!-- Badges & Title -->
-                        <div class="min-w-0 space-y-0.5">
-                            <div class="flex flex-wrap items-center gap-1.5">
-                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-100/80">
-                                    {{ activity.category_label || 'Olahraga & Atletik' }}
-                                </span>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
-                                    {{ activity.unit?.name || 'Unit Sekolah' }}
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100/90 text-slate-600">
+                                    <BuildingOfficeIcon class="w-3.5 h-3.5 text-slate-400 stroke-[2]" />
+                                    <span>{{ activity.unit?.name || 'SD Namira' }}</span>
                                 </span>
                             </div>
 
-                            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
+                            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
                                 {{ formattedActivityName }}
                             </h1>
                         </div>
                     </div>
 
                     <!-- Right Column: Status Badge & Edit Button -->
-                    <div class="flex flex-col items-end gap-1.5 shrink-0">
+                    <div class="flex flex-col items-end gap-2 shrink-0">
                         <span
-                            class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 border"
+                            class="px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border"
                             :class="activity.status === 'active' || !activity.status ? 'bg-emerald-50 text-emerald-600 border-emerald-100/80' : 'bg-slate-100 text-slate-500 border-slate-200'"
                         >
-                            <span class="w-1.5 h-1.5 rounded-full" :class="activity.status === 'active' || !activity.status ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                            <span class="w-2 h-2 rounded-full" :class="activity.status === 'active' || !activity.status ? 'bg-emerald-500' : 'bg-slate-400'"></span>
                             <span>{{ activity.status === 'inactive' ? 'Nonaktif' : 'Aktif' }}</span>
                         </span>
 
@@ -733,83 +731,83 @@ const zoomPhoto = (url) => {
                             v-if="canManage"
                             @click="openEditModal"
                             type="button"
-                            class="px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition-colors"
+                            class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
                         >
-                            <PencilSquareIcon class="w-3 h-3 text-slate-500" />
+                            <PencilSquareIcon class="w-3.5 h-3.5 text-slate-500" />
                             <span>Edit</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Description Text -->
-                <p class="text-xs text-slate-500 leading-relaxed font-normal">
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
                     {{ activity.description || 'Belum ada deskripsi rinci untuk kegiatan ekstrakurikuler ini.' }}
                 </p>
 
-                <!-- 3 Info Items in 1 Compact Row (Grid 3 Columns matching Reference Mockup) -->
-                <div class="grid grid-cols-3 gap-1 pt-3 border-t border-slate-100">
+                <!-- 3 Info Items in 3 Distinct Cards (Matching Reference Mockup) -->
+                <div class="grid grid-cols-3 gap-2 sm:gap-2.5 pt-1">
                     <!-- 1. Jadwal Latihan -->
-                    <div class="flex items-start gap-1.5 pr-1">
-                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100/60 mt-0.5">
-                            <CalendarDaysIcon class="w-4 h-4 stroke-[2]" />
+                    <div class="bg-slate-50/70 rounded-2xl p-2.5 sm:p-3 border border-slate-100/80 flex items-center gap-2 sm:gap-2.5">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100/60">
+                            <CalendarDaysIcon class="w-5 h-5 stroke-[2]" />
                         </div>
                         <div class="min-w-0">
-                            <div class="text-[10px] text-slate-400 font-medium leading-tight">Jadwal Latihan</div>
-                            <div class="text-[11px] font-bold text-slate-800 leading-tight truncate mt-0.5">
-                                {{ activity.day_of_week ? `Setiap ${activity.day_of_week}` : 'Belum diatur' }}
+                            <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-none mb-1">Jadwal</div>
+                            <div class="text-xs sm:text-sm font-bold text-slate-800 leading-tight truncate">
+                                {{ activity.day_of_week || 'Belum diatur' }}
                             </div>
-                            <div class="text-[9.5px] text-slate-400 leading-tight truncate mt-0.5">
-                                {{ activity.start_time && activity.end_time ? `${formatTime(activity.start_time)} - ${formatTime(activity.end_time)} WIB` : '-' }}
+                            <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-none mt-1 truncate">
+                                {{ activity.start_time && activity.end_time ? `${formatTime(activity.start_time)} - ${formatTime(activity.end_time)}` : '-' }}
                             </div>
                         </div>
                     </div>
 
                     <!-- 2. Lokasi -->
-                    <div class="flex items-start gap-1.5 px-1 border-l border-slate-100">
-                        <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 border border-rose-100/60 mt-0.5">
-                            <MapPinIcon class="w-4 h-4 stroke-[2]" />
+                    <div class="bg-slate-50/70 rounded-2xl p-2.5 sm:p-3 border border-slate-100/80 flex items-center gap-2 sm:gap-2.5">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 border border-rose-100/60">
+                            <MapPinIcon class="w-5 h-5 stroke-[2]" />
                         </div>
                         <div class="min-w-0">
-                            <div class="text-[10px] text-slate-400 font-medium leading-tight">Lokasi</div>
-                            <div class="text-[11px] font-bold text-slate-800 leading-tight truncate mt-0.5">
+                            <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-none mb-1">Lokasi</div>
+                            <div class="text-xs sm:text-sm font-bold text-slate-800 leading-tight truncate">
                                 {{ locationTitle }}
                             </div>
-                            <div class="text-[9.5px] text-slate-400 leading-tight truncate mt-0.5">
+                            <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-none mt-1 truncate">
                                 {{ locationSubtitle }}
                             </div>
                         </div>
                     </div>
 
                     <!-- 3. Kuota Siswa -->
-                    <div class="flex items-start gap-1.5 pl-1 border-l border-slate-100">
-                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100/60 mt-0.5">
-                            <UserGroupIcon class="w-4 h-4 stroke-[2]" />
+                    <div class="bg-slate-50/70 rounded-2xl p-2.5 sm:p-3 border border-slate-100/80 flex items-center gap-2 sm:gap-2.5">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100/60">
+                            <UserGroupIcon class="w-5 h-5 stroke-[2]" />
                         </div>
                         <div class="min-w-0 flex-1">
-                            <div class="text-[10px] text-slate-400 font-medium leading-tight">Kuota</div>
-                            <div class="text-[11px] font-bold text-slate-800 leading-tight truncate mt-0.5">
-                                {{ activity.active_members?.length || 0 }} / {{ activity.max_quota || 0 }} Siswa
+                            <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-none mb-1">Kuota</div>
+                            <div class="text-xs sm:text-sm font-bold text-slate-800 leading-tight truncate">
+                                {{ activity.active_members?.length || 0 }} / {{ activity.max_quota || 0 }}
                             </div>
-                            <div class="flex items-center gap-1 mt-1">
-                                <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <div class="flex-1 h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
                                     <div
                                         class="h-full bg-teal-600 rounded-full transition-all duration-300"
                                         :style="{ width: `${quotaPercentage}%` }"
                                     ></div>
                                 </div>
-                                <span class="text-[9px] font-bold text-slate-500 shrink-0">{{ quotaPercentage }}%</span>
+                                <span class="text-[9px] sm:text-[10px] font-bold text-slate-500 shrink-0">{{ quotaPercentage }}%</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Pelatih Section (REAL DATA ONLY - NO DUMMY DATA) -->
-                <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                <div class="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-3">
                     
                     <!-- IF COACH EXISTS IN DB -->
                     <template v-if="leadCoach">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
                                 <img
                                     v-if="leadCoach.user?.profile_photo || leadCoach.user?.avatar"
                                     :src="leadCoach.user.profile_photo || leadCoach.user.avatar"
@@ -822,11 +820,11 @@ const zoomPhoto = (url) => {
                             </div>
 
                             <div class="min-w-0">
-                                <div class="text-[9px] font-semibold uppercase tracking-wider text-slate-400">Pelatih Utama</div>
-                                <div class="text-xs font-bold text-slate-800 truncate">
+                                <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-tight">Pelatih Utama</div>
+                                <div class="text-sm sm:text-base font-bold text-slate-800 truncate leading-tight mt-0.5">
                                     {{ leadCoach.user?.name || leadCoach.name }}
                                 </div>
-                                <div class="text-[10px] font-semibold text-teal-600 truncate">
+                                <div class="text-[10px] sm:text-[11px] font-semibold text-teal-600 truncate">
                                     {{ leadCoach.role_title || 'Pelatih Utama' }}
                                 </div>
                             </div>
@@ -871,9 +869,9 @@ const zoomPhoto = (url) => {
                             <button
                                 @click="showAddCoachModal = true"
                                 type="button"
-                                class="px-2 py-1 rounded-lg text-slate-500 hover:text-teal-700 hover:bg-teal-50 text-[10px] font-medium border border-slate-200 transition-colors flex items-center gap-1"
+                                class="px-3 py-1.5 rounded-xl text-slate-500 hover:text-teal-700 hover:bg-teal-50 text-xs font-medium border border-slate-200 transition-colors flex items-center gap-1"
                             >
-                                <PlusIcon class="w-3 h-3" />
+                                <PlusIcon class="w-3 h-3 stroke-[2.2]" />
                                 <span>Tambah Asisten</span>
                             </button>
                         </div>
@@ -881,13 +879,13 @@ const zoomPhoto = (url) => {
 
                     <!-- IF NO COACH SET IN DB (NO DUMMY NAMES) -->
                     <template v-else>
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-                                <UserIcon class="w-4 h-4 stroke-[1.8]" />
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-slate-100/80 border border-slate-200/70 flex items-center justify-center text-slate-400 shrink-0">
+                                <UserIcon class="w-5 h-5 stroke-[1.8]" />
                             </div>
                             <div class="min-w-0">
-                                <div class="text-[9px] font-semibold uppercase tracking-wider text-slate-400">Pelatih Utama</div>
-                                <div class="text-xs font-semibold text-slate-400 italic">Belum diatur</div>
+                                <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-tight">Pelatih Utama</div>
+                                <div class="text-sm sm:text-base font-bold text-slate-500 italic leading-tight mt-0.5">Belum diatur</div>
                             </div>
                         </div>
 
@@ -895,9 +893,9 @@ const zoomPhoto = (url) => {
                             v-if="canManage"
                             @click="showAddCoachModal = true"
                             type="button"
-                            class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-[11px] font-semibold border border-teal-200/80 transition-colors flex items-center gap-1 shrink-0"
+                            class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl bg-teal-50/70 hover:bg-teal-100/70 text-teal-700 font-bold text-xs sm:text-sm border border-teal-200/80 shadow-2xs transition-colors flex items-center gap-1.5 shrink-0"
                         >
-                            <PlusIcon class="w-3.5 h-3.5 stroke-[2.2]" />
+                            <PlusIcon class="w-4 h-4 stroke-[2.4]" />
                             <span>Tugaskan</span>
                         </button>
                     </template>
@@ -910,7 +908,7 @@ const zoomPhoto = (url) => {
                     <button
                         @click="activeTab = 'sessions'"
                         type="button"
-                        class="flex flex-col items-center justify-center py-2.5 relative transition-all group"
+                        class="flex flex-col items-center justify-center py-2.5 sm:py-3 relative transition-all group"
                         :class="activeTab === 'sessions' ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                     >
                         <CalendarDaysIcon class="w-5 h-5 stroke-[2]" />
@@ -919,14 +917,14 @@ const zoomPhoto = (url) => {
                         </span>
                         <span
                             v-if="activeTab === 'sessions'"
-                            class="absolute bottom-0 inset-x-2 h-0.5 bg-teal-700 rounded-full"
+                            class="absolute bottom-0 inset-x-2 sm:inset-x-4 h-1 bg-teal-700 rounded-full"
                         ></span>
                     </button>
 
                     <button
                         @click="activeTab = 'members'"
                         type="button"
-                        class="flex flex-col items-center justify-center py-2.5 relative transition-all group"
+                        class="flex flex-col items-center justify-center py-2.5 sm:py-3 relative transition-all group"
                         :class="activeTab === 'members' ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                     >
                         <UserGroupIcon class="w-5 h-5 stroke-[2]" />
@@ -935,14 +933,14 @@ const zoomPhoto = (url) => {
                         </span>
                         <span
                             v-if="activeTab === 'members'"
-                            class="absolute bottom-0 inset-x-2 h-0.5 bg-teal-700 rounded-full"
+                            class="absolute bottom-0 inset-x-2 sm:inset-x-4 h-1 bg-teal-700 rounded-full"
                         ></span>
                     </button>
 
                     <button
                         @click="activeTab = 'overview'"
                         type="button"
-                        class="flex flex-col items-center justify-center py-2.5 relative transition-all group"
+                        class="flex flex-col items-center justify-center py-2.5 sm:py-3 relative transition-all group"
                         :class="activeTab === 'overview' ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                     >
                         <UserIcon class="w-5 h-5 stroke-[2]" />
@@ -951,14 +949,14 @@ const zoomPhoto = (url) => {
                         </span>
                         <span
                             v-if="activeTab === 'overview'"
-                            class="absolute bottom-0 inset-x-2 h-0.5 bg-teal-700 rounded-full"
+                            class="absolute bottom-0 inset-x-2 sm:inset-x-4 h-1 bg-teal-700 rounded-full"
                         ></span>
                     </button>
 
                     <button
                         @click="activeTab = 'grades'; initGradesForm()"
                         type="button"
-                        class="flex flex-col items-center justify-center py-2.5 relative transition-all group"
+                        class="flex flex-col items-center justify-center py-2.5 sm:py-3 relative transition-all group"
                         :class="activeTab === 'grades' ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                     >
                         <ChartBarIcon class="w-5 h-5 stroke-[2]" />
@@ -967,7 +965,7 @@ const zoomPhoto = (url) => {
                         </span>
                         <span
                             v-if="activeTab === 'grades'"
-                            class="absolute bottom-0 inset-x-2 h-0.5 bg-teal-700 rounded-full"
+                            class="absolute bottom-0 inset-x-2 sm:inset-x-4 h-1 bg-teal-700 rounded-full"
                         ></span>
                     </button>
                 </div>
