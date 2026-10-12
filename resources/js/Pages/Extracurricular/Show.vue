@@ -579,7 +579,7 @@ const zoomPhoto = (url) => {
     <AuthenticatedLayout>
         <Head :title="`${activity.name} - Kelola Ekstrakurikuler`" />
 
-        <div class="space-y-4 pb-28 sm:pb-16 max-w-5xl mx-auto px-2 sm:px-4">
+        <div class="space-y-3.5 pb-24 sm:pb-16 max-w-5xl mx-auto px-1 sm:px-3">
             
             <!-- 1. Top Header: Back Button & Breadcrumbs & Actions -->
             <div class="flex items-center justify-between pt-1">
@@ -746,72 +746,59 @@ const zoomPhoto = (url) => {
                     {{ activity.description || 'Belum ada deskripsi rinci untuk kegiatan ekstrakurikuler ini.' }}
                 </p>
 
-                <!-- 3 Info Grid Cards: Responsive Stack on Mobile (Fully Readable) & 3 Columns on Tablet/Desktop -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-0.5">
-                    
+                <!-- 3 Info Items in 1 Compact Row (Grid 3 Columns matching Reference Mockup) -->
+                <div class="grid grid-cols-3 gap-1 pt-3 border-t border-slate-100">
                     <!-- 1. Jadwal Latihan -->
-                    <div class="p-2.5 sm:p-3 rounded-2xl bg-slate-50/80 border border-slate-100 flex items-center justify-between sm:flex-col sm:items-start sm:justify-between gap-2.5">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100/60">
-                                <CalendarDaysIcon class="w-4 h-4 stroke-[2]" />
-                            </div>
-                            <div class="min-w-0">
-                                <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Jadwal Latihan</div>
-                                <div class="text-xs sm:text-sm font-bold text-slate-800">
-                                    {{ activity.day_of_week ? `Setiap ${activity.day_of_week}` : 'Belum diatur' }}
-                                </div>
-                            </div>
+                    <div class="flex items-start gap-1.5 pr-1">
+                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100/60 mt-0.5">
+                            <CalendarDaysIcon class="w-4 h-4 stroke-[2]" />
                         </div>
-                        <div class="text-right sm:text-left shrink-0 sm:w-full sm:pt-0.5">
-                            <span class="inline-block text-[11px] font-semibold text-teal-700 bg-teal-50/90 px-2 py-0.5 rounded-lg border border-teal-100/80 sm:bg-transparent sm:border-0 sm:px-0 sm:py-0 sm:text-slate-500">
+                        <div class="min-w-0">
+                            <div class="text-[10px] text-slate-400 font-medium leading-tight">Jadwal Latihan</div>
+                            <div class="text-[11px] font-bold text-slate-800 leading-tight truncate mt-0.5">
+                                {{ activity.day_of_week ? `Setiap ${activity.day_of_week}` : 'Belum diatur' }}
+                            </div>
+                            <div class="text-[9.5px] text-slate-400 leading-tight truncate mt-0.5">
                                 {{ activity.start_time && activity.end_time ? `${formatTime(activity.start_time)} - ${formatTime(activity.end_time)} WIB` : '-' }}
-                            </span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- 2. Lokasi -->
-                    <div class="p-2.5 sm:p-3 rounded-2xl bg-slate-50/80 border border-slate-100 flex items-center justify-between sm:flex-col sm:items-start sm:justify-between gap-2.5">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 border border-rose-100/60">
-                                <MapPinIcon class="w-4 h-4 stroke-[2]" />
-                            </div>
-                            <div class="min-w-0">
-                                <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lokasi</div>
-                                <div class="text-xs sm:text-sm font-bold text-slate-800">
-                                    {{ locationTitle }}
-                                </div>
-                            </div>
+                    <div class="flex items-start gap-1.5 px-1 border-l border-slate-100">
+                        <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 border border-rose-100/60 mt-0.5">
+                            <MapPinIcon class="w-4 h-4 stroke-[2]" />
                         </div>
-                        <div class="text-right sm:text-left shrink-0 sm:w-full sm:pt-0.5">
-                            <span class="inline-block text-[11px] font-medium text-slate-500 bg-slate-100/90 px-2 py-0.5 rounded-lg sm:bg-transparent sm:px-0 sm:py-0">
+                        <div class="min-w-0">
+                            <div class="text-[10px] text-slate-400 font-medium leading-tight">Lokasi</div>
+                            <div class="text-[11px] font-bold text-slate-800 leading-tight truncate mt-0.5">
+                                {{ locationTitle }}
+                            </div>
+                            <div class="text-[9.5px] text-slate-400 leading-tight truncate mt-0.5">
                                 {{ locationSubtitle }}
-                            </span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- 3. Kuota Siswa -->
-                    <div class="p-2.5 sm:p-3 rounded-2xl bg-slate-50/80 border border-slate-100 flex flex-col justify-between gap-1.5">
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100/60">
-                                    <UserGroupIcon class="w-4 h-4 stroke-[2]" />
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Kuota Peserta</div>
-                                    <div class="text-xs sm:text-sm font-bold text-slate-800">
-                                        {{ activity.active_members?.length || 0 }} / {{ activity.max_quota || 0 }} Siswa
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="text-[11px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100/80 shrink-0">
-                                {{ quotaPercentage }}%
-                            </span>
+                    <div class="flex items-start gap-1.5 pl-1 border-l border-slate-100">
+                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100/60 mt-0.5">
+                            <UserGroupIcon class="w-4 h-4 stroke-[2]" />
                         </div>
-                        <div class="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden mt-0.5">
-                            <div
-                                class="h-full bg-teal-600 rounded-full transition-all duration-300"
-                                :style="{ width: `${quotaPercentage}%` }"
-                            ></div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-[10px] text-slate-400 font-medium leading-tight">Kuota</div>
+                            <div class="text-[11px] font-bold text-slate-800 leading-tight truncate mt-0.5">
+                                {{ activity.active_members?.length || 0 }} / {{ activity.max_quota || 0 }} Siswa
+                            </div>
+                            <div class="flex items-center gap-1 mt-1">
+                                <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                    <div
+                                        class="h-full bg-teal-600 rounded-full transition-all duration-300"
+                                        :style="{ width: `${quotaPercentage}%` }"
+                                    ></div>
+                                </div>
+                                <span class="text-[9px] font-bold text-slate-500 shrink-0">{{ quotaPercentage }}%</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -917,69 +904,71 @@ const zoomPhoto = (url) => {
                 </div>
             </div>
 
-            <!-- 3. Navigation Tabs (Smooth Horizontal Scroll & Clear Active Indicator) -->
-            <div class="border-b border-slate-200/80 -mx-2 sm:mx-0 px-2 sm:px-0">
-                <div class="flex overflow-x-auto scrollbar-none gap-1.5 sm:gap-6 pt-1 pb-px scroll-smooth">
+            <!-- 3. Navigation Tabs (Grid 4 Columns matching Reference Mockup) -->
+            <div class="border-b border-slate-200/80">
+                <div class="grid grid-cols-4 w-full">
                     <button
                         @click="activeTab = 'sessions'"
                         type="button"
-                        class="flex items-center gap-2 px-3 py-2 sm:px-1.5 sm:py-2.5 text-xs transition-all whitespace-nowrap shrink-0 border-b-2"
-                        :class="activeTab === 'sessions'
-                            ? 'border-teal-700 text-teal-800 font-bold bg-teal-50/80 sm:bg-transparent rounded-t-xl sm:rounded-none'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 font-medium hover:bg-slate-50 sm:hover:bg-transparent rounded-t-xl sm:rounded-none'"
+                        class="flex flex-col items-center justify-center py-2.5 relative transition-all group"
+                        :class="activeTab === 'sessions' ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                     >
-                        <CalendarDaysIcon class="w-4 h-4 stroke-[2]" :class="activeTab === 'sessions' ? 'text-teal-700' : 'text-slate-400'" />
-                        <span>Jurnal & Presensi</span>
-                        <span
-                            v-if="activity.sessions?.length"
-                            class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
-                            :class="activeTab === 'sessions' ? 'bg-teal-200 text-teal-900' : 'bg-slate-200 text-slate-600'"
-                        >
-                            {{ activity.sessions.length }}
+                        <CalendarDaysIcon class="w-5 h-5 stroke-[2]" />
+                        <span class="text-[10px] sm:text-xs leading-tight mt-1 text-center truncate w-full px-1" :class="activeTab === 'sessions' ? 'font-bold' : 'font-medium'">
+                            Jurnal & Presensi
                         </span>
+                        <span
+                            v-if="activeTab === 'sessions'"
+                            class="absolute bottom-0 inset-x-2 h-0.5 bg-teal-700 rounded-full"
+                        ></span>
                     </button>
 
                     <button
                         @click="activeTab = 'members'"
                         type="button"
-                        class="flex items-center gap-2 px-3 py-2 sm:px-1.5 sm:py-2.5 text-xs transition-all whitespace-nowrap shrink-0 border-b-2"
-                        :class="activeTab === 'members'
-                            ? 'border-teal-700 text-teal-800 font-bold bg-teal-50/80 sm:bg-transparent rounded-t-xl sm:rounded-none'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 font-medium hover:bg-slate-50 sm:hover:bg-transparent rounded-t-xl sm:rounded-none'"
+                        class="flex flex-col items-center justify-center py-2.5 relative transition-all group"
+                        :class="activeTab === 'members' ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                     >
-                        <UserGroupIcon class="w-4 h-4 stroke-[2]" :class="activeTab === 'members' ? 'text-teal-700' : 'text-slate-400'" />
-                        <span>Anggota Siswa</span>
-                        <span
-                            v-if="activity.active_members?.length"
-                            class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
-                            :class="activeTab === 'members' ? 'bg-teal-200 text-teal-900' : 'bg-slate-200 text-slate-600'"
-                        >
-                            {{ activity.active_members.length }}
+                        <UserGroupIcon class="w-5 h-5 stroke-[2]" />
+                        <span class="text-[10px] sm:text-xs leading-tight mt-1 text-center truncate w-full px-1" :class="activeTab === 'members' ? 'font-bold' : 'font-medium'">
+                            Anggota Siswa
                         </span>
+                        <span
+                            v-if="activeTab === 'members'"
+                            class="absolute bottom-0 inset-x-2 h-0.5 bg-teal-700 rounded-full"
+                        ></span>
                     </button>
 
                     <button
                         @click="activeTab = 'overview'"
                         type="button"
-                        class="flex items-center gap-2 px-3 py-2 sm:px-1.5 sm:py-2.5 text-xs transition-all whitespace-nowrap shrink-0 border-b-2"
-                        :class="activeTab === 'overview'
-                            ? 'border-teal-700 text-teal-800 font-bold bg-teal-50/80 sm:bg-transparent rounded-t-xl sm:rounded-none'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 font-medium hover:bg-slate-50 sm:hover:bg-transparent rounded-t-xl sm:rounded-none'"
+                        class="flex flex-col items-center justify-center py-2.5 relative transition-all group"
+                        :class="activeTab === 'overview' ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                     >
-                        <UserIcon class="w-4 h-4 stroke-[2]" :class="activeTab === 'overview' ? 'text-teal-700' : 'text-slate-400'" />
-                        <span>Profil & Pelatih</span>
+                        <UserIcon class="w-5 h-5 stroke-[2]" />
+                        <span class="text-[10px] sm:text-xs leading-tight mt-1 text-center truncate w-full px-1" :class="activeTab === 'overview' ? 'font-bold' : 'font-medium'">
+                            Profil & Pelatih
+                        </span>
+                        <span
+                            v-if="activeTab === 'overview'"
+                            class="absolute bottom-0 inset-x-2 h-0.5 bg-teal-700 rounded-full"
+                        ></span>
                     </button>
 
                     <button
                         @click="activeTab = 'grades'; initGradesForm()"
                         type="button"
-                        class="flex items-center gap-2 px-3 py-2 sm:px-1.5 sm:py-2.5 text-xs transition-all whitespace-nowrap shrink-0 border-b-2"
-                        :class="activeTab === 'grades'
-                            ? 'border-teal-700 text-teal-800 font-bold bg-teal-50/80 sm:bg-transparent rounded-t-xl sm:rounded-none'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 font-medium hover:bg-slate-50 sm:hover:bg-transparent rounded-t-xl sm:rounded-none'"
+                        class="flex flex-col items-center justify-center py-2.5 relative transition-all group"
+                        :class="activeTab === 'grades' ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                     >
-                        <ChartBarIcon class="w-4 h-4 stroke-[2]" :class="activeTab === 'grades' ? 'text-teal-700' : 'text-slate-400'" />
-                        <span>Penilaian Rapor</span>
+                        <ChartBarIcon class="w-5 h-5 stroke-[2]" />
+                        <span class="text-[10px] sm:text-xs leading-tight mt-1 text-center truncate w-full px-1" :class="activeTab === 'grades' ? 'font-bold' : 'font-medium'">
+                            Penilaian Rapor
+                        </span>
+                        <span
+                            v-if="activeTab === 'grades'"
+                            class="absolute bottom-0 inset-x-2 h-0.5 bg-teal-700 rounded-full"
+                        ></span>
                     </button>
                 </div>
             </div>
@@ -1016,32 +1005,33 @@ const zoomPhoto = (url) => {
                     class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center mt-1"
                 >
                     <!-- Mint Cloud Background with Calendar & Dots Illustration -->
-                    <div class="relative w-24 h-24 flex items-center justify-center mb-1">
+                    <div class="relative w-36 h-28 flex items-center justify-center mb-1">
                         <!-- Soft Mint Cloud / Blob -->
-                        <div class="absolute inset-0 bg-teal-50/90 rounded-[36px] transform rotate-6"></div>
-                        <div class="absolute inset-1.5 bg-emerald-50/70 rounded-[32px] transform -rotate-3"></div>
+                        <div class="absolute inset-0 bg-[#E8F6F3] rounded-[42px] transform rotate-3"></div>
+                        <div class="absolute inset-1.5 bg-teal-50/80 rounded-[38px] transform -rotate-2"></div>
                         
-                        <!-- Floating playful accent dots -->
-                        <div class="absolute top-1 -left-2 w-2 h-2 rounded-full bg-teal-300 opacity-60"></div>
-                        <div class="absolute -bottom-1 right-2 w-2 h-2 rounded-full bg-emerald-300 opacity-60"></div>
+                        <!-- Floating playful accent dots / leaves -->
+                        <div class="absolute top-4 left-3 w-2 h-2 rounded-full bg-teal-400/80"></div>
+                        <div class="absolute bottom-4 right-4 w-2 h-2 rounded-full bg-teal-500/80"></div>
+                        <div class="absolute top-3 right-6 w-2.5 h-1.5 rounded-full bg-emerald-400/70 rotate-45"></div>
 
                         <!-- Calendar Graphic Box -->
-                        <div class="relative w-14 h-14 rounded-2xl bg-white border border-teal-100 shadow-2xs flex flex-col items-center justify-center p-1.5">
+                        <div class="relative z-10 w-16 h-16 rounded-2xl bg-white border-2 border-teal-600 shadow-md shadow-teal-700/10 flex flex-col items-center justify-center p-1.5">
                             <!-- Ring binders -->
-                            <div class="w-full flex items-center justify-around pb-1 border-b border-teal-100">
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                            <div class="w-full flex items-center justify-around pb-1.5 border-b border-teal-100">
+                                <span class="w-1.5 h-2 rounded-full bg-teal-700"></span>
+                                <span class="w-1.5 h-2 rounded-full bg-teal-700"></span>
                             </div>
                             <!-- Days dot grid -->
-                            <div class="grid grid-cols-4 gap-1 w-full pt-1 px-0.5">
-                                <span class="w-1 h-1 rounded-full bg-teal-300 mx-auto"></span>
-                                <span class="w-1 h-1 rounded-full bg-teal-500 mx-auto"></span>
-                                <span class="w-1 h-1 rounded-full bg-teal-300 mx-auto"></span>
-                                <span class="w-1 h-1 rounded-full bg-teal-500 mx-auto"></span>
-                                <span class="w-1 h-1 rounded-full bg-teal-500 mx-auto"></span>
-                                <span class="w-1 h-1 rounded-full bg-teal-300 mx-auto"></span>
-                                <span class="w-1 h-1 rounded-full bg-teal-500 mx-auto"></span>
-                                <span class="w-1 h-1 rounded-full bg-teal-300 mx-auto"></span>
+                            <div class="grid grid-cols-4 gap-1 w-full pt-1.5 px-0.5">
+                                <span class="w-1 h-1 rounded-full bg-teal-600 mx-auto"></span>
+                                <span class="w-1 h-1 rounded-full bg-teal-600 mx-auto"></span>
+                                <span class="w-1 h-1 rounded-full bg-teal-600 mx-auto"></span>
+                                <span class="w-1 h-1 rounded-full bg-teal-600 mx-auto"></span>
+                                <span class="w-1 h-1 rounded-full bg-teal-600 mx-auto"></span>
+                                <span class="w-1 h-1 rounded-full bg-teal-600 mx-auto"></span>
+                                <span class="w-1 h-1 rounded-full bg-teal-600 mx-auto"></span>
+                                <span class="w-1 h-1 rounded-full bg-teal-600 mx-auto"></span>
                             </div>
                         </div>
                     </div>
@@ -1055,7 +1045,7 @@ const zoomPhoto = (url) => {
                         v-if="canManage || isInstructor"
                         @click="openNewSessionModal"
                         type="button"
-                        class="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-md shadow-teal-700/20 transition-all active:scale-95"
+                        class="mt-4 inline-flex items-center gap-1.5 px-6 py-2.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-md shadow-teal-700/20 transition-all active:scale-95"
                     >
                         <PlusIcon class="w-3.5 h-3.5 stroke-[2.4]" />
                         <span>Buat Sesi Latihan Pertama</span>
