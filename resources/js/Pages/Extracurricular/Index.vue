@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
-    SparklesIcon,
     PlusIcon,
     MagnifyingGlassIcon,
     CalendarDaysIcon,
@@ -22,9 +21,10 @@ import {
     EllipsisVerticalIcon,
     ArrowRightIcon,
     CheckIcon,
+    FlagIcon,
+    BuildingOfficeIcon,
 } from '@heroicons/vue/24/outline';
 import { 
-    SparklesIcon as SparklesIconSolid, 
     HeartIcon as HeartIconSolid 
 } from '@heroicons/vue/24/solid';
 import { HeartIcon as HeartIconOutline } from '@heroicons/vue/24/outline';
@@ -50,7 +50,7 @@ const selectedDay = ref(props.filters.day || 'all');
 const activeMenuId = ref(null);
 
 // Favorites persisted in localStorage
-const favorites = ref(new Set(['mock-4'])); // Taekwondo favorited by default as in mockup
+const favorites = ref(new Set());
 onMounted(() => {
     try {
         const stored = localStorage.getItem('namira_ekskul_favorites');
@@ -123,113 +123,19 @@ const genderOptions = [
     { value: 'female_only', title: 'Khusus Akhwat', subtitle: 'Putri Saja' },
 ];
 
-// Rich Fallback Activities matching User Mockup Reference exactly
-const fallbackActivities = [
-    {
-        id: 'mock-1',
-        name: 'Futsal SD',
-        category: 'olahraga',
-        category_label: 'Olahraga',
-        day_of_week: 'Jumat',
-        start_time: '14:30',
-        end_time: '16:00',
-        formatted_schedule: 'Setiap Jumat, 14:30 - 16:00 WIB',
-        location_name: 'Lapangan Utama',
-        room: { name: 'Lapangan Utama' },
-        unit: { name: 'SD NAMIRA' },
-        active_members_count: 18,
-        max_quota: 30,
-        cover_image_url: '/images/extracurricular/futsal_sd.jpg',
-        instructors: [{ user: { name: 'Ust. Ahmad Fauzi' }, role_title: 'Pelatih Utama' }],
-        bar_color: 'bg-[#00796B]',
-        can_edit: true,
-    },
-    {
-        id: 'mock-2',
-        name: 'Tari Tradisional',
-        category: 'seni_budaya',
-        category_label: 'Seni & Budaya',
-        day_of_week: 'Selasa',
-        start_time: '15:00',
-        end_time: '16:30',
-        formatted_schedule: 'Setiap Selasa, 15:00 - 16:30 WIB',
-        location_name: 'Aula Utama Lt. 2',
-        room: { name: 'Aula Utama Lt. 2' },
-        unit: { name: 'SD NAMIRA' },
-        active_members_count: 24,
-        max_quota: 30,
-        cover_image_url: '/images/extracurricular/tari_tradisional.jpg',
-        instructors: [{ user: { name: 'Bu Siti Rahmawati' }, role_title: 'Pelatih Utama' }],
-        bar_color: 'bg-[#F59E0B]',
-        can_edit: true,
-    },
-    {
-        id: 'mock-3',
-        name: 'Robotika',
-        category: 'sains_teknologi',
-        category_label: 'Sains & Teknologi',
-        day_of_week: 'Rabu',
-        start_time: '14:00',
-        end_time: '16:00',
-        formatted_schedule: 'Setiap Rabu, 14:00 - 16:00 WIB',
-        location_name: 'Lab Komputer',
-        room: { name: 'Lab Komputer' },
-        unit: { name: 'SD NAMIRA' },
-        active_members_count: 15,
-        max_quota: 20,
-        cover_image_url: '/images/extracurricular/robotika.jpg',
-        instructors: [{ user: { name: 'Pak Dimas Prasetyo' }, role_title: 'Pelatih Utama' }],
-        bar_color: 'bg-[#3B82F6]',
-        can_edit: true,
-    },
-    {
-        id: 'mock-4',
-        name: 'Taekwondo',
-        category: 'kepanduan',
-        category_label: 'Bela Diri',
-        day_of_week: 'Sabtu',
-        start_time: '08:00',
-        end_time: '10:00',
-        formatted_schedule: 'Setiap Sabtu, 08:00 - 10:00 WIB',
-        location_name: 'Aula Utama',
-        room: { name: 'Aula Utama' },
-        unit: { name: 'SD NAMIRA' },
-        active_members_count: 28,
-        max_quota: 30,
-        cover_image_url: '/images/extracurricular/taekwondo.jpg',
-        instructors: [{ user: { name: 'Sabum Rian' }, role_title: 'Pelatih Eksternal' }],
-        bar_color: 'bg-[#EF4444]',
-        can_edit: true,
-    },
-];
-
-// Unified Activities Source
+// Real Activities Source (No Dummy Data)
 const allActivities = computed(() => {
-    if (props.activities && props.activities.length > 0) {
-        return props.activities.map((item) => {
-            let barColor = 'bg-[#00796B]';
-            if (item.category === 'seni_budaya') barColor = 'bg-[#F59E0B]';
-            else if (item.category === 'sains_teknologi') barColor = 'bg-[#3B82F6]';
-            else if (item.category === 'kepanduan') barColor = 'bg-[#EF4444]';
+    return (props.activities || []).map((item) => {
+        let barColor = 'bg-[#00796B]';
+        if (item.category === 'seni_budaya') barColor = 'bg-[#F59E0B]';
+        else if (item.category === 'sains_teknologi') barColor = 'bg-[#3B82F6]';
+        else if (item.category === 'kepanduan') barColor = 'bg-[#EF4444]';
 
-            let cover = item.cover_image_url;
-            if (!cover) {
-                const nameLower = (item.name || '').toLowerCase();
-                if (nameLower.includes('futsal')) cover = '/images/extracurricular/futsal_sd.jpg';
-                else if (nameLower.includes('tari')) cover = '/images/extracurricular/tari_tradisional.jpg';
-                else if (nameLower.includes('robot')) cover = '/images/extracurricular/robotika.jpg';
-                else if (nameLower.includes('taekwondo')) cover = '/images/extracurricular/taekwondo.jpg';
-                else cover = '/images/extracurricular/futsal_sd.jpg';
-            }
-
-            return {
-                ...item,
-                cover_image_url: cover,
-                bar_color: barColor,
-            };
-        });
-    }
-    return fallbackActivities;
+        return {
+            ...item,
+            bar_color: barColor,
+        };
+    });
 });
 
 // Form
@@ -559,6 +465,15 @@ const getCategoryLabel = (item) => {
     return item.category_label || 'Umum';
 };
 
+const getCoverImage = (item) => {
+    if (item.cover_image_url) return item.cover_image_url;
+    if (item.category === 'olahraga') return '/images/extracurricular/futsal_sd.jpg';
+    if (item.category === 'seni_budaya') return '/images/extracurricular/tari_tradisional.jpg';
+    if (item.category === 'sains_teknologi') return '/images/extracurricular/robotika.jpg';
+    if (item.category === 'kepanduan') return '/images/extracurricular/taekwondo.jpg';
+    return '/images/banners/extracurricular_hero.png';
+};
+
 const getQuotaPercentage = (item) => {
     if (!item.max_quota || item.max_quota <= 0) return 0;
     return Math.min(100, Math.round(((item.active_members_count || 0) / item.max_quota) * 100));
@@ -608,7 +523,7 @@ const getLinkDestination = (item) => {
                             <UserGroupIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
                         <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
-                            {{ stats.total_activities || 12 }}
+                            {{ stats.total_activities ?? 0 }}
                         </div>
                         <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
                             Total Kegiatan
@@ -621,7 +536,7 @@ const getLinkDestination = (item) => {
                             <AcademicCapIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
                         <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
-                            {{ stats.total_members || 247 }}
+                            {{ stats.total_members ?? 0 }}
                         </div>
                         <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
                             Anggota Terdaftar
@@ -634,7 +549,7 @@ const getLinkDestination = (item) => {
                             <CalendarDaysIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
                         <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
-                            {{ stats.total_sessions_month || 36 }}
+                            {{ stats.total_sessions_month ?? 0 }}
                         </div>
                         <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
                             Sesi Bulan Ini
@@ -647,7 +562,7 @@ const getLinkDestination = (item) => {
                             <UserIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
                         <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
-                            {{ stats.total_instructors || 18 }}
+                            {{ stats.total_instructors ?? 0 }}
                         </div>
                         <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
                             Pelatih &amp; Pembina
@@ -739,7 +654,7 @@ const getLinkDestination = (item) => {
                     <!-- Cover Image Area -->
                     <div class="h-28 sm:h-36 relative overflow-hidden bg-slate-100 rounded-t-2xl">
                         <img
-                            :src="item.cover_image_url || '/images/extracurricular/futsal_sd.jpg'"
+                            :src="getCoverImage(item)"
                             :alt="item.name"
                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
@@ -810,7 +725,7 @@ const getLinkDestination = (item) => {
                             <!-- Unit Name -->
                             <div class="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-[#00796B]">
                                 <BuildingLibraryIcon class="w-3 h-3 text-[#00796B]" />
-                                <span>{{ item.unit?.name || 'SD NAMIRA' }}</span>
+                                <span>{{ item.unit?.name || 'Unit Sekolah' }}</span>
                             </div>
 
                             <!-- Jadwal Latihan -->
@@ -825,34 +740,46 @@ const getLinkDestination = (item) => {
                             <div class="flex items-center gap-1 text-[8px] sm:text-[9px] text-slate-500 truncate">
                                 <MapPinIcon class="w-3 h-3 text-slate-400 shrink-0" />
                                 <span class="truncate">
-                                    {{ item.room?.name || item.location_name || 'Area Kampus' }}
+                                    {{ item.room?.name || item.location_name || 'Belum diatur' }}
                                 </span>
                             </div>
 
-                            <!-- Coach Row & Quota Status -->
+                            <!-- Coach Row & Quota Status (No Dummy Data) -->
                             <div class="flex items-center justify-between pt-1 text-[9px] sm:text-[10px]">
                                 <!-- Left: Coach -->
                                 <div class="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <div class="w-5 h-5 rounded-full bg-slate-200 overflow-hidden shrink-0 flex items-center justify-center text-[9px] font-bold text-slate-600">
-                                        {{ (item.instructors?.[0]?.user?.name || 'P').charAt(0) }}
-                                    </div>
-                                    <div class="min-w-0">
-                                        <div class="font-bold text-slate-800 truncate text-[9px]">
-                                            {{ item.instructors?.[0]?.user?.name || 'Pelatih' }}
+                                    <template v-if="item.instructors && item.instructors.length > 0">
+                                        <div class="w-5 h-5 rounded-full bg-teal-100 text-teal-800 overflow-hidden shrink-0 flex items-center justify-center text-[9px] font-bold">
+                                            {{ item.instructors[0].user?.name ? item.instructors[0].user.name.charAt(0) : 'P' }}
                                         </div>
-                                        <div class="text-[8px] text-slate-400 truncate">
-                                            {{ item.instructors?.[0]?.role_title || 'Pelatih Utama' }}
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-slate-800 truncate text-[9px]">
+                                                {{ item.instructors[0].user?.name }}
+                                            </div>
+                                            <div class="text-[8px] text-slate-400 truncate">
+                                                {{ item.instructors[0].role_title || 'Pelatih' }}
+                                            </div>
                                         </div>
-                                    </div>
+                                    </template>
+                                    <template v-else>
+                                        <div class="w-5 h-5 rounded-full bg-slate-100 text-slate-400 overflow-hidden shrink-0 flex items-center justify-center text-[9px]">
+                                            <UserIcon class="w-3 h-3 stroke-[2]" />
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-medium text-slate-400 truncate text-[9px] italic">
+                                                Belum diatur
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
 
                                 <!-- Right: Quota -->
                                 <div class="text-right shrink-0">
                                     <div class="font-bold text-slate-800 text-[9px]">
-                                        {{ item.active_members_count || 18 }}/{{ item.max_quota }}
+                                        {{ item.active_members_count || 0 }}/{{ item.max_quota }}
                                     </div>
                                     <div class="text-[8px] text-slate-400">
-                                        Sisa {{ Math.max(0, item.max_quota - (item.active_members_count || 18)) }} Kursi
+                                        Sisa {{ Math.max(0, item.max_quota - (item.active_members_count || 0)) }} Kursi
                                     </div>
                                 </div>
                             </div>
@@ -878,6 +805,29 @@ const getLinkDestination = (item) => {
                             </Link>
                         </div>
                     </div>
+                </div>
+
+                <!-- Empty State (No Activities in Database or Filter) -->
+                <div
+                    v-if="filteredActivities.length === 0"
+                    class="col-span-full py-12 px-4 text-center bg-white rounded-3xl border border-slate-100 shadow-xs flex flex-col items-center justify-center"
+                >
+                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-3">
+                        <UserGroupIcon class="w-6 h-6 stroke-[1.8]" />
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-sm">Belum Ada Ekstrakurikuler</h3>
+                    <p class="text-xs text-slate-500 mt-1 max-w-sm">
+                        {{ searchQuery || selectedCategory !== 'all' || selectedDay !== 'all' ? 'Tidak ada kegiatan yang sesuai dengan filter pencarian.' : 'Belum ada kegiatan ekstrakurikuler yang ditambahkan.' }}
+                    </p>
+                    <button
+                        v-if="canManage && !searchQuery && selectedCategory === 'all' && selectedDay === 'all'"
+                        @click="openCreateModal"
+                        type="button"
+                        class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-xs shadow-xs transition-all active:scale-95"
+                    >
+                        <PlusIcon class="w-4 h-4" />
+                        <span>Tambah Kegiatan Sekarang</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1181,12 +1131,12 @@ const getLinkDestination = (item) => {
                                     <button
                                         type="button"
                                         @click="setLocationType('outdoor')"
-                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1"
+                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5"
                                         :class="locationType === 'outdoor'
                                             ? 'border-teal-600 bg-teal-50/80 text-teal-900 font-bold ring-1 ring-teal-500 shadow-xs'
                                             : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 font-medium'"
                                     >
-                                        <span class="text-base">🌳</span>
+                                        <FlagIcon class="w-5 h-5 text-teal-700" />
                                         <span class="text-[11px] sm:text-xs">Lapangan / Outdoor</span>
                                     </button>
 
@@ -1194,12 +1144,12 @@ const getLinkDestination = (item) => {
                                     <button
                                         type="button"
                                         @click="setLocationType('classroom')"
-                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1"
+                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5"
                                         :class="locationType === 'classroom'
                                             ? 'border-teal-600 bg-teal-50/80 text-teal-900 font-bold ring-1 ring-teal-500 shadow-xs'
                                             : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 font-medium'"
                                     >
-                                        <span class="text-base">🏫</span>
+                                        <AcademicCapIcon class="w-5 h-5 text-teal-700" />
                                         <span class="text-[11px] sm:text-xs">Ruang Kelas</span>
                                     </button>
 
@@ -1207,12 +1157,12 @@ const getLinkDestination = (item) => {
                                     <button
                                         type="button"
                                         @click="setLocationType('sarpras')"
-                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1"
+                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5"
                                         :class="locationType === 'sarpras'
                                             ? 'border-teal-600 bg-teal-50/80 text-teal-900 font-bold ring-1 ring-teal-500 shadow-xs'
                                             : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 font-medium'"
                                     >
-                                        <span class="text-base">🏢</span>
+                                        <BuildingOfficeIcon class="w-5 h-5 text-teal-700" />
                                         <span class="text-[11px] sm:text-xs">Sarpras / Lab / Aula</span>
                                     </button>
 
@@ -1220,12 +1170,12 @@ const getLinkDestination = (item) => {
                                     <button
                                         type="button"
                                         @click="setLocationType('external')"
-                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1"
+                                        class="p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5"
                                         :class="locationType === 'external'
                                             ? 'border-teal-600 bg-teal-50/80 text-teal-900 font-bold ring-1 ring-teal-500 shadow-xs'
                                             : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 font-medium'"
                                     >
-                                        <span class="text-base">📍</span>
+                                        <MapPinIcon class="w-5 h-5 text-teal-700" />
                                         <span class="text-[11px] sm:text-xs">Luar Sekolah</span>
                                     </button>
                                 </div>
@@ -1314,8 +1264,9 @@ const getLinkDestination = (item) => {
                                     <!-- Summary Banner of Final Location -->
                                     <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
                                         <span class="text-slate-500 font-medium">Lokasi Tampil:</span>
-                                        <span class="font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">
-                                            📍 {{ form.location_name || 'Belum ditentukan' }}
+                                        <span class="font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200 inline-flex items-center gap-1">
+                                            <MapPinIcon class="w-3.5 h-3.5 text-teal-600" />
+                                            <span>{{ form.location_name || 'Belum ditentukan' }}</span>
                                         </span>
                                     </div>
                                 </div>

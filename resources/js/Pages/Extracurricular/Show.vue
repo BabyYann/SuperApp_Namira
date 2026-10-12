@@ -3,7 +3,6 @@ import { ref, computed } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
-    SparklesIcon,
     ArrowLeftIcon,
     CalendarDaysIcon,
     ClockIcon,
@@ -29,6 +28,10 @@ import {
     EllipsisVerticalIcon,
     UserIcon,
     ChartBarIcon,
+    FlagIcon,
+    BuildingOfficeIcon,
+    ExclamationTriangleIcon,
+    CheckIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -973,9 +976,7 @@ const zoomPhoto = (url) => {
                         <div class="absolute inset-0 bg-teal-50/90 rounded-[36px] transform rotate-6"></div>
                         <div class="absolute inset-1.5 bg-emerald-50/70 rounded-[32px] transform -rotate-3"></div>
                         
-                        <!-- Floating playful accent leaves/stars -->
-                        <div class="absolute -top-1 -right-1 text-teal-400 text-xs">✦</div>
-                        <div class="absolute bottom-2 -left-2 text-emerald-400 text-[10px]">✦</div>
+                        <!-- Floating playful accent dots -->
                         <div class="absolute top-1 -left-2 w-2 h-2 rounded-full bg-teal-300 opacity-60"></div>
                         <div class="absolute -bottom-1 right-2 w-2 h-2 rounded-full bg-emerald-300 opacity-60"></div>
 
@@ -1500,34 +1501,38 @@ const zoomPhoto = (url) => {
                                 <button
                                     type="button"
                                     @click="setEditLocationType('outdoor')"
-                                    class="px-2 py-1.5 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-0.5"
+                                    class="px-2 py-2 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-1"
                                     :class="editLocationType === 'outdoor' ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
                                 >
-                                    <span>🌳 Outdoor</span>
+                                    <FlagIcon class="w-4 h-4" />
+                                    <span>Outdoor</span>
                                 </button>
                                 <button
                                     type="button"
                                     @click="setEditLocationType('classroom')"
-                                    class="px-2 py-1.5 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-0.5"
+                                    class="px-2 py-2 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-1"
                                     :class="editLocationType === 'classroom' ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
                                 >
-                                    <span>🏫 Kelas Unit</span>
+                                    <AcademicCapIcon class="w-4 h-4" />
+                                    <span>Kelas Unit</span>
                                 </button>
                                 <button
                                     type="button"
                                     @click="setEditLocationType('sarpras')"
-                                    class="px-2 py-1.5 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-0.5"
+                                    class="px-2 py-2 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-1"
                                     :class="editLocationType === 'sarpras' ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
                                 >
-                                    <span>🏢 Sarpras</span>
+                                    <BuildingOfficeIcon class="w-4 h-4" />
+                                    <span>Sarpras</span>
                                 </button>
                                 <button
                                     type="button"
                                     @click="setEditLocationType('external')"
-                                    class="px-2 py-1.5 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-0.5"
+                                    class="px-2 py-2 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-1"
                                     :class="editLocationType === 'external' ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
                                 >
-                                    <span>📍 Luar Kampus</span>
+                                    <MapPinIcon class="w-4 h-4" />
+                                    <span>Luar Kampus</span>
                                 </button>
                             </div>
 
@@ -1987,8 +1992,9 @@ const zoomPhoto = (url) => {
                                     <span v-else-if="!isGenderEligible(s.gender)" class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-700">
                                         Khusus {{ activity.gender_restriction === 'male_only' ? 'Ikhwan' : 'Akhwat' }}
                                     </span>
-                                    <span v-else-if="memberForm.student_ids.includes(s.id)" class="px-2 py-0.5 rounded-full text-[9px] font-black bg-teal-200 text-teal-800">
-                                        Terpilih ✓
+                                    <span v-else-if="memberForm.student_ids.includes(s.id)" class="px-2 py-0.5 rounded-full text-[9px] font-black bg-teal-200 text-teal-800 inline-flex items-center gap-1">
+                                        <CheckIcon class="w-3 h-3 stroke-[3]" />
+                                        <span>Terpilih</span>
                                     </span>
                                 </div>
                             </div>
@@ -2000,8 +2006,9 @@ const zoomPhoto = (url) => {
 
                         <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between">
                             <span class="text-xs text-slate-500 font-medium">
-                                <span v-if="memberForm.student_ids.length > remainingQuota" class="text-amber-600 font-bold">
-                                    ⚠️ Pilihan melebihi sisa kuota ({{ remainingQuota }} kursi).
+                                <span v-if="memberForm.student_ids.length > remainingQuota" class="text-amber-600 font-bold inline-flex items-center gap-1">
+                                    <ExclamationTriangleIcon class="w-4 h-4 text-amber-500 shrink-0" />
+                                    <span>Pilihan melebihi sisa kuota ({{ remainingQuota }} kursi).</span>
                                 </span>
                                 <span v-else>
                                     {{ memberForm.student_ids.length }} siswa akan didaftarkan.

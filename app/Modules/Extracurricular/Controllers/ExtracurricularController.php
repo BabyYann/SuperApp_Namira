@@ -90,31 +90,6 @@ class ExtracurricularController extends Controller
         $activities->transform(function ($item) use ($assignedActivityIds, $canManage) {
             $item->is_my_activity = in_array($item->id, $assignedActivityIds);
             $item->can_edit = $canManage || $item->is_my_activity;
-            
-            $nameLower = strtolower($item->name);
-            if (!$item->cover_image) {
-                if (str_contains($nameLower, 'futsal')) {
-                    $item->cover_image_url = '/images/extracurricular/futsal_sd.jpg';
-                } elseif (str_contains($nameLower, 'tari')) {
-                    $item->cover_image_url = '/images/extracurricular/tari_tradisional.jpg';
-                } elseif (str_contains($nameLower, 'robot')) {
-                    $item->cover_image_url = '/images/extracurricular/robotika.jpg';
-                } elseif (str_contains($nameLower, 'taekwondo')) {
-                    $item->cover_image_url = '/images/extracurricular/taekwondo.jpg';
-                }
-            }
-
-            if ($item->active_members_count === 0) {
-                if (str_contains($nameLower, 'futsal')) {
-                    $item->active_members_count = 18;
-                } elseif (str_contains($nameLower, 'tari')) {
-                    $item->active_members_count = 24;
-                } elseif (str_contains($nameLower, 'robot')) {
-                    $item->active_members_count = 15;
-                } elseif (str_contains($nameLower, 'taekwondo')) {
-                    $item->active_members_count = 28;
-                }
-            }
             return $item;
         });
 
@@ -156,10 +131,10 @@ class ExtracurricularController extends Controller
         return Inertia::render('Extracurricular/Index', [
             'activities' => $activities,
             'stats' => [
-                'total_activities' => $totalActivities ?: 12,
-                'total_members' => $totalMembers ?: 247,
-                'total_sessions_month' => $totalSessionsMonth ?: 36,
-                'total_instructors' => $totalInstructors ?: 18,
+                'total_activities' => $totalActivities,
+                'total_members' => $totalMembers,
+                'total_sessions_month' => $totalSessionsMonth,
+                'total_instructors' => $totalInstructors,
             ],
             'rooms' => $rooms,
             'classrooms' => $classrooms,
