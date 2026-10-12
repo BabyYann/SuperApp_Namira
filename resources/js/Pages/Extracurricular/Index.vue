@@ -472,38 +472,27 @@ const getLinkDestination = (item) => {
             <!-- UNIFIED HERO SECTION: BANNER IS THE BACKGROUND BEHIND THE 4 STAT METRIC CARDS             -->
             <!-- (Pixel-Perfect Match with Reference Image 1)                                              -->
             <!-- ========================================================================================= -->
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#E7F6F2] via-[#DEF3ED] to-[#E3F5F0] p-4 sm:p-6 border border-emerald-100/70 shadow-xs">
+            <div class="relative overflow-hidden rounded-3xl border border-emerald-100/70 shadow-xs min-h-[195px] sm:min-h-[240px] flex flex-col justify-end p-2.5 sm:p-4 bg-[#E7F6F2]">
                 
-                <!-- Kids & Green Waves Graphic Anchor in Upper/Mid Right Background -->
-                <div class="absolute right-0 top-0 w-[55%] sm:w-[48%] h-[68%] pointer-events-none select-none flex items-start justify-end z-0">
+                <!-- Full-Bleed Banner Photo Background (Fitted Cleanly with Zero Text Clutter) -->
+                <picture class="absolute inset-0 w-full h-full pointer-events-none select-none">
+                    <source media="(min-width: 640px)" srcset="/images/banners/extracurricular_hero.webp" type="image/webp" />
+                    <source media="(min-width: 640px)" srcset="/images/banners/extracurricular_hero.png" type="image/png" />
                     <img
                         src="/images/banners/extracurricular_kids.png"
-                        alt="Ilustrasi Siswa Bakat Minat"
-                        class="h-full w-auto object-contain object-top-right drop-shadow-xs"
+                        alt="Banner Ekstrakurikuler"
+                        class="w-full h-full object-cover object-top sm:object-center select-none pointer-events-none"
                         loading="eager"
                     />
-                </div>
+                </picture>
 
-                <!-- Upper Text Content -->
-                <div class="relative z-10 max-w-[58%] sm:max-w-md space-y-1.5 sm:space-y-2 mb-4 sm:mb-6">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#D4F1EA] text-[#00796B] border border-[#BCE8DE]">
-                        <span>Ekstrakurikuler</span>
-                        <span class="text-teal-600 text-xs">✦</span>
-                    </span>
+                <!-- Soft Gradient Overlay at Bottom for Card Readability -->
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/15 via-transparent to-transparent pointer-events-none"></div>
 
-                    <h1 class="text-base sm:text-2xl font-black text-slate-800 tracking-tight leading-tight">
-                        Pusat Pembinaan<br />Bakat &amp; Minat Siswa
-                    </h1>
-
-                    <p class="text-slate-600 text-[10px] sm:text-xs leading-relaxed line-clamp-2 sm:line-clamp-none">
-                        Kelola kegiatan, pantau perkembangan, dan dukung potensi terbaik mereka.
-                    </p>
-                </div>
-
-                <!-- 4 Floating Stat Metric Cards Sitting Inside at the Bottom of Banner Background -->
+                <!-- 4 Floating Stat Metric Cards Sitting at the Bottom of Banner Background -->
                 <div class="relative z-10 grid grid-cols-4 gap-2 sm:gap-3">
                     <!-- Total Kegiatan -->
-                    <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-white/80 shadow-md shadow-emerald-950/5 flex flex-col justify-between hover:border-teal-200 transition-colors">
+                    <div class="bg-white/95 backdrop-blur-xs rounded-2xl p-2 sm:p-3.5 border border-white/90 shadow-md shadow-emerald-950/10 flex flex-col justify-between hover:border-teal-200 transition-colors">
                         <div class="w-8 h-8 rounded-xl bg-teal-50 text-[#00796B] flex items-center justify-center border border-teal-100/60">
                             <UserGroupIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
@@ -516,7 +505,7 @@ const getLinkDestination = (item) => {
                     </div>
 
                     <!-- Anggota Terdaftar -->
-                    <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-white/80 shadow-md shadow-emerald-950/5 flex flex-col justify-between hover:border-sky-200 transition-colors">
+                    <div class="bg-white/95 backdrop-blur-xs rounded-2xl p-2 sm:p-3.5 border border-white/90 shadow-md shadow-emerald-950/10 flex flex-col justify-between hover:border-sky-200 transition-colors">
                         <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100/60">
                             <AcademicCapIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
@@ -529,7 +518,7 @@ const getLinkDestination = (item) => {
                     </div>
 
                     <!-- Sesi Bulan Ini -->
-                    <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-white/80 shadow-md shadow-emerald-950/5 flex flex-col justify-between hover:border-amber-200 transition-colors">
+                    <div class="bg-white/95 backdrop-blur-xs rounded-2xl p-2 sm:p-3.5 border border-white/90 shadow-md shadow-emerald-950/10 flex flex-col justify-between hover:border-amber-200 transition-colors">
                         <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/60">
                             <CalendarDaysIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
@@ -542,7 +531,7 @@ const getLinkDestination = (item) => {
                     </div>
 
                     <!-- Pelatih & Pembina -->
-                    <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-white/80 shadow-md shadow-emerald-950/5 flex flex-col justify-between hover:border-purple-200 transition-colors">
+                    <div class="bg-white/95 backdrop-blur-xs rounded-2xl p-2 sm:p-3.5 border border-white/90 shadow-md shadow-emerald-950/10 flex flex-col justify-between hover:border-purple-200 transition-colors">
                         <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100/60">
                             <UserIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
