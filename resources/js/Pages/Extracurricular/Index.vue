@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     SparklesIcon,
@@ -40,13 +40,6 @@ const props = defineProps({
     isCoach: { type: Boolean, default: false },
     activeYear: { type: Object, default: () => null },
     units: { type: Array, default: () => [] },
-});
-
-const page = usePage();
-
-// Current Active Unit Display
-const activeUnitName = computed(() => {
-    return props.units?.find(u => u.name.includes('SD'))?.name || 'SD NAMIRA';
 });
 
 // Search & Filter State
@@ -212,14 +205,25 @@ const fallbackActivities = [
 // Unified Activities Source
 const allActivities = computed(() => {
     if (props.activities && props.activities.length > 0) {
-        return props.activities.map((item, idx) => {
+        return props.activities.map((item) => {
             let barColor = 'bg-[#00796B]';
             if (item.category === 'seni_budaya') barColor = 'bg-[#F59E0B]';
             else if (item.category === 'sains_teknologi') barColor = 'bg-[#3B82F6]';
             else if (item.category === 'kepanduan') barColor = 'bg-[#EF4444]';
 
+            let cover = item.cover_image_url;
+            if (!cover) {
+                const nameLower = (item.name || '').toLowerCase();
+                if (nameLower.includes('futsal')) cover = '/images/extracurricular/futsal_sd.jpg';
+                else if (nameLower.includes('tari')) cover = '/images/extracurricular/tari_tradisional.jpg';
+                else if (nameLower.includes('robot')) cover = '/images/extracurricular/robotika.jpg';
+                else if (nameLower.includes('taekwondo')) cover = '/images/extracurricular/taekwondo.jpg';
+                else cover = '/images/extracurricular/futsal_sd.jpg';
+            }
+
             return {
                 ...item,
+                cover_image_url: cover,
                 bar_color: barColor,
             };
         });
@@ -453,7 +457,6 @@ const getLinkDestination = (item) => {
     if (typeof item.id === 'number') {
         return route('extracurricular.show', item.id);
     }
-    // For mock-1..4 fallback to first real activity or default link
     const firstReal = props.activities?.[0];
     return firstReal ? route('extracurricular.show', firstReal.id) : '#';
 };
@@ -463,47 +466,27 @@ const getLinkDestination = (item) => {
     <AuthenticatedLayout>
         <Head title="Ekstrakurikuler" />
 
-        <div class="space-y-4 max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 sm:py-5">
+        <div class="space-y-4 max-w-5xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-5">
             
-            <!-- 1. TOP USER & UNIT PROFILE HEADER (Exact Match Reference Image 1) -->
-            <div class="flex items-center justify-between pb-1">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-10 h-10 rounded-full overflow-hidden bg-teal-100 border border-teal-200 shrink-0">
-                        <img
-                            v-if="$page.props.auth?.user?.profile_photo_url"
-                            :src="$page.props.auth.user.profile_photo_url"
-                            :alt="$page.props.auth.user.name"
-                            class="w-full h-full object-cover"
-                        />
-                        <div v-else class="w-full h-full flex items-center justify-center font-bold text-teal-800 text-xs">
-                            {{ ($page.props.auth?.user?.name || 'RH').substring(0, 2).toUpperCase() }}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-1 text-[11px] font-bold text-[#00796B]">
-                            <BuildingLibraryIcon class="w-3.5 h-3.5" />
-                            <span>{{ activeUnitName }}</span>
-                        </div>
-                        <div class="text-sm font-black text-slate-800 leading-tight">
-                            {{ $page.props.auth?.user?.name || 'Rian Hidayad S. Kom' }}
-                        </div>
-                    </div>
+            <!-- ========================================================================================= -->
+            <!-- UNIFIED HERO SECTION: BANNER IS THE BACKGROUND BEHIND THE 4 STAT METRIC CARDS             -->
+            <!-- (Pixel-Perfect Match with Reference Image 1)                                              -->
+            <!-- ========================================================================================= -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#E7F6F2] via-[#DEF3ED] to-[#E3F5F0] p-4 sm:p-6 border border-emerald-100/70 shadow-xs">
+                
+                <!-- Kids & Green Waves Graphic Anchor in Upper/Mid Right Background -->
+                <div class="absolute right-0 top-0 w-[55%] sm:w-[48%] h-[68%] pointer-events-none select-none flex items-start justify-end z-0">
+                    <img
+                        src="/images/banners/extracurricular_kids.png"
+                        alt="Ilustrasi Siswa Bakat Minat"
+                        class="h-full w-auto object-contain object-top-right drop-shadow-xs"
+                        loading="eager"
+                    />
                 </div>
 
-                <Link
-                    :href="route('profile.edit')"
-                    class="w-9 h-9 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-xs"
-                    title="Profil Pengguna"
-                >
-                    <UserIcon class="w-5 h-5 stroke-[1.8]" />
-                </Link>
-            </div>
-
-            <!-- 2. HERO BANNER WITH INTEGRATED RIGHT-SIDE KIDS ILLUSTRATION (Exact Match Reference Image 1) -->
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#EAF7F4] via-[#E2F5F1] to-[#C7EFE6] border border-emerald-100/60 p-4 sm:p-6 shadow-xs min-h-[145px] sm:min-h-[165px] flex items-center">
-                <!-- Left Content -->
-                <div class="relative z-10 max-w-[58%] sm:max-w-md space-y-1.5 sm:space-y-2">
-                    <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-bold bg-[#D4F1EA] text-[#00796B] border border-[#BCE8DE]">
+                <!-- Upper Text Content -->
+                <div class="relative z-10 max-w-[58%] sm:max-w-md space-y-1.5 sm:space-y-2 mb-4 sm:mb-6">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#D4F1EA] text-[#00796B] border border-[#BCE8DE]">
                         <span>Ekstrakurikuler</span>
                         <span class="text-teal-600 text-xs">✦</span>
                     </span>
@@ -517,77 +500,69 @@ const getLinkDestination = (item) => {
                     </p>
                 </div>
 
-                <!-- Right Side Anchored Kids Illustration -->
-                <div class="absolute right-0 bottom-0 top-0 w-[55%] sm:w-[48%] pointer-events-none select-none flex items-end justify-end">
-                    <img
-                        src="/images/banners/extracurricular_kids.png"
-                        alt="Ilustrasi Siswa Bakat Minat"
-                        class="h-full w-auto max-w-none object-contain object-right-bottom drop-shadow-xs"
-                        loading="eager"
-                    />
-                </div>
-            </div>
+                <!-- 4 Floating Stat Metric Cards Sitting Inside at the Bottom of Banner Background -->
+                <div class="relative z-10 grid grid-cols-4 gap-2 sm:gap-3">
+                    <!-- Total Kegiatan -->
+                    <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-white/80 shadow-md shadow-emerald-950/5 flex flex-col justify-between hover:border-teal-200 transition-colors">
+                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-[#00796B] flex items-center justify-center border border-teal-100/60">
+                            <UserGroupIcon class="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
+                            {{ stats.total_activities || 12 }}
+                        </div>
+                        <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
+                            Total Kegiatan
+                        </div>
+                    </div>
 
-            <!-- 3. 4 STAT METRIC CARDS IN A SINGLE HORIZONTAL ROW (Exact Match Reference Image 1) -->
-            <div class="grid grid-cols-4 gap-2 sm:gap-3">
-                <!-- Total Kegiatan -->
-                <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-slate-100 shadow-xs flex flex-col justify-between hover:border-teal-200 transition-colors">
-                    <div class="w-8 h-8 rounded-xl bg-teal-50 text-[#00796B] flex items-center justify-center border border-teal-100/60">
-                        <UserGroupIcon class="w-4 h-4 stroke-[2.2]" />
+                    <!-- Anggota Terdaftar -->
+                    <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-white/80 shadow-md shadow-emerald-950/5 flex flex-col justify-between hover:border-sky-200 transition-colors">
+                        <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100/60">
+                            <AcademicCapIcon class="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
+                            {{ stats.total_members || 247 }}
+                        </div>
+                        <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
+                            Anggota Terdaftar
+                        </div>
                     </div>
-                    <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
-                        {{ stats.total_activities || 12 }}
-                    </div>
-                    <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
-                        Total Kegiatan
-                    </div>
-                </div>
 
-                <!-- Anggota Terdaftar -->
-                <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-slate-100 shadow-xs flex flex-col justify-between hover:border-sky-200 transition-colors">
-                    <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100/60">
-                        <AcademicCapIcon class="w-4 h-4 stroke-[2.2]" />
+                    <!-- Sesi Bulan Ini -->
+                    <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-white/80 shadow-md shadow-emerald-950/5 flex flex-col justify-between hover:border-amber-200 transition-colors">
+                        <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/60">
+                            <CalendarDaysIcon class="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
+                            {{ stats.total_sessions_month || 36 }}
+                        </div>
+                        <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
+                            Sesi Bulan Ini
+                        </div>
                     </div>
-                    <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
-                        {{ stats.total_members || 247 }}
-                    </div>
-                    <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
-                        Anggota Terdaftar
-                    </div>
-                </div>
 
-                <!-- Sesi Bulan Ini -->
-                <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-slate-100 shadow-xs flex flex-col justify-between hover:border-amber-200 transition-colors">
-                    <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/60">
-                        <CalendarDaysIcon class="w-4 h-4 stroke-[2.2]" />
-                    </div>
-                    <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
-                        {{ stats.total_sessions_month || 36 }}
-                    </div>
-                    <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
-                        Sesi Bulan Ini
-                    </div>
-                </div>
-
-                <!-- Pelatih & Pembina -->
-                <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-slate-100 shadow-xs flex flex-col justify-between hover:border-purple-200 transition-colors">
-                    <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100/60">
-                        <UserIcon class="w-4 h-4 stroke-[2.2]" />
-                    </div>
-                    <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
-                        {{ stats.total_instructors || 18 }}
-                    </div>
-                    <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
-                        Pelatih &amp; Pembina
+                    <!-- Pelatih & Pembina -->
+                    <div class="bg-white rounded-2xl p-2 sm:p-3.5 border border-white/80 shadow-md shadow-emerald-950/5 flex flex-col justify-between hover:border-purple-200 transition-colors">
+                        <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100/60">
+                            <UserIcon class="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <div class="text-base sm:text-xl font-black text-slate-800 mt-2 leading-none">
+                            {{ stats.total_instructors || 18 }}
+                        </div>
+                        <div class="text-[9px] sm:text-[11px] font-semibold text-slate-500 mt-1 leading-tight">
+                            Pelatih &amp; Pembina
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 4. SEARCH, FILTER SLIDER & ADD BUTTON (Exact Match Reference Image 1) -->
-            <div class="space-y-2.5">
+            <!-- ========================================================================================= -->
+            <!-- SEARCH, FILTER SLIDER & ADD BUTTON (Exact Match Reference Image 1)                        -->
+            <!-- ========================================================================================= -->
+            <div class="space-y-2.5 pt-1">
                 <div class="flex items-center gap-2 sm:gap-2.5">
                     <!-- Search Input -->
-                    <div class="relative flex-1">
+                    <div class="relative flex-1 min-w-0">
                         <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             v-model="searchQuery"
@@ -612,14 +587,14 @@ const getLinkDestination = (item) => {
                         v-if="canManage"
                         @click="openCreateModal"
                         type="button"
-                        class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-xs shrink-0 shadow-xs transition-all active:scale-95"
+                        class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-xs shrink-0 shadow-xs transition-all active:scale-95 whitespace-nowrap"
                     >
                         <PlusIcon class="w-4 h-4 stroke-[3]" />
                         <span>Tambah Ekskul Baru</span>
                     </button>
                 </div>
 
-                <!-- 5. HORIZONTAL CATEGORY PILLS (Exact Match Reference Image 1) -->
+                <!-- Horizontal Category Pills -->
                 <div class="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 select-none">
                     <button
                         v-for="cat in categories"
@@ -635,7 +610,7 @@ const getLinkDestination = (item) => {
                     </button>
                 </div>
 
-                <!-- 6. HORIZONTAL DAY PILLS (Exact Match Reference Image 1) -->
+                <!-- Horizontal Day Pills -->
                 <div class="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 select-none">
                     <button
                         v-for="day in daysList"
@@ -652,8 +627,10 @@ const getLinkDestination = (item) => {
                 </div>
             </div>
 
-            <!-- 7. 2-COLUMN ACTIVITY CARDS GRID ON MOBILE (Exact Match Reference Image 1) -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <!-- ========================================================================================= -->
+            <!-- 2-COLUMN ACTIVITY CARDS GRID ON MOBILE (Exact Match Reference Image 1)                     -->
+            <!-- ========================================================================================= -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 pt-1">
                 <div
                     v-for="item in filteredActivities"
                     :key="item.id"
@@ -806,7 +783,7 @@ const getLinkDestination = (item) => {
         </div>
 
         <!-- ========================================================================================= -->
-        <!-- MODAL TAMBAH & EDIT EKSTRAKURIKULER (4 Segmented Numbered Sections) -->
+        <!-- MODAL TAMBAH & EDIT EKSTRAKURIKULER (4 Segmented Numbered Sections)                         -->
         <!-- ========================================================================================= -->
         <Teleport to="body">
             <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
