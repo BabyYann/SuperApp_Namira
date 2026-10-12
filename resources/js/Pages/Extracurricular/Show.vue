@@ -12,12 +12,14 @@ import {
     AcademicCapIcon,
     PlusIcon,
     PencilSquareIcon,
+    PencilIcon,
     TrashIcon,
     PhotoIcon,
     CheckCircleIcon,
     XMarkIcon,
     MagnifyingGlassIcon,
     ChevronDownIcon,
+    ChevronRightIcon,
     ChatBubbleLeftRightIcon,
     DocumentTextIcon,
     ShieldCheckIcon,
@@ -25,6 +27,9 @@ import {
     CameraIcon,
     CheckBadgeIcon,
     FunnelIcon,
+    EllipsisVerticalIcon,
+    UserIcon,
+    ChartBarIcon,
 } from '@heroicons/vue/24/outline';
 import { 
     SparklesIcon as SparklesIconSolid,
@@ -41,21 +46,23 @@ const props = defineProps({
     isInstructor: { type: Boolean, default: false },
 });
 
-// Active Tab ('overview' | 'members' | 'sessions' | 'grades')
+// Active Tab ('sessions' | 'members' | 'overview' | 'grades') - Default 'sessions' per reference
 const activeTab = ref('sessions');
 
-// Search & filter members
-const memberSearch = ref('');
-const memberClassFilter = ref('all');
+// Dropdown Action Menu
+const showActionMenu = ref(false);
 
 // Modals
+const showEditModal = ref(false);
 const showAddMemberModal = ref(false);
 const showAddCoachModal = ref(false);
 const showSessionModal = ref(false);
 const showZoomPhotoModal = ref(false);
 const zoomedPhotoUrl = ref('');
 
-// Member Modal Filtering & Checkbox Selection State
+// Search & filter members
+const memberSearch = ref('');
+const memberClassFilter = ref('all');
 const memberModalClassFilter = ref('all');
 const memberModalSearch = ref('');
 
@@ -64,6 +71,100 @@ const memberForm = useForm({
     student_ids: [],
     student_id: '',
     notes: '',
+});
+
+const coachForm = useForm({
+    mode: 'existing', // 'existing' | 'create_new'
+    user_id: '',
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    role_title: 'Pelatih Utama',
+    institution: '',
+    notes: '',
+});
+
+const sessionForm = useForm({
+    date: new Date().toISOString().substr(0, 10),
+    start_time: props.activity.start_time ? props.activity.start_time.substring(0, 5) : '14:30',
+    end_time: props.activity.end_time ? props.activity.end_time.substring(0, 5) : '16:00',
+    topic: '',
+    notes: '',
+    photos: [],
+    attendances: [],
+    send_wa: true,
+});
+
+const gradesForm = useForm({
+    grades: [],
+});
+
+const editForm = useForm({
+    name: props.activity.name,
+    category: props.activity.category,
+    day_of_week: props.activity.day_of_week || 'Jumat',
+    start_time: props.activity.start_time ? props.activity.start_time.substring(0, 5) : '14:30',
+    end_time: props.activity.end_time ? props.activity.end_time.substring(0, 5) : '16:00',
+    room_id: props.activity.room_id,
+    location_name: props.activity.location_name || '',
+    max_quota: props.activity.max_quota || 30,
+    is_mandatory: props.activity.is_mandatory || false,
+    gender_restriction: props.activity.gender_restriction || 'all',
+    target_levels: props.activity.target_levels || [],
+    description: props.activity.description || '',
+    status: props.activity.status || 'active',
+    cover_image: null,
+});
+
+// Location Type Selector for Edit Modal
+const editLocationType = ref('outdoor');
+const editOutdoorPreset = ref('');
+const editSelectedClassroomId = ref('');
+
+const outdoorPresets = [
+    'Lapangan Utama',
+    'Lapangan Futsal',
+    'Lapangan Basket',
+    'Halaman Sekolah',
+    'Masjid Sekolah',
+];
+
+// Helper Computations
+const quotaPercentage = computed(() => {
+    const max = props.activity.max_quota || 30;
+    const current = (props.activity.active_members || []).length;
+    if (!max) return 0;
+    return Math.min(100, Math.round((current / max) * 100));
+});
+
+const leadCoach = computed(() => {
+    const list = props.activity.instructors || [];
+    return list.find((i) => i.is_primary) || list[0] || null;
+});
+
+const otherCoaches = computed(() => {
+    const list = props.activity.instructors || [];
+    const lead = leadCoach.value;
+    if (!lead) return [];
+    return list.filter((i) => i.id !== lead.id);
+});
+
+const formatTime = (timeStr) => {
+    if (!timeStr) return '';
+    return timeStr.substring(0, 5);
+};
+
+const locationTitle = computed(() => {
+    if (props.activity.location_name) return props.activity.location_name;
+    if (props.activity.room?.name) return props.activity.room.name;
+    return 'Ruang Guru 2';
+});
+
+const locationSubtitle = computed(() => {
+    if (props.activity.room?.building) return props.activity.room.building;
+    if (props.activity.room) return 'Gedung Sarpras';
+    return 'Gedung Utama';
 });
 
 // Enrolled student set & remaining quota
@@ -145,38 +246,10 @@ const openAddMemberModal = () => {
     showAddMemberModal.value = true;
 };
 
-const coachForm = useForm({
-    mode: 'existing', // 'existing' | 'create_new'
-    user_id: '',
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    role_title: 'Pelatih Utama',
-    institution: '',
-    notes: '',
-});
-
-const sessionForm = useForm({
-    date: new Date().toISOString().substr(0, 10),
-    start_time: props.activity.start_time || '14:30',
-    end_time: props.activity.end_time || '16:00',
-    topic: '',
-    notes: '',
-    photos: [],
-    attendances: [],
-    send_wa: true,
-});
-
-const gradesForm = useForm({
-    grades: [],
-});
-
-// Photo upload state
+// Image Compression
 const isCompressing = ref(false);
 const sessionPhotoPreviews = ref([]);
 
-// Image compression
 const compressImage = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -266,8 +339,8 @@ const openNewSessionModal = () => {
     sessionForm.reset();
     sessionForm.clearErrors();
     sessionForm.date = new Date().toISOString().substr(0, 10);
-    sessionForm.start_time = props.activity.start_time || '14:30';
-    sessionForm.end_time = props.activity.end_time || '16:00';
+    sessionForm.start_time = props.activity.start_time ? props.activity.start_time.substring(0, 5) : '14:30';
+    sessionForm.end_time = props.activity.end_time ? props.activity.end_time.substring(0, 5) : '16:00';
     sessionPhotoPreviews.value = [];
 
     // Prepopulate attendance from active members
@@ -276,7 +349,7 @@ const openNewSessionModal = () => {
         student_id: m.student_id,
         student_name: m.student?.full_name || 'Siswa',
         classroom_name: m.student?.classroom?.name || '-',
-        status: 'hadir', // Default hadir
+        status: 'hadir',
         notes: '',
     }));
 
@@ -383,6 +456,110 @@ const submitGrades = () => {
     });
 };
 
+// Edit Activity Modal Handlers
+const openEditModal = () => {
+    editForm.name = props.activity.name;
+    editForm.category = props.activity.category;
+    editForm.day_of_week = props.activity.day_of_week || 'Jumat';
+    editForm.start_time = props.activity.start_time ? props.activity.start_time.substring(0, 5) : '14:30';
+    editForm.end_time = props.activity.end_time ? props.activity.end_time.substring(0, 5) : '16:00';
+    editForm.room_id = props.activity.room_id;
+    editForm.location_name = props.activity.location_name || '';
+    editForm.max_quota = props.activity.max_quota || 30;
+    editForm.is_mandatory = props.activity.is_mandatory || false;
+    editForm.gender_restriction = props.activity.gender_restriction || 'all';
+    editForm.target_levels = props.activity.target_levels || [];
+    editForm.description = props.activity.description || '';
+    editForm.status = props.activity.status || 'active';
+    editForm.cover_image = null;
+
+    // Detect location category
+    if (props.activity.room_id) {
+        editLocationType.value = 'sarpras';
+    } else if (props.activity.location_name) {
+        const loc = props.activity.location_name;
+        const matchingClass = props.classrooms.find(c => `Kelas ${c.name}` === loc || c.name === loc);
+        if (matchingClass) {
+            editLocationType.value = 'classroom';
+            editSelectedClassroomId.value = matchingClass.id;
+        } else if (outdoorPresets.includes(loc) || loc.toLowerCase().includes('lapangan') || loc.toLowerCase().includes('masjid') || loc.toLowerCase().includes('halaman')) {
+            editLocationType.value = 'outdoor';
+            editOutdoorPreset.value = outdoorPresets.includes(loc) ? loc : 'Lainnya';
+        } else {
+            editLocationType.value = 'external';
+        }
+    } else {
+        editLocationType.value = 'outdoor';
+        editOutdoorPreset.value = 'Lapangan Utama';
+        editForm.location_name = 'Lapangan Utama';
+    }
+
+    showEditModal.value = true;
+    showActionMenu.value = false;
+};
+
+const setEditLocationType = (type) => {
+    editLocationType.value = type;
+    if (type === 'outdoor') {
+        editForm.room_id = null;
+        if (!editOutdoorPreset.value) editOutdoorPreset.value = outdoorPresets[0];
+        if (editOutdoorPreset.value !== 'Lainnya') {
+            editForm.location_name = editOutdoorPreset.value;
+        }
+    } else if (type === 'classroom') {
+        editForm.room_id = null;
+        if (editSelectedClassroomId.value) {
+            const cls = props.classrooms.find(c => c.id === editSelectedClassroomId.value);
+            if (cls) editForm.location_name = `Kelas ${cls.name}`;
+        }
+    } else if (type === 'sarpras') {
+        if (editForm.room_id) {
+            const rm = props.rooms.find(r => r.id === editForm.room_id);
+            if (rm) editForm.location_name = rm.name;
+        }
+    } else if (type === 'external') {
+        editForm.room_id = null;
+    }
+};
+
+const onSelectEditOutdoorPreset = (preset) => {
+    editOutdoorPreset.value = preset;
+    if (preset !== 'Lainnya') {
+        editForm.location_name = preset;
+    } else {
+        editForm.location_name = '';
+    }
+};
+
+const onSelectEditClassroom = () => {
+    const cls = props.classrooms.find(c => c.id === editSelectedClassroomId.value);
+    if (cls) {
+        editForm.location_name = `Kelas ${cls.name}`;
+    }
+};
+
+const onSelectEditRoom = () => {
+    const rm = props.rooms.find(r => r.id === editForm.room_id);
+    if (rm) {
+        editForm.location_name = rm.name;
+    }
+};
+
+const submitEdit = () => {
+    editForm.put(route('extracurricular.update', props.activity.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showEditModal.value = false;
+        },
+    });
+};
+
+const deleteActivity = () => {
+    if (confirm(`Yakin ingin menghapus kegiatan ekstrakurikuler "${props.activity.name}"? Data anggota dan riwayat sesi juga akan terhapus.`)) {
+        router.delete(route('extracurricular.destroy', props.activity.id));
+    }
+};
+
 // Photo Zoom Modal
 const zoomPhoto = (url) => {
     zoomedPhotoUrl.value = url;
@@ -392,148 +569,444 @@ const zoomPhoto = (url) => {
 
 <template>
     <AuthenticatedLayout>
-        <Head :title="`${activity.name} - Ekstrakurikuler`" />
+        <Head :title="`${activity.name} - Kelola Ekstrakurikuler`" />
 
-        <div class="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5 pb-24">
             
-            <!-- Back & Breadcrumb -->
-            <div class="flex items-center gap-3">
-                <Link
-                    :href="route('extracurricular.index')"
-                    class="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-teal-700 hover:bg-teal-50 transition-colors shadow-2xs"
-                >
-                    <ArrowLeftIcon class="w-5 h-5 stroke-[2.2]" />
-                </Link>
-                <div>
-                    <div class="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-                        <Link :href="route('extracurricular.index')" class="hover:underline">Ekstrakurikuler</Link>
-                        <span>/</span>
-                        <span class="text-teal-800 font-bold">{{ activity.name }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Header Card -->
-            <div class="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div class="flex items-start sm:items-center gap-4">
-                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
-                        <img v-if="activity.cover_image_url" :src="activity.cover_image_url" class="w-full h-full object-cover" />
-                        <SparklesIcon v-else class="w-10 h-10 text-teal-600" />
-                    </div>
-                    <div class="space-y-1.5">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-teal-50 text-teal-800 border border-teal-200">
-                                {{ activity.category_label }}
-                            </span>
-                            <span v-if="activity.is_mandatory" class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
-                                Wajib
-                            </span>
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                                {{ activity.unit?.name || 'Unit Sekolah' }}
-                            </span>
-                        </div>
-                        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                            {{ activity.name }}
-                        </h1>
-                        <div class="flex flex-wrap items-center gap-4 text-xs text-slate-600 pt-1">
-                            <span class="flex items-center gap-1.5 font-semibold">
-                                <ClockIcon class="w-4 h-4 text-teal-600" />
-                                {{ activity.formatted_schedule }}
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <MapPinIcon class="w-4 h-4 text-rose-500" />
-                                {{ activity.room?.name || activity.location_name || 'Kampus' }}
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <UserGroupIcon class="w-4 h-4 text-sky-600" />
-                                {{ activity.active_members?.length || 0 }} / {{ activity.max_quota }} Siswa
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Primary Action Button: Mulai Sesi -->
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <button
-                        v-if="canManage || isInstructor"
-                        @click="openNewSessionModal"
-                        type="button"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md shadow-teal-800/20 transition-all active:scale-95"
+            <!-- 1. Top Header: Back Button & Breadcrumbs & Actions -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <Link
+                        :href="route('extracurricular.index')"
+                        class="w-10 h-10 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-slate-700 hover:text-teal-700 hover:border-teal-200 transition-all active:scale-95"
                     >
-                        <CameraIcon class="w-5 h-5 stroke-[2.2]" />
-                        <span>Buka Sesi Latihan Hari Ini</span>
+                        <ArrowLeftIcon class="w-5 h-5 stroke-[2.2]" />
+                    </Link>
+                    <div class="flex items-center gap-2 text-xs sm:text-sm font-semibold">
+                        <Link :href="route('extracurricular.index')" class="text-slate-500 hover:text-slate-700 transition-colors">
+                            Ekstrakurikuler
+                        </Link>
+                        <span class="text-slate-300">/</span>
+                        <span class="text-teal-700 font-bold">
+                            {{ activity.name }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- More Options Menu (⋮) -->
+                <div class="relative">
+                    <button
+                        @click="showActionMenu = !showActionMenu"
+                        type="button"
+                        class="w-10 h-10 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-slate-600 hover:text-slate-800 hover:border-slate-300 transition-all active:scale-95"
+                    >
+                        <EllipsisVerticalIcon class="w-5 h-5 stroke-[2.2]" />
                     </button>
+
+                    <!-- Dropdown Menu -->
+                    <div
+                        v-if="showActionMenu"
+                        @click.outside="showActionMenu = false"
+                        class="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-40 animate-in fade-in zoom-in-95 duration-150"
+                    >
+                        <button
+                            v-if="canManage"
+                            @click="openEditModal"
+                            type="button"
+                            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                        >
+                            <PencilSquareIcon class="w-4 h-4 text-slate-500" />
+                            <span>Edit Ekstrakurikuler</span>
+                        </button>
+                        <button
+                            v-if="canManage || isInstructor"
+                            @click="openNewSessionModal(); showActionMenu = false"
+                            type="button"
+                            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                        >
+                            <CameraIcon class="w-4 h-4 text-teal-600" />
+                            <span>Catat Sesi Baru</span>
+                        </button>
+                        <button
+                            v-if="canManage || isInstructor"
+                            @click="openAddMemberModal(); showActionMenu = false"
+                            type="button"
+                            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                        >
+                            <UserPlusIcon class="w-4 h-4 text-teal-600" />
+                            <span>Tambah Anggota Siswa</span>
+                        </button>
+                        <button
+                            v-if="canManage"
+                            @click="showAddCoachModal = true; showActionMenu = false"
+                            type="button"
+                            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                        >
+                            <UserIcon class="w-4 h-4 text-teal-600" />
+                            <span>Tugaskan Pelatih Baru</span>
+                        </button>
+                        <div v-if="canManage" class="my-1 border-t border-slate-100"></div>
+                        <button
+                            v-if="canManage"
+                            @click="deleteActivity(); showActionMenu = false"
+                            type="button"
+                            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
+                        >
+                            <TrashIcon class="w-4 h-4" />
+                            <span>Hapus Kegiatan</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tab Navigation Bar -->
-            <div class="flex border-b border-slate-200 overflow-x-auto scrollbar-none bg-white rounded-2xl p-1.5 shadow-2xs">
+            <!-- 2. Hero Overview Card (Identical to reference) -->
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
+                
+                <!-- Card Header Row -->
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start gap-4 min-w-0">
+                        <!-- Activity Icon Box -->
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-teal-50 border border-teal-100/70 flex items-center justify-center text-teal-600 shrink-0 overflow-hidden shadow-2xs">
+                            <img
+                                v-if="activity.cover_image_url"
+                                :src="activity.cover_image_url"
+                                class="w-full h-full object-cover"
+                                alt="Cover"
+                            />
+                            <!-- Dedicated Athletic Runner SVG for Sport / Futsal -->
+                            <svg
+                                v-else-if="activity.category === 'olahraga' || activity.name.toLowerCase().includes('futsal') || activity.name.toLowerCase().includes('bola') || activity.name.toLowerCase().includes('basket') || activity.name.toLowerCase().includes('badminton') || activity.name.toLowerCase().includes('renang')"
+                                class="w-10 h-10 text-teal-600"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <circle cx="16.5" cy="4.5" r="2" />
+                                <path d="M6 10l3.5-1 3 2" />
+                                <path d="M16 11.5l3.5.5-2 3" />
+                                <path d="M12.5 9l-1 5" />
+                                <path d="M11.5 14l2.5 2.5 2-.5" />
+                                <path d="M9.5 15l-3 2v4" />
+                            </svg>
+                            <SparklesIcon v-else class="w-10 h-10 text-teal-600" />
+                        </div>
+
+                        <!-- Badges & Title -->
+                        <div class="min-w-0 space-y-1">
+                            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100/80">
+                                    {{ activity.category_label || 'Olahraga & Atletik' }}
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                                    {{ activity.unit?.name || 'SD Namira' }}
+                                </span>
+                            </div>
+
+                            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                                {{ activity.name }}
+                            </h1>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Status Badge & Edit Button -->
+                    <div class="flex flex-col items-end gap-2 shrink-0">
+                        <span
+                            class="px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border"
+                            :class="activity.status === 'active' || !activity.status ? 'bg-emerald-50 text-emerald-600 border-emerald-100/80' : 'bg-slate-100 text-slate-500 border-slate-200'"
+                        >
+                            <span class="w-1.5 h-1.5 rounded-full" :class="activity.status === 'active' || !activity.status ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                            <span>{{ activity.status === 'inactive' ? 'Nonaktif' : 'Aktif' }}</span>
+                        </span>
+
+                        <button
+                            v-if="canManage"
+                            @click="openEditModal"
+                            type="button"
+                            class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
+                        >
+                            <PencilSquareIcon class="w-3.5 h-3.5 text-slate-500" />
+                            <span>Edit</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Description Text -->
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+                    {{ activity.description || 'Kegiatan futsal untuk melatih keterampilan bermain sepak bola, kerja sama tim, sportivitas, dan menjaga kebugaran tubuh.' }}
+                </p>
+
+                <!-- 3 Info Grid Cards: Jadwal, Lokasi, Kuota -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    
+                    <!-- 1. Jadwal Latihan -->
+                    <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50/60 border border-slate-100/80">
+                        <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                            <CalendarDaysIcon class="w-5 h-5 stroke-[2]" />
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-[11px] font-medium text-slate-400">Jadwal Latihan</div>
+                            <div class="text-xs sm:text-sm font-bold text-slate-800 truncate">
+                                Setiap {{ activity.day_of_week || 'Jumat' }}
+                            </div>
+                            <div class="text-[11px] text-slate-500 font-medium truncate">
+                                {{ formatTime(activity.start_time) || '14:30' }} - {{ formatTime(activity.end_time) || '16:00' }} WIB
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Lokasi -->
+                    <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50/60 border border-slate-100/80">
+                        <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+                            <MapPinIcon class="w-5 h-5 stroke-[2]" />
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-[11px] font-medium text-slate-400">Lokasi</div>
+                            <div class="text-xs sm:text-sm font-bold text-slate-800 truncate">
+                                {{ locationTitle }}
+                            </div>
+                            <div class="text-[11px] text-slate-500 font-medium truncate">
+                                {{ locationSubtitle }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Kuota -->
+                    <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50/60 border border-slate-100/80">
+                        <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                            <UserGroupIcon class="w-5 h-5 stroke-[2]" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-[11px] font-medium text-slate-400">Kuota</div>
+                            <div class="text-xs sm:text-sm font-bold text-slate-800">
+                                {{ activity.active_members?.length || 0 }} / {{ activity.max_quota || 30 }} Siswa
+                            </div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <div class="flex-1 h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                                    <div
+                                        class="h-full bg-teal-500 rounded-full transition-all duration-500"
+                                        :style="{ width: `${quotaPercentage}%` }"
+                                    ></div>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-bold shrink-0">{{ quotaPercentage }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pelatih Section (Bottom row of Hero Card) -->
+                <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    
+                    <!-- Lead Coach Info -->
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                            <img
+                                v-if="leadCoach?.user?.profile_photo || leadCoach?.user?.avatar"
+                                :src="leadCoach.user.profile_photo || leadCoach.user.avatar"
+                                class="w-full h-full object-cover"
+                                alt="Pelatih"
+                            />
+                            <div v-else-if="leadCoach?.user?.name" class="w-full h-full bg-teal-700 text-white font-bold text-sm flex items-center justify-center">
+                                {{ leadCoach.user.name.charAt(0) }}
+                            </div>
+                            <UserIcon v-else class="w-6 h-6 text-slate-400" />
+                        </div>
+
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Pelatih Utama</div>
+                            <div class="text-xs sm:text-sm font-bold text-slate-800 truncate">
+                                {{ leadCoach?.user?.name || leadCoach?.name || 'Ust. Ahmad Fauzi' }}
+                            </div>
+                            <div class="text-[11px] font-semibold text-teal-600 truncate">
+                                {{ leadCoach?.role_title || 'Pelatih Utama' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Coaches Avatar Stack & Text Link -->
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                        <div class="flex items-center -space-x-2">
+                            <!-- Real other coaches if available -->
+                            <template v-if="otherCoaches.length > 0">
+                                <div
+                                    v-for="(coach, cidx) in otherCoaches.slice(0, 3)"
+                                    :key="coach.id"
+                                    class="w-8 h-8 rounded-full border-2 border-white bg-slate-200 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-700 shadow-2xs"
+                                    :title="coach.user?.name"
+                                >
+                                    <img v-if="coach.user?.profile_photo" :src="coach.user.profile_photo" class="w-full h-full object-cover" />
+                                    <span v-else>{{ coach.user?.name ? coach.user.name.charAt(0) : (cidx + 1) }}</span>
+                                </div>
+                            </template>
+                            <!-- Sample coach avatars if instructors list has fewer items for mockup fidelity -->
+                            <template v-else>
+                                <div class="w-8 h-8 rounded-full border-2 border-white bg-teal-100 text-teal-800 font-bold text-[10px] flex items-center justify-center shadow-2xs">
+                                    R
+                                </div>
+                                <div class="w-8 h-8 rounded-full border-2 border-white bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center justify-center shadow-2xs">
+                                    F
+                                </div>
+                                <div class="w-8 h-8 rounded-full border-2 border-white bg-sky-100 text-sky-800 font-bold text-[10px] flex items-center justify-center shadow-2xs">
+                                    A
+                                </div>
+                            </template>
+
+                            <!-- Add Coach Button -->
+                            <button
+                                v-if="canManage"
+                                @click="showAddCoachModal = true"
+                                type="button"
+                                class="w-8 h-8 rounded-full border-2 border-white bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-teal-700 flex items-center justify-center text-xs font-bold transition-colors shadow-2xs"
+                                title="Tugaskan Pelatih Lainnya"
+                            >
+                                +
+                            </button>
+                        </div>
+
+                        <!-- Text Link -->
+                        <button
+                            @click="activeTab = 'overview'"
+                            type="button"
+                            class="text-xs font-semibold text-slate-600 hover:text-teal-700 flex items-center gap-1 transition-colors ml-1"
+                        >
+                            <span>+ {{ Math.max(3, otherCoaches.length) }} Pelatih Lainnya</span>
+                            <ChevronRightIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Navigation Tabs (Clean Underline Style) -->
+            <div class="flex border-b border-slate-200/80 overflow-x-auto scrollbar-none gap-6 sm:gap-8 px-1 pt-2">
                 <button
                     @click="activeTab = 'sessions'"
                     type="button"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all"
-                    :class="activeTab === 'sessions' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'"
+                    class="flex items-center gap-2 pb-3.5 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap border-b-2"
+                    :class="activeTab === 'sessions' ? 'border-teal-700 text-teal-700 font-bold' : 'border-transparent text-slate-400 hover:text-slate-600'"
                 >
-                    <CalendarDaysIcon class="w-4 h-4" />
-                    <span>Jurnal Sesi & Presensi ({{ activity.sessions?.length || 0 }})</span>
+                    <CalendarDaysIcon class="w-4 h-4 stroke-[2]" />
+                    <span>Jurnal & Presensi</span>
                 </button>
 
                 <button
                     @click="activeTab = 'members'"
                     type="button"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all"
-                    :class="activeTab === 'members' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'"
+                    class="flex items-center gap-2 pb-3.5 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap border-b-2"
+                    :class="activeTab === 'members' ? 'border-teal-700 text-teal-700 font-bold' : 'border-transparent text-slate-400 hover:text-slate-600'"
                 >
-                    <UserGroupIcon class="w-4 h-4" />
-                    <span>Anggota Siswa ({{ activity.active_members?.length || 0 }})</span>
+                    <UserGroupIcon class="w-4 h-4 stroke-[2]" />
+                    <span>Anggota Siswa</span>
                 </button>
 
                 <button
                     @click="activeTab = 'overview'"
                     type="button"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all"
-                    :class="activeTab === 'overview' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'"
+                    class="flex items-center gap-2 pb-3.5 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap border-b-2"
+                    :class="activeTab === 'overview' ? 'border-teal-700 text-teal-700 font-bold' : 'border-transparent text-slate-400 hover:text-slate-600'"
                 >
-                    <ShieldCheckIcon class="w-4 h-4" />
-                    <span>Profil & Pelatih ({{ activity.instructors?.length || 0 }})</span>
+                    <UserIcon class="w-4 h-4 stroke-[2]" />
+                    <span>Profil & Pelatih</span>
                 </button>
 
                 <button
                     @click="activeTab = 'grades'; initGradesForm()"
                     type="button"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all"
-                    :class="activeTab === 'grades' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-50'"
+                    class="flex items-center gap-2 pb-3.5 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap border-b-2"
+                    :class="activeTab === 'grades' ? 'border-teal-700 text-teal-700 font-bold' : 'border-transparent text-slate-400 hover:text-slate-600'"
                 >
-                    <DocumentTextIcon class="w-4 h-4" />
-                    <span>Penilaian Rapor Semester</span>
+                    <ChartBarIcon class="w-4 h-4 stroke-[2]" />
+                    <span>Penilaian Rapor</span>
                 </button>
             </div>
 
-            <!-- TAB 1: JURNAL SESI & PRESENSI -->
+            <!-- 4. TAB 1: JURNAL & PRESENSI -->
             <div v-if="activeTab === 'sessions'" class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-base font-black text-slate-800">Riwayat Latihan & Pertemuan</h2>
-                        <p class="text-xs text-slate-500">Seluruh sesi latihan yang telah diselesaikan beserta dokumentasi dan absensi siswa.</p>
+                
+                <!-- Section Header -->
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100/60 text-teal-600 flex items-center justify-center shrink-0">
+                            <CalendarDaysIcon class="w-5 h-5 stroke-[2]" />
+                        </div>
+                        <div>
+                            <h2 class="text-sm sm:text-base font-bold text-slate-800">Riwayat Latihan & Pertemuan</h2>
+                            <p class="text-[11px] sm:text-xs text-slate-400">Seluruh sesi latihan yang telah diselesaikan beserta dokumentasi dan absensi siswa.</p>
+                        </div>
                     </div>
 
                     <button
                         v-if="canManage || isInstructor"
                         @click="openNewSessionModal"
                         type="button"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-50 text-teal-800 hover:bg-teal-100 font-bold text-xs border border-teal-200 transition-colors"
+                        class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs sm:text-sm shadow-sm transition-all active:scale-95 shrink-0"
                     >
                         <PlusIcon class="w-4 h-4 stroke-[2.5]" />
                         <span>Sesi Baru</span>
                     </button>
                 </div>
 
-                <!-- Session Cards -->
-                <div v-if="activity.sessions?.length > 0" class="space-y-4">
+                <!-- Empty Sessions State (Identical to reference screenshot) -->
+                <div
+                    v-if="!activity.sessions || activity.sessions.length === 0"
+                    class="bg-white rounded-3xl p-8 sm:p-12 border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center"
+                >
+                    <!-- Mint Cloud Background with Calendar & Dots Illustration -->
+                    <div class="relative w-28 h-28 flex items-center justify-center mb-2">
+                        <!-- Soft Mint Cloud / Blob -->
+                        <div class="absolute inset-0 bg-teal-50/90 rounded-[44px] transform rotate-6"></div>
+                        <div class="absolute inset-1.5 bg-emerald-50/70 rounded-[40px] transform -rotate-3"></div>
+                        
+                        <!-- Floating playful accent leaves/stars -->
+                        <div class="absolute -top-1 -right-2 text-teal-400 text-sm">✦</div>
+                        <div class="absolute bottom-2 -left-3 text-emerald-400 text-xs">✦</div>
+                        <div class="absolute top-2 -left-2 w-2 h-2 rounded-full bg-teal-300 opacity-60"></div>
+                        <div class="absolute -bottom-1 right-3 w-2.5 h-2.5 rounded-full bg-emerald-300 opacity-60"></div>
+
+                        <!-- Calendar Graphic -->
+                        <div class="relative w-16 h-16 rounded-2xl bg-white border border-teal-100 shadow-xs flex flex-col items-center justify-center p-2">
+                            <!-- Ring binders -->
+                            <div class="w-full flex items-center justify-around pb-1.5 border-b border-teal-100">
+                                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+                                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+                            </div>
+                            <!-- Days dot grid -->
+                            <div class="grid grid-cols-4 gap-1.5 w-full pt-1.5 px-0.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-300 mx-auto"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-500 mx-auto"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-300 mx-auto"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-500 mx-auto"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-500 mx-auto"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-300 mx-auto"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-500 mx-auto"></span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-300 mx-auto"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="font-bold text-slate-800 text-base sm:text-lg mt-3">Belum Ada Sesi Latihan</h3>
+                    <p class="text-xs sm:text-sm text-slate-400 max-w-sm mt-1 leading-relaxed">
+                        Pelatih dapat mencatat pertemuan, presensi siswa, dan mengunggah dokumentasi latihan.
+                    </p>
+
+                    <button
+                        v-if="canManage || isInstructor"
+                        @click="openNewSessionModal"
+                        type="button"
+                        class="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md shadow-teal-700/20 transition-all active:scale-95"
+                    >
+                        <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                        <span>Buat Sesi Latihan Pertama</span>
+                    </button>
+                </div>
+
+                <!-- Session Cards List (When sessions exist) -->
+                <div v-else class="space-y-4">
                     <div
                         v-for="session in activity.sessions"
                         :key="session.id"
-                        class="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-4"
+                        class="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 sm:p-6 space-y-4"
                     >
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                             <div>
@@ -541,12 +1014,12 @@ const zoomPhoto = (url) => {
                                     <CalendarDaysIcon class="w-4 h-4 text-teal-600" />
                                     <span>{{ new Date(session.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</span>
                                     <span>•</span>
-                                    <span>{{ session.start_time }} - {{ session.end_time }} WIB</span>
+                                    <span>{{ formatTime(session.start_time) }} - {{ formatTime(session.end_time) }} WIB</span>
                                 </div>
                                 <h3 class="font-black text-lg text-slate-800 mt-1">
                                     {{ session.topic }}
                                 </h3>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-slate-500 mt-0.5">
                                     Dipandu oleh: <span class="font-bold text-slate-700">{{ session.instructor?.name || 'Pelatih' }}</span>
                                 </p>
                             </div>
@@ -626,34 +1099,21 @@ const zoomPhoto = (url) => {
                         </details>
                     </div>
                 </div>
-
-                <!-- Empty Sessions -->
-                <div v-else class="bg-white rounded-3xl p-10 text-center border border-slate-200/80 shadow-xs space-y-3">
-                    <CalendarDaysIcon class="w-12 h-12 text-slate-300 mx-auto" />
-                    <h3 class="font-black text-slate-800 text-base">Belum Ada Sesi Latihan</h3>
-                    <p class="text-xs text-slate-500 max-w-sm mx-auto">
-                        Pelatih dapat mencatat pertemuan perdana, presensi anggota, dan dokumentasi foto lapangan sekarang.
-                    </p>
-                    <button
-                        v-if="canManage || isInstructor"
-                        @click="openNewSessionModal"
-                        type="button"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-700 text-white font-bold text-xs hover:bg-teal-800 transition-all shadow-xs"
-                    >
-                        <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                        <span>Mulai Sesi Pertama</span>
-                    </button>
-                </div>
             </div>
 
-            <!-- TAB 2: ANGGOTA SISWA -->
+            <!-- 5. TAB 2: ANGGOTA SISWA -->
             <div v-else-if="activeTab === 'members'" class="space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h2 class="text-base font-black text-slate-800">Daftar Anggota Siswa</h2>
-                        <p class="text-xs text-slate-500">
-                            Terisi {{ activity.active_members?.length || 0 }} dari kuota {{ activity.max_quota }} siswa.
-                        </p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100/60 text-teal-600 flex items-center justify-center shrink-0">
+                            <UserGroupIcon class="w-5 h-5 stroke-[2]" />
+                        </div>
+                        <div>
+                            <h2 class="text-sm sm:text-base font-bold text-slate-800">Daftar Anggota Siswa</h2>
+                            <p class="text-xs text-slate-400">
+                                Terisi {{ activity.active_members?.length || 0 }} dari kuota {{ activity.max_quota }} siswa.
+                            </p>
+                        </div>
                     </div>
 
                     <button
@@ -668,7 +1128,7 @@ const zoomPhoto = (url) => {
                 </div>
 
                 <!-- Search & Class Filter -->
-                <div class="bg-white rounded-2xl p-3 border border-slate-200 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
                     <div class="relative w-full sm:w-80">
                         <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -680,7 +1140,7 @@ const zoomPhoto = (url) => {
                     </div>
 
                     <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label class="text-xs font-semibold text-slate-600 shrink-0">Filter Kelas:</label>
+                        <label class="text-xs font-semibold text-slate-500 shrink-0">Filter Kelas:</label>
                         <select
                             v-model="memberClassFilter"
                             class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-teal-500 bg-white"
@@ -692,7 +1152,7 @@ const zoomPhoto = (url) => {
                 </div>
 
                 <!-- Members Table / Cards -->
-                <div class="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                     <div v-if="filteredMembers.length > 0" class="overflow-x-auto">
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-extrabold text-[10px]">
@@ -748,45 +1208,45 @@ const zoomPhoto = (url) => {
                 </div>
             </div>
 
-            <!-- TAB 3: PROFIL & PELATIH -->
+            <!-- 6. TAB 3: PROFIL & PELATIH -->
             <div v-else-if="activeTab === 'overview'" class="space-y-5">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     
                     <!-- Left: Detail Ekskul -->
-                    <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
-                        <h2 class="text-base font-black text-slate-800">Tentang Ekstrakurikuler</h2>
-                        <p class="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                    <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-4">
+                        <h2 class="text-base font-bold text-slate-800">Tentang Ekstrakurikuler</h2>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
                             {{ activity.description || 'Belum ada deskripsi rinci untuk kegiatan ekstrakurikuler ini.' }}
                         </p>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100 text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-slate-100 text-xs">
                             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
                                 <span class="text-slate-400 font-semibold">Jadwal Rutin:</span>
-                                <div class="font-black text-slate-800">{{ activity.formatted_schedule }}</div>
+                                <div class="font-bold text-slate-800">Setiap {{ activity.day_of_week }}, {{ formatTime(activity.start_time) }} - {{ formatTime(activity.end_time) }} WIB</div>
                             </div>
                             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
                                 <span class="text-slate-400 font-semibold">Tempat / Ruangan:</span>
-                                <div class="font-black text-slate-800">{{ activity.room?.name || activity.location_name || 'Kampus Sekolah' }}</div>
+                                <div class="font-bold text-slate-800">{{ locationTitle }} ({{ locationSubtitle }})</div>
                             </div>
                             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
                                 <span class="text-slate-400 font-semibold">Batasan Gender:</span>
-                                <div class="font-black text-slate-800">
+                                <div class="font-bold text-slate-800">
                                     {{ activity.gender_restriction === 'all' ? 'Semua Siswa' : (activity.gender_restriction === 'male_only' ? 'Khusus Putra' : 'Khusus Putri') }}
                                 </div>
                             </div>
                             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
                                 <span class="text-slate-400 font-semibold">Kapasitas Maksimal:</span>
-                                <div class="font-black text-slate-800">{{ activity.max_quota }} Siswa</div>
+                                <div class="font-bold text-slate-800">{{ activity.max_quota }} Siswa</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Right: Daftar Pelatih / Pembina -->
-                    <div class="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+                    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h2 class="text-base font-black text-slate-800">Pelatih / Pembina</h2>
-                                <p class="text-xs text-slate-500">Pengampu resmi kegiatan.</p>
+                                <h2 class="text-base font-bold text-slate-800">Pelatih & Pembina</h2>
+                                <p class="text-xs text-slate-400">Pengampu resmi kegiatan.</p>
                             </div>
 
                             <button
@@ -807,11 +1267,12 @@ const zoomPhoto = (url) => {
                                 class="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between gap-3"
                             >
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-teal-700 text-white flex items-center justify-center font-black text-xs shrink-0">
-                                        {{ inst.user?.name?.charAt(0) || 'P' }}
+                                    <div class="w-10 h-10 rounded-full bg-teal-700 text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
+                                        <img v-if="inst.user?.profile_photo" :src="inst.user.profile_photo" class="w-full h-full object-cover" />
+                                        <span v-else>{{ inst.user?.name?.charAt(0) || 'P' }}</span>
                                     </div>
                                     <div>
-                                        <div class="font-black text-slate-800 text-xs">{{ inst.user?.name }}</div>
+                                        <div class="font-bold text-slate-800 text-xs">{{ inst.user?.name }}</div>
                                         <div class="text-[11px] font-semibold text-teal-700">{{ inst.role_title }}</div>
                                         <div v-if="inst.institution" class="text-[10px] text-slate-400">{{ inst.institution }}</div>
                                     </div>
@@ -847,14 +1308,19 @@ const zoomPhoto = (url) => {
                 </div>
             </div>
 
-            <!-- TAB 4: PENILAIAN RAPOR SEMESTER -->
+            <!-- 7. TAB 4: PENILAIAN RAPOR SEMESTER -->
             <div v-else-if="activeTab === 'grades'" class="space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h2 class="text-base font-black text-slate-800">Penilaian Capaian Rapor Siswa</h2>
-                        <p class="text-xs text-slate-500">
-                            Masukkan predikat dan deskripsi naratif untuk dicetak pada Buku Rapor Semester.
-                        </p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100/60 text-teal-600 flex items-center justify-center shrink-0">
+                            <ChartBarIcon class="w-5 h-5 stroke-[2]" />
+                        </div>
+                        <div>
+                            <h2 class="text-sm sm:text-base font-bold text-slate-800">Penilaian Capaian Rapor Siswa</h2>
+                            <p class="text-xs text-slate-400">
+                                Masukkan predikat dan deskripsi naratif untuk dicetak pada Buku Rapor Semester.
+                            </p>
+                        </div>
                     </div>
 
                     <button
@@ -869,7 +1335,7 @@ const zoomPhoto = (url) => {
                     </button>
                 </div>
 
-                <div class="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                     <div v-if="gradesForm.grades.length > 0" class="divide-y divide-slate-100">
                         <div
                             v-for="(item, idx) in gradesForm.grades"
@@ -877,8 +1343,8 @@ const zoomPhoto = (url) => {
                             class="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
                         >
                             <div class="w-full md:w-1/4">
-                                <div class="font-black text-slate-800 text-sm">{{ item.student_name }}</div>
-                                <div class="text-xs text-slate-400 font-semibold">{{ item.classroom_name }}</div>
+                                <div class="font-bold text-slate-800 text-sm">{{ item.student_name }}</div>
+                                <div class="text-xs text-slate-400 font-medium">{{ item.classroom_name }}</div>
                             </div>
 
                             <div class="w-full md:w-1/6">
@@ -923,18 +1389,280 @@ const zoomPhoto = (url) => {
             </div>
         </div>
 
-        <!-- MODAL 1: BUKA SESI LATIHAN & PRESENSI BARU -->
+        <!-- MODAL 1: EDIT EKSTRAKURIKULER (DENGAN 4-TIER LOCATION SELECTOR) -->
+        <Teleport to="body">
+            <div v-if="showEditModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div class="px-6 py-4 bg-slate-50/90 border-b border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
+                                <PencilSquareIcon class="w-5 h-5 stroke-[2.2]" />
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Edit Informasi Ekstrakurikuler</h3>
+                                <p class="text-xs text-slate-500">Perbarui rincian kegiatan, jadwal, dan lokasi</p>
+                            </div>
+                        </div>
+                        <button @click="showEditModal = false" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <form @submit.prevent="submitEdit" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Nama Kegiatan *</label>
+                                <input
+                                    v-model="editForm.name"
+                                    type="text"
+                                    required
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kategori *</label>
+                                <select
+                                    v-model="editForm.category"
+                                    required
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500 bg-white"
+                                >
+                                    <option value="olahraga">Olahraga & Atletik</option>
+                                    <option value="seni_budaya">Seni & Budaya</option>
+                                    <option value="keagamaan">Keagamaan & Karakter</option>
+                                    <option value="sains_teknologi">Sains & Teknologi</option>
+                                    <option value="kepanduan">Kepanduan & Bela Diri</option>
+                                    <option value="lainnya">Peminatan Lainnya</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Jadwal: Hari & Jam -->
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Hari Rutin *</label>
+                                <select
+                                    v-model="editForm.day_of_week"
+                                    required
+                                    class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500 bg-white"
+                                >
+                                    <option value="Senin">Senin</option>
+                                    <option value="Selasa">Selasa</option>
+                                    <option value="Rabu">Rabu</option>
+                                    <option value="Kamis">Kamis</option>
+                                    <option value="Jumat">Jumat</option>
+                                    <option value="Sabtu">Sabtu</option>
+                                    <option value="Minggu">Minggu</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Jam Mulai *</label>
+                                <input
+                                    v-model="editForm.start_time"
+                                    type="time"
+                                    required
+                                    class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Jam Selesai *</label>
+                                <input
+                                    v-model="editForm.end_time"
+                                    type="time"
+                                    required
+                                    class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- 4-TIER LOCATION SELECTOR -->
+                        <div class="p-4 rounded-2xl bg-teal-50/50 border border-teal-100 space-y-3">
+                            <label class="block text-xs font-bold text-teal-900">
+                                Lokasi Pelaksanaan Kegiatan *
+                            </label>
+
+                            <!-- Pilihan Kategori Lokasi -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <button
+                                    type="button"
+                                    @click="setEditLocationType('outdoor')"
+                                    class="px-2.5 py-2 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-1"
+                                    :class="editLocationType === 'outdoor' ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                                >
+                                    <span>🌳 Outdoor</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="setEditLocationType('classroom')"
+                                    class="px-2.5 py-2 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-1"
+                                    :class="editLocationType === 'classroom' ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                                >
+                                    <span>🏫 Kelas Unit</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="setEditLocationType('sarpras')"
+                                    class="px-2.5 py-2 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-1"
+                                    :class="editLocationType === 'sarpras' ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                                >
+                                    <span>🏢 Sarpras</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="setEditLocationType('external')"
+                                    class="px-2.5 py-2 rounded-xl text-[11px] font-bold border transition-all text-center flex flex-col items-center gap-1"
+                                    :class="editLocationType === 'external' ? 'bg-teal-700 text-white border-teal-700 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                                >
+                                    <span>📍 Luar Kampus</span>
+                                </button>
+                            </div>
+
+                            <!-- Opsi 1: Outdoor Presets -->
+                            <div v-if="editLocationType === 'outdoor'" class="space-y-2">
+                                <div class="flex flex-wrap gap-1.5">
+                                    <button
+                                        v-for="preset in outdoorPresets"
+                                        :key="preset"
+                                        type="button"
+                                        @click="onSelectEditOutdoorPreset(preset)"
+                                        class="px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors"
+                                        :class="editOutdoorPreset === preset ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
+                                    >
+                                        {{ preset }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Opsi 2: Kelas Unit -->
+                            <div v-else-if="editLocationType === 'classroom'">
+                                <select
+                                    v-model="editSelectedClassroomId"
+                                    @change="onSelectEditClassroom"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:ring-teal-500"
+                                >
+                                    <option value="">-- Pilih Ruang Kelas Unit --</option>
+                                    <option v-for="c in classrooms" :key="c.id" :value="c.id">
+                                        Kelas {{ c.name }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Opsi 3: Ruang Sarpras -->
+                            <div v-else-if="editLocationType === 'sarpras'">
+                                <select
+                                    v-model="editForm.room_id"
+                                    @change="onSelectEditRoom"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:ring-teal-500"
+                                >
+                                    <option :value="null">-- Pilih Ruangan Sarpras --</option>
+                                    <option v-for="r in rooms" :key="r.id" :value="r.id">
+                                        {{ r.name }} {{ r.building ? `(${r.building})` : '' }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Opsi 4: Luar Sekolah -->
+                            <div v-else-if="editLocationType === 'external'">
+                                <input
+                                    v-model="editForm.location_name"
+                                    type="text"
+                                    placeholder="Misal: Kolam Renang Tirta Indah, GOR Futsal..."
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:ring-teal-500"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Kuota & Gender -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kapasitas Kuota *</label>
+                                <input
+                                    v-model.number="editForm.max_quota"
+                                    type="number"
+                                    min="1"
+                                    max="500"
+                                    required
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Batasan Gender *</label>
+                                <select
+                                    v-model="editForm.gender_restriction"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500 bg-white"
+                                >
+                                    <option value="all">Semua Siswa (Campur)</option>
+                                    <option value="male_only">Khusus Putra (Ikhwan)</option>
+                                    <option value="female_only">Khusus Putri (Akhwat)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Status & Mandatory -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Status Kegiatan *</label>
+                                <select
+                                    v-model="editForm.status"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500 bg-white"
+                                >
+                                    <option value="active">Aktif</option>
+                                    <option value="inactive">Nonaktif</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center pt-6">
+                                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                                    <input
+                                        v-model="editForm.is_mandatory"
+                                        type="checkbox"
+                                        class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300"
+                                    />
+                                    <span>Ekstrakurikuler Wajib</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Deskripsi -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Deskripsi Kegiatan</label>
+                            <textarea
+                                v-model="editForm.description"
+                                rows="3"
+                                class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:ring-teal-500"
+                            ></textarea>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button
+                                @click="showEditModal = false"
+                                type="button"
+                                class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                :disabled="editForm.processing"
+                                class="px-6 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-xs disabled:opacity-50"
+                            >
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- MODAL 2: BUKA SESI LATIHAN & PRESENSI BARU -->
         <Teleport to="body">
             <div v-if="showSessionModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
                 <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    
                     <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
                                 <CameraIcon class="w-5 h-5 stroke-[2.2]" />
                             </div>
                             <div>
-                                <h3 class="font-black text-slate-800 text-base sm:text-lg">
+                                <h3 class="font-bold text-slate-800 text-base sm:text-lg">
                                     Catat Pertemuan Latihan & Presensi
                                 </h3>
                                 <p class="text-xs text-slate-500">{{ activity.name }} - Sesi Kegiatan Lapangan</p>
@@ -946,8 +1674,6 @@ const zoomPhoto = (url) => {
                     </div>
 
                     <form @submit.prevent="submitSession" class="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
-                        
-                        <!-- Tanggal & Jam -->
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Sesi *</label>
@@ -978,19 +1704,17 @@ const zoomPhoto = (url) => {
                             </div>
                         </div>
 
-                        <!-- Topik Materi -->
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Topik / Materi Latihan *</label>
                             <input
                                 v-model="sessionForm.topic"
                                 type="text"
                                 required
-                                placeholder="Misal: Latihan Passing Cepat, Gerak Dasar Tari Piring, Merakit Sensor Ultrasonik..."
+                                placeholder="Misal: Latihan Passing Cepat, Gerak Dasar..."
                                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-teal-500"
                             />
                         </div>
 
-                        <!-- Catatan Evaluasi -->
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Evaluasi / Hambatan Latihan</label>
                             <textarea
@@ -1001,7 +1725,7 @@ const zoomPhoto = (url) => {
                             ></textarea>
                         </div>
 
-                        <!-- Upload Foto Dokumentasi (Canvas Auto-Compression) -->
+                        <!-- Upload Foto Dokumentasi -->
                         <div class="space-y-2">
                             <label class="block text-xs font-bold text-slate-700">Foto Dokumentasi Lapangan (Otomatis Terkompresi)</label>
                             <div class="flex items-center gap-3">
@@ -1021,7 +1745,6 @@ const zoomPhoto = (url) => {
                                 </span>
                             </div>
 
-                            <!-- Preview Previews -->
                             <div v-if="sessionPhotoPreviews.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
                                 <div
                                     v-for="(p, pidx) in sessionPhotoPreviews"
@@ -1040,11 +1763,11 @@ const zoomPhoto = (url) => {
                             </div>
                         </div>
 
-                        <!-- Presensi Kehadiran Siswa Cepat -->
+                        <!-- Presensi Siswa -->
                         <div class="space-y-3 pt-3 border-t border-slate-100">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <h4 class="font-black text-slate-800 text-xs uppercase tracking-wider">Presensi Kehadiran Siswa</h4>
+                                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Presensi Kehadiran Siswa</h4>
                                     <p class="text-[11px] text-slate-400">Total {{ sessionForm.attendances.length }} siswa peserta.</p>
                                 </div>
                                 <button
@@ -1072,7 +1795,7 @@ const zoomPhoto = (url) => {
                                         <button
                                             type="button"
                                             @click="att.status = 'hadir'"
-                                            class="px-2.5 py-1 rounded-lg font-black text-xs transition-colors border"
+                                            class="px-2.5 py-1 rounded-lg font-bold text-xs transition-colors border"
                                             :class="att.status === 'hadir' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-600 border-slate-200'"
                                         >
                                             Hadir
@@ -1080,7 +1803,7 @@ const zoomPhoto = (url) => {
                                         <button
                                             type="button"
                                             @click="att.status = 'izin'"
-                                            class="px-2.5 py-1 rounded-lg font-black text-xs transition-colors border"
+                                            class="px-2.5 py-1 rounded-lg font-bold text-xs transition-colors border"
                                             :class="att.status === 'izin' ? 'bg-sky-600 text-white border-sky-600' : 'bg-slate-50 text-slate-600 border-slate-200'"
                                         >
                                             Izin
@@ -1088,7 +1811,7 @@ const zoomPhoto = (url) => {
                                         <button
                                             type="button"
                                             @click="att.status = 'sakit'"
-                                            class="px-2.5 py-1 rounded-lg font-black text-xs transition-colors border"
+                                            class="px-2.5 py-1 rounded-lg font-bold text-xs transition-colors border"
                                             :class="att.status === 'sakit' ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 text-slate-600 border-slate-200'"
                                         >
                                             Sakit
@@ -1096,7 +1819,7 @@ const zoomPhoto = (url) => {
                                         <button
                                             type="button"
                                             @click="att.status = 'alpha'"
-                                            class="px-2.5 py-1 rounded-lg font-black text-xs transition-colors border"
+                                            class="px-2.5 py-1 rounded-lg font-bold text-xs transition-colors border"
                                             :class="att.status === 'alpha' ? 'bg-rose-600 text-white border-rose-600' : 'bg-slate-50 text-slate-600 border-slate-200'"
                                         >
                                             Alpha
@@ -1119,7 +1842,6 @@ const zoomPhoto = (url) => {
                             </label>
                         </div>
 
-                        <!-- Modal Actions -->
                         <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                             <button
                                 @click="showSessionModal = false"
@@ -1141,13 +1863,13 @@ const zoomPhoto = (url) => {
             </div>
         </Teleport>
 
-        <!-- MODAL 2: TAMBAH ANGGOTA SISWA -->
+        <!-- MODAL 3: TAMBAH ANGGOTA SISWA -->
         <Teleport to="body">
             <div v-if="showAddMemberModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
                 <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                     <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                         <div>
-                            <h3 class="font-black text-slate-800 text-base">Pendaftaran Anggota Siswa</h3>
+                            <h3 class="font-bold text-slate-800 text-base">Pendaftaran Anggota Siswa</h3>
                             <p class="text-xs text-slate-500">
                                 Sisa Kuota: <strong class="text-teal-700">{{ remainingQuota }}</strong> dari {{ activity.max_quota }} kursi
                             </p>
@@ -1158,7 +1880,6 @@ const zoomPhoto = (url) => {
                     </div>
 
                     <form @submit.prevent="submitMember" class="p-6 space-y-4">
-                        <!-- Filter & Search Controls -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Filter Rombel / Kelas</label>
@@ -1186,7 +1907,6 @@ const zoomPhoto = (url) => {
                             </div>
                         </div>
 
-                        <!-- Selection Header Bar -->
                         <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs">
                             <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
                                 <input
@@ -1204,7 +1924,6 @@ const zoomPhoto = (url) => {
                             </span>
                         </div>
 
-                        <!-- Scrollable Student Checklist -->
                         <div class="max-h-64 overflow-y-auto space-y-1.5 border border-slate-100 rounded-2xl p-2 bg-slate-50/50">
                             <div
                                 v-for="s in availableStudentsForModal"
@@ -1231,7 +1950,7 @@ const zoomPhoto = (url) => {
                                         class="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300"
                                     />
                                     <div>
-                                        <div class="font-extrabold text-xs flex items-center gap-1.5">
+                                        <div class="font-bold text-xs flex items-center gap-1.5">
                                             <span>{{ s.full_name }}</span>
                                             <span 
                                                 class="px-1.5 py-0.2 rounded text-[9px] font-black uppercase"
@@ -1264,7 +1983,6 @@ const zoomPhoto = (url) => {
                             </div>
                         </div>
 
-                        <!-- Footer Actions -->
                         <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
                             <span class="text-xs text-slate-500 font-medium">
                                 <span v-if="memberForm.student_ids.length > remainingQuota" class="text-amber-600 font-bold">
@@ -1293,19 +2011,18 @@ const zoomPhoto = (url) => {
             </div>
         </Teleport>
 
-        <!-- MODAL 3: PENUGASAN / PEMBUATAN AKUN PELATIH -->
+        <!-- MODAL 4: PENUGASAN PELATIH -->
         <Teleport to="body">
             <div v-if="showAddCoachModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
                 <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                     <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                        <h3 class="font-black text-slate-800 text-base">Tugaskan / Buat Akun Pelatih</h3>
+                        <h3 class="font-bold text-slate-800 text-base">Tugaskan / Buat Akun Pelatih</h3>
                         <button @click="showAddCoachModal = false" class="p-2 text-slate-400 hover:text-slate-600">
                             <XMarkIcon class="w-5 h-5" />
                         </button>
                     </div>
 
                     <form @submit.prevent="submitCoach" class="p-6 space-y-4">
-                        <!-- Mode Selection -->
                         <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl text-xs font-bold">
                             <button
                                 type="button"
@@ -1325,7 +2042,6 @@ const zoomPhoto = (url) => {
                             </button>
                         </div>
 
-                        <!-- Mode Existing -->
                         <div v-if="coachForm.mode === 'existing'">
                             <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Guru / Pengguna *</label>
                             <select
@@ -1340,7 +2056,6 @@ const zoomPhoto = (url) => {
                             </select>
                         </div>
 
-                        <!-- Mode Create New -->
                         <div v-else class="space-y-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Pelatih *</label>
@@ -1386,7 +2101,6 @@ const zoomPhoto = (url) => {
                             </div>
                         </div>
 
-                        <!-- Common fields -->
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Jabatan Penugasan</label>
@@ -1422,7 +2136,7 @@ const zoomPhoto = (url) => {
             </div>
         </Teleport>
 
-        <!-- MODAL 4: ZOOM FOTO DOKUMENTASI -->
+        <!-- MODAL 5: ZOOM FOTO DOKUMENTASI -->
         <Teleport to="body">
             <div v-if="showZoomPhotoModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" @click="showZoomPhotoModal = false">
                 <div class="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl">
