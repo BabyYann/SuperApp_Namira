@@ -327,8 +327,9 @@ class ExtracurricularController extends Controller
         }
         $rooms = $rooms->orderBy('name')->get(['id', 'name', 'building', 'floor']);
 
-        // Available teachers / coaches
-        $availableInstructors = $this->getAvailableInstructors();
+        // Available teachers / coaches in this specific unit
+        $availableInstructors = $this->getAvailableInstructors($targetUnitId);
+        $allInstructors = $isGlobalAdmin ? $this->getAvailableInstructors(null) : [];
 
         return Inertia::render('Extracurricular/Show', [
             'activity' => $activity,
@@ -336,7 +337,9 @@ class ExtracurricularController extends Controller
             'students' => $students,
             'rooms' => $rooms,
             'availableInstructors' => $availableInstructors,
+            'allInstructors' => $allInstructors,
             'canManage' => $canManage,
+            'isGlobalAdmin' => $isGlobalAdmin,
             'isInstructor' => $isInstructor,
         ]);
     }
@@ -434,15 +437,34 @@ class ExtracurricularController extends Controller
     }
 
     /**
-     * Get available instructors (teachers, coaches, school staff) across the school system.
+     * Get available instructors (teachers, coaches, school staff) filtered by unit if provided.
      */
-    private function getAvailableInstructors()
+    private function getAvailableInstructors(?int $unitId = null)
     {
-        return User::select('users.id', 'users.name', 'users.phone', 'roles.name as role_name')
+        $query = User::select('users.id', 'users.name', 'users.phone', 'roles.name as role_name', 'model_has_roles.team_id')
             ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-            ->whereIn('roles.name', ['pelatih_ekskul', 'teacher', 'staff_unit', 'guru', 'kepala_sekolah', 'koordinator_kesiswaan'])
-            ->distinct()
+            ->whereIn('roles.name', ['pelatih_ekskul', 'teacher', 'staff_unit', 'guru', 'kepala_sekolah', 'koordinator_kesiswaan']);
+
+        if ($unitId) {
+            $query->where(function ($q) use ($unitId) {
+                $q->where('model_has_roles.team_id', $unitId)
+                  ->orWhereExists(function ($sub) use ($unitId) {
+                      $sub->select(DB::raw(1))
+                          ->from('teachers')
+                          ->whereColumn('teachers.user_id', 'users.id')
+                          ->where('teachers.unit_id', $unitId);
+                  })
+                  ->orWhereExists(function ($sub) use ($unitId) {
+                      $sub->select(DB::raw(1))
+                          ->from('staff')
+                          ->whereColumn('staff.user_id', 'users.id')
+                          ->where('staff.unit_id', $unitId);
+                  });
+            });
+        }
+
+        return $query->distinct()
             ->orderBy('users.name')
             ->get()
             ->unique('id')
@@ -460,6 +482,7 @@ class ExtracurricularController extends Controller
                     'name' => $u->name,
                     'phone' => $u->phone,
                     'role_label' => $roleLabel,
+                    'team_id' => $u->team_id,
                     'label' => "{$u->name} ({$roleLabel})" . ($u->phone ? " - {$u->phone}" : ''),
                 ];
             })

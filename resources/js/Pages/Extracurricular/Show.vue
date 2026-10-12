@@ -40,8 +40,19 @@ const props = defineProps({
     students: { type: Array, default: () => [] },
     rooms: { type: Array, default: () => [] },
     availableInstructors: { type: Array, default: () => [] },
+    allInstructors: { type: Array, default: () => [] },
     canManage: { type: Boolean, default: false },
+    isGlobalAdmin: { type: Boolean, default: false },
     isInstructor: { type: Boolean, default: false },
+});
+
+// Toggle between unit-only coaches and all units
+const showAllUnitsCoaches = ref(false);
+const displayInstructors = computed(() => {
+    if (showAllUnitsCoaches.value && props.allInstructors && props.allInstructors.length > 0) {
+        return props.allInstructors;
+    }
+    return props.availableInstructors || [];
 });
 
 // Active Tab ('sessions' | 'members' | 'overview' | 'grades') - Default 'sessions' per reference
@@ -2109,18 +2120,35 @@ const zoomPhoto = (url) => {
                             </button>
                         </div>
 
-                        <div v-if="coachForm.mode === 'existing'">
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Guru / Pengguna *</label>
+                        <div v-if="coachForm.mode === 'existing'" class="space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-slate-700">
+                                    Pilih Guru / Pengguna ({{ activity.unit?.name || 'Unit Ini' }}) *
+                                </label>
+                                <label v-if="isGlobalAdmin" class="flex items-center gap-1.5 text-[11px] text-teal-700 font-semibold cursor-pointer select-none">
+                                    <input
+                                        v-model="showAllUnitsCoaches"
+                                        type="checkbox"
+                                        class="w-3.5 h-3.5 rounded text-teal-600 focus:ring-teal-500 border-slate-300"
+                                    />
+                                    <span>Semua Unit</span>
+                                </label>
+                            </div>
+
                             <select
                                 v-model="coachForm.user_id"
                                 required
                                 class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-teal-500 bg-white"
                             >
-                                <option value="">-- Pilih Guru / Pelatih / Staf --</option>
-                                <option v-for="c in availableInstructors" :key="c.id" :value="c.id">
+                                <option value="">-- Pilih Guru / Pelatih {{ showAllUnitsCoaches ? '(Semua Unit)' : `(${activity.unit?.name || 'Unit Ini'})` }} --</option>
+                                <option v-for="c in displayInstructors" :key="c.id" :value="c.id">
                                     {{ c.label || `${c.name} (${c.phone || 'No HP -'})` }}
                                 </option>
                             </select>
+
+                            <p class="text-[10px] text-slate-400">
+                                Menampilkan {{ displayInstructors.length }} guru & pelatih terdaftar di {{ showAllUnitsCoaches ? 'seluruh unit' : (activity.unit?.name || 'unit ini') }}.
+                            </p>
                         </div>
 
                         <div v-else class="space-y-2.5">
