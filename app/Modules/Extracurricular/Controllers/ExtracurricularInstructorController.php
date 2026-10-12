@@ -112,6 +112,11 @@ class ExtracurricularInstructorController extends Controller
      */
     public function destroy($extracurricularId, $instructorId)
     {
+        $user = Auth::user();
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'koordinator_kesiswaan'])) {
+            abort(403, 'Hanya koordinator kesiswaan dan admin yang dapat menghapus penugasan pelatih.');
+        }
+
         $instructor = ExtracurricularInstructor::where('extracurricular_id', $extracurricularId)
             ->findOrFail($instructorId);
 

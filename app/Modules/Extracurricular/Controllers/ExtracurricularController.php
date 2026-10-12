@@ -263,6 +263,7 @@ class ExtracurricularController extends Controller
             },
         ])->findOrFail($id);
 
+        $isGlobalAdmin = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'pembina_yayasan']);
         $canManage = $user->hasAnyRole([
             'super_admin_yayasan', 
             'admin_yayasan', 
@@ -272,6 +273,20 @@ class ExtracurricularController extends Controller
         ]);
 
         $isInstructor = $activity->instructors->contains('user_id', $user->id);
+
+        // Role-based authorization & unit isolation check
+        if (!$isGlobalAdmin) {
+            // Pelatih can only access extracurriculars assigned to them
+            if ($user->hasRole('pelatih_ekskul') && !$canManage && !$isInstructor) {
+                abort(403, 'Anda tidak ditugaskan sebagai pelatih pada kegiatan ekstrakurikuler ini.');
+            }
+
+            // Unit managers can only access their own unit
+            if ($canManage && $unitId && $activity->unit_id && (int) $activity->unit_id !== (int) $unitId && !$isInstructor) {
+                abort(403, 'Anda tidak memiliki hak akses untuk melihat ekstrakurikuler unit lain.');
+            }
+        }
+
         $targetUnitId = $activity->unit_id ?? $unitId;
 
         // Classrooms in the same unit for bulk adding students

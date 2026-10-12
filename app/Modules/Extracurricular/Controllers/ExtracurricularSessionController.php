@@ -233,6 +233,16 @@ class ExtracurricularSessionController extends Controller
      */
     public function destroy($extracurricularId, $sessionId)
     {
+        $user = Auth::user();
+        $activity = Extracurricular::findOrFail($extracurricularId);
+
+        $canManage = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'koordinator_kesiswaan']);
+        $isInstructor = $activity->instructors()->where('user_id', $user->id)->exists();
+
+        if (!$canManage && !$isInstructor) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menghapus sesi kegiatan ini.');
+        }
+
         $session = ExtracurricularSession::where('extracurricular_id', $extracurricularId)->findOrFail($sessionId);
 
         if (!empty($session->photo_paths) && is_array($session->photo_paths)) {

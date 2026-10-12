@@ -220,6 +220,15 @@ class ExtracurricularMemberController extends Controller
      */
     public function updateStatus(Request $request, $extracurricularId, $memberId)
     {
+        $user = Auth::user();
+        $activity = Extracurricular::findOrFail($extracurricularId);
+        $canManage = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'koordinator_kesiswaan']);
+        $isInstructor = $activity->instructors()->where('user_id', $user->id)->exists();
+
+        if (!$canManage && !$isInstructor) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengubah status anggota ekstrakurikuler ini.');
+        }
+
         $validated = $request->validate([
             'status' => 'required|in:active,inactive,dropped',
             'notes' => 'nullable|string|max:255',
@@ -238,6 +247,15 @@ class ExtracurricularMemberController extends Controller
      */
     public function destroy($extracurricularId, $memberId)
     {
+        $user = Auth::user();
+        $activity = Extracurricular::findOrFail($extracurricularId);
+        $canManage = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'koordinator_kesiswaan']);
+        $isInstructor = $activity->instructors()->where('user_id', $user->id)->exists();
+
+        if (!$canManage && !$isInstructor) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menghapus anggota ekstrakurikuler ini.');
+        }
+
         $member = ExtracurricularMember::where('extracurricular_id', $extracurricularId)
             ->findOrFail($memberId);
 
