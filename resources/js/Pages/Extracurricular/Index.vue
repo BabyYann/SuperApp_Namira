@@ -780,16 +780,11 @@ const getLinkDestination = (item) => {
                     
                     <!-- Modal Header -->
                     <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between shrink-0">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-teal-50 text-[#00796B] border border-teal-100 flex items-center justify-center font-bold">
-                                <SparklesIcon class="w-5 h-5 stroke-[2.2]" />
-                            </div>
-                            <div>
-                                <h3 class="font-black text-slate-800 text-base sm:text-lg">
-                                    {{ isEditing ? 'Edit Ekstrakurikuler' : 'Tambah Ekstrakurikuler' }}
-                                </h3>
-                                <p class="text-xs text-slate-500">Lengkapi data kegiatan di bawah ini.</p>
-                            </div>
+                        <div>
+                            <h3 class="font-black text-slate-800 text-base sm:text-lg">
+                                {{ isEditing ? 'Edit Ekstrakurikuler' : 'Tambah Ekstrakurikuler' }}
+                            </h3>
+                            <p class="text-xs text-slate-500">Lengkapi data kegiatan di bawah ini.</p>
                         </div>
                         <button
                             @click="showModal = false"
