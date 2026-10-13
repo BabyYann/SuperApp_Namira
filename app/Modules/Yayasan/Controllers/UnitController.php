@@ -81,6 +81,20 @@ class UnitController extends Controller
             $homeroomStats = null;
 
             if ($homeroomClass) {
+                // Auto-heal: If no attendance found today, check if records were saved today with end-of-month date due to previous loop variable bug
+                $todayDateStr = today()->toDateString();
+                $endOfMonthStr = today()->endOfMonth()->toDateString();
+                $todayCount = \App\Models\StudentAttendance::where('classroom_id', $homeroomClass->id)
+                    ->whereDate('date', $todayDateStr)
+                    ->count();
+
+                if ($todayCount === 0) {
+                    \App\Models\StudentAttendance::where('classroom_id', $homeroomClass->id)
+                        ->where('date', $endOfMonthStr)
+                        ->whereDate('updated_at', $todayDateStr)
+                        ->update(['date' => $todayDateStr]);
+                }
+
                 $totalClassStudents = \App\Modules\Academic\Models\Student::where('classroom_id', $homeroomClass->id)->count();
                 $todayAtt = \App\Models\StudentAttendance::where('classroom_id', $homeroomClass->id)
                     ->whereDate('date', today())

@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, onMounted, watch, computed } from 'vue';
+import Swal from 'sweetalert2';
 import { 
     ChevronLeftIcon, ChevronRightIcon, CheckIcon, 
     ExclamationCircleIcon, ArrowPathIcon,
@@ -30,21 +31,17 @@ const activeTab = ref('daily'); // 'daily' | 'subject_matrix'
 
 const cleanDateStr = (d) => {
     if (!d) return new Date().toISOString().split('T')[0];
-    const s = String(d);
+    const s = String(d).trim();
     if (s.includes('T')) return s.split('T')[0];
     if (s.includes(' ')) return s.split(' ')[0];
     return s;
 };
 
-const form = useForm({
-    attendances: [],
-    date: cleanDateStr(props.date), // Include date in submission
-});
-
-// --- 1. Initialization & Reactivity ---
-const initForm = () => {
-    form.attendances = props.students.map(student => {
-        const existing = props.attendances[student.id] || props.attendances[String(student.id)];
+// Safely construct attendance array for form
+const buildInitialAttendances = () => {
+    if (!props.students || !Array.isArray(props.students)) return [];
+    return props.students.map(student => {
+        const existing = props.attendances?.[student.id] || props.attendances?.[String(student.id)];
         return {
             student_id: student.id,
             status: existing ? existing.status : '', // Empty by default for "Mark Remaining" logic
@@ -53,11 +50,27 @@ const initForm = () => {
     });
 };
 
+const form = useForm({
+    attendances: buildInitialAttendances(),
+    date: cleanDateStr(props.date), // Include date in submission
+});
+
+// --- 1. Initialization & Reactivity ---
+const initForm = () => {
+    form.attendances = buildInitialAttendances();
+};
+
 onMounted(() => {
-    initForm();
+    if (!form.attendances || form.attendances.length === 0) {
+        initForm();
+    }
 });
 
 watch(() => props.attendances, () => {
+    initForm();
+}, { deep: true });
+
+watch(() => props.students, () => {
     initForm();
 }, { deep: true });
 
@@ -70,7 +83,7 @@ watch(() => props.date, (newDate) => {
 // --- 2. Scoreboard Logic ---
 const summary = computed(() => {
     const stats = { H: 0, S: 0, I: 0, A: 0, Unset: 0 };
-    form.attendances.forEach(item => {
+    (form.attendances || []).forEach(item => {
         if (item.status && stats[item.status] !== undefined) {
             stats[item.status]++;
         } else {
@@ -96,7 +109,7 @@ const changeDate = (days) => {
 
 // --- 4. Smart Actions ---
 const markRemainingPresent = () => {
-    form.attendances.forEach(item => {
+    (form.attendances || []).forEach(item => {
         if (!item.status) {
             item.status = 'H';
         }
@@ -104,13 +117,43 @@ const markRemainingPresent = () => {
 };
 
 const submit = () => {
+    if (!form.attendances || form.attendances.length === 0) {
+        initForm();
+    }
+
+    // Check for unset attendances
+    const unsetCount = form.attendances.filter(item => !item.status).length;
+    if (unsetCount > 0) {
+        if (confirm(`Terdapat ${unsetCount} siswa yang belum diabsen. Apakah Anda ingin menandai seluruh siswa yang belum diabsen sebagai Hadir (H)?`)) {
+            markRemainingPresent();
+        } else {
+            return;
+        }
+    }
+
+    form.date = cleanDateStr(props.date);
+
     form.post(route('yayasan.student-attendance.store', props.classroom.id), {
         preserveScroll: true,
         onSuccess: () => {
-            // Toast handled by layout usually
+            Swal.fire({
+                title: 'Berhasil Disimpan!',
+                text: 'Data presensi siswa kelas ini berhasil disimpan ke sistem.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end',
+            });
         },
         onError: (errors) => {
-            alert('Gagal menyimpan. Periksa koneksi atau inputan.');
+            const errorMsg = Object.values(errors).flat().join('\n') || 'Gagal menyimpan absensi. Periksa kelengkapan inputan atau koneksi.';
+            Swal.fire({
+                title: 'Gagal Menyimpan',
+                text: errorMsg,
+                icon: 'error',
+                confirmButtonColor: '#00584b',
+            });
         }
     });
 };
@@ -207,6 +250,50 @@ const getHistoryWarning = (studentId) => {
         </template>
 
         <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Mobile Header: Class Title, Date Navigation, & Live Stats -->
+            <div class="lg:hidden mb-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-extrabold text-lg text-slate-800 leading-tight">Kelas {{ classroom.name }}</h2>
+                        <div class="flex items-center gap-1.5 text-slate-500 text-xs mt-1">
+                            <button @click="changeDate(-1)" class="p-1 rounded-md hover:bg-slate-100 text-slate-600 transition-colors" title="Hari Sebelumnya">
+                                <ChevronLeftIcon class="h-4 w-4" />
+                            </button>
+                            <span class="font-semibold text-slate-700">
+                                {{ new Date(date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) }}
+                            </span>
+                            <button @click="changeDate(1)" class="p-1 rounded-md hover:bg-slate-100 text-slate-600 transition-colors" title="Hari Berikutnya">
+                                <ChevronRightIcon class="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Siswa</span>
+                        <span class="text-lg font-black text-slate-800 leading-none">{{ students.length }}</span>
+                    </div>
+                </div>
+
+                <!-- 4 Stats in 1 row compact -->
+                <div class="grid grid-cols-4 gap-2 text-center pt-2 border-t border-slate-100">
+                    <div class="bg-emerald-50 rounded-xl py-1.5 px-1 border border-emerald-100">
+                        <span class="block font-black text-sm text-emerald-700 leading-none">{{ summary.H }}</span>
+                        <span class="text-[9px] font-bold text-emerald-600">Hadir</span>
+                    </div>
+                    <div class="bg-blue-50 rounded-xl py-1.5 px-1 border border-blue-100">
+                        <span class="block font-black text-sm text-blue-700 leading-none">{{ summary.S }}</span>
+                        <span class="text-[9px] font-bold text-blue-600">Sakit</span>
+                    </div>
+                    <div class="bg-amber-50 rounded-xl py-1.5 px-1 border border-amber-100">
+                        <span class="block font-black text-sm text-amber-700 leading-none">{{ summary.I }}</span>
+                        <span class="text-[9px] font-bold text-amber-600">Izin</span>
+                    </div>
+                    <div class="bg-rose-50 rounded-xl py-1.5 px-1 border border-rose-100">
+                        <span class="block font-black text-sm text-rose-700 leading-none">{{ summary.A }}</span>
+                        <span class="text-[9px] font-bold text-rose-600">Alpa</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-slate-200">
                 
                 <!-- Navigation Tabs (Absensi Harian vs Presensi Per-Mapel) -->

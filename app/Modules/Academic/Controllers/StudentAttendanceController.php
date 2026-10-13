@@ -113,17 +113,25 @@ class StudentAttendanceController extends Controller
             $scheduleDayNumbers = array_map(fn($day) => $dayNameMap[$day] ?? -1, $scheduleDays);
         }
 
+        // Auto-heal any mismatched end-of-month dates created today due to previous loop variable bug
+        if ($date === Carbon::today()->toDateString()) {
+            $endOfMonth = Carbon::today()->endOfMonth()->toDateString();
+            StudentAttendance::where('date', $endOfMonth)
+                ->whereDate('updated_at', Carbon::today())
+                ->update(['date' => $date]);
+        }
+
         $dates = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
-            $date = Carbon::createFromDate($year, $month, $d);
-            $dayOfWeek = $date->dayOfWeek;
+            $calendarDate = Carbon::createFromDate($year, $month, $d);
+            $dayOfWeek = $calendarDate->dayOfWeek;
             $hasSchedule = in_array($dayOfWeek, $scheduleDayNumbers);
-            $isHoliday = $date->isWeekend() && !$hasSchedule;
+            $isHoliday = $calendarDate->isWeekend() && !$hasSchedule;
             $dates[] = [
                 'day' => $d,
-                'date' => $date->format('Y-m-d'),
-                'dayName' => $date->locale('id')->shortDayName,
-                'isWeekend' => $date->isWeekend(),
+                'date' => $calendarDate->format('Y-m-d'),
+                'dayName' => $calendarDate->locale('id')->shortDayName,
+                'isWeekend' => $calendarDate->isWeekend(),
                 'isHoliday' => $isHoliday,
             ];
         }
@@ -241,6 +249,29 @@ class StudentAttendanceController extends Controller
             })
             ->get()
             ->keyBy('student_id');
+
+        // Auto-heal: If no attendance found for today, check if records were saved today with end-of-month date due to previous loop bug
+        if ($date === Carbon::today()->toDateString() && $attendances->isEmpty()) {
+            $endOfMonth = Carbon::today()->endOfMonth()->toDateString();
+            $misdated = StudentAttendance::where('classroom_id', $classroom->id)
+                ->where('date', $endOfMonth)
+                ->whereDate('updated_at', Carbon::today())
+                ->get();
+
+            if ($misdated->isNotEmpty()) {
+                StudentAttendance::where('classroom_id', $classroom->id)
+                    ->where('date', $endOfMonth)
+                    ->whereDate('updated_at', Carbon::today())
+                    ->update(['date' => $date]);
+
+                $attendances = StudentAttendance::where('classroom_id', $classroom->id)
+                    ->where(function ($q) use ($date) {
+                        $q->where('date', $date)->orWhereDate('date', $date);
+                    })
+                    ->get()
+                    ->keyBy('student_id');
+            }
+        }
 
         // 3. Fetch Monthly History (Insight)
         // Count Alpha/Izin/Sakit for current month to flag frequent absentees
@@ -532,7 +563,7 @@ class StudentAttendanceController extends Controller
 
         foreach ($students as $student) {
             $studentAttendances = $allAttendances->get($student->id, collect())
-                ->keyBy(fn($a) => $a->date->format('Y-m-d'));
+                ->keyBy(fn($a) => is_string($a->date) ? substr($a->date, 0, 10) : $a->date->format('Y-m-d'));
 
             $summary = ['H' => 0, 'S' => 0, 'I' => 0, 'A' => 0];
             

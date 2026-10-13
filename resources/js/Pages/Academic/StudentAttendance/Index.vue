@@ -49,8 +49,21 @@ const setTab = (tab) => {
     });
 };
 
+const cleanDateStr = (d) => {
+    if (!d) return new Date().toISOString().split('T')[0];
+    const s = String(d).trim();
+    if (s.includes('T')) return s.split('T')[0];
+    if (s.includes(' ')) return s.split(' ')[0];
+    return s;
+};
+
 // Daily View State
-const currentDate = ref(props.selectedDate || props.filters?.date || new Date().toISOString().split('T')[0]);
+const currentDate = ref(cleanDateStr(props.selectedDate || props.filters?.date));
+
+watch(() => [props.selectedDate, props.filters?.date], () => {
+    currentDate.value = cleanDateStr(props.selectedDate || props.filters?.date);
+});
+
 const searchQuery = ref('');
 const selectedLevel = ref(null);
 const activeMenuId = ref(null);

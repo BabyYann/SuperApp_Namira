@@ -1155,6 +1155,13 @@ const eventTypeLabels = {
                     >
                         Mulai Absen
                     </Link>
+                    <Link 
+                        v-else
+                        :href="safeRoute('yayasan.student-attendance.show', teacherData.homeroom_stats.classroom_id)"
+                        class="text-[11px] font-extrabold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-100 transition-colors"
+                    >
+                        Lihat / Edit
+                    </Link>
                 </div>
 
                 <!-- Progress Bar Mini -->
