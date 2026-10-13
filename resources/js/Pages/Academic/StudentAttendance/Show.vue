@@ -28,9 +28,17 @@ const props = defineProps({
 
 const activeTab = ref('daily'); // 'daily' | 'subject_matrix'
 
+const cleanDateStr = (d) => {
+    if (!d) return new Date().toISOString().split('T')[0];
+    const s = String(d);
+    if (s.includes('T')) return s.split('T')[0];
+    if (s.includes(' ')) return s.split(' ')[0];
+    return s;
+};
+
 const form = useForm({
     attendances: [],
-    date: props.date, // Include date in submission
+    date: cleanDateStr(props.date), // Include date in submission
 });
 
 // --- 1. Initialization & Reactivity ---
@@ -55,7 +63,7 @@ watch(() => props.attendances, () => {
 
 // Sync form.date when navigating dates
 watch(() => props.date, (newDate) => {
-    form.date = newDate;
+    form.date = cleanDateStr(newDate);
     initForm();
 });
 

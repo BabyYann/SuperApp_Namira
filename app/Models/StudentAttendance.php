@@ -16,8 +16,13 @@ class StudentAttendance extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'date:Y-m-d',
     ];
+
+    public function setDateAttribute($value)
+    {
+        $this->attributes['date'] = $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : null;
+    }
 
     public function student()
     {

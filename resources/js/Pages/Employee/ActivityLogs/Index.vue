@@ -10,6 +10,10 @@ import {
     DocumentTextIcon, TagIcon, FingerPrintIcon, CalendarDaysIcon,
     MagnifyingGlassIcon, ArrowPathIcon
 } from '@heroicons/vue/24/outline';
+import dayjs from 'dayjs';
+import 'dayjs/locale/id';
+
+dayjs.locale('id');
 
 import Pagination from '@/Components/Pagination.vue';
 
@@ -24,6 +28,33 @@ const props = defineProps({
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const isMobile = computed(() => typeof window !== 'undefined' && window.innerWidth < 768);
+
+const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const cleanDate = typeof dateStr === 'string' && dateStr.includes('T') ? dateStr.split('T')[0] : (typeof dateStr === 'string' && dateStr.includes(' ') ? dateStr.split(' ')[0] : dateStr);
+    return dayjs(cleanDate).format('dddd, DD MMMM YYYY');
+};
+
+const historyTotalCount = computed(() => {
+    if (!props.historyLogs) return 0;
+    if (typeof props.historyLogs.total === 'number') return props.historyLogs.total;
+    if (Array.isArray(props.historyLogs)) return props.historyLogs.length;
+    if (Array.isArray(props.historyLogs.data)) return props.historyLogs.data.length;
+    return 0;
+});
+
+const userRoleTitle = computed(() => {
+    if (!user.value) return 'SDM Namira';
+    if (user.value.staff?.position) return user.value.staff.position;
+    const roles = user.value.roles || [];
+    if (roles.length > 0) {
+        const firstRole = typeof roles[0] === 'string' ? roles[0] : roles[0]?.name;
+        if (firstRole) {
+            return firstRole.replace(/_/g, ' ');
+        }
+    }
+    return 'SDM Namira';
+});
 
 // Active Tab for Main View: 'today' or 'history'
 const activeTab = ref('today');
@@ -281,7 +312,7 @@ const categoryBadgeClass = (catKey) => {
                         </div>
                     </div>
                     <div class="flex items-baseline gap-2">
-                        <span class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{{ historyLogs?.length || 0 }}</span>
+                        <span class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{{ historyTotalCount }}</span>
                         <span class="text-xs font-semibold text-slate-500">Record</span>
                     </div>
                     <p class="text-[11px] text-indigo-600 font-medium">
@@ -298,7 +329,7 @@ const categoryBadgeClass = (catKey) => {
                         </div>
                     </div>
                     <div class="truncate">
-                        <span class="text-sm font-extrabold text-slate-800 capitalize truncate block">{{ user.roles[0]?.name?.replace('_', ' ') || 'SDM Namira' }}</span>
+                        <span class="text-sm font-extrabold text-slate-800 capitalize truncate block">{{ userRoleTitle }}</span>
                     </div>
                     <p class="text-[11px] text-purple-600 font-medium truncate">
                         {{ user.name }}
@@ -327,7 +358,7 @@ const categoryBadgeClass = (catKey) => {
                             class="px-4 py-2 rounded-lg text-xs font-bold transition-all"
                             :class="activeTab === 'history' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
                         >
-                            Riwayat Sebelumnya ({{ historyLogs?.length || 0 }})
+                            Riwayat Sebelumnya ({{ historyTotalCount }})
                         </button>
                     </div>
 
@@ -475,8 +506,8 @@ const categoryBadgeClass = (catKey) => {
                                         </span>
                                     </div>
                                     <p v-if="item.description" class="text-xs text-slate-500 line-clamp-1">{{ item.description }}</p>
-                                    <p class="text-[11px] text-slate-400 font-mono">
-                                        {{ item.activity_date }} • {{ item.activity_time ? item.activity_time.substring(0, 5) : '-' }} WIB
+                                    <p class="text-[11px] text-slate-400 font-medium">
+                                        {{ formatDate(item.activity_date) }} • {{ item.activity_time ? item.activity_time.substring(0, 5) : '-' }} WIB
                                     </p>
                                 </div>
                             </div>

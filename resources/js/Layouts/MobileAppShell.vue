@@ -381,7 +381,21 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Kesiswaan</span>
                 </Link>
 
-                <!-- Staff biasa / Guru: Presensi Pegawai -->
+                <!-- Staff biasa (Non-guru): Giat Tugas / Logbook Harian -->
+                <Link 
+                    v-else-if="!isTeacher"
+                    :href="safeRoute('employee.activity-logs.index')"
+                    class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
+                    :class="isRouteActive('employee.activity-logs.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
+                >
+                    <component 
+                        :is="isRouteActive('employee.activity-logs.*') ? ClipboardDocumentCheckIconSolid : ClipboardDocumentCheckIcon" 
+                        class="w-6 h-6 transition-transform" 
+                    />
+                    <span class="text-[10px] font-bold tracking-tight">Giat Tugas</span>
+                </Link>
+
+                <!-- Guru / Lainnya: Presensi Pegawai -->
                 <Link 
                     v-else
                     :href="safeRoute('employee.attendance.index', { tab: 'personal' })"

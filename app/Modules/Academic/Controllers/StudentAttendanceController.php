@@ -9,6 +9,7 @@ use App\Modules\Academic\Models\Student;
 use App\Services\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -50,10 +51,13 @@ class StudentAttendanceController extends Controller
             ->get();
 
         // 2. Daily Status for Tab 1 (Presensi Harian)
-        $date = $request->input('date', Carbon::today()->toDateString());
+        $rawDate = $request->input('date');
+        $date = $rawDate ? Carbon::parse($rawDate)->toDateString() : Carbon::today()->toDateString();
         $carbonDate = Carbon::parse($date);
         $attendanceCounts = StudentAttendance::whereIn('classroom_id', $classrooms->pluck('id'))
-            ->where('date', $date)
+            ->where(function ($q) use ($date) {
+                $q->where('date', $date)->orWhereDate('date', $date);
+            })
             ->selectRaw('classroom_id, count(*) as count')
             ->groupBy('classroom_id')
             ->pluck('count', 'classroom_id');
@@ -223,7 +227,8 @@ class StudentAttendanceController extends Controller
         }
 
         // 3. Handle Date Navigation
-        $date = $request->input('date', Carbon::today()->toDateString());
+        $rawDate = $request->input('date');
+        $date = $rawDate ? Carbon::parse($rawDate)->toDateString() : Carbon::today()->toDateString();
         
         $students = Student::where('classroom_id', $classroom->id)
             ->orderBy('full_name')
@@ -231,7 +236,9 @@ class StudentAttendanceController extends Controller
 
         // 2. Fetch existing attendance for the selected date
         $attendances = StudentAttendance::where('classroom_id', $classroom->id)
-            ->where('date', $date)
+            ->where(function ($q) use ($date) {
+                $q->where('date', $date)->orWhereDate('date', $date);
+            })
             ->get()
             ->keyBy('student_id');
 
@@ -303,75 +310,103 @@ class StudentAttendanceController extends Controller
             abort(403, 'Akses Ditolak: Hanya Wali Kelas atau Admin yang berhak mengisi dan menyimpan presensi kelas ini.');
         }
 
-        // Use date from form, fallback to today
-        $date = $request->input('date', Carbon::today()->toDateString());
+        // Use date from form, strictly formatted as Y-m-d
+        $rawDate = $request->input('date');
+        $date = $rawDate ? Carbon::parse($rawDate)->toDateString() : Carbon::today()->toDateString();
         $userId = Auth::id();
 
         \Log::info("Processing attendance for Classroom {$classroom->id} on {$date} by User {$userId}");
 
-        foreach ($request->attendances as $data) {
-            $attendance = StudentAttendance::updateOrCreate(
-                [
-                    'student_id' => $data['student_id'],
-                    'date' => $date,
-                ],
-                [
-                    'classroom_id' => $classroom->id,
-                    'status' => $data['status'],
-                    'note' => $data['note'] ?? null,
-                    'recorded_by' => $userId,
-                ]
-            );
-            \Log::info("Saved attendance for Student {$data['student_id']}: {$data['status']}", $attendance->toArray());
+        DB::beginTransaction();
+        try {
+            foreach ($request->attendances as $data) {
+                $studentId = $data['student_id'];
+                $status = $data['status'];
+                $note = $data['note'] ?? null;
 
-            // Automated WhatsApp & Push Notification (In-App + FCM) for Sakit (S), Izin (I), and Alpha (A)
-            try {
-                $student = Student::with(['unit', 'user'])->find($data['student_id']);
-                if ($student && in_array($data['status'], ['S', 'I', 'A'])) {
-                    $statusName = [
-                        'S' => 'Sakit',
-                        'I' => 'Izin',
-                        'A' => 'Alpha (Tanpa Keterangan)',
-                    ][$data['status']] ?? $data['status'];
+                // Explicit lookup prevents MySQL 1062 unique constraint race/comparison mismatch
+                $existing = StudentAttendance::where('student_id', $studentId)
+                    ->where(function ($q) use ($date) {
+                        $q->where('date', $date)->orWhereDate('date', $date);
+                    })
+                    ->first();
 
-                    $dateFormatted = Carbon::parse($date)->translatedFormat('d F Y');
-                    $unitName = $student->unit->name ?? 'Namira School Foundation';
-
-                    // 1. WhatsApp to Parent
-                    if (!empty($student->parent_phone)) {
-                        $message = "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: {$classroom->name}).\n\nKami menginformasikan bahwa putra/putri Anda tercatat *{$statusName}* pada tanggal *{$dateFormatted}*.\n\n" . 
-                                   (!empty($data['note']) ? "Keterangan: {$data['note']}\n\n" : "") .
-                                   "Terima kasih.\n-- *{$unitName}*";
-
-                        \App\Helpers\WhatsAppHelper::send($student->parent_phone, $message);
-                    }
-
-                    // 2. In-App & FCM Push Notification to Student User Account (Backup if WA down)
-                    if ($student->user) {
-                        NotificationDispatcher::sendToUser(
-                            $student->user,
-                            '📋 Catatan Presensi Kelas',
-                            "Anda tercatat {$statusName} pada tanggal {$dateFormatted}." . (!empty($data['note']) ? " Catatan: {$data['note']}" : ''),
-                            'academic',
-                            ['student_id' => $student->id]
-                        );
-                    }
-
-                    // 3. Alert to BK, Kepala Sekolah, & Admin Unit if Alpha (A)
-                    if ($data['status'] === 'A') {
-                        NotificationDispatcher::sendToRoles(
-                            ['bk', 'kepala_sekolah', 'admin_unit'],
-                            $student->unit_id,
-                            '⚠️ Laporan Siswa Alpha',
-                            "Siswa {$student->full_name} ({$classroom->name}) tercatat ALPHA pada {$dateFormatted}.",
-                            'academic',
-                            ['student_id' => $student->id, 'classroom_id' => $classroom->id]
-                        );
-                    }
+                if ($existing) {
+                    $existing->update([
+                        'classroom_id' => $classroom->id,
+                        'date' => $date,
+                        'status' => $status,
+                        'note' => $note,
+                        'recorded_by' => $userId,
+                    ]);
+                    $attendance = $existing;
+                } else {
+                    $attendance = StudentAttendance::create([
+                        'student_id' => $studentId,
+                        'classroom_id' => $classroom->id,
+                        'date' => $date,
+                        'status' => $status,
+                        'note' => $note,
+                        'recorded_by' => $userId,
+                    ]);
                 }
-            } catch (\Exception $e) {
-                \Log::error("Failed to send automated attendance notifications: " . $e->getMessage());
+
+                \Log::info("Saved attendance for Student {$studentId}: {$status}", $attendance->toArray());
+
+                // Automated WhatsApp & Push Notification (In-App + FCM) for Sakit (S), Izin (I), and Alpha (A)
+                try {
+                    $student = Student::with(['unit', 'user'])->find($studentId);
+                    if ($student && in_array($status, ['S', 'I', 'A'])) {
+                        $statusName = [
+                            'S' => 'Sakit',
+                            'I' => 'Izin',
+                            'A' => 'Alpha (Tanpa Keterangan)',
+                        ][$status] ?? $status;
+
+                        $dateFormatted = Carbon::parse($date)->translatedFormat('d F Y');
+                        $unitName = $student->unit->name ?? 'Namira School Foundation';
+
+                        // 1. WhatsApp to Parent
+                        if (!empty($student->parent_phone)) {
+                            $message = "Yth. Orang Tua/Wali dari *{$student->full_name}* (Kelas: {$classroom->name}).\n\nKami menginformasikan bahwa putra/putri Anda tercatat *{$statusName}* pada tanggal *{$dateFormatted}*.\n\n" . 
+                                       (!empty($note) ? "Keterangan: {$note}\n\n" : "") .
+                                       "Terima kasih.\n-- *{$unitName}*";
+
+                            \App\Helpers\WhatsAppHelper::send($student->parent_phone, $message);
+                        }
+
+                        // 2. In-App & FCM Push Notification to Student User Account (Backup if WA down)
+                        if ($student->user) {
+                            NotificationDispatcher::sendToUser(
+                                $student->user,
+                                '📋 Catatan Presensi Kelas',
+                                "Anda tercatat {$statusName} pada tanggal {$dateFormatted}." . (!empty($note) ? " Catatan: {$note}" : ''),
+                                'academic',
+                                ['student_id' => $student->id]
+                            );
+                        }
+
+                        // 3. Alert to BK, Kepala Sekolah, & Admin Unit if Alpha (A)
+                        if ($status === 'A') {
+                            NotificationDispatcher::sendToRoles(
+                                ['bk', 'kepala_sekolah', 'admin_unit'],
+                                $student->unit_id,
+                                '⚠️ Laporan Siswa Alpha',
+                                "Siswa {$student->full_name} ({$classroom->name}) tercatat ALPHA pada {$dateFormatted}.",
+                                'academic',
+                                ['student_id' => $student->id, 'classroom_id' => $classroom->id]
+                            );
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("Failed to send automated attendance notifications for Student {$studentId}: " . $e->getMessage());
+                }
             }
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            \Log::error("Failed saving attendance for classroom {$classroom->id}: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Gagal menyimpan absensi: ' . $e->getMessage());
         }
 
         return redirect()->back()->with('success', 'Absensi siswa berhasil disimpan.');

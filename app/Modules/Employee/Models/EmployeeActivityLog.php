@@ -27,10 +27,15 @@ class EmployeeActivityLog extends Model
     ];
 
     protected $casts = [
-        'activity_date' => 'date',
+        'activity_date' => 'date:Y-m-d',
         'latitude' => 'float',
         'longitude' => 'float',
     ];
+
+    public function setActivityDateAttribute($value)
+    {
+        $this->attributes['activity_date'] = $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : null;
+    }
 
     public function user()
     {
