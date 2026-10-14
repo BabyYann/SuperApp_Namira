@@ -91,7 +91,7 @@ class ApplicantPortalController extends Controller
         }
 
         $request->validate([
-            'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ], [
             'payment_proof.required' => 'Bukti pembayaran transfer wajib dipilih.',
         ]);

@@ -309,7 +309,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'photo' => 'nullable|image|mimes:jpeg,jpg,png,webp,gif,bmp|max:5120',
+            'photo' => 'nullable|image|mimes:jpeg,jpg,png,webp,gif,bmp|max:10240',
             'roles' => 'required_without:role|array|min:1',
             'roles.*' => 'string|exists:roles,name',
             'role' => 'nullable|string|exists:roles,name',

@@ -84,7 +84,7 @@ class SettingController extends Controller
     {
         // Validate file uploads
         $request->validate([
-            'app_logo' => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048',
+            'app_logo' => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:10240',
             'app_favicon' => 'nullable|image|mimes:png,ico,svg|max:512',
         ]);
 

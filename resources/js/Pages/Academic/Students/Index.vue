@@ -16,6 +16,7 @@ import {
     SparklesIcon, BuildingOffice2Icon, XMarkIcon,
     AdjustmentsHorizontalIcon, ChevronRightIcon, UserGroupIcon, PhoneIcon
 } from '@heroicons/vue/24/outline';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     students: Object, // Paginator
@@ -243,11 +244,23 @@ const closeModal = () => {
     photoPreview.value = null;
 };
 
-const handlePhotoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const isCompressing = ref(false);
+
+const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 1000, 0.8);
+        form.photo = compressedFile;
+        photoPreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Photo compression error:', err);
         form.photo = file;
         photoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -988,17 +1001,27 @@ const submitExcelImport = () => {
                             <!-- Photo Upload -->
                            <div class="md:col-span-2 flex justify-center mb-4">
                                 <div class="relative group cursor-pointer text-center">
-                                    <div class="w-32 h-32 mx-auto rounded-full bg-gray-50 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden hover:border-namira-teal transition-all group-hover:shadow-xl">
-                                        <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover">
+                                    <div class="w-32 h-32 mx-auto rounded-full bg-gray-50 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden hover:border-namira-teal transition-all group-hover:shadow-xl relative">
+                                        <template v-if="photoPreview">
+                                            <img :src="photoPreview" class="w-full h-full object-cover">
+                                            <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                                <ArrowPathIcon class="w-6 h-6 animate-spin mb-1 text-teal-400" />
+                                                <span class="text-[9px] font-bold">Kompresi...</span>
+                                            </div>
+                                        </template>
+                                        <div v-else-if="isCompressing" class="flex flex-col items-center justify-center text-namira-teal">
+                                            <ArrowPathIcon class="w-8 h-8 animate-spin mb-1" />
+                                            <span class="text-[10px] font-bold">Kompresi...</span>
+                                        </div>
                                         <div v-else class="flex flex-col items-center justify-center text-gray-400 group-hover:text-namira-teal transition-colors">
                                             <CameraIcon class="w-10 h-10 mb-1" />
                                             <span class="text-[10px] font-bold uppercase tracking-wide">Upload Foto</span>
                                         </div>
                                     </div>
                                     <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span class="text-white text-xs font-bold">Ubah Foto</span>
+                                        <span class="text-white text-xs font-bold">{{ isCompressing ? 'Mengompres...' : 'Ubah Foto' }}</span>
                                     </div>
-                                    <input type="file" @change="handlePhotoUpload" class="absolute inset-0 opacity-0 cursor-pointer w-32 mx-auto h-32" accept="image/*">
+                                    <input type="file" @change="handlePhotoUpload" :disabled="isCompressing" class="absolute inset-0 opacity-0 cursor-pointer w-32 mx-auto h-32" accept="image/*">
                                     <div class="text-xs text-red-500 mt-2 font-bold" v-if="form.errors.photo">{{ form.errors.photo }}</div>
                                 </div>
                            </div>
@@ -1068,7 +1091,7 @@ const submitExcelImport = () => {
 
                             <div class="md:col-span-2 flex justify-end gap-3 pt-6 border-t border-gray-50">
                                 <button type="button" @click="closeModal" class="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition-colors">Batal</button>
-                                <PrimaryButton :disabled="form.processing" class="rounded-xl px-8 shadow-lg shadow-namira-teal/20">{{ isEditing ? 'Simpan Perubahan' : 'Registrasi Siswa' }}</PrimaryButton>
+                                <PrimaryButton :disabled="form.processing || isCompressing" class="rounded-xl px-8 shadow-lg shadow-namira-teal/20">{{ isEditing ? 'Simpan Perubahan' : 'Registrasi Siswa' }}</PrimaryButton>
                             </div>
                         </form>
                     </div>

@@ -101,7 +101,7 @@ class TestimonialController extends Controller
             'role_or_title' => 'required|string|max:255',
             'quote' => 'required|string',
             'approval_status' => 'required|in:draft,pending,published,rejected',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $request->unit_id != $unitId) {
@@ -196,7 +196,7 @@ class TestimonialController extends Controller
             'role_or_title' => 'required|string|max:255',
             'quote' => 'required|string',
             'approval_status' => 'required|in:draft,pending,published,rejected',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         $approvalStatus = $validated['approval_status'];

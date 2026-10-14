@@ -7,6 +7,7 @@ import {
     ArrowLeftIcon, CalendarDaysIcon, PaperClipIcon, CloudArrowUpIcon, 
     CheckCircleIcon, ExclamationTriangleIcon, ChatBubbleBottomCenterTextIcon
 } from '@heroicons/vue/24/outline';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     lmsClassroom: Object,
@@ -16,15 +17,31 @@ const props = defineProps({
 
 const fileInput = ref(null);
 const filePreviewName = ref(null);
+const isCompressing = ref(false);
 
 const form = useForm({
     submission_text: props.submission?.submission_text || '',
     file: null,
 });
 
-const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type && file.type.startsWith('image/')) {
+        isCompressing.value = true;
+        try {
+            const compressedFile = await compressImageFile(file, 1600, 0.8);
+            form.file = compressedFile;
+            filePreviewName.value = `${compressedFile.name} (~${Math.round(compressedFile.size / 1024)} KB)`;
+        } catch (err) {
+            console.error('Image compression error:', err);
+            form.file = file;
+            filePreviewName.value = file.name;
+        } finally {
+            isCompressing.value = false;
+        }
+    } else {
         form.file = file;
         filePreviewName.value = file.name;
     }
@@ -165,30 +182,32 @@ const formatDate = (dateStr) => {
 
                         <!-- Upload Box -->
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Unggah Tugas</label>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Unggah Tugas (Foto / Dokumen)</label>
                             <div class="flex items-center gap-3 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-2xl">
-                                <label class="px-4 py-2 bg-white border border-gray-200 hover:border-emerald-700 hover:text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-xl cursor-pointer active:scale-95 shadow-sm transition">
-                                    Pilih Berkas
+                                <label class="px-4 py-2 bg-white border border-gray-200 hover:border-emerald-700 hover:text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-xl cursor-pointer active:scale-95 shadow-sm transition" :class="{ 'opacity-60 cursor-not-allowed': isCompressing }">
+                                    <span>{{ isCompressing ? 'Mengompres...' : 'Pilih Berkas' }}</span>
                                     <input 
                                         type="file" 
                                         class="hidden" 
                                         @change="handleFileSelect"
                                         ref="fileInput"
+                                        :disabled="isCompressing"
                                     />
                                 </label>
-                                <span class="text-xs text-gray-500 font-medium truncate max-w-[150px]">
-                                    {{ filePreviewName || 'Belum ada berkas' }}
+                                <span class="text-xs text-gray-500 font-medium truncate max-w-[180px]">
+                                    {{ isCompressing ? 'Mengompresi foto...' : (filePreviewName || 'Belum ada berkas') }}
                                 </span>
                             </div>
+                            <p class="text-[10px] text-gray-400 mt-1">Mendukung PDF, Word, Excel, ZIP, dan Foto (Maks 10MB, foto otomatis dioptimalkan).</p>
                         </div>
 
                         <button 
                             type="submit" 
                             class="w-full py-3 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-700/70 text-white rounded-2xl font-bold shadow-lg shadow-emerald-700/20 text-center flex items-center justify-center gap-2 transition-all active:scale-95 text-xs tracking-wider uppercase"
-                            :disabled="form.processing"
+                            :disabled="form.processing || isCompressing"
                         >
                             <NamiraLoader :visible="form.processing" variant="button" />
-                            <span>{{ form.processing ? 'Mengirim...' : (submission ? 'Kirim Ulang Tugas' : 'Serahkan Tugas') }}</span>
+                            <span>{{ form.processing ? 'Mengirim...' : (isCompressing ? 'Mengompresi Foto...' : (submission ? 'Kirim Ulang Tugas' : 'Serahkan Tugas')) }}</span>
                         </button>
                     </form>
                 </div>

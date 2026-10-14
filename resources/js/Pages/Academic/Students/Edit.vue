@@ -6,6 +6,7 @@ import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { ref } from 'vue';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     student: Object,
@@ -23,12 +24,23 @@ const form = useForm({
 });
 
 const photoPreview = ref(props.student.photo ? `/storage/${props.student.photo}` : null);
+const isCompressing = ref(false);
 
-const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 1000, 0.8);
+        form.photo = compressedFile;
+        photoPreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Photo compression error:', err);
         form.photo = file;
         photoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -51,19 +63,28 @@ const submit = () => {
 
         <div class="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
             <form @submit.prevent="submit" class="space-y-6">
-                
-                <!-- Photo Upload -->
+                                <!-- Photo Upload -->
                  <div class="flex flex-col items-center mb-6">
-                    <div class="w-24 h-24 rounded-full bg-gray-100 mb-3 overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center">
-                        <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover" />
+                    <div class="w-24 h-24 rounded-full bg-gray-100 mb-3 overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center relative">
+                        <template v-if="photoPreview">
+                            <img :src="photoPreview" class="w-full h-full object-cover" />
+                            <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                <svg class="animate-spin h-5 w-5 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <span class="text-[9px] font-bold mt-1">Kompresi...</span>
+                            </div>
+                        </template>
+                        <div v-else-if="isCompressing" class="flex flex-col items-center justify-center text-teal-600">
+                            <svg class="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <span class="text-[9px] font-bold mt-1">Kompresi...</span>
+                        </div>
                         <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-gray-400">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
                         </svg>
                     </div>
                     <label for="photo" class="cursor-pointer text-sm text-namira-teal font-medium hover:underline">
-                        Ubah Foto
-                        <input type="file" id="photo" class="hidden" @change="handleFileChange" accept="image/*" />
+                        <span>{{ isCompressing ? 'Mengompres...' : 'Ubah Foto' }}</span>
+                        <input type="file" id="photo" class="hidden" @change="handleFileChange" accept="image/*" :disabled="isCompressing" />
                     </label>
                     <InputError :message="form.errors.photo" />
                 </div>
@@ -123,7 +144,7 @@ const submit = () => {
                     <Link :href="route('yayasan.students.index')" class="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">
                         Batal
                     </Link>
-                    <PrimaryButton :disabled="form.processing">
+                    <PrimaryButton :disabled="form.processing || isCompressing">
                         Simpan Perubahan
                     </PrimaryButton>
                 </div>

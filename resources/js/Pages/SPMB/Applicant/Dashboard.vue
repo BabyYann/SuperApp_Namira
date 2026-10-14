@@ -14,6 +14,8 @@ import {
     MapPinIcon
 } from '@heroicons/vue/24/outline';
 
+import { compressImageFile } from '@/Utils/imageCompressor';
+
 const props = defineProps({
     applicant: Object,
     setting: Object,
@@ -23,17 +25,26 @@ const uploadForm = useForm({
     payment_proof: null,
 });
 
-const handleUploadProof = (e) => {
+const handleUploadProof = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-        uploadForm.payment_proof = file;
-        uploadForm.post(route('spmb.applicant.upload-proof', props.applicant.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                alert('Bukti transfer daftar ulang berhasil diunggah.');
-            }
-        });
+    if (!file) return;
+
+    let uploadFile = file;
+    if (file.type && file.type.startsWith('image/')) {
+        try {
+            uploadFile = await compressImageFile(file, 1280, 0.75);
+        } catch (err) {
+            console.error('Kompresi bukti daftar ulang gagal:', err);
+        }
     }
+
+    uploadForm.payment_proof = uploadFile;
+    uploadForm.post(route('spmb.applicant.upload-proof', props.applicant.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            alert('Bukti transfer daftar ulang berhasil diunggah.');
+        }
+    });
 };
 
 const formatRupiah = (amount) => {

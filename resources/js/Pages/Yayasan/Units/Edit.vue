@@ -5,12 +5,13 @@ import { ref } from 'vue';
 import { 
     PencilSquareIcon, ClockIcon, ChevronDownIcon, BuildingLibraryIcon, 
     EnvelopeIcon, PhoneIcon, MapPinIcon, PhotoIcon, XMarkIcon,
-    AdjustmentsHorizontalIcon, CheckCircleIcon 
+    AdjustmentsHorizontalIcon, CheckCircleIcon, ArrowPathIcon 
 } from '@heroicons/vue/24/outline';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     unit: Object,
@@ -64,12 +65,23 @@ const onUnitTypeChange = (type) => {
 // Logo preview
 const logoPreview = ref(props.unit.logo ? `/storage/${props.unit.logo}` : null);
 const logoInput = ref(null);
+const isCompressing = ref(false);
 
-const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handleLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 800, 0.85);
+        form.logo = compressedFile;
+        logoPreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Logo compression error:', err);
         form.logo = file;
         logoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -124,12 +136,22 @@ const submit = () => {
                             <!-- Logo Upload -->
                             <div class="flex flex-col items-center gap-4">
                                 <div class="w-32 h-32 rounded-2xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden relative group">
-                                    <img v-if="logoPreview" :src="logoPreview" class="w-full h-full object-cover" />
+                                    <template v-if="logoPreview">
+                                        <img :src="logoPreview" class="w-full h-full object-cover" />
+                                        <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                            <ArrowPathIcon class="w-6 h-6 animate-spin text-teal-300 mb-0.5" />
+                                            <span class="text-[9px] font-bold">Kompresi...</span>
+                                        </div>
+                                    </template>
+                                    <div v-else-if="isCompressing" class="flex flex-col items-center justify-center text-teal-600">
+                                        <ArrowPathIcon class="w-6 h-6 animate-spin mb-1" />
+                                        <span class="text-[9px] font-bold">Kompresi...</span>
+                                    </div>
                                     <BuildingLibraryIcon v-else class="w-12 h-12 text-gray-300" />
                                     
                                     <!-- Remove button -->
                                     <button 
-                                        v-if="logoPreview" 
+                                        v-if="logoPreview && !isCompressing" 
                                         type="button"
                                         @click="removeLogo" 
                                         class="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -137,9 +159,9 @@ const submit = () => {
                                         <XMarkIcon class="w-4 h-4" />
                                     </button>
                                 </div>
-                                <label class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-xl cursor-pointer transition-colors">
-                                    <input ref="logoInput" type="file" accept="image/*" @change="handleLogoChange" class="hidden" />
-                                    Upload Logo
+                                <label class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-xl cursor-pointer transition-colors" :class="{ 'opacity-60 cursor-not-allowed': isCompressing }">
+                                    <input ref="logoInput" type="file" accept="image/*" @change="handleLogoChange" class="hidden" :disabled="isCompressing" />
+                                    <span>{{ isCompressing ? 'Mengompres...' : 'Upload Logo' }}</span>
                                 </label>
                                 <InputError :message="form.errors.logo" />
                             </div>
@@ -398,7 +420,7 @@ const submit = () => {
                         <Link :href="route('yayasan.units.index')" class="px-5 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors shadow-sm">
                             Batal
                         </Link>
-                        <PrimaryButton :disabled="form.processing" class="px-8 py-2.5 bg-namira-teal hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-namira-teal/30 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-namira-teal border-0 active:scale-95">
+                        <PrimaryButton :disabled="form.processing || isCompressing" class="px-8 py-2.5 bg-namira-teal hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-namira-teal/30 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-namira-teal border-0 active:scale-95">
                             <span v-if="form.processing">Menyimpan...</span>
                             <span v-else>Simpan Perubahan</span>
                         </PrimaryButton>

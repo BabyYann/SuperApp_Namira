@@ -61,7 +61,7 @@ class StaffController extends Controller
             'gender' => 'required|in:L,P',
             'phone' => 'nullable|string|max:20',
             'position' => 'nullable|string|max:100',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         DB::transaction(function () use ($validated, $unitId, $request) {
@@ -161,7 +161,7 @@ class StaffController extends Controller
             'gender' => 'required|in:L,P',
             'phone' => 'nullable|string|max:20',
             'position' => 'nullable|string|max:100',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         $staff->full_name = $validated['full_name'];

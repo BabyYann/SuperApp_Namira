@@ -105,7 +105,11 @@ class ViolationController extends Controller
             'violation_category_id' => 'required|exists:violation_categories,id',
             'date' => 'required|date',
             'description' => 'nullable|string',
-            'photo' => 'nullable|image|max:2048', // 2MB Max
+            'photo' => 'nullable|image|max:10240', // Max 10MB
+        ], [
+            'photo.uploaded' => 'Foto bukti pelanggaran gagal diunggah. Ukuran file terlalu besar atau koneksi terputus.',
+            'photo.image' => 'File bukti harus berupa foto/gambar (JPG, PNG, atau WebP).',
+            'photo.max' => 'Ukuran foto bukti tidak boleh melebihi 10MB.',
         ]);
 
         // Get default points

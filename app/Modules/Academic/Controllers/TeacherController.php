@@ -79,7 +79,7 @@ class TeacherController extends Controller
             'nip' => 'nullable|string|max:20',
             'gender' => 'required|in:L,P',
             'phone' => 'nullable|string|max:20',
-            'photo' => 'nullable|image|max:2048', // Max 2MB
+            'photo' => 'nullable|image|max:10240', // Max 10MB
         ]);
 
         try {
@@ -175,7 +175,7 @@ class TeacherController extends Controller
             'nip' => 'nullable|string|max:20',
             'gender' => 'required|in:L,P',
             'phone' => 'nullable|string|max:20',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         $teacher->full_name = $validated['full_name'];

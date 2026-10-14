@@ -7,6 +7,7 @@ import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import InputError from '@/Components/InputError.vue';
+import { compressImageFile } from '@/Utils/imageCompressor';
 import { 
     PhotoIcon, 
     CalendarIcon, 
@@ -35,6 +36,7 @@ const form = useForm({
 
 const selectedClassroom = ref('');
 const previewPhoto = ref(null);
+const isCompressing = ref(false);
 
 // Filter Students based on selected Classroom
 const filteredStudents = computed(() => {
@@ -42,11 +44,21 @@ const filteredStudents = computed(() => {
     return props.students.filter(s => s.classroom_id === selectedClassroom.value);
 });
 
-const handleFileChange = (e) => {
+const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    try {
+        isCompressing.value = true;
+        const compressed = await compressImageFile(file, 1280, 0.75);
+        form.photo = compressed;
+        previewPhoto.value = URL.createObjectURL(compressed);
+    } catch (err) {
+        console.error('Kompresi foto pelanggaran gagal:', err);
         form.photo = file;
         previewPhoto.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -195,12 +207,21 @@ const submit = () => {
                                             <div class="bg-white p-4 rounded-full shadow-md mb-3 group-hover:scale-110 transition-transform">
                                                 <PhotoIcon class="w-8 h-8 text-slate-400 group-hover:text-red-500" />
                                             </div>
-                                            <p class="text-sm font-bold text-slate-600 group-hover:text-red-600 transition-colors" v-if="!form.photo">Klik untuk upload foto bukti</p>
-                                            <p class="text-sm font-bold text-teal-600 flex items-center gap-2" v-else>
-                                                <DocumentArrowUpIcon class="w-5 h-5" />
-                                                {{ form.photo.name }}
-                                            </p>
-                                            <p class="text-xs text-slate-400 mt-1 font-medium">Format: PNG, JPG (Maks. 2MB)</p>
+                                            <div v-if="isCompressing" class="flex flex-col items-center justify-center py-2">
+                                                <svg class="animate-spin h-6 w-6 text-red-600 mb-2" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                                </svg>
+                                                <p class="text-xs font-bold text-red-600">Mengompres foto bukti...</p>
+                                            </div>
+                                            <template v-else>
+                                                <p class="text-sm font-bold text-slate-600 group-hover:text-red-600 transition-colors" v-if="!form.photo">Klik untuk upload foto bukti</p>
+                                                <p class="text-sm font-bold text-teal-600 flex items-center gap-2" v-else>
+                                                    <DocumentArrowUpIcon class="w-5 h-5" />
+                                                    {{ form.photo.name }}
+                                                </p>
+                                                <p class="text-xs text-slate-400 mt-1 font-medium">Format: PNG, JPG, WebP (Kompresi Otomatis)</p>
+                                            </template>
                                         </div>
                                     </div>
                                 </div>
@@ -215,8 +236,8 @@ const submit = () => {
                         <Link :href="route('counseling.violations.index')" class="px-6 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-100 transition-colors">
                             Batal
                         </Link>
-                        <button :disabled="form.processing" type="submit" class="px-8 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white text-sm font-bold rounded-2xl shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                             <ExclamationTriangleIcon class="w-5 h-5" />
+                        <button :disabled="form.processing || isCompressing" type="submit" class="px-8 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white text-sm font-bold rounded-2xl shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                            <ExclamationTriangleIcon class="w-5 h-5" />
                             <span v-if="form.processing">Menyimpan...</span>
                             <span v-else>Simpan Laporan</span>
                         </button>

@@ -95,7 +95,7 @@ class NewsController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'status' => 'required|in:draft,pending,published,rejected',
-            'image' => 'nullable|image|max:2048'
+            'image' => 'nullable|image|max:10240'
         ]);
 
         // Unit isolation
@@ -187,7 +187,7 @@ class NewsController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'status' => 'required|in:draft,pending,published,rejected',
-            'image' => 'nullable|image|max:2048'
+            'image' => 'nullable|image|max:10240'
         ]);
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $request->unit_id != $unitId) {

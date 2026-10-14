@@ -16,6 +16,8 @@ import {
     InformationCircleIcon
 } from '@heroicons/vue/24/outline';
 
+import { compressImageFile } from '@/Utils/imageCompressor';
+
 const props = defineProps({
     unit: Object,
     setting: Object,
@@ -23,6 +25,7 @@ const props = defineProps({
 });
 
 const currentStep = ref(1);
+const isCompressing = ref(false);
 
 const form = useForm({
     // Step 1: Biodata Anak
@@ -84,17 +87,42 @@ const fileNames = ref({
     registration_payment_proof: ''
 });
 
-const onPhotoChange = (e) => {
+const onPhotoChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    try {
+        isCompressing.value = true;
+        const compressed = await compressImageFile(file, 800, 0.8);
+        form.photo = compressed;
+        photoPreview.value = URL.createObjectURL(compressed);
+    } catch (err) {
+        console.error('Kompresi pas foto gagal:', err);
         form.photo = file;
         photoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
-const onFileChange = (e, field) => {
+const onFileChange = async (e, field) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    if (file.type && file.type.startsWith('image/')) {
+        try {
+            isCompressing.value = true;
+            const compressed = await compressImageFile(file, 1280, 0.75);
+            form[field] = compressed;
+            fileNames.value[field] = compressed.name;
+        } catch (err) {
+            console.error(`Kompresi berkas ${field} gagal:`, err);
+            form[field] = file;
+            fileNames.value[field] = file.name;
+        } finally {
+            isCompressing.value = false;
+        }
+    } else {
         form[field] = file;
         fileNames.value[field] = file.name;
     }

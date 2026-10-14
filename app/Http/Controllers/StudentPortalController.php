@@ -489,8 +489,13 @@ class StudentPortalController extends Controller
     public function uploadPaymentProof(Request $request, $billId)
     {
         $request->validate([
-            'proof' => 'required|file|mimes:jpeg,png,jpg,svg,pdf|max:5120',
+            'proof' => 'required|file|mimes:jpeg,png,jpg,svg,pdf,webp|max:10240',
             'notes' => 'nullable|string|max:255',
+        ], [
+            'proof.uploaded' => 'File bukti transfer gagal diunggah. Ukuran file terlalu besar atau koneksi terputus.',
+            'proof.mimes' => 'Format bukti transfer harus berupa JPG, PNG, WebP, SVG, atau PDF.',
+            'proof.max' => 'Ukuran file bukti transfer maksimal 10MB.',
+            'proof.required' => 'File bukti transfer wajib dipilih.',
         ]);
 
         $student = $this->getStudent();

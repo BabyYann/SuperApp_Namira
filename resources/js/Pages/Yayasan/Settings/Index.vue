@@ -12,8 +12,9 @@ import {
     AcademicCapIcon, BanknotesIcon, UserGroupIcon,
     ChatBubbleLeftRightIcon, BuildingOffice2Icon, IdentificationIcon,
     CheckCircleIcon, SwatchIcon, AtSymbolIcon, MapPinIcon, ArrowUpTrayIcon,
-    ClipboardDocumentListIcon, ClockIcon, ArrowTopRightOnSquareIcon
+    ClipboardDocumentListIcon, ClockIcon, ArrowTopRightOnSquareIcon, ArrowPathIcon
 } from '@heroicons/vue/24/outline';
+import { compressImageFile } from '@/Utils/imageCompressor';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
@@ -44,12 +45,23 @@ const form = useForm({
 });
 
 const logoPreview = ref(props.settings?.app_logo || null);
+const isCompressing = ref(false);
 
-const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 800, 0.85);
+        form.app_logo = compressedFile;
+        logoPreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Logo compression error:', err);
         form.app_logo = file;
         logoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -321,16 +333,27 @@ watch(qStatusFilter, () => {
                                 Branding Utama
                             </h3>
                             <div class="flex flex-col items-center p-6 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
-                                <div class="w-32 h-32 mb-4 rounded-xl overflow-hidden border shadow-sm bg-white flex items-center justify-center">
-                                    <img v-if="logoPreview" :src="logoPreview" class="w-full h-full object-contain p-2" />
+                                <div class="relative w-32 h-32 mb-4 rounded-xl overflow-hidden border shadow-sm bg-white flex items-center justify-center">
+                                    <template v-if="logoPreview">
+                                        <img :src="logoPreview" class="w-full h-full object-contain p-2" />
+                                        <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                            <ArrowPathIcon class="w-6 h-6 animate-spin text-teal-300 mb-0.5" />
+                                            <span class="text-[9px] font-bold">Kompresi...</span>
+                                        </div>
+                                    </template>
+                                    <div v-else-if="isCompressing" class="flex flex-col items-center justify-center text-teal-600">
+                                        <ArrowPathIcon class="w-6 h-6 animate-spin mb-1" />
+                                        <span class="text-[9px] font-bold">Kompresi...</span>
+                                    </div>
                                     <BuildingLibraryIcon v-else class="w-12 h-12 text-gray-300" />
                                 </div>
-                                <label class="cursor-pointer bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 shadow-sm hover:shadow-md transition-all flex items-center gap-2">
-                                    <ArrowUpTrayIcon class="w-4 h-4" />
-                                    Ganti Logo Yayasan
-                                    <input type="file" class="hidden" accept="image/*" @change="handleLogoUpload">
+                                <label class="cursor-pointer bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-bold text-gray-600 shadow-sm hover:shadow-md transition-all flex items-center gap-2" :class="{ 'opacity-60 cursor-not-allowed': isCompressing }">
+                                    <ArrowPathIcon v-if="isCompressing" class="w-4 h-4 animate-spin text-teal-600" />
+                                    <ArrowUpTrayIcon v-else class="w-4 h-4" />
+                                    <span>{{ isCompressing ? 'Mengompres...' : 'Ganti Logo Yayasan' }}</span>
+                                    <input type="file" class="hidden" accept="image/*" @change="handleLogoUpload" :disabled="isCompressing">
                                 </label>
-                                <p class="text-xs text-gray-400 mt-2">Gunakan format PNG transparan untuk hasil terbaik.</p>
+                                <p class="text-xs text-gray-400 mt-2">Format PNG/JPG/WEBP maks 10MB (Otomatis dioptimalkan & dikompresi).</p>
                             </div>
                             <div>
                                 <InputLabel for="app_name" value="Nama Aplikasi / Yayasan" />
@@ -374,7 +397,7 @@ watch(qStatusFilter, () => {
                                 </div>
                             </div>
                             <div class="flex justify-end pt-2">
-                                <PrimaryButton :disabled="form.processing" class="px-8 py-3 rounded-xl">
+                                <PrimaryButton :disabled="form.processing || isCompressing" class="px-8 py-3 rounded-xl">
                                     Simpan Pengaturan
                                 </PrimaryButton>
                             </div>

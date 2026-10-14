@@ -2,9 +2,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { PhotoIcon, ExclamationCircleIcon, ChatBubbleBottomCenterTextIcon, InformationCircleIcon } from '@heroicons/vue/24/outline';
+import { PhotoIcon, ExclamationCircleIcon, ChatBubbleBottomCenterTextIcon, InformationCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
 import { QuillEditor } from '@vueup/vue-quill';
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     news: Object,
@@ -30,12 +31,23 @@ const form = useForm({
 });
 
 const imagePreview = ref(props.news?.image_path ? '/' + props.news.image_path : null);
+const isCompressing = ref(false);
 
-const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 1600, 0.8);
+        form.image = compressedFile;
+        imagePreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Image compression error:', err);
         form.image = file;
         imagePreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -117,14 +129,19 @@ const submitForm = () => {
                         <div class="mt-1 flex items-center gap-4">
                             <div v-if="imagePreview" class="relative w-32 h-20 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                                 <img :src="imagePreview" class="w-full h-full object-cover" />
+                                <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                    <ArrowPathIcon class="w-5 h-5 animate-spin text-teal-300" />
+                                    <span class="text-[9px] font-bold mt-0.5">Kompresi...</span>
+                                </div>
                             </div>
-                            <label class="cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
-                                <PhotoIcon class="w-5 h-5 text-gray-500" />
-                                <span>Pilih Gambar</span>
-                                <input type="file" @change="handleImageChange" accept="image/*" class="hidden" />
+                            <label class="cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2" :class="{ 'opacity-60 cursor-not-allowed': isCompressing }">
+                                <ArrowPathIcon v-if="isCompressing" class="w-5 h-5 animate-spin text-teal-600" />
+                                <PhotoIcon v-else class="w-5 h-5 text-gray-500" />
+                                <span>{{ isCompressing ? 'Mengompres...' : 'Pilih Gambar' }}</span>
+                                <input type="file" @change="handleImageChange" accept="image/*" class="hidden" :disabled="isCompressing" />
                             </label>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">Format: JPG, PNG, WEBP. Maks 2MB. Otomatis dikompresi.</p>
+                        <p class="text-xs text-gray-400 mt-1">Format: JPG, PNG, WEBP. Maks 10MB (Otomatis dioptimalkan & dikompresi).</p>
                         <div v-if="form.errors.image" class="text-red-500 text-xs mt-1">{{ form.errors.image }}</div>
                     </div>
 
@@ -168,7 +185,7 @@ const submitForm = () => {
                         <button 
                             type="button" 
                             @click="submitWithStatus('draft')" 
-                            :disabled="form.processing" 
+                            :disabled="form.processing || isCompressing" 
                             class="px-5 py-2.5 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
                         >
                             Simpan Draft
@@ -178,7 +195,7 @@ const submitForm = () => {
                             v-if="!is_approver" 
                             type="button" 
                             @click="submitWithStatus('pending')" 
-                            :disabled="form.processing" 
+                            :disabled="form.processing || isCompressing" 
                             class="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-all disabled:opacity-50"
                         >
                             {{ news?.status === 'rejected' ? 'Ajukan Verifikasi Kembali' : 'Ajukan Verifikasi' }}
@@ -188,7 +205,7 @@ const submitForm = () => {
                             v-if="is_approver" 
                             type="button" 
                             @click="submitWithStatus('published')" 
-                            :disabled="form.processing" 
+                            :disabled="form.processing || isCompressing" 
                             class="px-5 py-2.5 bg-namira-teal text-white rounded-xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 transition-all disabled:opacity-50"
                         >
                             Terbitkan Langsung

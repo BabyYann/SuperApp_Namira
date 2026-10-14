@@ -7,6 +7,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     user: Object,
@@ -53,11 +54,23 @@ const form = useForm({
     unit_id: props.currentUnitId,
 });
 
-const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const isCompressing = ref(false);
+
+const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 800, 0.8);
+        form.photo = compressedFile;
+        photoPreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Photo compression error:', err);
         form.photo = file;
         photoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -118,17 +131,23 @@ const submitResetPassword = () => {
                         <!-- Photo Upload & Preview Bar -->
                         <div class="mb-6 flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80">
                             <div class="relative w-24 h-24 rounded-2xl overflow-hidden shadow-md border-2 border-white shrink-0 bg-gradient-to-br from-namira-teal to-teal-700 flex items-center justify-center text-white text-2xl font-black">
-                                <img v-if="photoPreview" :src="photoPreview" class="w-full h-full object-cover" />
+                                <template v-if="photoPreview">
+                                    <img :src="photoPreview" class="w-full h-full object-cover" />
+                                    <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                        <svg class="animate-spin h-5 w-5 text-teal-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <span class="text-[9px] font-bold mt-1">Kompresi...</span>
+                                    </div>
+                                </template>
                                 <img v-else-if="user.profile_photo_url" :src="user.profile_photo_url" class="w-full h-full object-cover" />
                                 <span v-else>{{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}</span>
                             </div>
                             <div class="space-y-1.5 text-center sm:text-left">
-                                <label class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-teal-50 text-namira-teal font-bold rounded-xl text-xs border border-gray-200 shadow-sm cursor-pointer transition-all active:scale-95">
+                                <label class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-teal-50 text-namira-teal font-bold rounded-xl text-xs border border-gray-200 shadow-sm cursor-pointer transition-all active:scale-95" :class="{ 'opacity-60 cursor-not-allowed': isCompressing }">
                                     <CameraIcon class="w-4 h-4 text-namira-teal" />
-                                    <span>Unggah / Ganti Foto Profil</span>
-                                    <input type="file" class="hidden" accept="image/*" @change="handlePhotoChange" />
+                                    <span>{{ isCompressing ? 'Mengompres...' : 'Unggah / Ganti Foto Profil' }}</span>
+                                    <input type="file" class="hidden" accept="image/*" @change="handlePhotoChange" :disabled="isCompressing" />
                                 </label>
-                                <p class="text-xs text-gray-500">Foto profil resmi pengguna (.jpg, .png, .webp). Otomatis dikompresi ke WebP super ringan.</p>
+                                <p class="text-xs text-gray-500">Foto profil resmi (.jpg, .png, .webp). Otomatis dioptimalkan & dikompresi.</p>
                                 <InputError :message="form.errors.photo" class="mt-1" />
                             </div>
                         </div>
@@ -242,7 +261,7 @@ const submitResetPassword = () => {
                         <Link :href="route('yayasan.users.index')" class="px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-all shadow-sm">
                             Batal
                         </Link>
-                        <PrimaryButton :disabled="form.processing" class="px-8 py-2.5 bg-namira-teal hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-namira-teal/30 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-namira-teal border-0 hover:-translate-y-0.5">
+                        <PrimaryButton :disabled="form.processing || isCompressing" class="px-8 py-2.5 bg-namira-teal hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-namira-teal/30 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-namira-teal border-0 hover:-translate-y-0.5">
                             <span v-if="form.processing">Menyimpan...</span>
                             <span v-else>Simpan Perubahan</span>
                         </PrimaryButton>

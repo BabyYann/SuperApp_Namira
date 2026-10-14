@@ -101,7 +101,7 @@ class EventController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'status' => 'required|in:upcoming,completed,cancelled',
             'approval_status' => 'required|in:draft,pending,published,rejected',
-            'image' => 'nullable|image|max:2048'
+            'image' => 'nullable|image|max:10240'
         ]);
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $validated['unit_id'] != $unitId) {
@@ -207,7 +207,7 @@ class EventController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'status' => 'required|in:upcoming,completed,cancelled',
             'approval_status' => 'required|in:draft,pending,published,rejected',
-            'image' => 'nullable|image|max:2048'
+            'image' => 'nullable|image|max:10240'
         ]);
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan']) && $validated['unit_id'] != $unitId) {

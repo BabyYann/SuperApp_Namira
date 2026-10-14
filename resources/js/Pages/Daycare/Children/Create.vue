@@ -10,6 +10,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const form = useForm({
     full_name: '',
@@ -29,12 +30,23 @@ const form = useForm({
 });
 
 const photoPreview = ref(null);
+const isCompressing = ref(false);
 
-const handlePhotoChange = (e) => {
+const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    try {
+        isCompressing.value = true;
+        const compressed = await compressImageFile(file, 800, 0.8);
+        form.photo = compressed;
+        photoPreview.value = URL.createObjectURL(compressed);
+    } catch (err) {
+        console.error('Kompresi foto anak daycare gagal:', err);
         form.photo = file;
         photoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 

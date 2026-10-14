@@ -12,22 +12,42 @@ import {
     ShieldCheckIcon,
     ArrowRightOnRectangleIcon
 } from '@heroicons/vue/24/outline';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const logout = () => {
     router.post(route('logout'));
 };
 
-const handlePhotoUpload = (e) => {
+const isUploadingPhoto = ref(false);
+
+const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    router.post(route('profile.photo.update'), {
-        photo: file
-    }, {
-        forceFormData: true,
-    });
+    try {
+        isUploadingPhoto.value = true;
+        const compressed = await compressImageFile(file, 800, 0.8);
+        router.post(route('profile.photo.update'), {
+            photo: compressed
+        }, {
+            forceFormData: true,
+            onFinish: () => {
+                isUploadingPhoto.value = false;
+            }
+        });
+    } catch (err) {
+        console.error('Kompresi avatar gagal:', err);
+        router.post(route('profile.photo.update'), {
+            photo: file
+        }, {
+            forceFormData: true,
+            onFinish: () => {
+                isUploadingPhoto.value = false;
+            }
+        });
+    }
 };
 
 const props = defineProps({
@@ -151,7 +171,14 @@ const canEditSelf = computed(() => {
                             </div>
                             
                             <!-- Upload Overlay (only for Admin) -->
-                            <label v-if="canEditSelf" class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div v-if="isUploadingPhoto" class="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center text-white z-20">
+                                <svg class="animate-spin h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                <span class="text-[10px] font-bold">Mengompres...</span>
+                            </div>
+                            <label v-else-if="canEditSelf" class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                 <span class="text-white text-xs font-bold text-center px-2">Klik untuk<br>Ubah Foto</span>
                                 <input type="file" class="hidden" accept="image/*" @change="handlePhotoUpload">
                             </label>

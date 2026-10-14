@@ -20,7 +20,7 @@ class DaycareDailyLogController extends Controller
             'description' => 'nullable|string|max:1000',
             'amount_ml' => 'nullable|integer|min:0',
             'portion_eaten' => 'nullable|string|max:50',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         if ($request->hasFile('photo')) {

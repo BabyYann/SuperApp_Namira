@@ -86,7 +86,7 @@ class DaycareChildrenController extends Controller
             'parent_name' => 'required|string|max:255',
             'parent_phone' => 'required|string|max:30',
             'address' => 'nullable|string|max:500',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
             'blood_type' => 'nullable|string|max:5',
             'allergies' => 'nullable|string|max:1000',
             'special_conditions' => 'nullable|string|max:1000',
@@ -178,7 +178,7 @@ class DaycareChildrenController extends Controller
             'parent_name' => 'required|string|max:255',
             'parent_phone' => 'required|string|max:30',
             'address' => 'nullable|string|max:500',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
             'blood_type' => 'nullable|string|max:5',
             'allergies' => 'nullable|string|max:1000',
             'special_conditions' => 'nullable|string|max:1000',
@@ -220,7 +220,7 @@ class DaycareChildrenController extends Controller
             'name' => 'required|string|max:255',
             'relationship' => 'required|string|max:100',
             'phone' => 'nullable|string|max:30',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|max:10240',
         ]);
 
         if ($request->hasFile('photo')) {

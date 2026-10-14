@@ -5,7 +5,8 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { BuildingOffice2Icon, ArrowLeftIcon, CloudArrowUpIcon, InformationCircleIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
+import { BuildingOffice2Icon, ArrowLeftIcon, CloudArrowUpIcon, InformationCircleIcon, ExclamationCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     partner: Object,
@@ -32,12 +33,23 @@ const form = useForm({
 });
 
 const logoPreview = ref(props.partner?.logo_path ? '/' + props.partner.logo_path : null);
+const isCompressing = ref(false);
 
-const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handleLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 800, 0.85);
+        form.logo = compressedFile;
+        logoPreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Logo compression error:', err);
         form.logo = file;
         logoPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -143,24 +155,36 @@ const submitForm = () => {
                         
                         <div class="flex flex-col sm:flex-row items-center gap-6 mt-1 p-4 bg-gray-50/70 border border-dashed border-gray-200 rounded-2xl">
                             <!-- Preview Box -->
-                            <div class="w-32 h-20 bg-white rounded-xl flex items-center justify-center p-2 border border-gray-100 overflow-hidden shrink-0 shadow-inner">
-                                <img v-if="logoPreview" :src="logoPreview" alt="Logo Preview" class="w-full h-full object-contain" />
+                            <div class="relative w-32 h-20 bg-white rounded-xl flex items-center justify-center p-2 border border-gray-100 overflow-hidden shrink-0 shadow-inner">
+                                <template v-if="logoPreview">
+                                    <img :src="logoPreview" alt="Logo Preview" class="w-full h-full object-contain" />
+                                    <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                        <ArrowPathIcon class="w-5 h-5 animate-spin text-teal-300 mb-0.5" />
+                                        <span class="text-[9px] font-bold">Kompresi...</span>
+                                    </div>
+                                </template>
+                                <div v-else-if="isCompressing" class="flex flex-col items-center justify-center text-teal-600">
+                                    <ArrowPathIcon class="w-6 h-6 animate-spin mb-1" />
+                                    <span class="text-[9px] font-bold">Kompresi...</span>
+                                </div>
                                 <BuildingOffice2Icon v-else class="w-10 h-10 text-gray-300" />
                             </div>
 
                             <!-- File Inputs -->
                             <div class="flex-1 w-full text-center sm:text-left space-y-2">
-                                <label class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 hover:border-namira-teal hover:text-namira-teal rounded-xl shadow-sm text-xs font-bold transition-all cursor-pointer active:scale-95">
-                                    <CloudArrowUpIcon class="w-4 h-4" />
-                                    <span>Pilih File Gambar</span>
+                                <label class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 hover:border-namira-teal hover:text-namira-teal rounded-xl shadow-sm text-xs font-bold transition-all cursor-pointer active:scale-95" :class="{ 'opacity-60 cursor-not-allowed': isCompressing }">
+                                    <ArrowPathIcon v-if="isCompressing" class="w-4 h-4 animate-spin text-teal-600" />
+                                    <CloudArrowUpIcon v-else class="w-4 h-4" />
+                                    <span>{{ isCompressing ? 'Mengompres...' : 'Pilih File Gambar' }}</span>
                                     <input 
                                         type="file" 
                                         class="hidden" 
                                         accept="image/*"
                                         @change="handleLogoChange"
+                                        :disabled="isCompressing"
                                     />
                                 </label>
-                                <p class="text-[11px] text-gray-400">Direkomendasikan format PNG transparan atau JPG, ukuran maksimal 2MB.</p>
+                                <p class="text-[11px] text-gray-400">Format PNG, JPG, WEBP. Maks 10MB (Otomatis dioptimalkan & dikompresi).</p>
                             </div>
                         </div>
                         <InputError class="mt-1.5" :message="form.errors.logo" />
@@ -193,7 +217,7 @@ const submitForm = () => {
                             v-if="!is_approver"
                             type="button" 
                             @click="submitWithStatus('draft')" 
-                            :disabled="form.processing" 
+                            :disabled="form.processing || isCompressing" 
                             class="px-5 py-2.5 bg-slate-700 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all text-xs disabled:opacity-50"
                         >
                             Simpan Draft
@@ -202,7 +226,7 @@ const submitForm = () => {
                         <button 
                             type="submit" 
                             class="px-8 py-2.5 bg-namira-teal text-white rounded-2xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 active:scale-95 text-xs"
-                            :disabled="form.processing"
+                            :disabled="form.processing || isCompressing"
                         >
                             <span v-if="!form.processing">{{ is_approver ? (isEdit ? 'Perbarui Mitra' : 'Simpan Mitra') : 'Ajukan Verifikasi' }}</span>
                             <span v-else class="flex items-center gap-1.5">

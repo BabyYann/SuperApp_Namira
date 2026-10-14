@@ -48,7 +48,7 @@ class DaycareAttendanceController extends Controller
             'check_in_temp' => 'nullable|numeric|between:34,42',
             'check_in_condition' => 'required|string|max:255',
             'check_in_notes' => 'nullable|string|max:500',
-            'check_in_photo' => 'nullable|image|max:2048',
+            'check_in_photo' => 'nullable|image|max:10240',
         ]);
 
         if ($request->hasFile('check_in_photo')) {
@@ -77,7 +77,7 @@ class DaycareAttendanceController extends Controller
             'picked_up_by' => 'required|string|max:255',
             'authorized_pickup_id' => 'nullable|exists:daycare_authorized_pickups,id',
             'check_out_notes' => 'nullable|string|max:500',
-            'check_out_photo' => 'nullable|image|max:2048',
+            'check_out_photo' => 'nullable|image|max:10240',
         ]);
 
         if ($request->hasFile('check_out_photo')) {

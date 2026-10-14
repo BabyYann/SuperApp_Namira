@@ -89,8 +89,8 @@ class PublicCareerController extends Controller
             'cv' => 'required|file|mimes:pdf|max:5120',
             'cover_letter' => 'nullable|file|mimes:pdf|max:5120',
             'certificate' => 'nullable|file|mimes:pdf|max:5120',
-            'ktp' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:3072',
-            'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:3072',
+            'ktp' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:10240',
             'notes' => 'nullable|string|max:1000',
         ]);
 

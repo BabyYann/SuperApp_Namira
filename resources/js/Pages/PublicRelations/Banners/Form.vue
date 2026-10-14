@@ -2,7 +2,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { PhotoIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { PhotoIcon, ArrowLeftIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     banner: Object,
@@ -19,17 +20,23 @@ const form = useForm({
 });
 
 const imagePreviewUrl = ref(props.banner?.image_path ? '/' + props.banner.image_path : null);
+const isCompressing = ref(false);
 
-const onFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        // Validate client-side size (3MB = 3 * 1024 * 1024 bytes)
-        if (file.size > 3 * 1024 * 1024) {
-            alert('Ukuran file foto melebihi batas maksimal 3MB.');
-            return;
-        }
+const onFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 1920, 0.85);
+        form.image = compressedFile;
+        imagePreviewUrl.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Banner compression error:', err);
         form.image = file;
         imagePreviewUrl.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -73,7 +80,17 @@ const submit = () => {
                             <label class="block text-sm font-semibold text-gray-700">Foto Banner <span v-if="!isEdit" class="text-red-500">*</span></label>
                             
                             <div class="relative w-full aspect-[21/9] md:aspect-[16/6] rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-namira-teal transition-colors flex items-center justify-center bg-gray-50 group shadow-inner">
-                                <img v-if="imagePreviewUrl" :src="imagePreviewUrl" class="w-full h-full object-cover" />
+                                <template v-if="imagePreviewUrl">
+                                    <img :src="imagePreviewUrl" class="w-full h-full object-cover" />
+                                    <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                        <ArrowPathIcon class="w-8 h-8 animate-spin text-teal-300 mb-1" />
+                                        <span class="text-xs font-bold">Mengompresi banner...</span>
+                                    </div>
+                                </template>
+                                <div v-else-if="isCompressing" class="flex flex-col items-center justify-center text-teal-600 p-4">
+                                    <ArrowPathIcon class="w-8 h-8 animate-spin mb-2" />
+                                    <span class="text-sm font-semibold">Mengompresi banner...</span>
+                                </div>
                                 <div v-else class="flex flex-col items-center justify-center text-gray-400 p-4">
                                     <PhotoIcon class="w-12 h-12 mb-2 stroke-1" />
                                     <span class="text-sm font-semibold text-gray-700">Pilih File Foto Banner</span>
@@ -81,15 +98,15 @@ const submit = () => {
                                 </div>
                                 
                                 <!-- Hover Overlay -->
-                                <label for="image-upload" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white cursor-pointer transition-opacity">
+                                <label for="image-upload" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white cursor-pointer transition-opacity" :class="{ 'cursor-not-allowed': isCompressing }">
                                     <PhotoIcon class="w-8 h-8 mb-1" />
-                                    <span class="text-sm font-semibold">Unggah Foto Baru</span>
+                                    <span class="text-sm font-semibold">{{ isCompressing ? 'Mengompres...' : 'Unggah Foto Baru' }}</span>
                                 </label>
                             </div>
                             
-                            <input id="image-upload" type="file" class="hidden" accept="image/*" @change="onFileChange" />
+                            <input id="image-upload" type="file" class="hidden" accept="image/*" @change="onFileChange" :disabled="isCompressing" />
                             <div class="flex justify-between items-center text-[11px] text-gray-500">
-                                <span>Format file: JPG, JPEG, PNG. Maksimal ukuran file 3MB.</span>
+                                <span>Format file: JPG, JPEG, PNG, WEBP. Maksimal ukuran file 10MB (Otomatis dikompresi).</span>
                             </div>
                             <p v-if="form.errors.image" class="text-xs text-red-600 font-medium">{{ form.errors.image }}</p>
                         </div>
@@ -135,7 +152,7 @@ const submit = () => {
                         <ArrowLeftIcon class="w-4 h-4" />
                         Batal
                     </Link>
-                    <button type="submit" :disabled="form.processing"
+                    <button type="submit" :disabled="form.processing || isCompressing"
                         class="px-6 py-2.5 bg-namira-teal text-white rounded-xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 hover:-translate-y-0.5 transition-all disabled:opacity-50 flex items-center gap-2 text-sm">
                         <svg v-if="form.processing" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>

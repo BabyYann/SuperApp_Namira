@@ -10,8 +10,10 @@ import {
     TrashIcon, 
     QrCodeIcon, 
     PhotoIcon,
-    ShieldCheckIcon
+    ShieldCheckIcon,
+    ArrowPathIcon
 } from '@heroicons/vue/24/outline';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     setting: Object,
@@ -37,12 +39,23 @@ const settingForm = useForm({
 });
 
 const qrisPreview = ref(props.setting?.qris_image_url || null);
+const isCompressing = ref(false);
 
-const handleQrisUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handleQrisUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 800, 0.85);
+        settingForm.qris_image = compressedFile;
+        qrisPreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('QRIS compression error:', err);
         settingForm.qris_image = file;
         qrisPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -154,16 +167,26 @@ const removePanitia = (user) => {
                             <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
                                 <span class="font-bold text-slate-800 dark:text-slate-200 block">Gambar Kode QRIS Bank Jatim</span>
                                 <div class="flex items-center gap-4">
-                                    <div class="w-24 h-24 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden shrink-0">
-                                        <img v-if="qrisPreview" :src="qrisPreview" class="w-full h-full object-contain">
+                                    <div class="relative w-24 h-24 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden shrink-0">
+                                        <template v-if="qrisPreview">
+                                            <img :src="qrisPreview" class="w-full h-full object-contain">
+                                            <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                                <ArrowPathIcon class="w-5 h-5 animate-spin text-teal-300 mb-0.5" />
+                                                <span class="text-[9px] font-bold">Kompresi...</span>
+                                            </div>
+                                        </template>
+                                        <div v-else-if="isCompressing" class="flex flex-col items-center justify-center text-teal-600">
+                                            <ArrowPathIcon class="w-5 h-5 animate-spin mb-0.5" />
+                                            <span class="text-[9px] font-bold">Kompresi...</span>
+                                        </div>
                                         <QrCodeIcon v-else class="w-8 h-8 text-slate-400" />
                                     </div>
                                     <div>
-                                        <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-xs font-semibold text-slate-800 dark:text-white transition">
-                                            <span>Pilih Foto QRIS</span>
-                                            <input type="file" accept="image/*" class="hidden" @change="handleQrisUpload">
+                                        <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-xs font-semibold text-slate-800 dark:text-white transition" :class="{ 'opacity-60 cursor-not-allowed': isCompressing }">
+                                            <span>{{ isCompressing ? 'Mengompres...' : 'Pilih Foto QRIS' }}</span>
+                                            <input type="file" accept="image/*" class="hidden" @change="handleQrisUpload" :disabled="isCompressing">
                                         </label>
-                                        <span class="text-[11px] text-slate-400 block mt-1">Format: JPG atau PNG maksimal 3MB.</span>
+                                        <span class="text-[11px] text-slate-400 block mt-1">Format: JPG atau PNG (Maks 10MB, otomatis dioptimalkan).</span>
                                     </div>
                                 </div>
                             </div>
@@ -179,10 +202,10 @@ const removePanitia = (user) => {
                             <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
                                 <button 
                                     type="submit" 
-                                    :disabled="settingForm.processing"
+                                    :disabled="settingForm.processing || isCompressing"
                                     class="px-6 py-2.5 rounded-xl bg-[#064e3b] hover:bg-emerald-700 text-white font-bold text-xs shadow transition disabled:opacity-50"
                                 >
-                                    {{ settingForm.processing ? 'Menyimpan...' : 'Simpan Pengaturan' }}
+                                    {{ settingForm.processing ? 'Menyimpan...' : (isCompressing ? 'Mengompresi Foto...' : 'Simpan Pengaturan') }}
                                 </button>
                             </div>
                         </form>

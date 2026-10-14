@@ -2,9 +2,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { PhotoIcon, ChatBubbleBottomCenterTextIcon, InformationCircleIcon, ExclamationCircleIcon } from '@heroicons/vue/24/outline';
+import { PhotoIcon, ChatBubbleBottomCenterTextIcon, InformationCircleIcon, ExclamationCircleIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
 import { QuillEditor } from '@vueup/vue-quill';
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     event: Object,
@@ -40,16 +41,23 @@ const form = useForm({
 });
 
 const bannerPreview = ref(props.event?.image_path ? (props.event.image_path.startsWith('http') ? props.event.image_path : `/storage/${props.event.image_path}`) : null);
+const isCompressing = ref(false);
 
-const handleBannerChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+const handleBannerChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    isCompressing.value = true;
+    try {
+        const compressedFile = await compressImageFile(file, 1600, 0.8);
+        form.image = compressedFile;
+        bannerPreview.value = URL.createObjectURL(compressedFile);
+    } catch (err) {
+        console.error('Banner compression error:', err);
         form.image = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            bannerPreview.value = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        bannerPreview.value = URL.createObjectURL(file);
+    } finally {
+        isCompressing.value = false;
     }
 };
 
@@ -144,16 +152,20 @@ const submitWithApprovalStatus = (targetApprovalStatus) => {
                         <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl relative group" :class="{'border-namira-teal bg-teal-50/10': bannerPreview}">
                             <div v-if="bannerPreview" class="absolute inset-0 overflow-hidden rounded-xl">
                                 <img :src="bannerPreview" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                <div v-if="isCompressing" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+                                    <ArrowPathIcon class="w-6 h-6 animate-spin text-teal-300 mb-1" />
+                                    <span class="text-xs font-bold">Mengompresi banner...</span>
+                                </div>
                             </div>
                             <div class="space-y-1 text-center relative z-10 p-4 bg-white/80 rounded-lg backdrop-blur-sm">
                                 <PhotoIcon class="mx-auto h-12 w-12 text-gray-400" />
                                 <div class="flex text-sm text-gray-600 justify-center">
-                                    <label class="relative cursor-pointer bg-white rounded-md font-medium text-namira-teal hover:text-teal-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-namira-teal">
-                                        <span>Upload banner</span>
-                                        <input type="file" class="sr-only" @change="handleBannerChange" accept="image/*">
+                                    <label class="relative cursor-pointer bg-white rounded-md font-medium text-namira-teal hover:text-teal-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-namira-teal" :class="{ 'opacity-60 cursor-not-allowed': isCompressing }">
+                                        <span>{{ isCompressing ? 'Mengompres...' : 'Upload banner' }}</span>
+                                        <input type="file" class="sr-only" @change="handleBannerChange" accept="image/*" :disabled="isCompressing">
                                     </label>
                                 </div>
-                                <p class="text-xs text-gray-500">PNG, JPG up to 2MB (Format WebP Otomatis)</p>
+                                <p class="text-xs text-gray-500">PNG, JPG maks 10MB (Otomatis dioptimalkan & dikompresi)</p>
                             </div>
                         </div>
                         <p v-if="form.errors.image" class="text-sm text-red-600 mt-1">{{ form.errors.image }}</p>
@@ -196,7 +208,7 @@ const submitWithApprovalStatus = (targetApprovalStatus) => {
                         <button 
                             type="button" 
                             @click="submitWithApprovalStatus('draft')" 
-                            :disabled="form.processing" 
+                            :disabled="form.processing || isCompressing" 
                             class="px-5 py-2.5 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-800 transition-all disabled:opacity-50"
                         >
                             Simpan Draft
@@ -206,7 +218,7 @@ const submitWithApprovalStatus = (targetApprovalStatus) => {
                             v-if="!is_approver" 
                             type="button" 
                             @click="submitWithApprovalStatus('pending')" 
-                            :disabled="form.processing" 
+                            :disabled="form.processing || isCompressing" 
                             class="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-all disabled:opacity-50"
                         >
                             {{ event?.approval_status === 'rejected' ? 'Ajukan Verifikasi Kembali' : 'Ajukan Verifikasi' }}
@@ -216,7 +228,7 @@ const submitWithApprovalStatus = (targetApprovalStatus) => {
                             v-if="is_approver" 
                             type="button" 
                             @click="submitWithApprovalStatus('published')" 
-                            :disabled="form.processing" 
+                            :disabled="form.processing || isCompressing" 
                             class="px-5 py-2.5 bg-namira-teal text-white rounded-xl font-bold shadow-lg shadow-namira-teal/30 hover:bg-teal-600 transition-all disabled:opacity-50"
                         >
                             Terbitkan Langsung

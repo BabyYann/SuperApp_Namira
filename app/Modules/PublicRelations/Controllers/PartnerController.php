@@ -90,7 +90,7 @@ class PartnerController extends Controller
         $validated = $request->validate([
             'unit_id' => 'required|exists:units,id',
             'name' => 'required|string|max:255',
-            'logo' => 'required|image|max:2048',
+            'logo' => 'required|image|max:10240',
             'website_url' => 'nullable|url|max:255',
             'approval_status' => 'required|in:draft,pending,published,rejected',
         ]);
@@ -179,7 +179,7 @@ class PartnerController extends Controller
         $validated = $request->validate([
             'unit_id' => 'required|exists:units,id',
             'name' => 'required|string|max:255',
-            'logo' => 'nullable|image|max:2048',
+            'logo' => 'nullable|image|max:10240',
             'website_url' => 'nullable|url|max:255',
             'approval_status' => 'required|in:draft,pending,published,rejected',
         ]);

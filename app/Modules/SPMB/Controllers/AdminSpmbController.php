@@ -168,7 +168,7 @@ class AdminSpmbController extends Controller
         $request->validate([
             'evaluation_result' => 'required|in:accepted,reserve,rejected',
             'evaluation_notes' => 'nullable|string|max:1000',
-            'evaluation_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'evaluation_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         $data = [
@@ -356,7 +356,7 @@ class AdminSpmbController extends Controller
             'contact_whatsapp' => 'nullable|string|max:25',
             'notes' => 'nullable|string|max:1000',
             'is_active' => 'required|boolean',
-            'qris_image' => 'nullable|file|image|max:3072',
+            'qris_image' => 'nullable|file|image|max:10240',
         ]);
 
         $data = $request->only([

@@ -149,11 +149,11 @@ class PublicSpmbController extends Controller
             'postal_code' => 'nullable|string|max:10',
 
             // Upload Berkas
-            'photo' => 'required|file|image|max:5120', // Max 5MB
-            'family_card' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'birth_cert' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'parent_id_card' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'registration_payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'photo' => 'required|file|image|max:10240', // Max 10MB
+            'family_card' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'birth_cert' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'parent_id_card' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'registration_payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ], [
             'photo.required' => 'Pas foto anak berlatar merah wajib diunggah.',
             'family_card.required' => 'Kartu Keluarga (KK) wajib diunggah.',

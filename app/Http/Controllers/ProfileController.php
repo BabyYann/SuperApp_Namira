@@ -89,7 +89,12 @@ class ProfileController extends Controller
     public function updatePhoto(Request $request): RedirectResponse
     {
         $request->validate([
-            'photo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp,gif,bmp', 'max:5120'],
+            'photo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp,gif,bmp', 'max:10240'],
+        ], [
+            'photo.uploaded' => 'Foto profil gagal diunggah. Ukuran file terlalu besar atau koneksi terputus.',
+            'photo.image' => 'File harus berupa gambar (JPG, PNG, atau WebP).',
+            'photo.max' => 'Ukuran foto profil tidak boleh melebihi 10MB.',
+            'photo.required' => 'Foto profil wajib dipilih.',
         ]);
 
         $user = $request->user();
