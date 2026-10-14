@@ -61,9 +61,15 @@ class AttendanceApprovalController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function($qu) use ($search) {
+                    $qu->where('name', 'like', "%{$search}%");
+                })->orWhere('note', 'like', "%{$search}%");
             });
+        }
+
+        if ($request->filled('type') && $request->input('type') !== 'all') {
+            $query->where('status', $request->input('type'));
         }
 
         $approvals = $query->latest('date')->paginate(15)->withQueryString();
@@ -75,6 +81,7 @@ class AttendanceApprovalController extends Controller
             'filters' => [
                 'search' => $request->input('search', ''),
                 'status' => $tab,
+                'type' => $request->input('type', 'all'),
             ],
         ]);
     }
