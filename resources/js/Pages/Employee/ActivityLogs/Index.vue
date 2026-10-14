@@ -255,81 +255,83 @@ const categoryBadgeClass = (catKey) => {
                 </button>
             </div>
 
-            <!-- STATS CARDS GRID (FIXED: RESPONSIVE 2-COLUMN GRID ON MOBILE, 4-COLUMN ON DESKTOP) -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 w-full">
+            <!-- STATS CARDS (COMPACT SINGLE ROW FOR 4 CARDS) -->
+            <div class="grid grid-cols-4 gap-1.5 sm:gap-2 md:gap-3 w-full">
                 
-                <!-- Card 1: 0 Kegiatan (Terpublikasi otomatis) -->
-                <div class="bg-white rounded-2xl p-3 sm:p-3.5 border border-slate-100 shadow-2xs space-y-1.5 flex flex-col justify-between w-full min-w-0">
-                    <div class="flex items-center gap-2 sm:gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
-                            <CalendarDaysIcon class="w-4 h-4 stroke-[2]" />
-                        </div>
-                        <div class="min-w-0">
-                            <span class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none block">
-                                {{ stats?.total_today || 0 }}
-                            </span>
-                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium block mt-0.5">Kegiatan</span>
-                        </div>
+                <!-- Card 1: 0 Kegiatan -->
+                <div class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-3 border border-slate-100 shadow-2xs flex flex-col items-center text-center justify-between min-w-0 w-full">
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 mb-1">
+                        <CalendarDaysIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2]" />
                     </div>
-                    <p class="text-[10px] text-emerald-600 font-medium flex items-center gap-1.5 pt-0.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                        <span class="truncate">Terpublikasi otomatis</span>
+                    <div class="min-w-0 w-full">
+                        <span class="text-sm sm:text-base md:text-xl font-black text-slate-900 tracking-tight leading-none block">
+                            {{ stats?.total_today || 0 }}
+                        </span>
+                        <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5">Kegiatan</span>
+                    </div>
+                    <p class="text-[8px] sm:text-[9px] md:text-[10px] text-emerald-600 font-semibold flex items-center justify-center gap-0.5 sm:gap-1 mt-1 truncate w-full">
+                        <span class="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                        <span class="truncate hidden md:inline">Terpublikasi otomatis</span>
+                        <span class="truncate md:hidden">Otomatis</span>
                     </p>
                 </div>
 
-                <!-- Card 2: Terdata (Status Absensi >) -->
+                <!-- Card 2: Terdata (Status Absensi) -->
                 <Link
                     :href="route('employee.attendance.index')"
-                    class="bg-white rounded-2xl p-3 sm:p-3.5 border border-slate-100 shadow-2xs flex items-center justify-between group hover:border-teal-200 transition-all active:scale-[0.98] w-full min-w-0"
+                    class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-3 border border-slate-100 shadow-2xs flex flex-col items-center text-center justify-between min-w-0 w-full group hover:border-teal-200 transition-all active:scale-95"
                 >
-                    <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                        <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shrink-0">
-                            <FingerPrintIcon class="w-4 h-4 stroke-[2]" />
-                        </div>
-                        <div class="min-w-0">
-                            <span class="text-sm sm:text-base font-bold text-slate-800 leading-tight block">Terdata</span>
-                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium block mt-0.5 truncate">Status Absensi</span>
-                        </div>
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shrink-0 mb-1">
+                        <FingerPrintIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2]" />
                     </div>
-                    <ChevronRightIcon class="w-4 h-4 text-slate-300 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                    <div class="min-w-0 w-full">
+                        <span class="text-xs sm:text-sm md:text-base font-bold text-slate-800 leading-none block truncate">
+                            Terdata
+                        </span>
+                        <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5">Absensi</span>
+                    </div>
+                    <div class="text-[8px] sm:text-[9px] md:text-[10px] text-sky-600 group-hover:text-teal-600 font-semibold flex items-center justify-center gap-0.5 mt-1 truncate w-full">
+                        <span>Status</span>
+                        <ChevronRightIcon class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+                    </div>
                 </Link>
 
-                <!-- Card 3: 0 Logbook (Arsip Pribadi) -->
-                <div class="bg-white rounded-2xl p-3 sm:p-3.5 border border-slate-100 shadow-2xs space-y-1.5 flex flex-col justify-between w-full min-w-0">
-                    <div class="flex items-center gap-2 sm:gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shrink-0">
-                            <ClipboardDocumentCheckIcon class="w-4 h-4 stroke-[2]" />
-                        </div>
-                        <div class="min-w-0">
-                            <span class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none block">
-                                {{ historyTotalCount }}
-                            </span>
-                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium block mt-0.5">Logbook</span>
-                        </div>
+                <!-- Card 3: 0 Logbook -->
+                <div class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-3 border border-slate-100 shadow-2xs flex flex-col items-center text-center justify-between min-w-0 w-full">
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shrink-0 mb-1">
+                        <ClipboardDocumentCheckIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2]" />
                     </div>
-                    <p class="text-[10px] text-purple-600 font-medium flex items-center gap-1.5 pt-0.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"></span>
-                        <span class="truncate">Arsip Pribadi</span>
+                    <div class="min-w-0 w-full">
+                        <span class="text-sm sm:text-base md:text-xl font-black text-slate-900 tracking-tight leading-none block">
+                            {{ historyTotalCount }}
+                        </span>
+                        <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5">Logbook</span>
+                    </div>
+                    <p class="text-[8px] sm:text-[9px] md:text-[10px] text-purple-600 font-semibold flex items-center justify-center gap-0.5 sm:gap-1 mt-1 truncate w-full">
+                        <span class="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-purple-500 shrink-0"></span>
+                        <span class="truncate hidden md:inline">Arsip Pribadi</span>
+                        <span class="truncate md:hidden">Arsip</span>
                     </p>
                 </div>
 
-                <!-- Card 4: Super Admin (Jabatan / Role >) -->
+                <!-- Card 4: Super Admin (Jabatan) -->
                 <Link
                     :href="route('profile.edit')"
-                    class="bg-white rounded-2xl p-3 sm:p-3.5 border border-slate-100 shadow-2xs flex items-center justify-between group hover:border-teal-200 transition-all active:scale-[0.98] w-full min-w-0"
+                    class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-3 border border-slate-100 shadow-2xs flex flex-col items-center text-center justify-between min-w-0 w-full group hover:border-teal-200 transition-all active:scale-95"
                 >
-                    <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                        <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0">
-                            <TagIcon class="w-4 h-4 stroke-[2]" />
-                        </div>
-                        <div class="min-w-0">
-                            <span class="text-xs sm:text-sm font-bold text-slate-800 leading-tight block truncate">
-                                {{ userRoleTitle }}
-                            </span>
-                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium block mt-0.5 truncate">Jabatan / Role</span>
-                        </div>
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0 mb-1">
+                        <TagIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2]" />
                     </div>
-                    <ChevronRightIcon class="w-4 h-4 text-slate-300 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                    <div class="min-w-0 w-full">
+                        <span class="text-[10px] sm:text-xs md:text-sm font-bold text-slate-800 leading-none block truncate">
+                            {{ userRoleTitle }}
+                        </span>
+                        <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5">Jabatan</span>
+                    </div>
+                    <div class="text-[8px] sm:text-[9px] md:text-[10px] text-amber-600 group-hover:text-teal-600 font-semibold flex items-center justify-center gap-0.5 mt-1 truncate w-full">
+                        <span>Role</span>
+                        <ChevronRightIcon class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+                    </div>
                 </Link>
 
             </div>
