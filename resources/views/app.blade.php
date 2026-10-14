@@ -24,11 +24,11 @@
         <meta property="og:image" content="{{ asset('images/namira-foundation-logo.webp') }}">
 
         <!-- PWA, Favicon & Meta -->
-        <link rel="icon" type="image/webp" href="/images/namira-foundation-logo.webp">
-        <link rel="shortcut icon" href="/images/namira-foundation-logo.webp">
+        <link rel="icon" type="image/png" href="/images/icon-192.png">
+        <link rel="shortcut icon" href="/images/icon-192.png">
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#009688">
-        <link rel="apple-touch-icon" href="/images/namira-foundation-logo.webp">
+        <link rel="apple-touch-icon" href="/images/icon-192.png">
 
         <!-- Schema.org JSON-LD Structured Data for Google Search & Sitelinks -->
         @verbatim
