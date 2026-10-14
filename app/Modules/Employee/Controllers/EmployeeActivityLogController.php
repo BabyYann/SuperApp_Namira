@@ -46,12 +46,16 @@ class EmployeeActivityLogController extends Controller
             'stats' => $stats,
             'selectedDate' => $date,
             'categories' => [
+                'akademik' => 'Akademik',
+                'keagamaan' => 'Keagamaan',
+                'sosial' => 'Sosial',
+                'olahraga' => 'Olahraga',
                 'tugas_tambahan' => 'Tugas Tambahan',
                 'kebersihan' => 'Kebersihan & Kerapihan',
                 'keamanan' => 'Keamanan & Ketertiban',
                 'pemeliharaan' => 'Pemeliharaan Sarpar',
                 'layanan_admin' => 'Layanan Admin & Operasional',
-                'piket' => 'Tugas Piket Sekolah',
+                'piket' => 'Tugas Piket',
                 'lainnya' => 'Kegiatan Lainnya',
             ]
         ]);
@@ -134,7 +138,7 @@ class EmployeeActivityLogController extends Controller
         $unitId = session('active_unit_id') ?? $user->unit_id;
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'category' => 'required|string|in:tugas_tambahan,kebersihan,keamanan,pemeliharaan,layanan_admin,piket,lainnya',
+            'category' => 'required|string|in:akademik,keagamaan,sosial,olahraga,tugas_tambahan,kebersihan,keamanan,pemeliharaan,layanan_admin,piket,lainnya',
             'activity_date' => 'required|date',
             'activity_time' => 'nullable|string',
             'description' => 'nullable|string|max:1000',
