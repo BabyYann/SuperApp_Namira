@@ -343,20 +343,74 @@
                         <label class="block text-xs font-bold text-gray-700 mb-1">
                             Upload Bukti (Surat Dokter / Dokumen Pendukung)
                         </label>
-                        <input 
-                            type="file" 
-                            @change="e => form.document = e.target.files[0]" 
-                            class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer"
-                        />
-                        <p v-if="form.document" class="text-xs text-purple-700 font-bold mt-1 truncate">
-                            📎 {{ form.document.name }}
+                        
+                        <!-- Compressing Spinner State -->
+                        <div v-if="isCompressingDoc" class="w-full py-4 px-3 rounded-2xl border-2 border-dashed border-purple-300 bg-purple-50 flex items-center justify-center gap-2 text-purple-700">
+                            <svg class="animate-spin h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                            <span class="text-xs font-bold">Mengompres foto bukti...</span>
+                        </div>
+
+                        <!-- Image Preview Card -->
+                        <div v-else-if="docPreviewUrl && docIsImage" class="relative rounded-2xl border border-purple-200 overflow-hidden bg-purple-50/50 p-2.5">
+                            <div class="relative max-h-48 overflow-hidden rounded-xl bg-slate-900/5">
+                                <img :src="docPreviewUrl" class="w-full object-contain max-h-48 rounded-xl" />
+                            </div>
+                            <div class="mt-2 flex items-center justify-between px-1">
+                                <span class="text-xs font-semibold text-purple-800 truncate max-w-[200px]">
+                                    📎 {{ form.document?.name }}
+                                </span>
+                                <button
+                                    type="button"
+                                    @click="removeDocument"
+                                    class="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-rose-50 transition"
+                                >
+                                    <XMarkIcon class="w-4 h-4" /> Ganti / Hapus
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Non-Image (PDF) Preview Card -->
+                        <div v-else-if="form.document && !docIsImage" class="p-3 bg-purple-50 border border-purple-200 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-2 truncate">
+                                <span class="text-lg">📄</span>
+                                <div class="truncate">
+                                    <p class="text-xs font-bold text-purple-900 truncate">{{ form.document.name }}</p>
+                                    <p class="text-[10px] text-purple-600">{{ (form.document.size / 1024).toFixed(0) }} KB</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                @click="removeDocument"
+                                class="text-rose-600 p-1.5 hover:bg-rose-100 rounded-lg transition"
+                                title="Hapus dokumen"
+                            >
+                                <XMarkIcon class="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <!-- File Input Button -->
+                        <div v-else>
+                            <input 
+                                ref="docInputRef"
+                                type="file" 
+                                accept="image/*,application/pdf"
+                                @change="handleDocumentChange" 
+                                class="block w-full text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer"
+                            />
+                        </div>
+
+                        <p v-if="form.errors.document" class="text-xs text-rose-600 font-medium mt-1">
+                            {{ form.errors.document }}
                         </p>
                     </div>
 
                     <!-- Submit Button -->
                     <button 
                         @click="submitCheckIn(permitType)" 
-                        :disabled="form.processing || !form.note" 
+                        :disabled="form.processing || !form.note || isCompressingDoc" 
                         class="w-full py-3.5 bg-purple-700 hover:bg-purple-800 text-white rounded-2xl font-bold text-sm sm:text-base shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                     >
                         {{ form.processing ? 'Mengirim...' : 'Ajukan ' + (permitType === 'sick' ? 'Sakit' : 'Izin') }}
@@ -615,6 +669,7 @@ import {
     CalendarDaysIcon, DocumentTextIcon, MapPinIcon, ArrowPathIcon, ChevronLeftIcon,
     ChevronRightIcon, ExclamationCircleIcon, InformationCircleIcon
 } from '@heroicons/vue/24/outline';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     todayAttendance: Object,
@@ -825,6 +880,58 @@ const form = useForm({
     note: null,
     document: null,
 });
+
+// Document Upload State & Handler
+const docInputRef = ref(null);
+const isCompressingDoc = ref(false);
+const docPreviewUrl = ref(null);
+const docIsImage = ref(false);
+
+const handleDocumentChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check if PDF
+    if (file.type === 'application/pdf') {
+        if (file.size > 10 * 1024 * 1024) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Ukuran Dokumen Terlalu Besar',
+                text: 'Maksimal ukuran file PDF adalah 10 MB.',
+                confirmButtonColor: '#00584b',
+            });
+            removeDocument();
+            return;
+        }
+        form.document = file;
+        docPreviewUrl.value = null;
+        docIsImage.value = false;
+        return;
+    }
+
+    // If Image: compress to under 300KB
+    try {
+        isCompressingDoc.value = true;
+        const compressed = await compressImageFile(file, 1280, 0.75);
+        form.document = compressed;
+        docIsImage.value = true;
+        docPreviewUrl.value = URL.createObjectURL(compressed);
+    } catch (err) {
+        console.error('Kompresi dokumen gagal, memakai file asli:', err);
+        form.document = file;
+        docPreviewUrl.value = URL.createObjectURL(file);
+        docIsImage.value = true;
+    } finally {
+        isCompressingDoc.value = false;
+    }
+};
+
+const removeDocument = () => {
+    form.document = null;
+    docPreviewUrl.value = null;
+    docIsImage.value = false;
+    if (docInputRef.value) docInputRef.value.value = '';
+};
 
 // State
 const isWithinRadius = ref(false);
@@ -1106,6 +1213,7 @@ const submitCheckIn = (type) => {
                 confirmButtonColor: '#00584b',
             });
             photoPreview.value = null;
+            removeDocument();
             form.reset();
         },
         onError: (errors) => {

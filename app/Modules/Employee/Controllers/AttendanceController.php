@@ -80,6 +80,12 @@ class AttendanceController extends Controller
             'photo' => 'nullable|required_if:type,present,business_trip|string', // Base64
             'note' => 'nullable|required_if:type,business_trip,sick,permit|string',
             'document' => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:10240', // For sick/permit (up to 10MB)
+        ], [
+            'document.uploaded' => 'File bukti izin/sakit gagal diunggah. Ukuran file terlalu besar atau melebihi kapasitas server.',
+            'document.mimes' => 'Format file bukti harus berupa JPG, PNG, WebP, atau PDF.',
+            'document.max' => 'Ukuran file dokumen bukti tidak boleh melebihi 10MB.',
+            'note.required_if' => 'Keterangan/alasan wajib diisi.',
+            'photo.required_if' => 'Foto selfie kehadiran wajib diambil.',
         ]);
 
         $user = Auth::user();

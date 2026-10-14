@@ -16,6 +16,7 @@ import 'dayjs/locale/id';
 dayjs.locale('id');
 
 import Pagination from '@/Components/Pagination.vue';
+import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     todayActivities: Array,
@@ -90,66 +91,15 @@ const closeFormModal = () => {
 
 const isCompressing = ref(false);
 
-const compressAndConvertToWebP = (file, maxWidth = 1200, maxHeight = 1200, quality = 0.8) => {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                let width = img.width;
-                let height = img.height;
-
-                if (width > maxWidth || height > maxHeight) {
-                    if (width > height) {
-                        height = Math.round((height * maxWidth) / width);
-                        width = maxWidth;
-                    } else {
-                        width = Math.round((width * maxHeight) / height);
-                        height = maxHeight;
-                    }
-                }
-
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                canvas.toBlob(
-                    (blob) => {
-                        if (blob) {
-                            const newFileName = (file.name || 'photo').replace(/\.[^/.]+$/, '') + '.webp';
-                            const webpFile = new File([blob], newFileName, {
-                                type: 'image/webp',
-                                lastModified: Date.now(),
-                            });
-                            resolve(webpFile);
-                        } else {
-                            resolve(file);
-                        }
-                    },
-                    'image/webp',
-                    quality
-                );
-            };
-            img.onerror = () => resolve(file);
-        };
-        reader.onerror = () => resolve(file);
-    });
-};
-
 const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     try {
         isCompressing.value = true;
-        const compressedWebPFile = await compressAndConvertToWebP(file);
-        form.photo = compressedWebPFile;
-        photoPreviewUrl.value = URL.createObjectURL(compressedWebPFile);
+        const compressedFile = await compressImageFile(file, 1280, 0.75);
+        form.photo = compressedFile;
+        photoPreviewUrl.value = URL.createObjectURL(compressedFile);
     } catch (err) {
         console.error('Kompresi foto gagal, menggunakan file asli:', err);
         form.photo = file;
@@ -618,7 +568,7 @@ const categoryBadgeClass = (catKey) => {
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                                 </svg>
-                                <span class="text-xs font-bold">Mengompres & Mengonversi ke WebP...</span>
+                                <span class="text-xs font-bold">Mengompres & Mengoptimalkan Foto...</span>
                             </div>
 
                             <div v-else-if="photoPreviewUrl" class="w-full h-36 rounded-2xl border-2 border-slate-200 overflow-hidden relative group">
@@ -709,7 +659,7 @@ const categoryBadgeClass = (catKey) => {
                             </button>
                             <button
                                 type="submit"
-                                :disabled="form.processing"
+                                :disabled="form.processing || isCompressing"
                                 class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/30 transition disabled:opacity-50 flex items-center gap-1.5 active:scale-95"
                             >
                                 <svg v-if="form.processing" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">

@@ -132,19 +132,20 @@ class EmployeeActivityLogController extends Controller
     {
         $user = auth()->user();
         $unitId = session('active_unit_id') ?? $user->unit_id;
-
-        if (!$request->hasFile('photo')) {
-            $request->request->remove('photo');
-        }
-
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'category' => 'required|string|in:tugas_tambahan,kebersihan,keamanan,pemeliharaan,layanan_admin,piket,lainnya',
             'activity_date' => 'required|date',
             'activity_time' => 'nullable|string',
             'description' => 'nullable|string|max:1000',
-            'photo' => 'nullable|image|max:5120',
+            'photo' => 'nullable|image|max:10240',
             'location_name' => 'nullable|string|max:255',
+        ], [
+            'photo.uploaded' => 'Foto bukti giat gagal diunggah. Ukuran file terlalu besar atau koneksi terputus.',
+            'photo.image' => 'File bukti giat harus berupa foto/gambar (JPG, PNG, atau WebP).',
+            'photo.max' => 'Ukuran foto bukti giat tidak boleh melebihi 10MB.',
+            'title.required' => 'Judul kegiatan wajib diisi.',
+            'category.required' => 'Kategori giat wajib dipilih.',
         ]);
 
         $log = new EmployeeActivityLog();
