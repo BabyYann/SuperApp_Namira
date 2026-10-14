@@ -237,13 +237,13 @@ const categoryBadgeClass = (catKey) => {
             </div>
         </template>
 
-        <div class="max-w-7xl mx-auto space-y-4 sm:space-y-6 sm:px-4 sm:py-6">
+        <div class="max-w-7xl mx-auto space-y-3.5 sm:space-y-4 px-1 sm:px-4 py-1 sm:py-6 w-full min-w-0 box-border">
 
             <!-- MOBILE TOP TITLE & ACTION HEADER (MATCHING MOCKUP) -->
-            <div class="flex items-center justify-between gap-3 pt-1 pb-1">
-                <div>
+            <div class="flex items-center justify-between gap-3 pt-0.5 pb-0.5 w-full">
+                <div class="min-w-0">
                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">Giat</h1>
-                    <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Kelola kegiatan dan aktivitas harian yayasan.</p>
+                    <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">Kelola kegiatan dan aktivitas harian yayasan.</p>
                 </div>
                 <button
                     @click="openFormModal"
@@ -255,23 +255,23 @@ const categoryBadgeClass = (catKey) => {
                 </button>
             </div>
 
-            <!-- STATS CARDS ROW (MATCHING MOCKUP WITH 4 METRIC CARDS) -->
-            <div class="flex items-center gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none snap-x md:grid md:grid-cols-4 md:overflow-visible">
+            <!-- STATS CARDS GRID (FIXED: RESPONSIVE 2-COLUMN GRID ON MOBILE, 4-COLUMN ON DESKTOP) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 w-full">
                 
                 <!-- Card 1: 0 Kegiatan (Terpublikasi otomatis) -->
-                <div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-2xs min-w-[135px] flex-1 shrink-0 snap-start space-y-1.5">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 border border-emerald-100/80 flex items-center justify-center shrink-0">
+                <div class="bg-white rounded-2xl p-3 sm:p-3.5 border border-slate-100 shadow-2xs space-y-1.5 flex flex-col justify-between w-full min-w-0">
+                    <div class="flex items-center gap-2 sm:gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
                             <CalendarDaysIcon class="w-4 h-4 stroke-[2]" />
                         </div>
-                        <div>
-                            <span class="text-lg font-black text-slate-900 tracking-tight leading-none block">
+                        <div class="min-w-0">
+                            <span class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none block">
                                 {{ stats?.total_today || 0 }}
                             </span>
-                            <span class="text-[10px] text-slate-400 font-medium block -mt-0.5">Kegiatan</span>
+                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium block mt-0.5">Kegiatan</span>
                         </div>
                     </div>
-                    <p class="text-[10px] text-emerald-600 font-medium flex items-center gap-1 pt-0.5">
+                    <p class="text-[10px] text-emerald-600 font-medium flex items-center gap-1.5 pt-0.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                         <span class="truncate">Terpublikasi otomatis</span>
                     </p>
@@ -280,34 +280,34 @@ const categoryBadgeClass = (catKey) => {
                 <!-- Card 2: Terdata (Status Absensi >) -->
                 <Link
                     :href="route('employee.attendance.index')"
-                    class="bg-white rounded-2xl p-3 border border-slate-100 shadow-2xs min-w-[140px] flex-1 shrink-0 snap-start flex items-center justify-between group hover:border-teal-200 transition-all"
+                    class="bg-white rounded-2xl p-3 sm:p-3.5 border border-slate-100 shadow-2xs flex items-center justify-between group hover:border-teal-200 transition-all active:scale-[0.98] w-full min-w-0"
                 >
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-500 border border-sky-100/80 flex items-center justify-center shrink-0">
+                    <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shrink-0">
                             <FingerPrintIcon class="w-4 h-4 stroke-[2]" />
                         </div>
-                        <div>
-                            <span class="text-sm font-bold text-slate-800 leading-tight block">Terdata</span>
-                            <span class="text-[10px] text-slate-400 font-medium block">Status Absensi</span>
+                        <div class="min-w-0">
+                            <span class="text-sm sm:text-base font-bold text-slate-800 leading-tight block">Terdata</span>
+                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium block mt-0.5 truncate">Status Absensi</span>
                         </div>
                     </div>
                     <ChevronRightIcon class="w-4 h-4 text-slate-300 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
                 </Link>
 
-                <!-- Card 3: 0 Logbook -->
-                <div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-2xs min-w-[120px] flex-1 shrink-0 snap-start space-y-1.5">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-500 border border-purple-100/80 flex items-center justify-center shrink-0">
+                <!-- Card 3: 0 Logbook (Arsip Pribadi) -->
+                <div class="bg-white rounded-2xl p-3 sm:p-3.5 border border-slate-100 shadow-2xs space-y-1.5 flex flex-col justify-between w-full min-w-0">
+                    <div class="flex items-center gap-2 sm:gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shrink-0">
                             <ClipboardDocumentCheckIcon class="w-4 h-4 stroke-[2]" />
                         </div>
-                        <div>
-                            <span class="text-lg font-black text-slate-900 tracking-tight leading-none block">
+                        <div class="min-w-0">
+                            <span class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none block">
                                 {{ historyTotalCount }}
                             </span>
-                            <span class="text-[10px] text-slate-400 font-medium block -mt-0.5">Logbook</span>
+                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium block mt-0.5">Logbook</span>
                         </div>
                     </div>
-                    <p class="text-[10px] text-purple-600 font-medium flex items-center gap-1 pt-0.5">
+                    <p class="text-[10px] text-purple-600 font-medium flex items-center gap-1.5 pt-0.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"></span>
                         <span class="truncate">Arsip Pribadi</span>
                     </p>
@@ -316,17 +316,17 @@ const categoryBadgeClass = (catKey) => {
                 <!-- Card 4: Super Admin (Jabatan / Role >) -->
                 <Link
                     :href="route('profile.edit')"
-                    class="bg-white rounded-2xl p-3 border border-slate-100 shadow-2xs min-w-[145px] flex-1 shrink-0 snap-start flex items-center justify-between group hover:border-teal-200 transition-all"
+                    class="bg-white rounded-2xl p-3 sm:p-3.5 border border-slate-100 shadow-2xs flex items-center justify-between group hover:border-teal-200 transition-all active:scale-[0.98] w-full min-w-0"
                 >
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 border border-amber-100/80 flex items-center justify-center shrink-0">
+                    <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0">
                             <TagIcon class="w-4 h-4 stroke-[2]" />
                         </div>
                         <div class="min-w-0">
-                            <span class="text-xs font-bold text-slate-800 leading-tight block truncate max-w-[85px]">
+                            <span class="text-xs sm:text-sm font-bold text-slate-800 leading-tight block truncate">
                                 {{ userRoleTitle }}
                             </span>
-                            <span class="text-[10px] text-slate-400 font-medium block truncate">Jabatan / Role</span>
+                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium block mt-0.5 truncate">Jabatan / Role</span>
                         </div>
                     </div>
                     <ChevronRightIcon class="w-4 h-4 text-slate-300 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
@@ -334,55 +334,66 @@ const categoryBadgeClass = (catKey) => {
 
             </div>
 
-            <!-- TABS (GIAT HARI INI vs RIWAYAT SEBELUMNYA - MATCHING MOCKUP) -->
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden">
+            <!-- TABS (GIAT HARI INI vs RIWAYAT SEBELUMNYA - BALANCED WIDTH & CLEAR ACTIVE STATE) -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-2xs overflow-hidden w-full">
                 <div class="grid grid-cols-2 border-b border-slate-100">
                     <button
                         @click="activeTab = 'today'"
                         type="button"
-                        class="py-3 text-xs sm:text-sm font-bold text-center relative transition-all"
+                        class="py-2.5 sm:py-3 px-2 text-[11px] sm:text-xs md:text-sm font-bold text-center relative transition-all"
                         :class="activeTab === 'today' ? 'text-[#0B7068]' : 'text-slate-400 hover:text-slate-600'"
                     >
                         <span>Giat Hari Ini ({{ todayActivities?.length || 0 }})</span>
                         <div
                             v-if="activeTab === 'today'"
-                            class="absolute bottom-0 left-6 right-6 h-0.5 bg-[#0B7068] rounded-full"
+                            class="absolute bottom-0 left-4 right-4 sm:left-8 sm:right-8 h-0.5 bg-[#0B7068] rounded-full"
                         ></div>
                     </button>
                     <button
                         @click="activeTab = 'history'"
                         type="button"
-                        class="py-3 text-xs sm:text-sm font-bold text-center relative transition-all"
+                        class="py-2.5 sm:py-3 px-2 text-[11px] sm:text-xs md:text-sm font-bold text-center relative transition-all"
                         :class="activeTab === 'history' ? 'text-[#0B7068]' : 'text-slate-400 hover:text-slate-600'"
                     >
                         <span>Riwayat Sebelumnya ({{ historyTotalCount }})</span>
                         <div
                             v-if="activeTab === 'history'"
-                            class="absolute bottom-0 left-6 right-6 h-0.5 bg-[#0B7068] rounded-full"
+                            class="absolute bottom-0 left-4 right-4 sm:left-8 sm:right-8 h-0.5 bg-[#0B7068] rounded-full"
                         ></div>
                     </button>
                 </div>
             </div>
 
-            <!-- SEARCH & FILTER BAR (MATCHING MOCKUP) -->
-            <div class="space-y-3">
-                <div class="flex items-center gap-2">
-                    <!-- Search Input -->
-                    <div class="relative flex-1">
+            <!-- SEARCH & FILTER SECTION (FIXED: FULL-WIDTH STACKED ON MOBILE, SIDE-BY-SIDE ON DESKTOP) -->
+            <div class="space-y-2.5 w-full">
+                
+                <!-- Row 1: Search & Category Dropdown -->
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                    
+                    <!-- Search Input (Full width on mobile) -->
+                    <div class="relative w-full sm:flex-1">
                         <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <input
                             v-model="searchQuery"
                             type="text"
                             placeholder="Cari judul giat, lokasi, atau deskripsi..."
-                            class="w-full pl-9 pr-3.5 py-2.5 bg-white rounded-2xl border border-slate-200/90 text-xs text-slate-800 placeholder-slate-400 focus:border-[#0B7068] focus:ring-1 focus:ring-[#0B7068]/30 shadow-2xs transition-all"
+                            class="w-full pl-9 pr-8 py-2.5 bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 text-xs text-slate-800 placeholder-slate-400 focus:border-[#0B7068] focus:ring-1 focus:ring-[#0B7068]/30 shadow-2xs transition-all"
                         />
+                        <button
+                            v-if="searchQuery"
+                            @click="searchQuery = ''"
+                            type="button"
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                        >
+                            <XMarkIcon class="w-3.5 h-3.5" />
+                        </button>
                     </div>
 
-                    <!-- Dropdown Kategori -->
-                    <div class="relative shrink-0">
+                    <!-- Category Dropdown (Full width on mobile, sm:w-56 on desktop) -->
+                    <div class="relative w-full sm:w-56 shrink-0">
                         <select
                             v-model="filterCategory"
-                            class="py-2.5 pl-3.5 pr-8 bg-white rounded-2xl border border-slate-200/90 text-xs text-slate-700 font-medium focus:border-[#0B7068] focus:ring-1 focus:ring-[#0B7068]/30 shadow-2xs appearance-none transition-all cursor-pointer"
+                            class="w-full py-2.5 pl-3.5 pr-8 bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 text-xs text-slate-700 font-medium focus:border-[#0B7068] focus:ring-1 focus:ring-[#0B7068]/30 shadow-2xs appearance-none transition-all cursor-pointer truncate"
                         >
                             <option value="">Semua Kategori</option>
                             <option v-for="(label, key) in categories" :key="key" :value="key">{{ label }}</option>
@@ -391,76 +402,78 @@ const categoryBadgeClass = (catKey) => {
                     </div>
                 </div>
 
-                <!-- CATEGORY PILLS (MATCHING MOCKUP HORIZONTAL CHIPS) -->
-                <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
-                    <!-- Pill: Semua -->
-                    <button
-                        @click="filterCategory = ''"
-                        type="button"
-                        class="px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all active:scale-95"
-                        :class="filterCategory === '' ? 'bg-[#0B7068] text-white shadow-xs' : 'bg-white border border-slate-200/90 text-slate-700 hover:border-slate-300'"
-                    >
-                        <Squares2X2Icon class="w-3.5 h-3.5" />
-                        <span>Semua</span>
-                    </button>
+                <!-- Row 2: CATEGORY PILLS (Horizontal Scroll ONLY inside this chip bar, zero page overflow) -->
+                <div class="w-full overflow-hidden">
+                    <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none w-full">
+                        <!-- Pill: Semua -->
+                        <button
+                            @click="filterCategory = ''"
+                            type="button"
+                            class="px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all active:scale-95"
+                            :class="filterCategory === '' ? 'bg-[#0B7068] text-white shadow-xs' : 'bg-white border border-slate-200/90 text-slate-700 hover:border-slate-300'"
+                        >
+                            <Squares2X2Icon class="w-3.5 h-3.5" />
+                            <span>Semua</span>
+                        </button>
 
-                    <!-- Category Pills Dynamic from Backend (Akademik, Keagamaan, Sosial, Olahraga, etc.) -->
-                    <button
-                        v-for="(label, key) in categories"
-                        :key="key"
-                        @click="filterCategory = key"
-                        type="button"
-                        class="px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 transition-all active:scale-95"
-                        :class="filterCategory === key ? 'bg-[#0B7068] text-white font-semibold shadow-xs' : 'bg-white border border-slate-200/90 text-slate-700 hover:border-slate-300'"
-                    >
-                        <component :is="getCategoryIcon(key)" class="w-3.5 h-3.5 shrink-0" />
-                        <span>{{ label }}</span>
-                    </button>
+                        <!-- Dynamic Category Pills from Backend -->
+                        <button
+                            v-for="(label, key) in categories"
+                            :key="key"
+                            @click="filterCategory = key"
+                            type="button"
+                            class="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 transition-all active:scale-95 whitespace-nowrap"
+                            :class="filterCategory === key ? 'bg-[#0B7068] text-white font-semibold shadow-xs' : 'bg-white border border-slate-200/90 text-slate-700 hover:border-slate-300'"
+                        >
+                            <component :is="getCategoryIcon(key)" class="w-3.5 h-3.5 shrink-0" />
+                            <span>{{ label }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- TAB 1: TODAY ACTIVITIES -->
-            <div v-if="activeTab === 'today'">
+            <div v-if="activeTab === 'today'" class="w-full">
                 
-                <!-- EMPTY STATE BOX (EXACT MATCHING MOCKUP) -->
-                <div v-if="filteredTodayActivities.length === 0" class="bg-white rounded-3xl border border-slate-100 shadow-xs p-8 sm:p-12 text-center my-2">
+                <!-- EMPTY STATE BOX (COMPACT & PROPORTIONAL, FITS MOBILE SCREENS) -->
+                <div v-if="filteredTodayActivities.length === 0" class="bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-2xs p-6 sm:p-8 text-center my-1 w-full">
                     
                     <!-- Mint Clipboard Illustration with Leaves -->
-                    <div class="w-36 h-36 mx-auto relative flex items-center justify-center mb-2">
+                    <div class="w-24 h-24 sm:w-28 sm:h-28 mx-auto relative flex items-center justify-center mb-1">
                         <!-- Mint Glow Blob Background -->
                         <div class="absolute inset-0 bg-teal-50/80 rounded-full scale-95"></div>
-                        <div class="absolute inset-2 bg-gradient-to-tr from-teal-100/60 to-emerald-50/50 rounded-full"></div>
+                        <div class="absolute inset-1.5 bg-gradient-to-tr from-teal-100/60 to-emerald-50/50 rounded-full"></div>
 
                         <!-- Left Leaf Accent -->
-                        <svg class="absolute w-7 h-7 text-teal-400/70 left-3 top-8 -rotate-12 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
+                        <svg class="absolute w-5 h-5 text-teal-400/70 left-1.5 top-6 -rotate-12 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
                         </svg>
 
                         <!-- Right Leaf Accent -->
-                        <svg class="absolute w-6 h-6 text-emerald-400/70 right-3 top-10 rotate-45 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
+                        <svg class="absolute w-5 h-5 text-emerald-400/70 right-1.5 top-8 rotate-45 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
                         </svg>
 
                         <!-- Stylized Clipboard Document Card -->
-                        <div class="relative z-10 w-20 h-24 bg-white rounded-2xl shadow-md border-2 border-slate-100/90 flex flex-col items-center pt-2">
+                        <div class="relative z-10 w-16 h-20 bg-white rounded-xl shadow-xs border border-slate-100 flex flex-col items-center pt-1.5">
                             <!-- Clip Header -->
-                            <div class="w-10 h-3.5 bg-[#0B7068] rounded-t-md -mt-4 mb-2 shadow-xs flex items-center justify-center">
-                                <div class="w-4 h-1 bg-white/70 rounded-full"></div>
+                            <div class="w-8 h-2.5 bg-[#0B7068] rounded-t-xs -mt-3 mb-1.5 shadow-2xs flex items-center justify-center">
+                                <div class="w-3 h-0.5 bg-white/70 rounded-full"></div>
                             </div>
                             <!-- Document Line -->
-                            <div class="w-12 h-1 bg-slate-100 rounded-full mb-2"></div>
+                            <div class="w-10 h-0.5 bg-slate-100 rounded-full mb-1.5"></div>
                             <!-- Teal Checkmark Icon Circle -->
-                            <div class="w-10 h-10 rounded-full bg-teal-50 border border-teal-200/80 flex items-center justify-center text-[#0B7068]">
-                                <CheckIcon class="w-6 h-6 stroke-[3]" />
+                            <div class="w-8 h-8 rounded-full bg-teal-50 border border-teal-200/80 flex items-center justify-center text-[#0B7068]">
+                                <CheckIcon class="w-5 h-5 stroke-[3]" />
                             </div>
                             <!-- Bottom Line -->
-                            <div class="w-9 h-1 bg-slate-100 rounded-full mt-2"></div>
+                            <div class="w-8 h-0.5 bg-slate-100 rounded-full mt-1.5"></div>
                         </div>
                     </div>
 
                     <!-- Heading & Subtitle -->
-                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 mt-4">Belum Ada Giat yang Dicatat Hari Ini</h3>
-                    <p class="text-xs text-slate-400 mt-2 max-w-sm mx-auto leading-relaxed">
+                    <h3 class="text-sm sm:text-base font-extrabold text-slate-900 mt-3">Belum Ada Giat yang Dicatat Hari Ini</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 max-w-xs mx-auto leading-relaxed">
                         Mulai catat kegiatan yayasan seperti rapat, acara, pelatihan, atau aktivitas lainnya.
                     </p>
 
@@ -468,7 +481,7 @@ const categoryBadgeClass = (catKey) => {
                     <button
                         @click="openFormModal"
                         type="button"
-                        class="mt-6 px-6 py-3.5 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-2xl font-bold text-xs sm:text-sm shadow-md shadow-teal-900/15 inline-flex items-center justify-center gap-2 transition-all w-full max-w-xs mx-auto"
+                        class="mt-4 px-5 py-2.5 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm inline-flex items-center justify-center gap-1.5 transition-all w-full sm:w-auto"
                     >
                         <PlusIcon class="w-4 h-4 stroke-[2.5]" />
                         <span>Tambah Giat Pertama</span>
@@ -476,11 +489,11 @@ const categoryBadgeClass = (catKey) => {
                 </div>
 
                 <!-- ACTIVITIES CARDS LIST (WHEN DATA EXISTS) -->
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
                     <div
                         v-for="item in filteredTodayActivities"
                         :key="item.id"
-                        class="bg-white rounded-2xl border border-slate-100 shadow-2xs hover:shadow-md transition-all duration-200 p-4 space-y-3 flex flex-col justify-between"
+                        class="bg-white rounded-2xl border border-slate-100 shadow-2xs hover:shadow-md transition-all duration-200 p-4 space-y-3 flex flex-col justify-between w-full"
                     >
                         <div class="space-y-2.5">
                             <div class="flex items-center justify-between gap-2">
@@ -538,26 +551,28 @@ const categoryBadgeClass = (catKey) => {
             </div>
 
             <!-- TAB 2: HISTORY LOGS -->
-            <div v-if="activeTab === 'history'" class="space-y-4">
-                <div v-if="filteredHistoryLogs.length === 0" class="bg-white rounded-3xl border border-slate-100 shadow-xs p-8 text-center my-2 space-y-3">
-                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-[#0B7068] border border-teal-100 mx-auto flex items-center justify-center">
-                        <FolderIcon class="w-6 h-6 stroke-[1.8]" />
+            <div v-if="activeTab === 'history'" class="space-y-3 w-full">
+                
+                <!-- EMPTY STATE RIWAYAT -->
+                <div v-if="filteredHistoryLogs.length === 0" class="bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-2xs p-6 sm:p-8 text-center my-1 space-y-2 w-full">
+                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0B7068] border border-teal-100/80 mx-auto flex items-center justify-center">
+                        <FolderIcon class="w-5 h-5 stroke-[1.8]" />
                     </div>
                     <div>
                         <h4 class="font-bold text-slate-800 text-sm">Tidak Ada Riwayat Giat</h4>
-                        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                        <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">
                             Belum ada riwayat kegiatan yang tercatat sebelumnya atau tidak ada yang sesuai dengan filter pencarian.
                         </p>
                     </div>
                 </div>
 
-                <div v-else class="divide-y divide-slate-100 bg-white border border-slate-100 shadow-2xs rounded-2xl overflow-hidden">
+                <div v-else class="divide-y divide-slate-100 bg-white border border-slate-100 shadow-2xs rounded-2xl overflow-hidden w-full">
                     <div
                         v-for="item in filteredHistoryLogs"
                         :key="item.id"
-                        class="p-4 hover:bg-slate-50/80 transition flex items-center justify-between gap-4"
+                        class="p-3.5 sm:p-4 hover:bg-slate-50/80 transition flex items-center justify-between gap-3 sm:gap-4 w-full"
                     >
-                        <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="flex items-center gap-3 min-w-0">
                             <div
                                 v-if="item.photo_path"
                                 @click="openPhotoLightbox('/' + item.photo_path)"
@@ -569,15 +584,15 @@ const categoryBadgeClass = (catKey) => {
                                 <FolderIcon class="w-5 h-5 stroke-[1.8]" />
                             </div>
 
-                            <div class="space-y-1 min-w-0">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="font-bold text-slate-800 text-sm truncate max-w-[180px] sm:max-w-none">{{ item.title }}</span>
+                            <div class="space-y-0.5 min-w-0">
+                                <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                    <span class="font-bold text-slate-800 text-xs sm:text-sm truncate max-w-[170px] sm:max-w-none">{{ item.title }}</span>
                                     <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border" :class="categoryBadgeClass(item.category)">
                                         {{ categories[item.category] || item.category }}
                                     </span>
                                 </div>
                                 <p v-if="item.description" class="text-xs text-slate-500 line-clamp-1">{{ item.description }}</p>
-                                <p class="text-[11px] text-slate-400 font-medium">
+                                <p class="text-[10px] sm:text-[11px] text-slate-400 font-medium">
                                     {{ formatDate(item.activity_date) }} • {{ item.activity_time ? item.activity_time.substring(0, 5) : '-' }} WIB
                                 </p>
                             </div>
