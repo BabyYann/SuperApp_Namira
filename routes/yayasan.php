@@ -15,6 +15,8 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
         Route::post('academic-years/{academic_year}/activate', [\App\Modules\Yayasan\Controllers\AcademicYearController::class, 'setAsActive'])->name('academic-years.activate');
         Route::resource('users', \App\Modules\Yayasan\Controllers\UserController::class);
         Route::post('users/{user}/reset-password', [\App\Modules\Yayasan\Controllers\UserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::post('users/{user}/sync-profiles-unit', [\App\Modules\Yayasan\Controllers\UserController::class, 'syncProfilesUnit'])->name('users.sync-profiles-unit');
+        Route::post('users/{user}/unlink-profile', [\App\Modules\Yayasan\Controllers\UserController::class, 'unlinkProfile'])->name('users.unlink-profile');
         Route::resource('attendance-locations', \App\Modules\Yayasan\Controllers\AttendanceLocationController::class);
     });
 

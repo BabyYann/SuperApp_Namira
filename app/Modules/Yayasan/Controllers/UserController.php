@@ -372,6 +372,12 @@ class UserController extends Controller
         }
 
         if ($request->unit_id) {
+            // Sinkronkan seluruh profil pegawai (guru & staff) milik akun ini agar tidak terjadi double unit
+            \App\Modules\Academic\Models\Teacher::where('user_id', $user->id)
+                ->update(['unit_id' => $request->unit_id, 'full_name' => $user->name]);
+            \App\Modules\Employee\Models\Staff::where('user_id', $user->id)
+                ->update(['unit_id' => $request->unit_id, 'full_name' => $user->name]);
+
             foreach ($roles as $role) {
                 $this->syncUserProfile($user, $role, $request->unit_id);
             }
@@ -408,6 +414,140 @@ class UserController extends Controller
 
         $user->delete();
         return redirect()->back()->with('success', 'User berhasil dihapus.');
+    }
+
+    /**
+     * Sinkronkan semua profil pegawai (guru/staff) milik user ke unit tertentu.
+     */
+    public function syncProfilesUnit(Request $request, User $user)
+    {
+        $currentUser = auth()->user();
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+
+        $request->validate([
+            'unit_id' => 'required|exists:units,id',
+        ]);
+
+        $unitId = (int) $request->unit_id;
+
+        if (!$isGlobalAdmin) {
+            $userUnitId = \DB::table('model_has_roles')
+                ->where('model_id', $user->id)
+                ->value('team_id');
+
+            if ($userUnitId != session('active_unit_id') || $unitId != session('active_unit_id')) {
+                abort(403, 'Akses Ditolak: Anda tidak dapat memindahkan pegawai ke unit lain.');
+            }
+        }
+
+        // 1. Update Teacher profiles
+        \App\Modules\Academic\Models\Teacher::where('user_id', $user->id)
+            ->update(['unit_id' => $unitId, 'full_name' => $user->name]);
+
+        // 2. Update Staff profiles
+        \App\Modules\Employee\Models\Staff::where('user_id', $user->id)
+            ->update(['unit_id' => $unitId, 'full_name' => $user->name]);
+
+        // 3. Update team_id in model_has_roles for non-global roles
+        $globalRoleNames = ['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'pengawas_yayasan', 'humas_yayasan'];
+        $globalRoleIds = \DB::table('roles')->whereIn('name', $globalRoleNames)->pluck('id')->toArray();
+
+        \DB::table('model_has_roles')
+            ->where('model_id', $user->id)
+            ->whereNotIn('role_id', $globalRoleIds)
+            ->update(['team_id' => $unitId]);
+
+        $unit = \App\Modules\Yayasan\Models\Unit::find($unitId);
+        $unitName = $unit ? $unit->name : "Unit #{$unitId}";
+
+        return redirect()->back()->with('success', "Semua profil pegawai untuk {$user->name} berhasil disinkronkan ke {$unitName}.");
+    }
+
+    /**
+     * Lepas atau hapus profil tertentu (guru/staff/siswa) yang terhubung ke akun user.
+     */
+    public function unlinkProfile(Request $request, User $user)
+    {
+        $currentUser = auth()->user();
+        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+
+        $request->validate([
+            'type' => 'required|in:guru,staff,siswa',
+            'profile_id' => 'required|integer',
+            'action' => 'nullable|in:unlink,delete',
+        ]);
+
+        $type = $request->type;
+        $profileId = (int) $request->profile_id;
+        $action = $request->input('action', 'unlink');
+
+        if ($type === 'guru') {
+            $teacher = \App\Modules\Academic\Models\Teacher::where('id', $profileId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$teacher) {
+                return redirect()->back()->with('error', 'Profil guru tidak ditemukan atau tidak terhubung dengan user ini.');
+            }
+
+            if (!$isGlobalAdmin && $teacher->unit_id != session('active_unit_id')) {
+                abort(403, 'Akses Ditolak: Anda tidak dapat mengubah profil di unit lain.');
+            }
+
+            $hasSchedules = \App\Modules\Academic\Models\ClassSchedule::where('teacher_id', $teacher->id)->exists();
+            $hasJournals = \App\Modules\Academic\Models\TeachingJournal::where('teacher_id', $teacher->id)->exists();
+            $isHomeroom = \App\Modules\Academic\Models\Classroom::where('homeroom_teacher_id', $teacher->id)->exists();
+
+            if ($action === 'delete') {
+                if ($hasSchedules || $hasJournals || $isHomeroom) {
+                    $teacher->update(['user_id' => null]);
+                    return redirect()->back()->with('warning', 'Profil guru memiliki data jadwal/jurnal aktif sehingga tidak dihapus permanen, namun keterhubungan akun berhasil dilepas.');
+                }
+                $teacher->delete();
+                return redirect()->back()->with('success', 'Profil guru berhasil dihapus.');
+            } else {
+                $teacher->update(['user_id' => null]);
+                return redirect()->back()->with('success', 'Profil guru berhasil dilepas dari akun ini.');
+            }
+        } elseif ($type === 'staff') {
+            $staff = \App\Modules\Employee\Models\Staff::where('id', $profileId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$staff) {
+                return redirect()->back()->with('error', 'Profil staff tidak ditemukan atau tidak terhubung dengan user ini.');
+            }
+
+            if (!$isGlobalAdmin && $staff->unit_id != session('active_unit_id')) {
+                abort(403, 'Akses Ditolak: Anda tidak dapat mengubah profil di unit lain.');
+            }
+
+            if ($action === 'delete') {
+                $staff->delete();
+                return redirect()->back()->with('success', 'Profil staff berhasil dihapus.');
+            } else {
+                $staff->update(['user_id' => null]);
+                return redirect()->back()->with('success', 'Profil staff berhasil dilepas dari akun ini.');
+            }
+        } elseif ($type === 'siswa') {
+            $student = \App\Modules\Academic\Models\Student::where('id', $profileId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$student) {
+                return redirect()->back()->with('error', 'Profil siswa tidak ditemukan atau tidak terhubung dengan user ini.');
+            }
+
+            if (!$isGlobalAdmin && $student->unit_id != session('active_unit_id')) {
+                abort(403, 'Akses Ditolak: Anda tidak dapat mengubah profil di unit lain.');
+            }
+
+            // Always only unlink user_id for student to preserve academic records
+            $student->update(['user_id' => null]);
+            return redirect()->back()->with('success', 'Profil siswa berhasil dilepas dari akun user ini.');
+        }
+
+        return redirect()->back()->with('error', 'Tipe profil tidak valid.');
     }
 
     /**

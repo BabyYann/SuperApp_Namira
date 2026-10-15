@@ -80,6 +80,52 @@ const submit = () => {
     });
 };
 
+const selectedUnitName = computed(() => {
+    const u = (props.units || []).find(unit => unit.id === Number(form.unit_id));
+    return u ? u.name : 'Unit Terpilih';
+});
+
+const hasMismatchedEmployeeProfiles = computed(() => {
+    if (!form.unit_id) return false;
+    return (props.linkedProfiles || []).some(p => p.type !== 'siswa' && p.unit_id && p.unit_id !== Number(form.unit_id));
+});
+
+const isSyncingProfiles = ref(false);
+const syncAllProfilesToUnit = () => {
+    if (!form.unit_id) return;
+    if (!confirm(`Pindahkan semua profil pegawai (${props.user.name}) ke ${selectedUnitName.value}?`)) return;
+
+    isSyncingProfiles.value = true;
+    useForm({ unit_id: form.unit_id }).post(route('yayasan.users.sync-profiles-unit', props.user.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isSyncingProfiles.value = false;
+        }
+    });
+};
+
+const isUnlinking = ref(null);
+const unlinkOrDeleteProfile = (profile, action = 'unlink') => {
+    const isDel = action === 'delete';
+    const confirmMsg = isDel
+        ? `Yakin ingin MENGHAPUS profil ${profile.type.toUpperCase()} (${profile.name || '-'} · ${profile.unit_name || 'Tanpa Unit'})?\n\nJika profil memiliki catatan atau riwayat terkait, sistem akan otomatis hanya melepas keterhubungannya agar data aman.`
+        : `Yakin ingin MELEPAS profil ${profile.type.toUpperCase()} dari akun ini?\n\nProfil tidak akan terhapus, namun tidak akan lagi terhubung ke akun login ${props.user.email}.`;
+
+    if (!confirm(confirmMsg)) return;
+
+    isUnlinking.value = `${profile.type}-${profile.id}-${action}`;
+    useForm({
+        type: profile.type,
+        profile_id: profile.id,
+        action: action
+    }).post(route('yayasan.users.unlink-profile', props.user.id), {
+        preserveScroll: true,
+        onFinish: () => {
+            isUnlinking.value = null;
+        }
+    });
+};
+
 // Reset Password Form
 const resetForm = useForm({
     reset_mode: 'email',
@@ -195,36 +241,105 @@ const submitResetPassword = () => {
 
                             <!-- Linked profiles / shared-account warning -->
                             <div v-if="linkedProfiles.length"
-                                 class="rounded-2xl border p-4"
+                                 class="rounded-2xl border p-4 transition-all"
                                  :class="sharedAccountWarning === 'shared' ? 'border-red-200 bg-red-50/70' : (sharedAccountWarning ? 'border-amber-200 bg-amber-50/70' : 'border-gray-200 bg-white/60')">
                                 <div class="flex items-start gap-3">
                                     <ExclamationTriangleIcon v-if="sharedAccountWarning" class="w-5 h-5 shrink-0 mt-0.5"
                                         :class="sharedAccountWarning === 'shared' ? 'text-red-600' : 'text-amber-600'" />
                                     <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-semibold"
-                                           :class="sharedAccountWarning === 'shared' ? 'text-red-800' : (sharedAccountWarning ? 'text-amber-800' : 'text-gray-700')">
-                                            <template v-if="sharedAccountWarning === 'shared'">Akun ini terhubung ke lebih dari satu orang</template>
-                                            <template v-else-if="sharedAccountWarning === 'other-unit'">Ada profil di unit lain</template>
-                                            <template v-else>Profil yang terhubung</template>
-                                        </p>
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                            <p class="text-sm font-semibold"
+                                               :class="sharedAccountWarning === 'shared' ? 'text-red-800' : (sharedAccountWarning ? 'text-amber-800' : 'text-gray-700')">
+                                                <template v-if="sharedAccountWarning === 'shared'">Akun ini terhubung ke lebih dari satu orang</template>
+                                                <template v-else-if="sharedAccountWarning === 'other-unit'">Ada profil di unit lain (Penyebab Double Unit)</template>
+                                                <template v-else>Profil yang terhubung</template>
+                                            </p>
+
+                                            <!-- Tombol Cepat Sinkronkan Semua Profil Pegawai -->
+                                            <button 
+                                                v-if="hasMismatchedEmployeeProfiles && form.unit_id"
+                                                type="button"
+                                                @click="syncAllProfilesToUnit"
+                                                :disabled="isSyncingProfiles"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-amber-900 bg-amber-200 hover:bg-amber-300 rounded-lg shadow-sm transition-all shrink-0"
+                                            >
+                                                <span v-if="isSyncingProfiles">Menyinkronkan...</span>
+                                                <span v-else>🔄 Samakan ke {{ selectedUnitName }}</span>
+                                            </button>
+                                        </div>
+
                                         <p v-if="sharedAccountWarning === 'shared'" class="text-xs text-red-700 mt-1">
                                             Satu akun seharusnya hanya untuk satu orang. Mengubah unit di sini tidak memindahkan data siswa,
                                             jadi badge unit lain akan tetap muncul. Pisahkan akunnya dengan command
                                             <code class="px-1 py-0.5 rounded bg-red-100 font-mono">php artisan users:split-shared-accounts --email={{ user.email }}</code>.
                                         </p>
-                                        <p v-else-if="sharedAccountWarning === 'other-unit'" class="text-xs text-amber-700 mt-1">
-                                            Profil berikut berada di unit yang berbeda dengan Unit Penugasan yang dipilih.
+                                        <p v-else-if="sharedAccountWarning === 'other-unit'" class="text-xs text-amber-700 mt-1 leading-relaxed">
+                                            Profil di bawah ini tercatat pada unit berbeda dengan <strong>Unit Penugasan</strong> di atas. Hal ini menyebabkan user memiliki akses ke lebih dari satu unit (double unit). Anda dapat menyamakan unit profil atau melepas profil lama yang sudah tidak aktif.
                                         </p>
-                                        <ul class="mt-3 space-y-1.5">
-                                            <li v-for="p in linkedProfiles" :key="p.type + p.id" class="flex flex-wrap items-center gap-2 text-xs">
-                                                <span class="px-2 py-0.5 rounded-md font-semibold uppercase tracking-wide"
-                                                      :class="p.type === 'siswa' ? 'bg-emerald-100 text-emerald-700' : (p.type === 'guru' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700')">
-                                                    {{ p.type }}
-                                                </span>
-                                                <span class="font-medium text-gray-800">{{ p.name || '-' }}</span>
-                                                <span class="text-gray-500">· {{ p.unit_name || 'Tanpa unit' }}</span>
+                                        <p v-else class="text-xs text-gray-500 mt-1">
+                                            Daftar profil yang saat ini terhubung dengan akun pengguna ini.
+                                        </p>
+
+                                        <ul class="mt-3 space-y-2">
+                                            <li v-for="p in linkedProfiles" :key="p.type + p.id" 
+                                                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl border text-xs transition-all"
+                                                :class="p.unit_id === Number(form.unit_id) ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900' : 'bg-white border-amber-200 shadow-sm'">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="px-2 py-0.5 rounded-md font-bold uppercase tracking-wider text-[10px]"
+                                                          :class="p.type === 'siswa' ? 'bg-emerald-100 text-emerald-800' : (p.type === 'guru' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800')">
+                                                        {{ p.type }}
+                                                    </span>
+                                                    <span class="font-semibold text-gray-900">{{ p.name || '-' }}</span>
+                                                    <span class="text-gray-500">· {{ p.unit_name || 'Tanpa unit' }}</span>
+
+                                                    <span v-if="p.unit_id === Number(form.unit_id)" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                                                        ✓ Sesuai Unit Penugasan
+                                                    </span>
+                                                    <span v-else class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
+                                                        ⚠️ Unit Berbeda ({{ p.unit_name || 'Tanpa Unit' }})
+                                                    </span>
+                                                </div>
+
+                                                <!-- Action buttons for mismatched profile or management -->
+                                                <div v-if="p.unit_id !== Number(form.unit_id) || sharedAccountWarning === 'shared'" class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                                    <button 
+                                                        v-if="p.type !== 'siswa' && form.unit_id"
+                                                        type="button"
+                                                        @click="syncAllProfilesToUnit"
+                                                        title="Pindahkan profil pegawai ini ke unit yang sedang dipilih"
+                                                        class="px-2.5 py-1 text-[11px] font-semibold text-teal-800 bg-teal-100 hover:bg-teal-200 rounded-md transition-colors"
+                                                    >
+                                                        Pindahkan ke {{ selectedUnitName }}
+                                                    </button>
+                                                    <button 
+                                                        type="button"
+                                                        @click="unlinkOrDeleteProfile(p, 'unlink')"
+                                                        :disabled="isUnlinking === `${p.type}-${p.id}-unlink`"
+                                                        title="Lepas keterhubungan profil ini dari akun user"
+                                                        class="px-2 py-1 text-[11px] font-semibold text-gray-700 hover:text-red-700 bg-gray-100 hover:bg-red-50 border border-gray-200 rounded-md transition-colors"
+                                                    >
+                                                        <span v-if="isUnlinking === `${p.type}-${p.id}-unlink`">Melepas...</span>
+                                                        <span v-else>Lepas Akun</span>
+                                                    </button>
+                                                    <button 
+                                                        v-if="p.type !== 'siswa'"
+                                                        type="button"
+                                                        @click="unlinkOrDeleteProfile(p, 'delete')"
+                                                        :disabled="isUnlinking === `${p.type}-${p.id}-delete`"
+                                                        title="Hapus permanen profil lama ini (jika tidak ada riwayat jadwal)"
+                                                        class="px-2 py-1 text-[11px] font-semibold text-red-700 hover:text-red-800 bg-red-100 hover:bg-red-200 rounded-md transition-colors"
+                                                    >
+                                                        <span v-if="isUnlinking === `${p.type}-${p.id}-delete`">Menghapus...</span>
+                                                        <span v-else>Hapus</span>
+                                                    </button>
+                                                </div>
                                             </li>
                                         </ul>
+
+                                        <p class="text-[11px] text-gray-500 mt-2.5 flex items-center gap-1.5">
+                                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-namira-teal"></span>
+                                            <span><strong>Tips:</strong> Menyimpan perubahan form ini juga akan otomatis menyamakan unit profil Guru & Staff dengan Unit Penugasan yang dipilih.</span>
+                                        </p>
                                     </div>
                                 </div>
                             </div>
