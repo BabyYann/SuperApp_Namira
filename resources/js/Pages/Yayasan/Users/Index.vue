@@ -21,14 +21,15 @@ const props = defineProps({
 // Filter State
 const searchQuery = ref(props.filters?.search || '');
 const roleFilter = ref(props.filters?.role || '');
-const unitFilter = ref(props.filters?.unit_id || '');
+const unitFilter = ref(props.filters?.unit_id ? String(props.filters.unit_id) : '');
 
 // Debounced Search & Filter
 const performSearch = debounce(() => {
     router.get(route('yayasan.users.index'), { 
-        search: searchQuery.value,
-        role: roleFilter.value,
-        unit_id: unitFilter.value
+        search: searchQuery.value?.trim() || undefined,
+        role: roleFilter.value || undefined,
+        unit_id: unitFilter.value || undefined,
+        page: 1,
     }, { 
         preserveState: true, 
         preserveScroll: true,
@@ -44,9 +45,12 @@ watch(unitFilter, performSearch);
 // Sync filters when props change
 watch(() => props.filters, (newFilters) => {
     if (newFilters) {
-        if (newFilters.search !== undefined) searchQuery.value = newFilters.search || '';
-        if (newFilters.role !== undefined) roleFilter.value = newFilters.role || '';
-        if (newFilters.unit_id !== undefined) unitFilter.value = newFilters.unit_id || '';
+        const s = newFilters.search || '';
+        const r = newFilters.role || '';
+        const u = newFilters.unit_id ? String(newFilters.unit_id) : '';
+        if (searchQuery.value !== s) searchQuery.value = s;
+        if (roleFilter.value !== r) roleFilter.value = r;
+        if (unitFilter.value !== u) unitFilter.value = u;
     }
 }, { deep: true });
 
@@ -55,7 +59,11 @@ const resetFilters = () => {
     searchQuery.value = '';
     roleFilter.value = '';
     unitFilter.value = '';
-    performSearch();
+    router.get(route('yayasan.users.index'), {}, { 
+        preserveState: true, 
+        preserveScroll: true,
+        replace: true 
+    });
 };
 
 // Role Badges & Formatter
@@ -77,6 +85,11 @@ const getRoleBadgeStyle = (role) => {
         'teacher': 'bg-amber-100 text-amber-800 border-amber-200',
         'siswa': 'bg-green-100 text-green-800 border-green-200',
         'orang_tua': 'bg-orange-100 text-orange-800 border-orange-200',
+        'pelatih_ekskul': 'bg-lime-100 text-lime-800 border-lime-200',
+        'wali_kelas': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        'finance': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        'humas_unit': 'bg-teal-100 text-teal-800 border-teal-200',
+        'staff_admin_keuangan': 'bg-emerald-100 text-emerald-800 border-emerald-200',
     };
     return map[role] || 'bg-gray-100 text-gray-700 border-gray-200';
 };
@@ -99,6 +112,11 @@ const formatRoleName = (role) => {
         'teacher': 'Guru',
         'siswa': 'Siswa',
         'orang_tua': 'Orang Tua / Wali',
+        'pelatih_ekskul': 'Pelatih Ekskul',
+        'wali_kelas': 'Wali Kelas',
+        'finance': 'Keuangan',
+        'humas_unit': 'Humas Unit',
+        'staff_admin_keuangan': 'Staf Admin Keuangan',
     };
     return names[role] || role.replace(/_/g, ' ').toUpperCase();
 };
@@ -236,7 +254,7 @@ const submitResetPassword = () => {
                         </select>
                         <select v-model="unitFilter" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-700 focus:ring-teal-500 focus:border-teal-500">
                             <option value="">Semua Unit</option>
-                            <option v-for="u in units" :key="u.id" :value="u.id">{{ u.name }}</option>
+                            <option v-for="u in units" :key="u.id" :value="String(u.id)">{{ u.name }}</option>
                         </select>
                     </div>
                 </div>
@@ -244,8 +262,17 @@ const submitResetPassword = () => {
                 <!-- Mobile User Cards List -->
                 <div class="px-4 space-y-3">
                     <div v-if="users.data.length === 0" class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200">
-                        <UserIcon class="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p class="font-bold text-sm">Tidak ada pengguna ditemukan</p>
+                        <UserIcon class="w-12 h-12 mx-auto mb-2 opacity-50 text-slate-400" />
+                        <p class="font-bold text-sm text-slate-800">Tidak ada pengguna ditemukan</p>
+                        <p class="text-xs text-slate-400 mt-1">Coba ubah kata kunci pencarian atau sesuaikan filter role & unit.</p>
+                        <button 
+                            v-if="searchQuery || roleFilter || unitFilter"
+                            @click="resetFilters" 
+                            class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 text-teal-700 text-xs font-bold rounded-lg border border-teal-200 hover:bg-teal-100 transition shadow-sm"
+                        >
+                            <ArrowPathIcon class="w-3.5 h-3.5" />
+                            <span>Reset Filter</span>
+                        </button>
                     </div>
 
                     <div v-for="user in users.data" :key="user.id" class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
@@ -300,6 +327,11 @@ const submitResetPassword = () => {
                             </button>
                         </div>
                     </div>
+
+                    <!-- Mobile Pagination -->
+                    <div v-if="users.links && users.links.length > 3" class="pt-2 pb-1 flex justify-center">
+                        <Pagination :links="users.links" />
+                    </div>
                 </div>
             </div>
             <!-- END MOBILE VIEW -->
@@ -336,7 +368,7 @@ const submitResetPassword = () => {
                     <div class="relative w-full md:w-52">
                         <select v-model="unitFilter" class="appearance-none w-full pl-4 pr-10 py-2.5 bg-white/50 backdrop-blur-sm border-white/50 rounded-2xl text-sm focus:border-namira-teal focus:ring focus:ring-namira-teal/20 transition-all shadow-sm hover:shadow-md cursor-pointer h-[46px]">
                             <option value="">Semua Unit</option>
-                            <option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
+                            <option v-for="unit in units" :key="unit.id" :value="String(unit.id)">{{ unit.name }}</option>
                         </select>
                         <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
                             <ChevronDownIcon class="h-4 w-4" />
@@ -376,9 +408,17 @@ const submitResetPassword = () => {
                                 <tr v-if="users.data.length === 0" class="bg-transparent">
                                     <td colspan="4" class="p-12 text-center">
                                         <div class="flex flex-col items-center justify-center text-gray-400">
-                                            <UserIcon class="w-16 h-16 mb-4 opacity-50" />
+                                            <UserIcon class="w-16 h-16 mb-4 opacity-50 text-slate-400" />
                                             <h3 class="text-lg font-bold text-gray-900">Tidak ada user ditemukan.</h3>
-                                            <p class="text-sm">Coba ubah filter atau kata kunci pencarian.</p>
+                                            <p class="text-sm text-gray-500 mt-1">Coba ubah kata kunci atau sesuaikan filter role & unit.</p>
+                                            <button 
+                                                v-if="searchQuery || roleFilter || unitFilter"
+                                                @click="resetFilters"
+                                                class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-700 text-xs font-bold rounded-xl border border-teal-200 hover:bg-teal-100 transition shadow-sm"
+                                            >
+                                                <ArrowPathIcon class="w-4 h-4" />
+                                                <span>Reset Filter</span>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

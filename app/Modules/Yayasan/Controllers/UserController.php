@@ -13,13 +13,27 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    private function isGlobalAdminUser(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return \DB::table('model_has_roles')
+            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->where('model_has_roles.model_id', $user->id)
+            ->whereIn('roles.name', ['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])
+            ->exists();
+    }
+
     public function index(Request $request)
     {
         $query = User::query();
 
         // Unit Isolation Check
         $currentUser = auth()->user();
-        if (!$currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])) {
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
+        if (!$isGlobalAdmin) {
             $unitId = session('active_unit_id');
             $query->where(function ($subQ) use ($unitId) {
                 $subQ->whereExists(function ($q1) use ($unitId) {
@@ -50,11 +64,12 @@ class UserController extends Controller
         }
 
         // Search Filter
-        $query->when($request->search, function ($q, $search) {
-            $term = trim($search);
+        $query->when($request->filled('search'), function ($q) use ($request) {
+            $term = trim($request->search);
             $q->where(function ($sub) use ($term) {
                 $sub->where('users.name', 'like', "%{$term}%")
                     ->orWhere('users.email', 'like', "%{$term}%")
+                    ->orWhere('users.phone', 'like', "%{$term}%")
                     ->orWhereExists(function ($tQ) use ($term) {
                         $tQ->select(\DB::raw(1))
                            ->from('teachers')
@@ -88,15 +103,43 @@ class UserController extends Controller
             });
         });
 
-        // Role Filter
-        $query->when($request->role, function ($q, $role) {
-            $q->whereHas('roles', function ($sub) use ($role) {
-                $sub->where('name', $role);
+        // Role Filter (using whereExists to include team-scoped roles)
+        $query->when($request->filled('role'), function ($q) use ($request) {
+            $role = $request->role;
+            $q->where(function ($roleSub) use ($role) {
+                $roleSub->whereExists(function ($mq) use ($role) {
+                    $mq->select(\DB::raw(1))
+                       ->from('model_has_roles')
+                       ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                       ->whereColumn('model_has_roles.model_id', 'users.id')
+                       ->where('roles.name', $role);
+                });
+
+                if ($role === 'teacher') {
+                    $roleSub->orWhereExists(function ($tq) {
+                        $tq->select(\DB::raw(1))
+                           ->from('teachers')
+                           ->whereColumn('teachers.user_id', 'users.id');
+                    });
+                } elseif (in_array($role, ['staff_unit', 'staff_yayasan'])) {
+                    $roleSub->orWhereExists(function ($sq) {
+                        $sq->select(\DB::raw(1))
+                           ->from('staff')
+                           ->whereColumn('staff.user_id', 'users.id');
+                    });
+                } elseif (in_array($role, ['siswa', 'student'])) {
+                    $roleSub->orWhereExists(function ($stq) {
+                        $stq->select(\DB::raw(1))
+                           ->from('students')
+                           ->whereColumn('students.user_id', 'users.id');
+                    });
+                }
             });
         });
 
         // Unit Filter
-        $query->when($request->unit_id, function ($q, $unitId) {
+        $query->when($request->filled('unit_id'), function ($q) use ($request) {
+            $unitId = $request->unit_id;
             $q->where(function ($subQ) use ($unitId) {
                 $subQ->whereExists(function ($q1) use ($unitId) {
                     $q1->select(\DB::raw(1))
@@ -125,8 +168,7 @@ class UserController extends Controller
             });
         });
         
-        $users = $query->latest()->paginate(10)->withQueryString()->through(function ($user) {
-            
+        $users = $query->latest('users.id')->paginate(10)->withQueryString()->through(function ($user) {
             // Manual fetch of roles for display
             $roles = \DB::table('model_has_roles')
                 ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
@@ -141,22 +183,26 @@ class UserController extends Controller
                 'roles' => $roles,
                 'units' => $user->getUnitsAttribute()->pluck('name'),
                 'is_active' => !is_null($user->email_verified_at),
-                'created_at' => $user->created_at->format('d M Y'),
+                'created_at' => $user->created_at ? $user->created_at->format('d M Y') : '-',
             ];
         });
 
         return Inertia::render('Yayasan/Users/Index', [
             'users' => $users,
-            'units' => auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']) ? Unit::all() : Unit::where('id', session('active_unit_id'))->get(),
+            'units' => $isGlobalAdmin ? Unit::all() : Unit::where('id', session('active_unit_id'))->get(),
             'roles' => Role::where('name', '!=', 'super_admin_yayasan')->pluck('name'),
-            'filters' => $request->only(['search', 'role', 'unit_id']),
+            'filters' => [
+                'search' => $request->input('search', ''),
+                'role' => $request->input('role', ''),
+                'unit_id' => $request->input('unit_id', ''),
+            ],
         ]);
     }
 
     public function create()
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
         $units = $isGlobalAdmin 
             ? Unit::all() 
             : Unit::where('id', session('active_unit_id'))->get();
@@ -178,7 +224,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -240,7 +286,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
 
         // Fetch all current roles & team_id
         $roleInfos = \DB::table('model_has_roles')
@@ -283,7 +329,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
 
         $oldUnitId = \DB::table('model_has_roles')
             ->where('model_id', $user->id)
@@ -400,7 +446,7 @@ class UserController extends Controller
         }
 
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
 
         if (!$isGlobalAdmin) {
             $userUnitId = \DB::table('model_has_roles')
@@ -422,7 +468,7 @@ class UserController extends Controller
     public function syncProfilesUnit(Request $request, User $user)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
 
         $request->validate([
             'unit_id' => 'required|exists:units,id',
@@ -469,7 +515,7 @@ class UserController extends Controller
     public function unlinkProfile(Request $request, User $user)
     {
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
 
         $request->validate([
             'type' => 'required|in:guru,staff,siswa',
@@ -661,7 +707,7 @@ class UserController extends Controller
         }
 
         $currentUser = auth()->user();
-        $isGlobalAdmin = $currentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isGlobalAdmin = $this->isGlobalAdminUser($currentUser);
 
         if (!$isGlobalAdmin) {
             $userUnitId = \DB::table('model_has_roles')
