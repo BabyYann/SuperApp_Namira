@@ -169,10 +169,20 @@ const confirmDelete = (teacher) => {
 };
 
 const deleteItem = () => {
+    if (!itemToDelete.value || deleteForm.processing) return;
+
     deleteForm.delete(route('yayasan.teachers.destroy', itemToDelete.value.id), {
+        preserveScroll: true,
         onSuccess: () => {
             showDeleteConfirm.value = false;
             itemToDelete.value = null;
+        },
+        onError: () => {
+            showDeleteConfirm.value = false;
+            itemToDelete.value = null;
+        },
+        onFinish: () => {
+            showDeleteConfirm.value = false;
         }
     });
 };
@@ -646,9 +656,15 @@ const deleteItem = () => {
                         </div>
                         <h3 class="text-xl font-bold text-gray-900 mb-3">Hapus Data Guru?</h3>
                         <p class="text-gray-500 mb-8 leading-relaxed">Guru <span class="font-bold text-gray-800">"{{ itemToDelete?.full_name }}"</span> akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.</p>
-                        <div class="flex justify-center gap-4">
-                            <button @click="showDeleteConfirm = false" class="px-6 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-colors">Batal</button>
-                            <button @click="deleteItem" class="px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-500/30 transition-all hover:scale-105">Hapus Permanen</button>
+                        <div class="flex justify-center gap-3">
+                            <button type="button" @click="showDeleteConfirm = false" :disabled="deleteForm.processing" class="px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">Batal</button>
+                            <button type="button" @click="deleteItem" :disabled="deleteForm.processing" class="px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-500/30 transition-all hover:scale-105 disabled:opacity-60 disabled:pointer-events-none flex items-center justify-center gap-2 min-w-[150px]">
+                                <span v-if="deleteForm.processing" class="inline-flex items-center gap-2">
+                                    <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                    Menghapus...
+                                </span>
+                                <span v-else>Hapus Permanen</span>
+                            </button>
                         </div>
                     </div>
                 </div>

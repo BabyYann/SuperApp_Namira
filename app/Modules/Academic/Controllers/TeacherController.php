@@ -131,13 +131,17 @@ class TeacherController extends Controller
         }
     }
 
-    public function show(Teacher $teacher)
+    public function show($id)
     {
-        if ($teacher->unit_id != session('active_unit_id')) {
-            abort(403);
+        $teacher = Teacher::with(['user', 'classroom'])->find($id);
+        if (!$teacher) {
+            return redirect()->route('yayasan.teachers.index')
+                ->with('error', 'Data guru tidak ditemukan atau telah dihapus.');
         }
 
-        $teacher->load(['user', 'classroom']);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $teacher->unit_id != session('active_unit_id')) {
+            abort(403);
+        }
         
         // Fetch Teaching Schedule
         $schedules = \App\Modules\Academic\Models\ClassSchedule::with(['classroom', 'subject'])
@@ -160,10 +164,16 @@ class TeacherController extends Controller
         ]);
     }
 
-    public function update(Request $request, Teacher $teacher)
+    public function update(Request $request, $id)
     {
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
             abort(403, 'Akses Ditolak: Hanya Admin yang dapat mengubah data guru.');
+        }
+
+        $teacher = Teacher::find($id);
+        if (!$teacher) {
+            return redirect()->route('yayasan.teachers.index')
+                ->with('error', 'Data guru tidak ditemukan atau telah dihapus.');
         }
 
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $teacher->unit_id != session('active_unit_id')) {
@@ -194,29 +204,64 @@ class TeacherController extends Controller
 
         $teacher->save();
         
-        // Update User name
-        $teacher->user->update(['name' => $validated['full_name']]);
+        // Update User name if user exists
+        if ($teacher->user) {
+            $teacher->user->update(['name' => $validated['full_name']]);
+        }
 
         return redirect()->back()->with('success', 'Data guru diperbarui.');
     }
 
-    public function destroy(Teacher $teacher)
+    public function destroy($id)
     {
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
             abort(403, 'Akses Ditolak: Hanya Admin yang dapat menghapus data guru.');
+        }
+
+        $teacher = Teacher::find($id);
+        if (!$teacher) {
+            // Sudah terhapus sebelumnya (misal akibat double click / refresh)
+            return redirect()->route('yayasan.teachers.index')
+                ->with('success', 'Data guru sudah berhasil dihapus sebelumnya.');
         }
 
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $teacher->unit_id != session('active_unit_id')) {
             abort(403, 'Akses Ditolak: Anda tidak dapat menghapus data guru dari unit lain.');
         }
 
-        if ($teacher->photo) {
-            \Storage::disk('public')->delete($teacher->photo);
-        }
+        \DB::transaction(function () use ($teacher) {
+            if ($teacher->photo) {
+                \Storage::disk('public')->delete($teacher->photo);
+            }
 
-        $teacher->user->delete();
-        $teacher->delete();
+            $user = $teacher->user;
 
-        return redirect()->back()->with('success', 'Guru dihapus.');
+            // Hapus profil guru
+            $teacher->delete();
+
+            // Tangani akun user terkait jika ada
+            if ($user) {
+                // Periksa apakah user memiliki peran atau profil lain (misal: staff, siswa, admin)
+                $hasOtherProfiles = \DB::table('staff')->where('user_id', $user->id)->exists()
+                    || \DB::table('students')->where('user_id', $user->id)->exists();
+
+                $nonTeacherRoles = $user->roles()->where('name', '!=', 'teacher')->count();
+
+                if (!$hasOtherProfiles && $nonTeacherRoles === 0) {
+                    // Akun murni guru: aman dihapus total
+                    try {
+                        $user->delete();
+                    } catch (\Throwable $e) {
+                        // Jika ada relasi foreign key lain di audit/log, cabut peran teacher
+                        $user->removeRole('teacher');
+                    }
+                } else {
+                    // Akun memiliki profil/peran lain: cabut peran teacher saja agar akun staf/yayasan tetap utuh
+                    $user->removeRole('teacher');
+                }
+            }
+        });
+
+        return redirect()->route('yayasan.teachers.index')->with('success', 'Guru berhasil dihapus.');
     }
 }

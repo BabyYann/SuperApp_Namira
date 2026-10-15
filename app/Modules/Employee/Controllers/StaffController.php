@@ -183,23 +183,50 @@ class StaffController extends Controller
         return redirect()->back()->with('success', 'Data staf diperbarui.');
     }
 
-    public function destroy(Staff $staff)
+    public function destroy($id)
     {
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
             abort(403, 'Akses Ditolak: Hanya Admin yang dapat menghapus data staf.');
         }
 
-        if ($staff->unit_id != session('active_unit_id')) {
-            abort(403);
+        $staff = Staff::find($id);
+        if (!$staff) {
+            return redirect()->back()->with('success', 'Data staf sudah berhasil dihapus sebelumnya.');
         }
 
-        if ($staff->photo) {
-            Storage::disk('public')->delete($staff->photo);
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) && $staff->unit_id != session('active_unit_id')) {
+            abort(403, 'Akses Ditolak: Anda tidak dapat menghapus data staf dari unit lain.');
         }
 
-        $staff->user->delete(); // Optional: Delete user acc too? Typically yes if created for this alone.
-        $staff->delete();
+        \DB::transaction(function () use ($staff) {
+            if ($staff->photo) {
+                Storage::disk('public')->delete($staff->photo);
+            }
 
-        return redirect()->back()->with('success', 'Data staf dihapus.');
+            $user = $staff->user;
+            $staff->delete();
+
+            if ($user) {
+                // Periksa apakah user memiliki profil lain (guru/siswa) atau peran non-staff
+                $hasOtherProfiles = \DB::table('teachers')->where('user_id', $user->id)->exists()
+                    || \DB::table('students')->where('user_id', $user->id)->exists();
+
+                $nonStaffRoles = $user->roles()->whereNotIn('name', ['staff_unit', 'staff_yayasan'])->count();
+
+                if (!$hasOtherProfiles && $nonStaffRoles === 0) {
+                    try {
+                        $user->delete();
+                    } catch (\Throwable $e) {
+                        $user->removeRole('staff_unit');
+                        $user->removeRole('staff_yayasan');
+                    }
+                } else {
+                    $user->removeRole('staff_unit');
+                    $user->removeRole('staff_yayasan');
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', 'Data staf berhasil dihapus.');
     }
 }
