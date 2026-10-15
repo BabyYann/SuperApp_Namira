@@ -155,6 +155,13 @@ const openAddModal = (item = null) => {
     showAddModal.value = true;
 };
 
+const openAddModalForDay = (targetDay) => {
+    openAddModal(null);
+    if (targetDay) {
+        form.day = targetDay;
+    }
+};
+
 const closeModal = () => {
     showAddModal.value = false;
     isEditing.value = false;
@@ -447,41 +454,49 @@ const getMateriText = (item) => {
         
         <!-- HEADER DESKTOP ONLY -->
         <template #header v-if="!isMobile">
-            <div class="flex flex-col gap-4 print:hidden">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-black text-slate-900 leading-tight">
+            <div class="flex items-center justify-between w-full max-w-7xl mx-auto print:hidden">
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h2 class="text-2xl font-black text-slate-900 tracking-tight leading-tight">
                             Jadwal Pelajaran
                         </h2>
-                        <p class="text-xs text-slate-500 mt-1">
-                            {{ canManage ? 'Atur jadwal pelajaran per kelas dan guru pengampu.' : 'Lihat jadwal mengajar Anda di sekolah.' }}
-                        </p>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <!-- Desktop Calendar / Date Button -->
-                        <button 
-                            @click="openCalendarModal"
-                            type="button"
-                            class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs shadow-2xs flex items-center gap-2 transition-all cursor-pointer"
-                            title="Buka Kalender"
+                        <span 
+                            v-if="selectedClassroomName" 
+                            class="px-2.5 py-0.5 bg-teal-50 text-[#0B7068] border border-teal-200/80 rounded-full text-xs font-extrabold"
                         >
-                            <CalendarIcon class="w-4 h-4 text-[#0B7068] stroke-[2.2]" />
-                            <span>{{ selectedDateFormatted }}</span>
-                            <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400" />
-                        </button>
-
-                        <div v-if="canManage && selectedClassroomId" class="flex items-center gap-2">
-                            <button 
-                                @click="openAddModal(null)"
-                                type="button"
-                                class="px-4 py-2 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all"
-                            >
-                                <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                                <span>Tambah Jadwal</span>
-                            </button>
-                        </div>
+                            Kelas {{ selectedClassroomName }}
+                        </span>
                     </div>
+                    <p class="text-xs text-slate-500 mt-1">
+                        {{ canManage ? 'Atur jadwal pelajaran per kelas dan guru pengampu.' : 'Lihat jadwal mengajar Anda di sekolah.' }}
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <!-- Desktop Calendar / Date Button -->
+                    <button 
+                        @click="openCalendarModal"
+                        type="button"
+                        class="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs shadow-2xs flex items-center gap-2 transition-all cursor-pointer h-[42px]"
+                        title="Buka Kalender"
+                    >
+                        <CalendarIcon class="w-4 h-4 text-[#0B7068] stroke-[2.2]" />
+                        <span>{{ selectedDateFormatted }}</span>
+                        <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+
+                    <!-- Add Schedule Button (Single primary CTA on desktop) -->
+                    <button 
+                        v-if="canManage"
+                        @click="openAddModal(null)"
+                        type="button"
+                        class="px-4 py-2 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs shadow-sm shadow-teal-900/10 flex items-center gap-2 transition-all cursor-pointer h-[42px]"
+                        :class="{'opacity-75': !selectedClassroomId && !selectedClassroom}"
+                        :title="!selectedClassroomId && !selectedClassroom ? 'Pilih kelas terlebih dahulu' : 'Tambah Jadwal Baru'"
+                    >
+                        <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                        <span>Tambah Jadwal</span>
+                    </button>
                 </div>
             </div>
         </template>
@@ -831,90 +846,94 @@ const getMateriText = (item) => {
             <!-- END MOBILE VIEW -->
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
-            <div class="hidden md:block space-y-6">
-                <!-- Toolbar -->
-                <div class="flex flex-col md:flex-row items-center gap-4 print:hidden">
-                    <!-- View Toggle for Teachers -->
-                    <div v-if="isTeacher" class="bg-gray-100 p-1 rounded-2xl flex items-center h-[46px]">
-                        <button 
-                            @click="viewMode = 'personal'"
-                            class="px-4 py-2 text-xs font-bold rounded-xl transition-all h-full flex items-center"
-                            :class="viewMode === 'personal' ? 'bg-white text-namira-teal shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                        >
-                            Jadwal Saya
-                        </button>
-                        <button 
-                            @click="viewMode = 'class'"
-                            class="px-4 py-2 text-xs font-bold rounded-xl transition-all h-full flex items-center"
-                            :class="viewMode === 'class' ? 'bg-white text-namira-teal shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                        >
-                            Cari Kelas
-                        </button>
-                    </div>
+            <div class="hidden md:block space-y-5">
+                <!-- Toolbar Card -->
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-2xs flex flex-wrap items-center justify-between gap-3 print:hidden">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- View Toggle for Teachers -->
+                        <div v-if="isTeacher" class="bg-slate-100 p-1 rounded-xl flex items-center h-[42px]">
+                            <button 
+                                @click="viewMode = 'personal'"
+                                class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all h-full flex items-center gap-1.5 cursor-pointer"
+                                :class="viewMode === 'personal' ? 'bg-white text-[#0B7068] shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                            >
+                                <UserIcon class="w-3.5 h-3.5" />
+                                <span>Jadwal Saya</span>
+                            </button>
+                            <button 
+                                @click="viewMode = 'class'"
+                                class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all h-full flex items-center gap-1.5 cursor-pointer"
+                                :class="viewMode === 'class' ? 'bg-white text-[#0B7068] shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                            >
+                                <UserGroupIcon class="w-3.5 h-3.5" />
+                                <span>Cari Kelas</span>
+                            </button>
+                        </div>
 
-                    <!-- Class Selector -->
-                    <div v-if="canManage || viewMode === 'class'" class="relative flex-1 w-full md:w-auto">
-                        <select 
-                            v-model="selectedClassroom" 
-                            class="appearance-none bg-white border border-gray-200 text-gray-700 text-sm rounded-2xl focus:ring-[#0B7068] focus:border-[#0B7068] block w-full pl-4 pr-10 py-2.5 shadow-2xs hover:bg-slate-50 transition-all cursor-pointer h-[46px]"
-                        >
-                            <option :value="undefined" disabled>-- Pilih Kelas --</option>
-                            <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id">
-                                Kelas {{ classroom.name }}
-                            </option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                            <ChevronDownIcon class="h-4 w-4" />
+                        <!-- Class Selector (Controlled width, not stretching infinitely!) -->
+                        <div v-if="canManage || viewMode === 'class'" class="relative w-72 md:w-80">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#0B7068]">
+                                <UserGroupIcon class="h-4 w-4 stroke-[2]" />
+                            </div>
+                            <select 
+                                v-model="selectedClassroom" 
+                                class="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl focus:ring-[#0B7068] focus:border-[#0B7068] block w-full pl-10 pr-9 py-2 shadow-2xs hover:bg-slate-100/70 transition-all cursor-pointer h-[42px]"
+                            >
+                                <option :value="undefined" disabled>-- Pilih Kelas --</option>
+                                <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id">
+                                    Kelas {{ classroom.name }}
+                                </option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
+                                <ChevronDownIcon class="h-4 w-4" />
+                            </div>
+                        </div>
+
+                        <!-- Session Count Info -->
+                        <div v-if="selectedClassroomId" class="hidden lg:flex items-center gap-2 text-xs text-slate-500 font-medium pl-2 border-l border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Total <strong class="text-slate-800 font-black">{{ totalScheduleCount }} Sesi</strong> terdata minggu ini</span>
                         </div>
                     </div>
 
-                    <!-- Actions (For Admin / Yayasan / Koordinator Kurikulum) -->
-                    <template v-if="canManage">
-                        <!-- Smart Tools Dropdown -->
-                        <Dropdown align="right" width="48" v-if="selectedClassroomId">
+                    <!-- Right Toolbar Controls: Actions / Print -->
+                    <div class="flex items-center gap-2">
+                        <!-- Smart Tools Dropdown (Aksi) -->
+                        <Dropdown align="right" width="48" v-if="canManage && selectedClassroomId">
                             <template #trigger>
-                                <button class="px-4 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-2xl font-bold hover:bg-slate-50 flex items-center gap-2 transition-all shadow-2xs h-[46px]">
+                                <button class="px-3.5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-50 flex items-center gap-2 transition-all shadow-2xs h-[42px] cursor-pointer">
+                                    <BoltIcon class="h-4 w-4 text-amber-500" />
                                     <span>Aksi</span>
-                                    <BoltIcon class="h-4 w-4" />
+                                    <ChevronDownIcon class="h-3.5 w-3.5 text-slate-400" />
                                 </button>
                             </template>
                             <template #content>
-                                <button @click="openCloneModal" class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 gap-2">
-                                    <DocumentDuplicateIcon class="w-4 h-4" />
-                                    Clone Jadwal
+                                <button @click="openCloneModal" class="flex w-full items-center px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 gap-2.5 transition-colors cursor-pointer">
+                                    <DocumentDuplicateIcon class="w-4 h-4 text-slate-400" />
+                                    <span>Clone Jadwal</span>
                                 </button>
-                                <button @click="printSchedule" class="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 gap-2">
-                                    <PrinterIcon class="w-4 h-4" />
-                                    Cetak PDF
+                                <button @click="printSchedule" class="flex w-full items-center px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 gap-2.5 transition-colors cursor-pointer">
+                                    <PrinterIcon class="w-4 h-4 text-slate-400" />
+                                    <span>Cetak PDF</span>
                                 </button>
-                                <div class="border-t border-gray-100"></div>
-                                <button @click="resetSchedule" class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 gap-2">
-                                    <TrashIcon class="w-4 h-4" />
-                                    Reset Jadwal
+                                <div class="border-t border-slate-100 my-1"></div>
+                                <button @click="resetSchedule" class="flex w-full items-center px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 gap-2.5 transition-colors cursor-pointer">
+                                    <TrashIcon class="w-4 h-4 text-red-500" />
+                                    <span>Reset Jadwal</span>
                                 </button>
                             </template>
                         </Dropdown>
 
+                        <!-- Print Button for Teacher -->
                         <button 
-                            @click="openAddModal(null)"
-                            class="px-6 py-2.5 bg-[#0B7068] text-white rounded-2xl font-bold shadow-lg shadow-teal-900/20 hover:bg-[#095c55] transition-all flex items-center gap-2 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed h-[46px]"
-                            :class="{'opacity-50 cursor-not-allowed': !selectedClassroomId}"
-                            :disabled="!selectedClassroomId"
+                            v-if="isTeacher && selectedClassroomId && viewMode === 'class'"
+                            @click="printSchedule"
+                            class="px-3.5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-50 flex items-center gap-2 transition-all shadow-2xs h-[42px] cursor-pointer"
                         >
-                            <PlusIcon class="w-5 h-5 stroke-[2.5]" />
-                            <span>Tambah</span>
+                            <PrinterIcon class="w-4 h-4 text-slate-500" />
+                            <span>Cetak PDF</span>
                         </button>
-                    </template>
-                    
-                    <!-- Print Button for Teacher -->
-                    <button 
-                        v-if="isTeacher && selectedClassroomId && viewMode === 'class'"
-                        @click="printSchedule"
-                        class="px-4 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-2xl font-bold hover:bg-slate-50 flex items-center gap-2 transition-all shadow-2xs h-[46px]"
-                    >
-                        <PrinterIcon class="w-5 h-5" />
-                        Cetak
-                    </button>
+                    </div>
                 </div>
 
                 <!-- Print Header -->
@@ -933,65 +952,110 @@ const getMateriText = (item) => {
                     <p class="text-xs text-gray-400 max-w-md mx-auto">Silakan pilih kelas pada menu dropdown di atas untuk menampilkan jadwal pelajaran minggu ini.</p>
                 </div>
 
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 print:grid-cols-3 print:gap-6">
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 print:grid-cols-3 print:gap-6">
                     <!-- Day Column -->
                     <div v-for="day in days" :key="day" class="flex flex-col gap-3 break-inside-avoid">
                         <!-- Day Header -->
-                        <div class="bg-white p-3 rounded-2xl shadow-2xs border border-gray-100 text-center sticky top-0 z-10 print:border-black print:shadow-none">
-                            <h3 class="font-bold text-gray-800 text-sm">{{ day }}</h3>
-                            <div class="h-1 w-6 bg-[#0B7068] rounded-full mx-auto mt-1 print:bg-black"></div>
+                        <div 
+                            class="p-3 rounded-2xl shadow-2xs border text-center sticky top-0 z-10 transition-all print:border-black print:shadow-none"
+                            :class="day === todayName 
+                                ? 'bg-gradient-to-b from-teal-50/90 to-white border-teal-300 ring-1 ring-teal-500/20' 
+                                : 'bg-white border-slate-100'"
+                        >
+                            <div class="flex items-center justify-between mb-1.5">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <h3 
+                                        class="font-black text-sm tracking-tight truncate"
+                                        :class="day === todayName ? 'text-[#0B7068]' : 'text-slate-800'"
+                                    >
+                                        {{ day }}
+                                    </h3>
+                                    <span 
+                                        v-if="day === todayName" 
+                                        class="px-1.5 py-0.5 bg-[#0B7068] text-white text-[9px] font-black rounded-full shrink-0 uppercase tracking-wider"
+                                    >
+                                        Hari Ini
+                                    </span>
+                                </div>
+                                <span class="text-[10px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">
+                                    {{ sortedSchedules(day).length }}
+                                </span>
+                            </div>
+                            <div 
+                                class="h-1 rounded-full mx-auto print:bg-black transition-colors"
+                                :class="day === todayName ? 'w-10 bg-[#0B7068]' : 'w-6 bg-slate-200'"
+                            ></div>
                         </div>
 
                         <!-- Empty State for Day -->
-                        <div v-if="sortedSchedules(day).length === 0" class="flex-1 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center min-h-[120px] p-4 text-center group hover:bg-slate-100/60 transition-colors print:hidden">
-                            <div class="bg-white rounded-full p-2 mb-2 group-hover:scale-110 transition-transform shadow-2xs">
-                                <ClockIcon class="w-4 h-4 text-gray-400" />
+                        <div 
+                            v-if="sortedSchedules(day).length === 0" 
+                            class="flex-1 bg-slate-50/70 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center min-h-[140px] p-4 text-center group hover:bg-slate-100/60 hover:border-slate-300 transition-all print:hidden"
+                        >
+                            <div class="bg-white rounded-full p-2 mb-2 group-hover:scale-110 transition-transform shadow-2xs text-slate-400">
+                                <ClockIcon class="w-4 h-4" />
                             </div>
-                            <p class="text-xs font-bold text-gray-400">Tidak ada jadwal</p>
-                            <p class="text-[10px] text-gray-400/80">Santai sejenak ☕</p>
+                            <p class="text-xs font-bold text-slate-400">Tidak ada jadwal</p>
+                            <p class="text-[10px] text-slate-400/80 mt-0.5">Santai sejenak ☕</p>
+                            
+                            <!-- Quick add button on hover if canManage -->
+                            <button 
+                                v-if="canManage && (selectedClassroomId || selectedClassroom)"
+                                @click="openAddModalForDay(day)"
+                                type="button"
+                                class="mt-3 opacity-0 group-hover:opacity-100 px-2.5 py-1 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-200 text-teal-800 rounded-lg text-[10px] font-bold shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                                <PlusIcon class="w-3 h-3 stroke-[2.5]" />
+                                <span>Tambah</span>
+                            </button>
                         </div>
 
                         <!-- Schedule Cards -->
                         <div 
                             v-for="item in sortedSchedules(day)" 
                             :key="item.id" 
-                            class="bg-white p-3.5 rounded-2xl shadow-2xs border border-gray-100 hover:border-slate-300 transition-all relative group print:border-black print:shadow-none space-y-2"
+                            class="bg-white p-3.5 rounded-2xl shadow-2xs border border-slate-100 hover:border-teal-200 hover:shadow-md transition-all relative group print:border-black print:shadow-none space-y-2 border-l-[3px] border-l-[#0B7068]"
                             :class="{'ring-2 ring-[#0B7068]/20': isTeacher && viewMode === 'personal'}"
                         >
-                            <!-- Time -->
+                            <!-- Time & Badges -->
                             <div class="flex items-center justify-between gap-1">
-                                <div class="px-2 py-0.5 bg-emerald-50 text-emerald-800 text-[10px] font-bold rounded-lg border border-emerald-100 print:border-black print:text-black print:bg-transparent">
-                                    {{ item.start_time.substring(0, 5) }} - {{ item.end_time.substring(0, 5) }}
+                                <div class="px-2 py-0.5 bg-teal-50/90 text-teal-800 text-[10px] font-bold rounded-lg border border-teal-100/80 flex items-center gap-1 font-mono">
+                                    <ClockIcon class="w-3 h-3 text-[#0B7068]" />
+                                    <span>{{ item.start_time.substring(0, 5) }} - {{ item.end_time.substring(0, 5) }}</span>
                                 </div>
                                 <!-- Show Class Name if in Personal Mode -->
-                                <div v-if="viewMode === 'personal'" class="px-2 py-0.5 bg-amber-50 text-amber-800 text-[10px] font-bold rounded-lg border border-amber-200/60">
+                                <div v-if="viewMode === 'personal'" class="px-2 py-0.5 bg-amber-50 text-amber-800 text-[10px] font-bold rounded-lg border border-amber-200/60 truncate max-w-[80px]">
                                     {{ item.classroom?.name }}
                                 </div>
                             </div>
 
                             <!-- Subject -->
-                            <h4 class="font-bold text-gray-900 text-xs leading-snug">{{ item.subject?.name }}</h4>
+                            <h4 class="font-bold text-slate-900 text-xs leading-snug line-clamp-2">
+                                {{ item.subject?.name }}
+                            </h4>
                             
                             <!-- Teacher (Only show if NOT in personal mode) -->
-                            <div v-if="viewMode !== 'personal'" class="flex items-center gap-2 pt-1 border-t border-gray-100 print:border-gray-200">
-                                <div class="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 print:hidden">
+                            <div v-if="viewMode !== 'personal'" class="flex items-center gap-2 pt-1 border-t border-slate-100 print:border-gray-200">
+                                <div class="shrink-0 w-5 h-5 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-[10px] font-black text-[#0B7068] print:hidden">
                                     {{ item.teacher?.full_name?.charAt(0) || '?' }}
                                 </div>
-                                <p class="text-xs text-gray-500 truncate">{{ item.teacher?.full_name }}</p>
+                                <p class="text-xs text-slate-500 truncate" :title="item.teacher?.full_name">
+                                    {{ item.teacher?.full_name }}
+                                </p>
                             </div>
 
                             <!-- Actions (For Admin / Yayasan / Koordinator Kurikulum) -->
                             <div v-if="canManage" class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
                                 <button 
                                     @click="openAddModal(item)"
-                                    class="p-1 text-gray-400 hover:text-[#0B7068] bg-white rounded-md shadow-2xs"
+                                    class="p-1 text-slate-400 hover:text-[#0B7068] hover:bg-teal-50 bg-white rounded-lg shadow-2xs border border-slate-100 transition-colors cursor-pointer"
                                     title="Edit Jadwal"
                                 >
                                     <PencilSquareIcon class="w-3.5 h-3.5" />
                                 </button>
                                 <button 
                                     @click="deleteSchedule(item.id)"
-                                    class="p-1 text-gray-400 hover:text-red-500 bg-white rounded-md shadow-2xs"
+                                    class="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 bg-white rounded-lg shadow-2xs border border-slate-100 transition-colors cursor-pointer"
                                     title="Hapus Jadwal"
                                 >
                                     <TrashIcon class="w-3.5 h-3.5" />
