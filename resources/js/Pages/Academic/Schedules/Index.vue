@@ -9,7 +9,7 @@ import {
     CalendarIcon, PencilSquareIcon, ClockIcon, ExclamationTriangleIcon, 
     ChevronUpDownIcon, ChevronRightIcon, MagnifyingGlassIcon, BookOpenIcon,
     UserGroupIcon, MapPinIcon, DocumentTextIcon, UserIcon, XMarkIcon,
-    SparklesIcon
+    SparklesIcon, ChevronLeftIcon
 } from '@heroicons/vue/24/outline';
 import Modal from '@/Components/Modal.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -289,22 +289,121 @@ const activeDayScheduleCount = computed(() => {
     return (sortedSchedules(selectedMobileDay.value) || []).length;
 });
 
-// Helper for calculated date of the selected day in current week
-const getDateForDay = (dayName) => {
+// Interactive Calendar State & Methods
+const currentSelectedDate = ref(
+    todayName === 'Minggu'
+        ? dayjs().add(1, 'day').format('YYYY-MM-DD')
+        : dayjs().format('YYYY-MM-DD')
+);
+const calendarViewingMonth = ref(dayjs());
+const showCalendarModal = ref(false);
+const calendarWeekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+const selectedDateFormatted = computed(() => {
+    return dayjs(currentSelectedDate.value).format('D MMM YYYY');
+});
+
+const viewingMonthTitle = computed(() => {
+    return calendarViewingMonth.value.format('MMMM YYYY');
+});
+
+const openCalendarModal = () => {
+    calendarViewingMonth.value = dayjs(currentSelectedDate.value);
+    showCalendarModal.value = true;
+};
+
+const closeCalendarModal = () => {
+    showCalendarModal.value = false;
+};
+
+const prevMonth = () => {
+    calendarViewingMonth.value = calendarViewingMonth.value.subtract(1, 'month');
+};
+
+const nextMonth = () => {
+    calendarViewingMonth.value = calendarViewingMonth.value.add(1, 'month');
+};
+
+const selectDate = (dateObj) => {
+    const d = dayjs(dateObj);
+    currentSelectedDate.value = d.format('YYYY-MM-DD');
+    calendarViewingMonth.value = d;
+    
+    // Determine Indonesian day name
+    const dayOfWeekIndex = d.day(); // 0 = Sun, 1 = Mon ...
+    const dayName = dayMapNames[dayOfWeekIndex];
+    selectedMobileDay.value = dayName;
+    
+    showCalendarModal.value = false;
+};
+
+const jumpToToday = () => {
+    selectDate(dayjs());
+};
+
+const selectDay = (day) => {
+    selectedMobileDay.value = day;
+    
     const dayMap = {
+        'Minggu': 0,
         'Senin': 1,
         'Selasa': 2,
         'Rabu': 3,
         'Kamis': 4,
         'Jumat': 5,
-        'Sabtu': 6,
-        'Minggu': 0
+        'Sabtu': 6
     };
-    const targetDay = dayMap[dayName] ?? 1;
-    const now = dayjs();
-    const currentDay = now.day();
-    const diff = targetDay - (currentDay === 0 ? 7 : currentDay);
-    return now.add(diff, 'day').format('DD MMM YYYY');
+    const targetDayIndex = dayMap[day] ?? 1;
+    const ref = dayjs(currentSelectedDate.value);
+    const currentDayIndex = ref.day();
+    const diff = targetDayIndex - currentDayIndex;
+    currentSelectedDate.value = ref.add(diff, 'day').format('YYYY-MM-DD');
+};
+
+const calendarDays = computed(() => {
+    const startOfMonth = calendarViewingMonth.value.startOf('month');
+    const endOfMonth = calendarViewingMonth.value.endOf('month');
+    
+    const startDay = startOfMonth.day(); // 0 (Sun) to 6 (Sat)
+    const endDay = endOfMonth.day();
+    
+    const startGrid = startOfMonth.subtract(startDay, 'day');
+    const endGrid = endOfMonth.add(6 - endDay, 'day');
+    
+    const daysArr = [];
+    let curr = startGrid;
+    
+    while (curr.isBefore(endGrid) || curr.isSame(endGrid, 'day')) {
+        const isCurrentMonth = curr.month() === calendarViewingMonth.value.month();
+        const dateStr = curr.format('YYYY-MM-DD');
+        const isSelected = dateStr === currentSelectedDate.value;
+        const isToday = dateStr === dayjs().format('YYYY-MM-DD');
+        
+        const dayName = dayMapNames[curr.day()];
+        const scheduleList = sortedSchedules(dayName);
+        const hasSchedule = scheduleList && scheduleList.length > 0;
+        
+        daysArr.push({
+            date: curr,
+            dateStr,
+            dayNumber: curr.date(),
+            dayName,
+            isCurrentMonth,
+            isSelected,
+            isToday,
+            hasSchedule,
+            scheduleCount: scheduleList ? scheduleList.length : 0
+        });
+        
+        curr = curr.add(1, 'day');
+    }
+    
+    return daysArr;
+});
+
+// Helper for calculated date of the selected day in current week
+const getDateForDay = (dayName) => {
+    return selectedDateFormatted.value;
 };
 
 const getClassBadge = (item) => {
@@ -345,15 +444,29 @@ const getMateriText = (item) => {
                         </p>
                     </div>
 
-                    <div v-if="canManage && selectedClassroomId" class="flex items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <!-- Desktop Calendar / Date Button -->
                         <button 
-                            @click="openAddModal(null)"
+                            @click="openCalendarModal"
                             type="button"
-                            class="px-4 py-2 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all"
+                            class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs shadow-2xs flex items-center gap-2 transition-all cursor-pointer"
+                            title="Buka Kalender"
                         >
-                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                            <span>Tambah Jadwal</span>
+                            <CalendarIcon class="w-4 h-4 text-[#0B7068] stroke-[2.2]" />
+                            <span>{{ selectedDateFormatted }}</span>
+                            <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400" />
                         </button>
+
+                        <div v-if="canManage && selectedClassroomId" class="flex items-center gap-2">
+                            <button 
+                                @click="openAddModal(null)"
+                                type="button"
+                                class="px-4 py-2 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all"
+                            >
+                                <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                                <span>Tambah Jadwal</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -390,13 +503,18 @@ const getMateriText = (item) => {
                             </p>
                         </div>
 
-                        <!-- 3D Calendar Illustration (Compact & Perfectly Sized) -->
-                        <div class="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center">
+                        <!-- 3D Calendar Illustration (Interactive Button) -->
+                        <button 
+                            @click="openCalendarModal"
+                            type="button"
+                            class="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center cursor-pointer active:scale-95 transition-transform group"
+                            title="Klik untuk buka kalender"
+                        >
                             <!-- Glow circle -->
-                            <div class="absolute inset-0 bg-white/10 rounded-full blur-lg pointer-events-none"></div>
+                            <div class="absolute inset-0 bg-white/10 group-hover:bg-white/20 rounded-full blur-lg transition-colors pointer-events-none"></div>
                             
                             <!-- Calendar Graphic -->
-                            <svg class="w-18 h-18 sm:w-22 sm:h-22 drop-shadow-md relative z-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg class="w-18 h-18 sm:w-22 sm:h-22 drop-shadow-md relative z-10 transition-transform group-hover:scale-105" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <!-- Calendar Body (White) -->
                                 <rect x="15" y="20" width="70" height="65" rx="14" fill="#FFFFFF" />
                                 <!-- Calendar Header (Cyan / Mint) -->
@@ -417,7 +535,7 @@ const getMateriText = (item) => {
                                 <circle cx="76" cy="74" r="16" fill="#5EEAD4" stroke="#FFFFFF" stroke-width="3" />
                                 <path d="M76 66V74H82" stroke="#0F766E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
-                        </div>
+                        </button>
                     </div>
 
                     <!-- Stats Row Inside Banner (Compact 2-columns with No Cut-off) -->
@@ -437,9 +555,14 @@ const getMateriText = (item) => {
                             </div>
                         </div>
 
-                        <!-- Stat 2: Jadwal Hari Ini -->
-                        <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-2.5 border border-white/10 flex items-center gap-2 shadow-2xs min-w-0">
-                            <div class="w-8 h-8 rounded-xl bg-white/15 text-white flex items-center justify-center shrink-0">
+                        <!-- Stat 2: Jadwal Hari Ini (Interactive Quick Jump to Today) -->
+                        <button 
+                            @click="jumpToToday"
+                            type="button"
+                            class="bg-white/10 hover:bg-white/15 active:scale-98 transition-all backdrop-blur-xs rounded-2xl p-2.5 border border-white/10 flex items-center gap-2 shadow-2xs min-w-0 text-left cursor-pointer group"
+                            title="Klik untuk lihat jadwal hari ini"
+                        >
+                            <div class="w-8 h-8 rounded-xl bg-white/15 group-hover:bg-white/25 text-white flex items-center justify-center shrink-0 transition-colors">
                                 <CalendarIcon class="w-4 h-4 stroke-[2]" />
                             </div>
                             <div class="min-w-0 flex-1">
@@ -455,7 +578,7 @@ const getMateriText = (item) => {
                                     </span>
                                 </div>
                             </div>
-                        </div>
+                        </button>
                     </div>
                 </div>
 
@@ -510,7 +633,7 @@ const getMateriText = (item) => {
                         <button 
                             v-for="day in days" 
                             :key="day"
-                            @click="selectedMobileDay = day"
+                            @click="selectDay(day)"
                             type="button"
                             :class="[
                                 'px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer',
@@ -545,12 +668,17 @@ const getMateriText = (item) => {
                         </p>
                     </div>
 
-                    <!-- Date Pill Dropdown (Dynamic calculated date of the selected day) -->
-                    <div class="bg-white border border-slate-200/80 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5">
-                        <CalendarIcon class="w-3.5 h-3.5 text-slate-400 stroke-[2]" />
-                        <span>{{ getDateForDay(selectedMobileDay) }}</span>
+                    <!-- Date Pill Button (Interactive Calendar Trigger) -->
+                    <button 
+                        @click="openCalendarModal"
+                        type="button"
+                        class="bg-white hover:bg-teal-50/40 border border-slate-200/90 hover:border-teal-400 active:scale-95 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                        title="Pilih Tanggal di Kalender"
+                    >
+                        <CalendarIcon class="w-3.5 h-3.5 text-[#0B7068] stroke-[2.2]" />
+                        <span>{{ selectedDateFormatted }}</span>
                         <ChevronDownIcon class="w-3.5 h-3.5 text-slate-400 stroke-[2]" />
-                    </div>
+                    </button>
                 </div>
 
                 <!-- 5. SCHEDULE ITEM CARDS LIST (Responsive & No premature truncation) -->
@@ -1024,6 +1152,135 @@ const getMateriText = (item) => {
                         Clone Sekarang
                     </button>
                 </div>
+            </div>
+        </Modal>
+
+        <!-- 📅 CALENDAR MODAL (Interactive Date Picker for Jadwal Pelajaran) -->
+        <Modal :show="showCalendarModal" @close="closeCalendarModal" max-width="sm">
+            <div class="p-4 sm:p-5 space-y-3.5">
+                
+                <!-- Header: Title + Close Button -->
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-teal-50 text-[#0B7068] flex items-center justify-center">
+                            <CalendarIcon class="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 leading-tight">Pilih Tanggal Jadwal</h3>
+                            <p class="text-[10px] text-slate-400">Pilih tanggal untuk melihat jadwal mengajar</p>
+                        </div>
+                    </div>
+                    <button 
+                        @click="closeCalendarModal" 
+                        type="button"
+                        class="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                        <XMarkIcon class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <!-- Month Navigation (Prev / Month-Year / Next) -->
+                <div class="flex items-center justify-between px-1">
+                    <button 
+                        @click="prevMonth" 
+                        type="button"
+                        class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-600 active:scale-95 transition-all cursor-pointer"
+                        title="Bulan Sebelumnya"
+                    >
+                        <ChevronLeftIcon class="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                    <span class="text-xs sm:text-sm font-black text-slate-800 capitalize tracking-tight">
+                        {{ viewingMonthTitle }}
+                    </span>
+                    <button 
+                        @click="nextMonth" 
+                        type="button"
+                        class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-600 active:scale-95 transition-all cursor-pointer"
+                        title="Bulan Berikutnya"
+                    >
+                        <ChevronRightIcon class="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                </div>
+
+                <!-- Day of Week Headers (Min, Sen, Sel, Rab, Kam, Jum, Sab) -->
+                <div class="grid grid-cols-7 gap-1 text-center">
+                    <span 
+                        v-for="(wDay, idx) in calendarWeekDays" 
+                        :key="wDay" 
+                        :class="[
+                            'text-[10px] font-black py-1 select-none',
+                            idx === 0 ? 'text-rose-500' : 'text-slate-500'
+                        ]"
+                    >
+                        {{ wDay }}
+                    </span>
+                </div>
+
+                <!-- Days Grid (7 columns) -->
+                <div class="grid grid-cols-7 gap-1 text-center">
+                    <button 
+                        v-for="item in calendarDays" 
+                        :key="item.dateStr"
+                        @click="selectDate(item.date)"
+                        type="button"
+                        :class="[
+                            'relative h-9 sm:h-10 w-full rounded-xl flex flex-col items-center justify-center text-xs font-semibold transition-all cursor-pointer active:scale-90',
+                            item.isSelected 
+                                ? 'bg-[#0B7068] text-white font-bold shadow-sm ring-2 ring-[#0B7068]/30 z-10' 
+                                : item.isToday
+                                    ? 'bg-teal-50 text-[#0B7068] font-bold border border-[#0B7068]/40 hover:bg-teal-100/70'
+                                    : item.isCurrentMonth
+                                        ? 'text-slate-800 hover:bg-slate-100'
+                                        : 'text-slate-300 hover:bg-slate-50'
+                        ]"
+                    >
+                        <!-- Day Number -->
+                        <span class="leading-none">{{ item.dayNumber }}</span>
+
+                        <!-- Schedule indicator dot (If that weekday has sessions) -->
+                        <div v-if="item.hasSchedule && item.isCurrentMonth" class="absolute bottom-1 flex items-center justify-center">
+                            <span 
+                                :class="[
+                                    'w-1.5 h-1.5 rounded-full',
+                                    item.isSelected ? 'bg-white' : 'bg-[#0B7068]'
+                                ]"
+                            ></span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Legend / Info Row -->
+                <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 px-1 border-t border-slate-100">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-[#0B7068]"></span>
+                        <span>Ada Jadwal</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full border border-[#0B7068]/60 bg-teal-50"></span>
+                        <span>Hari Ini</span>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Footer -->
+                <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                    <button 
+                        @click="jumpToToday" 
+                        type="button" 
+                        class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 active:scale-95 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                        <CalendarIcon class="w-3.5 h-3.5 text-[#0B7068]" />
+                        <span>Hari Ini</span>
+                    </button>
+
+                    <button 
+                        @click="closeCalendarModal" 
+                        type="button" 
+                        class="px-4 py-1.5 bg-[#0B7068] hover:bg-[#095c55] text-white active:scale-95 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                    >
+                        Selesai
+                    </button>
+                </div>
+
             </div>
         </Modal>
 
