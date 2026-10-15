@@ -315,40 +315,15 @@ const getClassBadge = (item) => {
 const getRoomName = (item) => {
     if (item.room) return item.room;
     if (item.classroom?.room) return item.classroom.room;
-    const subName = (item.subject?.name || '').toLowerCase();
-    if (subName.includes('komputer') || subName.includes('informatika') || subName.includes('it')) {
-        return 'Ruang Lab Komputer';
-    }
-    if (subName.includes('ipa') || subName.includes('sains') || subName.includes('biologi') || subName.includes('fisika')) {
-        return 'Ruang Lab IPA';
-    }
-    if (subName.includes('olahraga') || subName.includes('penjas') || subName.includes('pjok')) {
-        return 'Lapangan Olahraga';
-    }
-    if (subName.includes('agama') || subName.includes('tahfidz') || subName.includes('qur\'an')) {
-        return 'Ruang Musholla / Kelas';
-    }
-    const cName = getClassBadge(item);
-    return cName ? `Ruang Kelas ${cName}` : 'Ruang Kelas';
+    if (item.classroom?.name) return `Ruang Kelas ${getClassBadge(item)}`;
+    return null;
 };
 
 const getMateriText = (item) => {
     if (item.materi) return item.materi;
+    if (item.notes) return item.notes;
     if (item.subject?.description) return item.subject.description;
-    const subName = (item.subject?.name || '').toLowerCase();
-    if (subName.includes('komputer') || subName.includes('informatika')) {
-        return 'Pengenalan Perangkat Komputer';
-    }
-    if (subName.includes('matematika')) {
-        return 'Operasi Hitung Bilangan & Logika';
-    }
-    if (subName.includes('indonesia')) {
-        return 'Membaca Pemahaman & Menulis';
-    }
-    if (subName.includes('inggris')) {
-        return 'Daily Vocabulary & Conversation';
-    }
-    return `Pengenalan Materi ${item.subject?.name || 'Pembelajaran'}`;
+    return null;
 };
 </script>
 
@@ -384,46 +359,44 @@ const getMateriText = (item) => {
             </div>
         </template>
         
-        <div class="max-w-7xl mx-auto px-4 py-2 sm:py-6 pb-28 sm:pb-8 w-full min-w-0 box-border space-y-4">
+        <div class="max-w-7xl mx-auto px-4 py-2 sm:py-6 pb-28 sm:pb-8 w-full min-w-0 box-border space-y-3.5">
 
-            <!-- 📱 MOBILE VIEW (MATCHING MOCKUP DESIGN PRECISELY) -->
-            <div class="block md:hidden space-y-3.5">
+            <!-- 📱 MOBILE VIEW (PIXEL-PERFECT REFINEMENT) -->
+            <div class="block md:hidden space-y-3">
                 
-                <!-- 1. HERO BANNER CARD (GRADIENT + 3D CALENDAR SVG + STATS ROW) -->
-                <div class="bg-gradient-to-br from-[#0B7068] via-[#085a53] to-[#0f172a] rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
+                <!-- 1. COMPACT HERO BANNER CARD -->
+                <div class="bg-gradient-to-br from-[#0B7068] via-[#085a53] to-[#0f172a] rounded-3xl p-4 sm:p-5 text-white shadow-xl relative overflow-hidden">
                     <!-- Subtle background glow -->
                     <div class="absolute -right-6 -bottom-6 w-36 h-36 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
-                    <div class="flex items-start justify-between relative z-10">
-                        <div class="flex-1 pr-2 min-w-0">
+                    <div class="flex items-center justify-between gap-2 relative z-10">
+                        <div class="flex-1 min-w-0 pr-1">
                             <!-- Top Pill Badge -->
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white/95 text-[10px] font-bold uppercase tracking-wider border border-white/15 shadow-2xs">
-                                <BookOpenIcon class="w-3.5 h-3.5 stroke-[2.2]" />
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md text-white/95 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border border-white/15 shadow-2xs">
+                                <BookOpenIcon class="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.2]" />
                                 <span class="truncate">
                                     {{ viewMode === 'personal' && isTeacher ? 'JADWAL MENGAJAR SAYA' : (selectedClassroomName ? `JADWAL KELAS ${selectedClassroomName}` : 'JADWAL PELAJARAN') }}
                                 </span>
                             </div>
 
-                            <!-- Main Title -->
-                            <h1 class="text-2xl font-black text-white tracking-tight leading-tight mt-2.5">
+                            <!-- Main Title (Guaranteed Single Line) -->
+                            <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight mt-1.5 whitespace-nowrap">
                                 Jadwal Pelajaran
                             </h1>
 
                             <!-- Subtitle -->
-                            <p class="text-xs text-white/80 mt-1 max-w-[210px] leading-relaxed">
+                            <p class="text-[11px] sm:text-xs text-white/80 mt-1 max-w-[210px] sm:max-w-xs leading-normal">
                                 Lihat jadwal, kelas, dan mata pelajaran yang saya ampu.
                             </p>
                         </div>
 
-                        <!-- 3D Calendar Illustration (Matching Reference Image) -->
-                        <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
-                            <!-- Subtle circular background glow & orbit rings -->
-                            <div class="absolute -right-1 -top-1 w-20 h-20 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
-                            <div class="absolute right-6 top-1 w-8 h-8 rounded-full border border-white/15 pointer-events-none"></div>
-                            <div class="absolute right-0 bottom-4 w-12 h-12 rounded-full border border-white/10 pointer-events-none"></div>
+                        <!-- 3D Calendar Illustration (Compact & Perfectly Sized) -->
+                        <div class="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center">
+                            <!-- Glow circle -->
+                            <div class="absolute inset-0 bg-white/10 rounded-full blur-lg pointer-events-none"></div>
                             
                             <!-- Calendar Graphic -->
-                            <svg class="w-20 h-20 drop-shadow-md relative z-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg class="w-18 h-18 sm:w-22 sm:h-22 drop-shadow-md relative z-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <!-- Calendar Body (White) -->
                                 <rect x="15" y="20" width="70" height="65" rx="14" fill="#FFFFFF" />
                                 <!-- Calendar Header (Cyan / Mint) -->
@@ -447,50 +420,55 @@ const getMateriText = (item) => {
                         </div>
                     </div>
 
-                    <!-- Stats Row Inside Banner -->
-                    <div class="grid grid-cols-2 gap-2.5 mt-4 pt-1 relative z-10">
+                    <!-- Stats Row Inside Banner (Compact 2-columns with No Cut-off) -->
+                    <div class="grid grid-cols-2 gap-2 sm:gap-2.5 mt-3 pt-1 relative z-10">
                         <!-- Stat 1: Total Jam Minggu Ini -->
-                        <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-2.5 sm:p-3 border border-white/10 flex items-center gap-2.5 shadow-2xs">
-                            <div class="w-9 h-9 rounded-xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0">
-                                <ClockIcon class="w-5 h-5 stroke-[2]" />
+                        <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-2.5 border border-white/10 flex items-center gap-2 shadow-2xs min-w-0">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0">
+                                <ClockIcon class="w-4 h-4 stroke-[2]" />
                             </div>
-                            <div class="min-w-0">
-                                <span class="text-[9px] font-bold text-white/70 uppercase tracking-wider block leading-tight">
+                            <div class="min-w-0 flex-1">
+                                <span class="text-[8px] sm:text-[9px] font-bold text-white/70 uppercase tracking-wider block leading-tight truncate">
                                     TOTAL JAM MINGGU INI
                                 </span>
-                                <span class="text-sm sm:text-base font-black text-white leading-tight mt-0.5 block truncate">
+                                <span class="text-xs sm:text-sm font-black text-white leading-tight mt-0.5 block whitespace-nowrap">
                                     {{ totalScheduleCount }} Sesi
                                 </span>
                             </div>
                         </div>
 
                         <!-- Stat 2: Jadwal Hari Ini -->
-                        <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-2.5 sm:p-3 border border-white/10 flex items-center gap-2.5 shadow-2xs">
-                            <div class="w-9 h-9 rounded-xl bg-white/15 text-white flex items-center justify-center shrink-0">
-                                <CalendarIcon class="w-5 h-5 stroke-[2]" />
+                        <div class="bg-white/10 backdrop-blur-xs rounded-2xl p-2.5 border border-white/10 flex items-center gap-2 shadow-2xs min-w-0">
+                            <div class="w-8 h-8 rounded-xl bg-white/15 text-white flex items-center justify-center shrink-0">
+                                <CalendarIcon class="w-4 h-4 stroke-[2]" />
                             </div>
-                            <div class="min-w-0">
-                                <span class="text-[9px] font-bold text-white/70 uppercase tracking-wider block leading-tight">
+                            <div class="min-w-0 flex-1">
+                                <span class="text-[8px] sm:text-[9px] font-bold text-white/70 uppercase tracking-wider block leading-tight truncate">
                                     JADWAL HARI INI
                                 </span>
-                                <span class="text-sm sm:text-base font-black text-white leading-tight mt-0.5 block truncate">
-                                    {{ activeDayScheduleCount }} Sesi <span class="text-xs font-normal text-white/70">({{ selectedMobileDay }})</span>
-                                </span>
+                                <div class="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                                    <span class="text-xs sm:text-sm font-black text-white leading-tight">
+                                        {{ activeDayScheduleCount }} Sesi
+                                    </span>
+                                    <span class="text-[10px] sm:text-xs font-normal text-white/75">
+                                        ({{ selectedMobileDay }})
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 2. SEGMENTED NAVIGATION TABS: Jadwal Saya vs Cari Kelas -->
-                <div class="bg-slate-100/90 p-1.5 rounded-2xl flex items-center gap-1.5">
+                <!-- 2. SEGMENTED NAVIGATION TABS (50%-50% Grid, Centered) -->
+                <div class="bg-slate-100/90 p-1 rounded-2xl grid grid-cols-2 gap-1 w-full box-border">
                     <button 
                         @click="viewMode = 'personal'"
                         type="button"
                         :class="[
-                            'flex-1 py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer',
+                            'py-2 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer',
                             viewMode === 'personal' 
                                 ? 'bg-[#0B7068] text-white shadow-xs' 
-                                : 'text-slate-500 hover:text-slate-800'
+                                : 'text-slate-600 hover:text-slate-900 bg-transparent'
                         ]"
                     >
                         <CalendarIcon class="w-4 h-4 stroke-[2.2]" />
@@ -501,10 +479,10 @@ const getMateriText = (item) => {
                         @click="viewMode = 'class'"
                         type="button"
                         :class="[
-                            'flex-1 py-2.5 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer',
+                            'py-2 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer',
                             viewMode === 'class' 
                                 ? 'bg-[#0B7068] text-white shadow-xs' 
-                                : 'text-slate-500 hover:text-slate-800'
+                                : 'text-slate-600 hover:text-slate-900 bg-transparent'
                         ]"
                     >
                         <MagnifyingGlassIcon class="w-4 h-4 stroke-[2.2]" />
@@ -512,7 +490,7 @@ const getMateriText = (item) => {
                     </button>
                 </div>
 
-                <!-- Class Selector Filter (Visible when Cari Kelas tab is active or canManage) -->
+                <!-- Class Selector Filter (Visible when Cari Kelas is active or canManage) -->
                 <div v-if="viewMode === 'class' || canManage" class="relative">
                     <select 
                         v-model="selectedClassroom" 
@@ -526,46 +504,48 @@ const getMateriText = (item) => {
                     <ChevronDownIcon class="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
                 </div>
 
-                <!-- 3. DAY CHIPS / HORIZONTAL PILL FILTER (Senin 4, Selasa 2, Rabu 2, Kamis 1, ...) -->
-                <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-0.5">
-                    <button 
-                        v-for="day in days" 
-                        :key="day"
-                        @click="selectedMobileDay = day"
-                        type="button"
-                        :class="[
-                            'px-3.5 py-2 rounded-2xl text-xs font-bold shrink-0 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer',
-                            selectedMobileDay === day 
-                                ? 'bg-[#0B7068] text-white shadow-xs' 
-                                : 'bg-white text-slate-700 border border-slate-200/90 shadow-2xs hover:border-slate-300'
-                        ]"
-                    >
-                        <span>{{ day }}</span>
-                        <span 
+                <!-- 3. DAY CHIPS / HORIZONTAL PILL FILTER (Edge-to-Edge Scrollable) -->
+                <div class="relative -mx-4 px-4 overflow-x-auto pb-1 scrollbar-none pt-0.5">
+                    <div class="flex items-center gap-1.5 sm:gap-2 w-max min-w-full">
+                        <button 
+                            v-for="day in days" 
+                            :key="day"
+                            @click="selectedMobileDay = day"
+                            type="button"
                             :class="[
-                                'px-1.5 py-0.5 rounded-full text-[10px] font-black min-w-4 text-center leading-none',
+                                'px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer',
                                 selectedMobileDay === day 
-                                    ? 'bg-teal-700/80 text-teal-100' 
-                                    : 'bg-slate-100 text-slate-500'
+                                    ? 'bg-[#0B7068] text-white shadow-xs' 
+                                    : 'bg-white text-slate-700 border border-slate-200/90 shadow-2xs hover:border-slate-300'
                             ]"
                         >
-                            {{ sortedSchedules(day).length }}
-                        </span>
-                    </button>
+                            <span>{{ day }}</span>
+                            <span 
+                                :class="[
+                                    'px-1.5 py-0.2 rounded-full text-[10px] font-black min-w-4 text-center leading-none',
+                                    selectedMobileDay === day 
+                                        ? 'bg-teal-700/80 text-teal-100' 
+                                        : 'bg-slate-100 text-slate-500'
+                                ]"
+                            >
+                                {{ sortedSchedules(day).length }}
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- 4. SECTION SUBHEADER (Jadwal Kamis + Sesi Mengajar + Date Dropdown Pill) -->
-                <div class="flex items-center justify-between pt-1 mb-1">
+                <!-- 4. SECTION SUBHEADER (Responsive Header + Dynamic Date Pill) -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 mb-1">
                     <div>
-                        <h3 class="font-black text-slate-900 text-base leading-tight">
+                        <h3 class="font-black text-slate-900 text-sm sm:text-base leading-tight">
                             Jadwal {{ selectedMobileDay }}
                         </h3>
-                        <p class="text-xs text-slate-400 font-medium mt-0.5">
+                        <p class="text-[11px] sm:text-xs text-slate-400 font-medium mt-0.5">
                             {{ sortedSchedules(selectedMobileDay).length }} sesi mengajar
                         </p>
                     </div>
 
-                    <!-- Date Pill Dropdown (07 Nov 2024 ⌄) -->
+                    <!-- Date Pill Dropdown (Dynamic calculated date of the selected day) -->
                     <div class="bg-white border border-slate-200/80 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5">
                         <CalendarIcon class="w-3.5 h-3.5 text-slate-400 stroke-[2]" />
                         <span>{{ getDateForDay(selectedMobileDay) }}</span>
@@ -573,8 +553,8 @@ const getMateriText = (item) => {
                     </div>
                 </div>
 
-                <!-- 5. SCHEDULE ITEM CARDS LIST (PIXEL-PERFECT MATCH TO REFERENCE IMAGE) -->
-                <div class="space-y-3">
+                <!-- 5. SCHEDULE ITEM CARDS LIST (Responsive & No premature truncation) -->
+                <div class="space-y-2.5">
                     <!-- If Class view and no class selected -->
                     <div v-if="!selectedClassroomId && viewMode === 'class'" class="bg-white rounded-3xl p-8 text-center border border-slate-100 shadow-2xs space-y-2">
                         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-50 text-[#0B7068] mb-1">
@@ -608,19 +588,19 @@ const getMateriText = (item) => {
                     </div>
 
                     <!-- Schedule Cards List -->
-                    <div v-else class="space-y-3">
+                    <div v-else class="space-y-2.5">
                         <div 
                             v-for="item in sortedSchedules(selectedMobileDay)" 
                             :key="item.id"
-                            class="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs hover:border-slate-200 transition-all flex items-center justify-between gap-3 relative"
+                            class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-100 shadow-2xs hover:border-slate-200 transition-all flex items-center justify-between gap-3 relative"
                         >
-                            <!-- Android Vertical Time Pillar (Soft Mint Green) -->
-                            <div class="bg-emerald-50 text-emerald-800 rounded-2xl p-2.5 sm:p-3 text-center shrink-0 min-w-[70px] sm:min-w-[76px] flex flex-col items-center justify-center">
-                                <span class="text-xs font-black text-emerald-800 leading-none">
+                            <!-- Time Pillar (Soft Mint Green) -->
+                            <div class="bg-emerald-50 text-emerald-800 rounded-xl p-2 sm:p-2.5 text-center shrink-0 w-[62px] sm:w-[68px] flex flex-col items-center justify-center">
+                                <span class="text-[11px] sm:text-xs font-black text-emerald-800 leading-none">
                                     {{ item.start_time.substring(0, 5) }}
                                 </span>
-                                <div class="w-3 h-0.5 bg-emerald-300 rounded-full my-1"></div>
-                                <span class="text-xs font-black text-emerald-800 leading-none">
+                                <div class="w-2.5 h-0.5 bg-emerald-300 rounded-full my-1"></div>
+                                <span class="text-[11px] sm:text-xs font-black text-emerald-800 leading-none">
                                     {{ item.end_time.substring(0, 5) }}
                                 </span>
                             </div>
@@ -628,12 +608,15 @@ const getMateriText = (item) => {
                             <!-- Middle Schedule Details -->
                             <div class="flex-1 min-w-0 space-y-1">
                                 <!-- Row 1: Subject Name + Class Badge -->
-                                <div class="flex items-center justify-between gap-2">
-                                    <h4 class="font-bold text-slate-900 text-sm leading-snug truncate">
+                                <div class="flex items-start justify-between gap-1.5">
+                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm leading-snug break-words flex-1 min-w-0">
                                         {{ item.subject?.name || 'Mata Pelajaran' }}
                                     </h4>
                                     <!-- Amber Class Badge (e.g. 4A) -->
-                                    <span class="bg-amber-50 text-amber-800 border border-amber-200/60 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                    <span 
+                                        v-if="getClassBadge(item)" 
+                                        class="bg-amber-50 text-amber-800 border border-amber-200/60 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-1 self-start"
+                                    >
                                         {{ getClassBadge(item) }}
                                     </span>
                                 </div>
@@ -645,15 +628,15 @@ const getMateriText = (item) => {
                                 </div>
 
                                 <!-- Row 3: Room Name -->
-                                <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                                <div v-if="getRoomName(item)" class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                                     <MapPinIcon class="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                     <span class="truncate">{{ getRoomName(item) }}</span>
                                 </div>
 
-                                <!-- Row 4: Material / Materi -->
-                                <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium truncate">
-                                    <DocumentTextIcon class="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                    <span class="truncate">Materi: {{ getMateriText(item) }}</span>
+                                <!-- Row 4: Material / Materi (Hanya tampil jika ada data riil, tanpa teks dummy) -->
+                                <div v-if="getMateriText(item)" class="flex items-start gap-1.5 text-xs text-slate-500 font-medium">
+                                    <DocumentTextIcon class="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                                    <span class="break-words leading-tight">Materi: {{ getMateriText(item) }}</span>
                                 </div>
 
                                 <!-- Teacher Info (Only in Class view) -->
@@ -684,7 +667,7 @@ const getMateriText = (item) => {
                             </div>
 
                             <!-- Right Chevron Icon -->
-                            <ChevronRightIcon class="w-4 h-4 text-slate-300 shrink-0" />
+                            <ChevronRightIcon class="w-4 h-4 text-slate-300 shrink-0 self-center" />
                         </div>
                     </div>
                 </div>
