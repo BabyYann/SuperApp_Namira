@@ -218,9 +218,9 @@ const categoryBadgeClass = (catKey) => {
         
         <!-- HEADER DESKTOP ONLY -->
         <template #header v-if="!isMobile">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center justify-between w-full max-w-7xl mx-auto">
                 <div>
-                    <h2 class="font-black text-2xl text-slate-900 leading-tight">
+                    <h2 class="font-black text-2xl text-slate-900 tracking-tight leading-tight">
                         Giat
                     </h2>
                     <p class="text-xs text-slate-500 mt-0.5">Kelola kegiatan dan aktivitas harian yayasan.</p>
@@ -229,7 +229,7 @@ const categoryBadgeClass = (catKey) => {
                 <button
                     @click="openFormModal"
                     type="button"
-                    class="px-4 py-2.5 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold shadow-sm shadow-teal-900/10 transition text-xs sm:text-sm flex items-center justify-center gap-2 shrink-0"
+                    class="px-4 py-2.5 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold shadow-sm shadow-teal-900/10 transition text-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                 >
                     <PlusIcon class="w-4 h-4 stroke-[2.5]" />
                     <span>Tambah Giat</span>
@@ -237,10 +237,10 @@ const categoryBadgeClass = (catKey) => {
             </div>
         </template>
 
-        <div class="max-w-7xl mx-auto space-y-3.5 sm:space-y-4 px-1 sm:px-4 py-1 sm:py-6 w-full min-w-0 box-border">
+        <div class="max-w-7xl mx-auto space-y-3.5 sm:space-y-4 md:space-y-5 px-1 sm:px-4 py-1 sm:py-2 md:py-3 w-full min-w-0 box-border">
 
-            <!-- MOBILE TOP TITLE & ACTION HEADER (MATCHING MOCKUP) -->
-            <div class="flex items-center justify-between gap-3 pt-0.5 pb-0.5 w-full">
+            <!-- MOBILE TOP TITLE & ACTION HEADER (MOBILE ONLY) -->
+            <div class="md:hidden flex items-center justify-between gap-3 pt-0.5 pb-0.5 w-full">
                 <div class="min-w-0">
                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">Giat</h1>
                     <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">Kelola kegiatan dan aktivitas harian yayasan.</p>
@@ -248,89 +248,97 @@ const categoryBadgeClass = (catKey) => {
                 <button
                     @click="openFormModal"
                     type="button"
-                    class="px-3.5 py-2 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 shrink-0 transition-all"
+                    class="px-3.5 py-2 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
                 >
                     <PlusIcon class="w-4 h-4 stroke-[2.5]" />
                     <span>Tambah Giat</span>
                 </button>
             </div>
 
-            <!-- STATS CARDS (COMPACT SINGLE ROW FOR 4 CARDS) -->
-            <div class="grid grid-cols-4 gap-1.5 sm:gap-2 md:gap-3 w-full">
+            <!-- STATS CARDS (COMPACT ON MOBILE, RICH TILES ON DESKTOP) -->
+            <div class="grid grid-cols-4 gap-1.5 sm:gap-2 md:gap-4 w-full">
                 
                 <!-- Card 1: 0 Kegiatan -->
-                <div class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-3 border border-slate-100 shadow-2xs flex flex-col items-center text-center justify-between min-w-0 w-full">
-                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 mb-1">
-                        <CalendarDaysIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2]" />
+                <div class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-4 border border-slate-100 shadow-2xs flex flex-col md:flex-row items-center md:items-center text-center md:text-left justify-between md:justify-start md:gap-3.5 min-w-0 w-full hover:shadow-xs transition-shadow">
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 mb-1 md:mb-0">
+                        <CalendarDaysIcon class="w-3.5 h-3.5 md:w-5 md:h-5 stroke-[2]" />
                     </div>
-                    <div class="min-w-0 w-full">
-                        <span class="text-sm sm:text-base md:text-xl font-black text-slate-900 tracking-tight leading-none block">
-                            {{ stats?.total_today || 0 }}
-                        </span>
-                        <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5">Kegiatan</span>
+                    <div class="min-w-0 w-full flex-1">
+                        <div class="flex flex-col md:flex-col justify-center">
+                            <span class="text-sm sm:text-base md:text-2xl font-black text-slate-900 tracking-tight leading-none block">
+                                {{ stats?.total_today || 0 }}
+                            </span>
+                            <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5 md:mt-1">Kegiatan</span>
+                            <p class="text-[8px] sm:text-[9px] md:text-xs text-emerald-600 font-semibold flex items-center justify-center md:justify-start gap-1 mt-1 truncate w-full">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span class="truncate hidden md:inline">Terpublikasi otomatis</span>
+                                <span class="truncate md:hidden">Otomatis</span>
+                            </p>
+                        </div>
                     </div>
-                    <p class="text-[8px] sm:text-[9px] md:text-[10px] text-emerald-600 font-semibold flex items-center justify-center gap-0.5 sm:gap-1 mt-1 truncate w-full">
-                        <span class="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                        <span class="truncate hidden md:inline">Terpublikasi otomatis</span>
-                        <span class="truncate md:hidden">Otomatis</span>
-                    </p>
                 </div>
 
                 <!-- Card 2: Terdata (Status Absensi) -->
                 <Link
                     :href="route('employee.attendance.index')"
-                    class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-3 border border-slate-100 shadow-2xs flex flex-col items-center text-center justify-between min-w-0 w-full group hover:border-teal-200 transition-all active:scale-95"
+                    class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-4 border border-slate-100 shadow-2xs flex flex-col md:flex-row items-center md:items-center text-center md:text-left justify-between md:justify-start md:gap-3.5 min-w-0 w-full group hover:border-teal-200 hover:shadow-xs transition-all active:scale-95"
                 >
-                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shrink-0 mb-1">
-                        <FingerPrintIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2]" />
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shrink-0 mb-1 md:mb-0">
+                        <FingerPrintIcon class="w-3.5 h-3.5 md:w-5 md:h-5 stroke-[2]" />
                     </div>
-                    <div class="min-w-0 w-full">
-                        <span class="text-xs sm:text-sm md:text-base font-bold text-slate-800 leading-none block truncate">
-                            Terdata
-                        </span>
-                        <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5">Absensi</span>
-                    </div>
-                    <div class="text-[8px] sm:text-[9px] md:text-[10px] text-sky-600 group-hover:text-teal-600 font-semibold flex items-center justify-center gap-0.5 mt-1 truncate w-full">
-                        <span>Status</span>
-                        <ChevronRightIcon class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+                    <div class="min-w-0 w-full flex-1">
+                        <div class="flex flex-col md:flex-col justify-center">
+                            <span class="text-xs sm:text-sm md:text-xl font-bold text-slate-800 leading-none block truncate">
+                                Terdata
+                            </span>
+                            <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5 md:mt-1">Absensi</span>
+                            <div class="text-[8px] sm:text-[9px] md:text-xs text-sky-600 group-hover:text-teal-600 font-semibold flex items-center justify-center md:justify-start gap-1 mt-1 truncate w-full">
+                                <span>Status</span>
+                                <ChevronRightIcon class="w-3 h-3 shrink-0" />
+                            </div>
+                        </div>
                     </div>
                 </Link>
 
                 <!-- Card 3: 0 Logbook -->
-                <div class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-3 border border-slate-100 shadow-2xs flex flex-col items-center text-center justify-between min-w-0 w-full">
-                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shrink-0 mb-1">
-                        <ClipboardDocumentCheckIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2]" />
+                <div class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-4 border border-slate-100 shadow-2xs flex flex-col md:flex-row items-center md:items-center text-center md:text-left justify-between md:justify-start md:gap-3.5 min-w-0 w-full hover:shadow-xs transition-shadow">
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shrink-0 mb-1 md:mb-0">
+                        <ClipboardDocumentCheckIcon class="w-3.5 h-3.5 md:w-5 md:h-5 stroke-[2]" />
                     </div>
-                    <div class="min-w-0 w-full">
-                        <span class="text-sm sm:text-base md:text-xl font-black text-slate-900 tracking-tight leading-none block">
-                            {{ historyTotalCount }}
-                        </span>
-                        <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5">Logbook</span>
+                    <div class="min-w-0 w-full flex-1">
+                        <div class="flex flex-col md:flex-col justify-center">
+                            <span class="text-sm sm:text-base md:text-2xl font-black text-slate-900 tracking-tight leading-none block">
+                                {{ historyTotalCount }}
+                            </span>
+                            <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5 md:mt-1">Logbook</span>
+                            <p class="text-[8px] sm:text-[9px] md:text-xs text-purple-600 font-semibold flex items-center justify-center md:justify-start gap-1 mt-1 truncate w-full">
+                                <span class="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"></span>
+                                <span class="truncate hidden md:inline">Arsip Pribadi</span>
+                                <span class="truncate md:hidden">Arsip</span>
+                            </p>
+                        </div>
                     </div>
-                    <p class="text-[8px] sm:text-[9px] md:text-[10px] text-purple-600 font-semibold flex items-center justify-center gap-0.5 sm:gap-1 mt-1 truncate w-full">
-                        <span class="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-purple-500 shrink-0"></span>
-                        <span class="truncate hidden md:inline">Arsip Pribadi</span>
-                        <span class="truncate md:hidden">Arsip</span>
-                    </p>
                 </div>
 
                 <!-- Card 4: Super Admin (Jabatan) -->
                 <Link
                     :href="route('profile.edit')"
-                    class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-3 border border-slate-100 shadow-2xs flex flex-col items-center text-center justify-between min-w-0 w-full group hover:border-teal-200 transition-all active:scale-95"
+                    class="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-2.5 md:p-4 border border-slate-100 shadow-2xs flex flex-col md:flex-row items-center md:items-center text-center md:text-left justify-between md:justify-start md:gap-3.5 min-w-0 w-full group hover:border-teal-200 hover:shadow-xs transition-all active:scale-95"
                 >
-                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0 mb-1">
-                        <TagIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2]" />
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 md:w-11 md:h-11 rounded-lg md:rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0 mb-1 md:mb-0">
+                        <TagIcon class="w-3.5 h-3.5 md:w-5 md:h-5 stroke-[2]" />
                     </div>
-                    <div class="min-w-0 w-full">
-                        <span class="text-[10px] sm:text-xs md:text-sm font-bold text-slate-800 leading-none block truncate">
-                            {{ userRoleTitle }}
-                        </span>
-                        <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5">Jabatan</span>
-                    </div>
-                    <div class="text-[8px] sm:text-[9px] md:text-[10px] text-amber-600 group-hover:text-teal-600 font-semibold flex items-center justify-center gap-0.5 mt-1 truncate w-full">
-                        <span>Role</span>
-                        <ChevronRightIcon class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0" />
+                    <div class="min-w-0 w-full flex-1">
+                        <div class="flex flex-col md:flex-col justify-center">
+                            <span class="text-[10px] sm:text-xs md:text-base font-bold text-slate-800 leading-none block truncate">
+                                {{ userRoleTitle }}
+                            </span>
+                            <span class="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-medium block truncate mt-0.5 md:mt-1">Jabatan</span>
+                            <div class="text-[8px] sm:text-[9px] md:text-xs text-amber-600 group-hover:text-teal-600 font-semibold flex items-center justify-center md:justify-start gap-1 mt-1 truncate w-full">
+                                <span>Role</span>
+                                <ChevronRightIcon class="w-3 h-3 shrink-0" />
+                            </div>
+                        </div>
                     </div>
                 </Link>
 
@@ -342,7 +350,7 @@ const categoryBadgeClass = (catKey) => {
                     <button
                         @click="activeTab = 'today'"
                         type="button"
-                        class="py-2.5 sm:py-3 px-2 text-[11px] sm:text-xs md:text-sm font-bold text-center relative transition-all"
+                        class="py-2.5 sm:py-3.5 px-2 text-[11px] sm:text-xs md:text-sm font-bold text-center relative transition-all cursor-pointer"
                         :class="activeTab === 'today' ? 'text-[#0B7068]' : 'text-slate-400 hover:text-slate-600'"
                     >
                         <span>Giat Hari Ini ({{ todayActivities?.length || 0 }})</span>
@@ -354,7 +362,7 @@ const categoryBadgeClass = (catKey) => {
                     <button
                         @click="activeTab = 'history'"
                         type="button"
-                        class="py-2.5 sm:py-3 px-2 text-[11px] sm:text-xs md:text-sm font-bold text-center relative transition-all"
+                        class="py-2.5 sm:py-3.5 px-2 text-[11px] sm:text-xs md:text-sm font-bold text-center relative transition-all cursor-pointer"
                         :class="activeTab === 'history' ? 'text-[#0B7068]' : 'text-slate-400 hover:text-slate-600'"
                     >
                         <span>Riwayat Sebelumnya ({{ historyTotalCount }})</span>
@@ -366,20 +374,20 @@ const categoryBadgeClass = (catKey) => {
                 </div>
             </div>
 
-            <!-- SEARCH & FILTER SECTION (FIXED: FULL-WIDTH STACKED ON MOBILE, SIDE-BY-SIDE ON DESKTOP) -->
-            <div class="space-y-2.5 w-full">
+            <!-- SEARCH & FILTER SECTION (STACKED ON MOBILE, SIDE-BY-SIDE ON DESKTOP) -->
+            <div class="space-y-2.5 sm:space-y-3 w-full">
                 
                 <!-- Row 1: Search & Category Dropdown -->
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full">
                     
-                    <!-- Search Input (Full width on mobile) -->
+                    <!-- Search Input -->
                     <div class="relative w-full sm:flex-1">
                         <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <input
                             v-model="searchQuery"
                             type="text"
                             placeholder="Cari judul giat, lokasi, atau deskripsi..."
-                            class="w-full pl-9 pr-8 py-2.5 bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 text-xs text-slate-800 placeholder-slate-400 focus:border-[#0B7068] focus:ring-1 focus:ring-[#0B7068]/30 shadow-2xs transition-all"
+                            class="w-full pl-9 pr-8 py-2.5 bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#0B7068] focus:ring-1 focus:ring-[#0B7068]/30 shadow-2xs transition-all h-[42px] sm:h-[46px]"
                         />
                         <button
                             v-if="searchQuery"
@@ -391,11 +399,11 @@ const categoryBadgeClass = (catKey) => {
                         </button>
                     </div>
 
-                    <!-- Category Dropdown (Full width on mobile, sm:w-56 on desktop) -->
-                    <div class="relative w-full sm:w-56 shrink-0">
+                    <!-- Category Dropdown -->
+                    <div class="relative w-full sm:w-60 md:w-64 shrink-0">
                         <select
                             v-model="filterCategory"
-                            class="w-full py-2.5 pl-3.5 pr-8 bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 text-xs text-slate-700 font-medium focus:border-[#0B7068] focus:ring-1 focus:ring-[#0B7068]/30 shadow-2xs appearance-none transition-all cursor-pointer truncate"
+                            class="w-full py-2.5 pl-3.5 pr-8 bg-white rounded-xl sm:rounded-2xl border border-slate-200/90 text-xs sm:text-sm text-slate-700 font-medium focus:border-[#0B7068] focus:ring-1 focus:ring-[#0B7068]/30 shadow-2xs appearance-none transition-all cursor-pointer truncate h-[42px] sm:h-[46px]"
                         >
                             <option value="">Semua Kategori</option>
                             <option v-for="(label, key) in categories" :key="key" :value="key">{{ label }}</option>
@@ -404,14 +412,14 @@ const categoryBadgeClass = (catKey) => {
                     </div>
                 </div>
 
-                <!-- Row 2: CATEGORY PILLS (Horizontal Scroll ONLY inside this chip bar, zero page overflow) -->
+                <!-- Row 2: CATEGORY PILLS (Horizontal Scroll on Mobile, Wrapped cleanly on Desktop) -->
                 <div class="w-full overflow-hidden">
-                    <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none w-full">
+                    <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto md:flex-wrap pb-1 scrollbar-none w-full">
                         <!-- Pill: Semua -->
                         <button
                             @click="filterCategory = ''"
                             type="button"
-                            class="px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all active:scale-95"
+                            class="px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all active:scale-95 cursor-pointer"
                             :class="filterCategory === '' ? 'bg-[#0B7068] text-white shadow-xs' : 'bg-white border border-slate-200/90 text-slate-700 hover:border-slate-300'"
                         >
                             <Squares2X2Icon class="w-3.5 h-3.5" />
@@ -424,7 +432,7 @@ const categoryBadgeClass = (catKey) => {
                             :key="key"
                             @click="filterCategory = key"
                             type="button"
-                            class="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 transition-all active:scale-95 whitespace-nowrap"
+                            class="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 transition-all active:scale-95 whitespace-nowrap cursor-pointer"
                             :class="filterCategory === key ? 'bg-[#0B7068] text-white font-semibold shadow-xs' : 'bg-white border border-slate-200/90 text-slate-700 hover:border-slate-300'"
                         >
                             <component :is="getCategoryIcon(key)" class="w-3.5 h-3.5 shrink-0" />
@@ -483,7 +491,7 @@ const categoryBadgeClass = (catKey) => {
                     <button
                         @click="openFormModal"
                         type="button"
-                        class="mt-4 px-5 py-2.5 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm inline-flex items-center justify-center gap-1.5 transition-all w-full sm:w-auto"
+                        class="mt-4 px-6 py-2.5 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm inline-flex items-center justify-center gap-2 transition-all w-full sm:w-auto cursor-pointer"
                     >
                         <PlusIcon class="w-4 h-4 stroke-[2.5]" />
                         <span>Tambah Giat Pertama</span>
@@ -491,7 +499,7 @@ const categoryBadgeClass = (catKey) => {
                 </div>
 
                 <!-- ACTIVITIES CARDS LIST (WHEN DATA EXISTS) -->
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 w-full">
                     <div
                         v-for="item in filteredTodayActivities"
                         :key="item.id"
