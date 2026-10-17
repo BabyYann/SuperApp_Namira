@@ -233,60 +233,64 @@ const formatRupiah = (amount) => {
                         </span>
                     </div>
 
-                    <!-- 4. Pengumuman -->
+                    <!-- 4. Pengumuman / Keputusan -->
                     <div 
                         class="p-3 rounded-xl border text-xs transition"
-                        :class="isAnnouncementReleased && applicant.evaluation_result 
-                            ? (applicant.evaluation_result === 'accepted' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900') 
+                        :class="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || (isAnnouncementReleased && applicant.evaluation_result)
+                            ? (applicant.evaluation_result === 'rejected' ? 'bg-rose-50 border-rose-300 text-rose-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900') 
                             : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <CheckBadgeIcon v-if="isAnnouncementReleased && applicant.evaluation_result === 'accepted'" class="w-5 h-5 mx-auto mb-1 text-emerald-700" />
+                        <CheckBadgeIcon v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || (isAnnouncementReleased && applicant.evaluation_result === 'accepted')" class="w-5 h-5 mx-auto mb-1 text-emerald-700" />
                         <ClockIcon v-else class="w-5 h-5 mx-auto mb-1 text-amber-600" />
                         <strong class="block text-[11px]">4. Keputusan</strong>
                         <span class="text-[10px] font-semibold block mt-0.5">
-                            {{ isAnnouncementReleased && applicant.evaluation_result ? (applicant.evaluation_result === 'accepted' ? 'Diterima' : 'Cadangan/Belum') : 'Menunggu' }}
+                            {{ ['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || (isAnnouncementReleased && applicant.evaluation_result === 'accepted') 
+                                ? 'Diterima' 
+                                : (isAnnouncementReleased && applicant.evaluation_result === 'reserve' 
+                                    ? 'Cadangan' 
+                                    : (isAnnouncementReleased && applicant.evaluation_result === 'rejected' ? 'Belum' : 'Menunggu')) }}
                         </span>
                     </div>
 
                     <!-- 5. Termin 60% -->
                     <div 
                         class="p-3 rounded-xl border text-xs transition"
-                        :class="isAnnouncementReleased && ['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)
+                        :class="['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
                             : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <CreditCardIcon class="w-5 h-5 mx-auto mb-1" :class="isAnnouncementReleased && ['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-700' : 'text-slate-400'" />
+                        <CreditCardIcon class="w-5 h-5 mx-auto mb-1" :class="['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-700' : 'text-slate-400'" />
                         <strong class="block text-[11px]">5. Termin 60%</strong>
                         <span class="text-[10px] font-semibold block mt-0.5">
-                            {{ isAnnouncementReleased && ['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Lunas 60%' : 'Menunggu' }}
+                            {{ ['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Lunas 60%' : 'Menunggu' }}
                         </span>
                     </div>
 
                     <!-- 6. Lunas 100% -->
                     <div 
                         class="p-3 rounded-xl border text-xs transition"
-                        :class="isAnnouncementReleased && ['fully_paid', 'enrolled'].includes(applicant.status)
+                        :class="['fully_paid', 'enrolled'].includes(applicant.status)
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
                             : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <CheckCircleIcon class="w-5 h-5 mx-auto mb-1" :class="isAnnouncementReleased && ['fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-700' : 'text-slate-400'" />
+                        <CheckCircleIcon class="w-5 h-5 mx-auto mb-1" :class="['fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-700' : 'text-slate-400'" />
                         <strong class="block text-[11px]">6. Lunas 100%</strong>
                         <span class="text-[10px] font-semibold block mt-0.5">
-                            {{ isAnnouncementReleased && ['fully_paid', 'enrolled'].includes(applicant.status) ? 'Lunas Tuntas' : 'Menunggu' }}
+                            {{ ['fully_paid', 'enrolled'].includes(applicant.status) ? 'Lunas Tuntas' : 'Menunggu' }}
                         </span>
                     </div>
 
                     <!-- 7. Siswa Aktif -->
                     <div 
                         class="p-3 rounded-xl border text-xs transition col-span-2 sm:col-span-1"
-                        :class="isAnnouncementReleased && applicant.status === 'enrolled'
+                        :class="applicant.status === 'enrolled'
                             ? 'bg-emerald-100 border-emerald-400 text-emerald-900 font-bold' 
                             : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <AcademicCapIcon class="w-5 h-5 mx-auto mb-1" :class="isAnnouncementReleased && applicant.status === 'enrolled' ? 'text-emerald-800' : 'text-slate-400'" />
+                        <AcademicCapIcon class="w-5 h-5 mx-auto mb-1" :class="applicant.status === 'enrolled' ? 'text-emerald-800' : 'text-slate-400'" />
                         <strong class="block text-[11px]">7. Siswa Aktif</strong>
                         <span class="text-[10px] font-semibold block mt-0.5">
-                            {{ isAnnouncementReleased && applicant.status === 'enrolled' ? 'Resmi Siswa' : 'Tahap Akhir' }}
+                            {{ applicant.status === 'enrolled' ? 'Resmi Siswa' : (applicant.status === 'fully_paid' ? 'Menunggu Penetapan' : 'Tahap Akhir') }}
                         </span>
                     </div>
 

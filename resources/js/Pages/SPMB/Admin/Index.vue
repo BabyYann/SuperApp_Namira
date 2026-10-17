@@ -102,7 +102,7 @@ const submitQuickPayment = () => {
 
 // Quick Enroll Student
 const quickEnroll = (app) => {
-    const unitName = app.unit?.name || 'Sekolah Namira';
+    const unitName = app.unit?.name || (isSmp.value ? 'SMP Namira' : 'SD Namira');
     if (confirm(`Resmikan calon siswa ${app.full_name} menjadi Siswa Aktif ${unitName}?`)) {
         router.post(route('spmb.admin.enroll-student', app.id), {}, {
             preserveScroll: true,
@@ -113,6 +113,17 @@ const quickEnroll = (app) => {
 const formatRupiah = (amount) => {
     if (!amount) return 'Rp 0';
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+};
+
+const formatScheduleDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
+    } catch (e) {
+        return dateStr;
+    }
 };
 
 let searchTimeout = null;
@@ -339,10 +350,10 @@ const getStatusBadgeClass = (s) => {
                                 <td class="py-3.5 px-4">
                                     <div v-if="app.observation_date" class="text-[11px] space-y-0.5">
                                         <div class="text-slate-700 dark:text-slate-300 font-medium">
-                                            Obs: {{ app.observation_date }} ({{ app.observation_time || '-' }})
+                                            Obs: {{ formatScheduleDate(app.observation_date) }} ({{ app.observation_time || '-' }})
                                         </div>
                                         <div v-if="app.psychotest_date" class="text-amber-600 dark:text-amber-400 font-medium">
-                                            Psi: {{ app.psychotest_date }} ({{ app.psychotest_time || '-' }})
+                                            Psi: {{ formatScheduleDate(app.psychotest_date) }} ({{ app.psychotest_time || '-' }})
                                         </div>
                                     </div>
                                     <span v-else class="text-[11px] text-slate-400 italic">Belum dijadwalkan</span>
@@ -397,6 +408,24 @@ const getStatusBadgeClass = (s) => {
                                         >
                                             <ArrowDownTrayIcon class="w-4 h-4" />
                                         </a>
+
+                                        <!-- 5. Resmikan Menjadi Siswa Aktif (Quick Action jika Lunas 100%) -->
+                                        <button 
+                                            v-if="app.status === 'fully_paid'"
+                                            @click="quickEnroll(app)"
+                                            type="button"
+                                            title="Pindahkan & Resmikan Calon Siswa Ini Menjadi Siswa Aktif"
+                                            class="w-8.5 h-8.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white flex items-center justify-center transition shadow-xs"
+                                        >
+                                            <AcademicCapIcon class="w-4 h-4 text-amber-300" />
+                                        </button>
+                                        <span 
+                                            v-else-if="app.status === 'enrolled'"
+                                            title="Sudah Diresmikan Sebagai Siswa Aktif"
+                                            class="w-8.5 h-8.5 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center cursor-default"
+                                        >
+                                            <AcademicCapIcon class="w-4 h-4" />
+                                        </span>
                                     </div>
                                 </td>
                             </tr>

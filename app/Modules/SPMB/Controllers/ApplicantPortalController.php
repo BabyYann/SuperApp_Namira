@@ -33,17 +33,21 @@ class ApplicantPortalController extends Controller
 
         $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
 
-        // Gating Pengumuman Resmi: periksa flag rilis manual atau tanggal jadwal pengumuman
+        // Gating Pengumuman Resmi:
+        // 1. Jika rilis manual diaktifkan di setting: rilis untuk semua
+        // 2. Jika tanggal jadwal pengumuman sudah tiba/lewat: rilis untuk semua
+        // 3. Jika siswa sudah tahap daftar ulang/resmi (partial_paid, fully_paid, enrolled): otomatis terbuka penuh
+        // 4. Jika tanggal pengumuman belum diset (null) dan siswa sudah diberi keputusan: otomatis terbuka
+        // 5. Jika tanggal pengumuman di masa depan dan rilis manual belum aktif: tahan hingga jadwalnya tiba
         $isAnnouncementReleased = false;
-        if ($setting) {
-            if ($setting->announcement_released) {
-                $isAnnouncementReleased = true;
-            } elseif ($setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date)) {
-                $isAnnouncementReleased = true;
-            }
-        } else {
-            // Default jika belum ada konfigurasi tanggal
-            $isAnnouncementReleased = in_array($applicant->status, ['accepted', 'reserve', 'rejected', 'partial_paid', 'fully_paid', 'enrolled']);
+        if ($setting && $setting->announcement_released) {
+            $isAnnouncementReleased = true;
+        } elseif ($setting && $setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date)) {
+            $isAnnouncementReleased = true;
+        } elseif (in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'])) {
+            $isAnnouncementReleased = true;
+        } elseif ((!$setting || !$setting->announcement_date) && in_array($applicant->status, ['accepted', 'reserve', 'rejected'])) {
+            $isAnnouncementReleased = true;
         }
 
         // Amankan nilai dan catatan evaluasi internal agar tidak bocor ke browser orang tua
@@ -89,11 +93,11 @@ class ApplicantPortalController extends Controller
 
         // Gating akses surat kelulusan sebelum rilis resmi
         $isAnnouncementReleased = false;
-        if ($setting) {
-            if ($setting->announcement_released || ($setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date))) {
-                $isAnnouncementReleased = true;
-            }
-        } else {
+        if ($setting && ($setting->announcement_released || ($setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date)))) {
+            $isAnnouncementReleased = true;
+        } elseif (in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'])) {
+            $isAnnouncementReleased = true;
+        } elseif ((!$setting || !$setting->announcement_date) && in_array($applicant->status, ['accepted', 'partial_paid', 'fully_paid', 'enrolled'])) {
             $isAnnouncementReleased = true;
         }
 

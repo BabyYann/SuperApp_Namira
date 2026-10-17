@@ -128,7 +128,8 @@ const verifyQrisPayment = () => {
 
 // Konversi ke Siswa Aktif
 const enrollStudent = () => {
-    if (confirm(`Pindahkan calon siswa ${props.applicant.full_name} menjadi Siswa Aktif resmi SD Namira?`)) {
+    const unitName = props.applicant.unit?.name || (isSmp.value ? 'SMP Namira' : 'SD Namira');
+    if (confirm(`Pindahkan calon siswa ${props.applicant.full_name} menjadi Siswa Aktif resmi ${unitName}?`)) {
         router.post(route('spmb.admin.enroll-student', props.applicant.id));
     }
 };
