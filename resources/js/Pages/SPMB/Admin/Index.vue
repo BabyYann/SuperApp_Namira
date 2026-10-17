@@ -348,16 +348,25 @@ const getStatusBadgeClass = (s) => {
                                     <span v-else class="text-[11px] text-slate-400 italic">Belum dijadwalkan</span>
                                 </td>
 
-                                <!-- Aksi Cepat -->
+                                <!-- Aksi -->
                                 <td class="py-3.5 px-4 text-center">
-                                    <div class="inline-flex items-center justify-center gap-1.5 flex-wrap max-w-[240px]">
-                                        <!-- 1. Tombol Quick View Bukti Transfer -->
+                                    <div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                        <!-- 1. Detail Button (Periksa) -->
+                                        <Link 
+                                            :href="route('spmb.admin.show', app.id)"
+                                            title="Buka Lembar Detail Calon Siswa"
+                                            class="w-8.5 h-8.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center transition shadow-xs"
+                                        >
+                                            <EyeIcon class="w-4 h-4" />
+                                        </Link>
+
+                                        <!-- 2. Bukti Transfer Modal -->
                                         <button 
                                             v-if="app.registration_payment_proof_url || app.re_registration_payment_proof_url || app.settlement_payment_proof_url"
                                             @click="openProofModal(app)"
                                             type="button"
                                             title="Periksa Seluruh Bukti Transfer (Pendaftaran, Termin 1, Pelunasan)"
-                                            class="p-2 rounded-xl border transition shadow-xs relative"
+                                            class="w-8.5 h-8.5 rounded-xl border flex items-center justify-center transition shadow-xs relative"
                                             :class="!app.registration_payment_verified_at || (app.re_registration_payment_proof_url && !app.admission_payment_verified_at) || (app.settlement_payment_proof_url && !app.settlement_payment_verified_at)
                                                 ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-700'
                                                 : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'"
@@ -369,72 +378,25 @@ const getStatusBadgeClass = (s) => {
                                             ></span>
                                         </button>
 
-                                        <!-- 2. WhatsApp Icon Button -->
+                                        <!-- 3. WhatsApp Orang Tua -->
                                         <a 
                                             :href="app.wa_link"
                                             target="_blank"
-                                            title="Chat WhatsApp Orang Tua"
-                                            class="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 transition shadow-xs"
+                                            title="Hubungi WhatsApp Orang Tua"
+                                            class="w-8.5 h-8.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center transition shadow-xs"
                                         >
                                             <ChatBubbleLeftRightIcon class="w-4 h-4" />
                                         </a>
 
-                                        <!-- 3. Tombol Kontekstual Berdasarkan Tahapan -->
-                                        <!-- Verifikasi QRIS jika status submitted -->
-                                        <button 
-                                            v-if="app.status === 'submitted'"
-                                            @click="quickVerifyQris(app)"
-                                            type="button"
-                                            title="Verifikasi Cepat Biaya Pendaftaran"
-                                            class="px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition shadow-xs inline-flex items-center gap-1"
-                                        >
-                                            <CheckCircleIcon class="w-3.5 h-3.5" />
-                                            <span>Verif QRIS</span>
-                                        </button>
-
-                                        <!-- Verifikasi VA jika accepted / partial_paid dan ada bukti -->
-                                        <button 
-                                            v-else-if="['accepted', 'partial_paid'].includes(app.status) && (app.re_registration_payment_proof_url || app.settlement_payment_proof_url)"
-                                            @click="openQuickPaymentModal(app)"
-                                            type="button"
-                                            title="Verifikasi Pembayaran Daftar Ulang VA"
-                                            class="px-2.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-[11px] font-bold transition shadow-xs inline-flex items-center gap-1"
-                                        >
-                                            <CreditCardIcon class="w-3.5 h-3.5" />
-                                            <span>{{ app.status === 'partial_paid' ? 'Verif Pelunasan' : 'Verif Termin 1' }}</span>
-                                        </button>
-
-                                        <!-- Jadikan Siswa jika fully_paid -->
-                                        <button 
-                                            v-else-if="['fully_paid'].includes(app.status)"
-                                            @click="quickEnroll(app)"
-                                            type="button"
-                                            title="Pindahkan Resmi ke Siswa Aktif"
-                                            class="px-2.5 py-1.5 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-[11px] font-bold transition shadow-xs inline-flex items-center gap-1"
-                                        >
-                                            <AcademicCapIcon class="w-3.5 h-3.5 text-[#fbbf24]" />
-                                            <span>Jadikan Siswa</span>
-                                        </button>
-
-                                        <!-- 4. Cetak Kartu Peserta Cepat -->
+                                        <!-- 4. Cetak Kartu Peserta (PDF) -->
                                         <a 
                                             :href="route('spmb.applicant.print-card', app.id)"
                                             target="_blank"
                                             title="Cetak Kartu Tanda Peserta (PDF)"
-                                            class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 transition shadow-xs"
+                                            class="w-8.5 h-8.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 flex items-center justify-center transition shadow-xs"
                                         >
                                             <ArrowDownTrayIcon class="w-4 h-4" />
                                         </a>
-
-                                        <!-- 5. Detail Button -->
-                                        <Link 
-                                            :href="route('spmb.admin.show', app.id)"
-                                            title="Buka Lembar Detail Lengkap Calon Siswa"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:bg-slate-800 transition shadow-xs"
-                                        >
-                                            <EyeIcon class="w-3.5 h-3.5" />
-                                            <span>Periksa</span>
-                                        </Link>
                                     </div>
                                 </td>
                             </tr>
@@ -542,6 +504,22 @@ const getStatusBadgeClass = (s) => {
                                     Verifikasi Pelunasan
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- 4. Resmikan Jadi Siswa jika Lunas 100% -->
+                        <div v-if="activeProofApplicant.status === 'fully_paid'" class="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+                            <div>
+                                <strong class="text-emerald-900 dark:text-emerald-200 block text-xs">Biaya Daftar Ulang Lunas (100%)</strong>
+                                <span class="text-[11px] text-emerald-700 dark:text-emerald-400">Calon santri siap diresmikan ke data siswa aktif.</span>
+                            </div>
+                            <button 
+                                type="button" 
+                                @click="quickEnroll(activeProofApplicant)" 
+                                class="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow-xs inline-flex items-center gap-1.5"
+                            >
+                                <AcademicCapIcon class="w-3.5 h-3.5" />
+                                <span>Resmikan Jadi Siswa</span>
+                            </button>
                         </div>
                     </div>
 
