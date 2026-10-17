@@ -9,6 +9,7 @@ use App\Modules\SPMB\Services\SpmbService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class ApplicantPortalController extends Controller
@@ -113,7 +114,7 @@ class ApplicantPortalController extends Controller
     }
 
     /**
-     * Upload proof of payment for re-registration (Daftar Ulang Termin 1 / 2).
+     * Upload proof of payment for re-registration (Daftar Ulang Termin 1 / 2 Pelunasan).
      */
     public function uploadReRegistrationProof(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
     {
@@ -124,23 +125,58 @@ class ApplicantPortalController extends Controller
 
         $request->validate([
             'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'payment_type' => 'nullable|in:termin_1,termin_2,pelunasan',
         ], [
             'payment_proof.required' => 'Bukti pembayaran transfer wajib dipilih.',
         ]);
 
         $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
 
+        // Deteksi apakah ini pembayaran Termin 1 atau Pelunasan (Termin 2)
+        $isSettlement = ($request->payment_type === 'termin_2' || $request->payment_type === 'pelunasan')
+            || ($applicant->status === 'partial_paid' || $applicant->admission_payment_status === 'partial')
+            || (!empty($applicant->re_registration_payment_proof) && empty($applicant->settlement_payment_proof));
+
+        $docTag = $isSettlement ? 'BUKTI_BAYAR_PELUNASAN' : 'BUKTI_BAYAR_DAFTAR_ULANG_TERMIN_1';
+
         $proofPath = $spmbService->storeApplicantDocument(
             $request->file('payment_proof'),
-            'BUKTI_BAYAR_DAFTAR_ULANG',
+            $docTag,
             $applicant->registration_number,
             $unitSlug
         );
 
-        $applicant->update([
-            're_registration_payment_proof' => $proofPath,
-        ]);
+        $updateData = [];
+        $history = $applicant->payment_history ?? [];
 
-        return back()->with('success', 'Bukti pembayaran daftar ulang berhasil diunggah dan sedang diproses oleh Panitia Keuangan.');
+        if ($isSettlement && Schema::hasColumn('spmb_applicants', 'settlement_payment_proof')) {
+            $updateData['settlement_payment_proof'] = $proofPath;
+            $history[] = [
+                'type' => 'termin_2',
+                'title' => 'Pembayaran Pelunasan (Termin 2 - 100%)',
+                'proof_path' => $proofPath,
+                'uploaded_at' => now()->toIso8601String(),
+                'status' => 'pending',
+            ];
+            $msg = 'Bukti pembayaran pelunasan daftar ulang berhasil diunggah dan sedang diproses oleh Panitia Keuangan.';
+        } else {
+            $updateData['re_registration_payment_proof'] = $proofPath;
+            $history[] = [
+                'type' => 'termin_1',
+                'title' => 'Pembayaran Daftar Ulang (Termin 1 / DP 60%)',
+                'proof_path' => $proofPath,
+                'uploaded_at' => now()->toIso8601String(),
+                'status' => 'pending',
+            ];
+            $msg = 'Bukti pembayaran daftar ulang Termin 1 berhasil diunggah dan sedang diproses oleh Panitia Keuangan.';
+        }
+
+        if (Schema::hasColumn('spmb_applicants', 'payment_history')) {
+            $updateData['payment_history'] = $history;
+        }
+
+        $applicant->update($updateData);
+
+        return back()->with('success', $msg);
     }
 }

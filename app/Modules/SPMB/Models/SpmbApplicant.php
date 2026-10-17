@@ -79,9 +79,13 @@ class SpmbApplicant extends Model
         'down_payment_deadline',
         'full_payment_deadline',
         're_registration_payment_proof',
+        'settlement_payment_proof',
         'admission_payment_status',
         'admission_payment_verified_at',
         'admission_payment_verified_by',
+        'settlement_payment_verified_at',
+        'settlement_payment_verified_by',
+        'payment_history',
         'is_inden',
         'academic_score_details',
         'enrolled_student_id',
@@ -92,6 +96,7 @@ class SpmbApplicant extends Model
     protected $casts = [
         'is_inden' => 'boolean',
         'academic_score_details' => 'array',
+        'payment_history' => 'array',
         'birth_date' => 'date',
         'observation_date' => 'date',
         'psychotest_date' => 'date',
@@ -101,6 +106,7 @@ class SpmbApplicant extends Model
         'scheduled_at' => 'datetime',
         'evaluated_at' => 'datetime',
         'admission_payment_verified_at' => 'datetime',
+        'settlement_payment_verified_at' => 'datetime',
         'enrolled_at' => 'datetime',
         'total_admission_fee' => 'decimal:2',
         'min_down_payment' => 'decimal:2',
@@ -115,6 +121,7 @@ class SpmbApplicant extends Model
         'registration_payment_proof_url',
         'evaluation_document_url',
         're_registration_payment_proof_url',
+        'settlement_payment_proof_url',
         'status_label',
         'wa_link',
     ];
@@ -154,6 +161,11 @@ class SpmbApplicant extends Model
         return $this->belongsTo(User::class, 'admission_payment_verified_by');
     }
 
+    public function settlementPaymentVerifier()
+    {
+        return $this->belongsTo(User::class, 'settlement_payment_verified_by');
+    }
+
     // Accessor URLs
     public function getPhotoUrlAttribute(): ?string
     {
@@ -188,6 +200,11 @@ class SpmbApplicant extends Model
     public function getReRegistrationPaymentProofUrlAttribute(): ?string
     {
         return $this->re_registration_payment_proof ? Storage::url($this->re_registration_payment_proof) : null;
+    }
+
+    public function getSettlementPaymentProofUrlAttribute(): ?string
+    {
+        return $this->settlement_payment_proof ? Storage::url($this->settlement_payment_proof) : null;
     }
 
     public function getStatusLabelAttribute(): string

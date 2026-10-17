@@ -53,9 +53,10 @@ const formatDate = (dateStr) => {
 
 const uploadForm = useForm({
     payment_proof: null,
+    payment_type: 'termin_1',
 });
 
-const handleUploadProof = async (e) => {
+const handleUploadProof = async (e, type = 'termin_1') => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -69,10 +70,11 @@ const handleUploadProof = async (e) => {
     }
 
     uploadForm.payment_proof = uploadFile;
+    uploadForm.payment_type = type;
     uploadForm.post(route('spmb.applicant.upload-proof', props.applicant.id), {
         preserveScroll: true,
         onSuccess: () => {
-            alert('Bukti transfer daftar ulang berhasil diunggah.');
+            alert(type === 'termin_2' ? 'Bukti transfer pelunasan berhasil diunggah.' : 'Bukti transfer daftar ulang Termin 1 berhasil diunggah.');
         }
     });
 };
@@ -466,20 +468,56 @@ const formatRupiah = (amount) => {
                         <div>
                             <span class="text-xs font-bold text-slate-800 block">Konfirmasi Bukti Transfer VA</span>
                             <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                Setelah transfer ke nomor Virtual Account di samping, silakan unggah bukti transfer agar panitia memvalidasi pelunasan.
+                                Setelah transfer ke nomor Virtual Account di samping, silakan unggah bukti transfer per termin agar panitia memvalidasi pendaftaran Ananda.
                             </p>
                         </div>
 
-                        <div class="mt-4">
-                            <div v-if="applicant.re_registration_payment_proof" class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold mb-3">
-                                ✓ Bukti pembayaran sudah terkirim ke panitia.
+                        <div class="mt-4 space-y-3">
+                            <!-- Box Termin 1: DP Minimal 60% -->
+                            <div class="p-3.5 rounded-xl border" :class="applicant.admission_payment_verified_at ? 'bg-emerald-50 border-emerald-200' : (applicant.re_registration_payment_proof ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200')">
+                                <div class="flex items-center justify-between mb-1">
+                                    <strong class="text-xs font-bold" :class="applicant.admission_payment_verified_at ? 'text-emerald-900' : 'text-slate-800'">
+                                        1. Bukti Pembayaran Termin 1 (DP 60%)
+                                    </strong>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="applicant.admission_payment_verified_at ? 'bg-emerald-100 text-emerald-800' : (applicant.re_registration_payment_proof ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500')">
+                                        {{ applicant.admission_payment_verified_at ? 'Terverifikasi' : (applicant.re_registration_payment_proof ? 'Menunggu Cek' : 'Belum Ada') }}
+                                    </span>
+                                </div>
+                                <div v-if="applicant.re_registration_payment_proof_url" class="flex items-center justify-between text-[11px] pt-1 mb-2">
+                                    <span class="text-slate-500">Berkas terunggah:</span>
+                                    <a :href="applicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-teal-700 hover:underline">
+                                        Lihat Bukti Termin 1 &rarr;
+                                    </a>
+                                </div>
+                                <label v-if="!applicant.admission_payment_verified_at" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#064e3b] hover:bg-emerald-800 text-white text-[11px] font-bold transition">
+                                    <DocumentTextIcon class="w-3.5 h-3.5 text-amber-300" />
+                                    <span>{{ applicant.re_registration_payment_proof ? 'Ganti Bukti Termin 1' : 'Unggah Bukti Termin 1' }}</span>
+                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="(e) => handleUploadProof(e, 'termin_1')">
+                                </label>
                             </div>
 
-                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-xs font-bold transition">
-                                <DocumentTextIcon class="w-4 h-4 text-amber-300" />
-                                <span>Unggah Bukti Transfer Daftar Ulang</span>
-                                <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="handleUploadProof">
-                            </label>
+                            <!-- Box Termin 2: Pelunasan 100% -->
+                            <div v-if="applicant.status === 'partial_paid' || applicant.settlement_payment_proof" class="p-3.5 rounded-xl border" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-50 border-emerald-200' : (applicant.settlement_payment_proof ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200')">
+                                <div class="flex items-center justify-between mb-1">
+                                    <strong class="text-xs font-bold" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'text-emerald-900' : 'text-slate-800'">
+                                        2. Bukti Pelunasan (Termin 2 - 100%)
+                                    </strong>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-800' : (applicant.settlement_payment_proof ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800')">
+                                        {{ applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'Lunas 100%' : (applicant.settlement_payment_proof ? 'Menunggu Cek' : 'Siap Diunggah') }}
+                                    </span>
+                                </div>
+                                <div v-if="applicant.settlement_payment_proof_url" class="flex items-center justify-between text-[11px] pt-1 mb-2">
+                                    <span class="text-slate-500">Berkas pelunasan:</span>
+                                    <a :href="applicant.settlement_payment_proof_url" target="_blank" class="font-bold text-indigo-700 hover:underline">
+                                        Lihat Bukti Pelunasan &rarr;
+                                    </a>
+                                </div>
+                                <label v-if="applicant.status === 'partial_paid' || !applicant.settlement_payment_verified_at" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white text-[11px] font-bold transition">
+                                    <DocumentTextIcon class="w-3.5 h-3.5 text-amber-300" />
+                                    <span>{{ applicant.settlement_payment_proof ? 'Ganti Bukti Pelunasan' : 'Unggah Bukti Pelunasan (Termin 2)' }}</span>
+                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="(e) => handleUploadProof(e, 'termin_2')">
+                                </label>
+                            </div>
                         </div>
                     </div>
 

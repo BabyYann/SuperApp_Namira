@@ -302,3 +302,76 @@ it('enforces unit scoping so SD panitia cannot evaluate SMP applicant', function
 
     $response->assertForbidden();
 });
+
+it('tracks installment Termin 1 and settlement Termin 2 proofs separately without losing history', function () {
+    $parent = User::factory()->create(['phone' => '081299990001']);
+    $parent->assignRole('orang_tua');
+
+    $applicant = SpmbApplicant::create([
+        'unit_id' => $this->smpUnit->id,
+        'user_id' => $parent->id,
+        'registration_number' => 'IND-SMPN-26004',
+        'full_name' => 'Calon Siswa Angsuran',
+        'gender' => 'L',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-04-04',
+        'father_name' => 'Ayah Siswa',
+        'mother_name' => 'Ibu Siswa',
+        'parent_phone' => '081299990001',
+        'address' => 'Jl. Pahlawan No. 10',
+        'status' => 'accepted',
+        'total_admission_fee' => 8500000,
+        'min_down_payment' => 5100000,
+        'is_inden' => true,
+    ]);
+
+    // 1. Upload Termin 1 (DP 60%)
+    $termin1File = UploadedFile::fake()->image('bukti_termin_1.jpg');
+    $res1 = $this->actingAs($parent)->post(route('spmb.applicant.upload-proof', $applicant->id), [
+        'payment_proof' => $termin1File,
+        'payment_type' => 'termin_1',
+    ]);
+    $res1->assertSessionHasNoErrors();
+
+    $applicant->refresh();
+    expect($applicant->re_registration_payment_proof)->not->toBeNull();
+    $termin1Path = $applicant->re_registration_payment_proof;
+
+    // 2. Admin verifies Termin 1
+    $panitia = createUserWithRole('panitia_spmb', $this->smpUnit->id);
+    $verifyRes = $this->actingAs($panitia)->post(route('spmb.admin.verify-admission-payment', $applicant->id), [
+        'paid_admission_amount' => 5100000,
+        'admission_payment_status' => 'partial',
+    ]);
+    $verifyRes->assertSessionHasNoErrors();
+
+    $applicant->refresh();
+    expect($applicant->status)->toBe('partial_paid')
+        ->and($applicant->paid_admission_amount)->toEqual(5100000);
+
+    // 3. Upload Termin 2 (Pelunasan 100%)
+    $termin2File = UploadedFile::fake()->image('bukti_pelunasan.jpg');
+    $res2 = $this->actingAs($parent)->post(route('spmb.applicant.upload-proof', $applicant->id), [
+        'payment_proof' => $termin2File,
+        'payment_type' => 'termin_2',
+    ]);
+    $res2->assertSessionHasNoErrors();
+
+    $applicant->refresh();
+    // Termin 1 proof must STILL EXIST and NOT be overwritten!
+    expect($applicant->re_registration_payment_proof)->toBe($termin1Path)
+        ->and($applicant->settlement_payment_proof)->not->toBeNull()
+        ->and($applicant->settlement_payment_proof)->not->toBe($termin1Path);
+
+    // 4. Admin verifies Pelunasan
+    $settleRes = $this->actingAs($panitia)->post(route('spmb.admin.verify-admission-payment', $applicant->id), [
+        'paid_admission_amount' => 8500000,
+        'admission_payment_status' => 'paid',
+    ]);
+    $settleRes->assertSessionHasNoErrors();
+
+    $applicant->refresh();
+    expect($applicant->status)->toBe('fully_paid')
+        ->and($applicant->paid_admission_amount)->toEqual(8500000)
+        ->and($applicant->settlement_payment_verified_at)->not->toBeNull();
+});

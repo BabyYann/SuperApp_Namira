@@ -90,8 +90,27 @@ const submitVa = () => {
 // Form: Verifikasi Bayar Daftar Ulang
 const paymentForm = useForm({
     paid_admission_amount: props.applicant.paid_admission_amount || (props.applicant.min_down_payment || 0),
-    admission_payment_status: 'partial', // partial or paid
+    admission_payment_status: props.applicant.status === 'partial_paid' ? 'paid' : 'partial', // partial or paid
 });
+
+const openPaymentModal = (preferredStatus = null) => {
+    const isPaid = preferredStatus === 'paid' || props.applicant.status === 'partial_paid';
+    paymentForm.admission_payment_status = isPaid ? 'paid' : 'partial';
+    paymentForm.paid_admission_amount = isPaid 
+        ? (props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000))
+        : (props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * 0.6));
+    showPaymentModal.value = true;
+};
+
+const setPresetAmount = (type) => {
+    if (type === 'partial') {
+        paymentForm.admission_payment_status = 'partial';
+        paymentForm.paid_admission_amount = props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * 0.6);
+    } else {
+        paymentForm.admission_payment_status = 'paid';
+        paymentForm.paid_admission_amount = props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000);
+    }
+};
 
 const submitPayment = () => {
     paymentForm.post(route('spmb.admin.verify-admission-payment', props.applicant.id), {
@@ -229,7 +248,7 @@ const formatRupiah = (amount) => {
                     <!-- 5. Tombol Verifikasi Bayar Daftar Ulang -->
                     <button 
                         v-if="['accepted', 'partial_paid'].includes(applicant.status)"
-                        @click="showPaymentModal = true"
+                        @click="openPaymentModal()"
                         class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow-xs transition"
                     >
                         <CreditCardIcon class="w-4 h-4" />
@@ -418,10 +437,10 @@ const formatRupiah = (amount) => {
                             <span v-else class="text-slate-400 italic text-[11px]">{{ isSmp ? 'Menyusul (Wawancara Ortu)' : 'Belum ada' }}</span>
                         </div>
 
-                        <!-- 5. Bukti QRIS Pendaftaran -->
+                        <!-- 5. Bukti QRIS / Transfer Pendaftaran Awal -->
                         <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
                             <div class="flex items-center justify-between mb-1.5">
-                                <span class="font-bold text-slate-700 dark:text-slate-300">5. Bukti Bayar QRIS</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300">5. Bukti Bayar Pendaftaran (Awal)</span>
                                 <span 
                                     class="px-2 py-0.5 rounded-full text-[10px] font-bold"
                                     :class="applicant.registration_payment_verified_at ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800'"
@@ -430,16 +449,59 @@ const formatRupiah = (amount) => {
                                 </span>
                             </div>
                             <a v-if="applicant.registration_payment_proof_url" :href="applicant.registration_payment_proof_url" target="_blank" class="text-emerald-600 dark:text-emerald-400 font-bold hover:underline block text-center py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mt-2">
-                                Lihat Bukti Transfer QRIS &rarr;
+                                Lihat Bukti Transfer Registrasi &rarr;
                             </a>
+                            <span v-else class="text-slate-400 italic block mt-1">Belum ada berkas</span>
                         </div>
 
-                        <!-- 6. Bukti Bayar Daftar Ulang -->
-                        <div v-if="applicant.re_registration_payment_proof_url" class="p-3.5 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs">
-                            <span class="font-bold text-teal-800 dark:text-teal-300 block mb-1">Bukti Bayar Daftar Ulang VA</span>
-                            <a :href="applicant.re_registration_payment_proof_url" target="_blank" class="text-teal-700 dark:text-teal-400 font-bold hover:underline block py-1">
-                                Periksa Bukti Transfer VA &rarr;
+                        <!-- 6. Bukti Bayar Daftar Ulang: Termin 1 (DP Minimal 60%) -->
+                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="font-bold text-slate-700 dark:text-slate-300">6. Bukti Daftar Ulang: Termin 1 (DP 60%)</span>
+                                <span 
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="applicant.admission_payment_verified_at ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : (applicant.re_registration_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300')"
+                                >
+                                    {{ applicant.admission_payment_verified_at ? 'Terverifikasi' : (applicant.re_registration_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
+                                </span>
+                            </div>
+                            <a v-if="applicant.re_registration_payment_proof_url" :href="applicant.re_registration_payment_proof_url" target="_blank" class="text-teal-700 dark:text-teal-400 font-bold hover:underline block text-center py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mt-2">
+                                Periksa Bukti Termin 1 &rarr;
                             </a>
+                            <span v-else class="text-slate-400 italic block mt-1">{{ ['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Menunggu upload dari orang tua' : 'Belum tahap daftar ulang' }}</span>
+                        </div>
+
+                        <!-- 7. Bukti Bayar Daftar Ulang: Termin 2 (Pelunasan 100%) -->
+                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="font-bold text-slate-700 dark:text-slate-300">7. Bukti Pelunasan: Termin 2 (100%)</span>
+                                <span 
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : (applicant.settlement_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300')"
+                                >
+                                    {{ applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'Lunas 100%' : (applicant.settlement_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
+                                </span>
+                            </div>
+                            <a v-if="applicant.settlement_payment_proof_url" :href="applicant.settlement_payment_proof_url" target="_blank" class="text-indigo-700 dark:text-indigo-400 font-bold hover:underline block text-center py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mt-2">
+                                Periksa Bukti Pelunasan &rarr;
+                            </a>
+                            <span v-else class="text-slate-400 italic block mt-1">
+                                {{ applicant.status === 'partial_paid' ? 'Menunggu pelunasan dari orang tua' : (applicant.status === 'fully_paid' ? 'Lunas sekaligus pada pembayaran awal' : 'Belum tahap pelunasan') }}
+                            </span>
+                        </div>
+
+                        <!-- Riwayat Histori Transaksi Pembayaran -->
+                        <div v-if="applicant.payment_history && applicant.payment_history.length > 0" class="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs space-y-2">
+                            <span class="font-bold text-emerald-950 dark:text-emerald-300 block">Riwayat Transaksi Angsuran:</span>
+                            <div v-for="(hist, idx) in applicant.payment_history" :key="idx" class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-emerald-100 dark:border-slate-700 text-[11px] space-y-0.5">
+                                <div class="flex items-center justify-between font-bold">
+                                    <span class="text-slate-800 dark:text-slate-200">{{ hist.title }}</span>
+                                    <span class="px-1.5 py-0.5 rounded text-[10px]" :class="hist.status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">
+                                        {{ hist.status === 'verified' ? 'Valid' : 'Pending' }}
+                                    </span>
+                                </div>
+                                <div class="text-slate-500 text-[10px]">Waktu Unggah: {{ hist.uploaded_at ? new Date(hist.uploaded_at).toLocaleString('id-ID') : '-' }}</div>
+                            </div>
                         </div>
                     </div>
 
@@ -600,6 +662,27 @@ const formatRupiah = (amount) => {
                 <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
                     <h3 class="text-base font-bold text-slate-900 dark:text-white">Verifikasi Pembayaran Daftar Ulang</h3>
 
+                    <!-- Tautan Cek Bukti yang Terunggah -->
+                    <div class="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
+                        <span class="font-bold text-slate-700 dark:text-slate-300 block">Bukti Transfer yang Tersedia:</span>
+                        <div class="flex flex-col gap-1.5 text-[11px]">
+                            <div class="flex items-center justify-between">
+                                <span>1. Termin 1 (DP 60%):</span>
+                                <a v-if="applicant.re_registration_payment_proof_url" :href="applicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-teal-600 hover:underline">
+                                    Buka File &rarr;
+                                </a>
+                                <span v-else class="text-slate-400 italic">Belum ada</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>2. Termin 2 (Pelunasan):</span>
+                                <a v-if="applicant.settlement_payment_proof_url" :href="applicant.settlement_payment_proof_url" target="_blank" class="font-bold text-indigo-600 hover:underline">
+                                    Buka File &rarr;
+                                </a>
+                                <span v-else class="text-slate-400 italic">Belum ada</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="space-y-3 text-xs">
                         <div>
                             <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Pembayaran</label>
@@ -610,7 +693,14 @@ const formatRupiah = (amount) => {
                         </div>
 
                         <div>
-                            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nominal yang Sudah Masuk (Rp)</label>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="font-medium text-slate-700 dark:text-slate-300">Nominal Masuk (Rp)</label>
+                                <div class="flex items-center gap-1.5 text-[10px]">
+                                    <button type="button" @click="setPresetAmount('partial')" class="text-teal-700 dark:text-teal-400 font-bold hover:underline">Preset DP 60%</button>
+                                    <span class="text-slate-300">|</span>
+                                    <button type="button" @click="setPresetAmount('paid')" class="text-emerald-700 dark:text-emerald-400 font-bold hover:underline">Preset Lunas 100%</button>
+                                </div>
+                            </div>
                             <input v-model="paymentForm.paid_admission_amount" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-600">
                         </div>
                     </div>

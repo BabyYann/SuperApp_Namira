@@ -12,6 +12,7 @@ use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
@@ -134,6 +135,7 @@ class AdminSpmbController extends Controller
             'scheduler',
             'evaluator',
             'admissionPaymentVerifier',
+            'settlementPaymentVerifier',
         ]);
 
         $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
@@ -305,13 +307,40 @@ class AdminSpmbController extends Controller
 
         $status = $request->admission_payment_status === 'paid' ? 'fully_paid' : 'partial_paid';
 
-        $applicant->update([
+        $updateData = [
             'paid_admission_amount' => $request->paid_admission_amount,
             'admission_payment_status' => $request->admission_payment_status,
-            'admission_payment_verified_at' => now(),
-            'admission_payment_verified_by' => Auth::id(),
             'status' => $status,
-        ]);
+        ];
+
+        if ($request->admission_payment_status === 'paid') {
+            if (Schema::hasColumn('spmb_applicants', 'settlement_payment_verified_at')) {
+                $updateData['settlement_payment_verified_at'] = now();
+                $updateData['settlement_payment_verified_by'] = Auth::id();
+            }
+            if (!$applicant->admission_payment_verified_at) {
+                $updateData['admission_payment_verified_at'] = now();
+                $updateData['admission_payment_verified_by'] = Auth::id();
+            }
+        } else {
+            $updateData['admission_payment_verified_at'] = now();
+            $updateData['admission_payment_verified_by'] = Auth::id();
+        }
+
+        if (Schema::hasColumn('spmb_applicants', 'payment_history')) {
+            $history = $applicant->payment_history ?? [];
+            foreach ($history as &$item) {
+                if (($request->admission_payment_status === 'partial' && ($item['type'] ?? '') === 'termin_1')
+                    || ($request->admission_payment_status === 'paid' && in_array($item['type'] ?? '', ['termin_2', 'pelunasan']))) {
+                    $item['status'] = 'verified';
+                    $item['verified_at'] = now()->toIso8601String();
+                    $item['verifier_name'] = Auth::user()->name;
+                }
+            }
+            $updateData['payment_history'] = $history;
+        }
+
+        $applicant->update($updateData);
 
         $msg = $request->admission_payment_status === 'paid' ? 'Pelunasan 100% Berhasil' : 'Pembayaran Termin 1 (60%) Berhasil';
 
