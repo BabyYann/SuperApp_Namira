@@ -425,15 +425,23 @@ class AdminSpmbController extends Controller
                 ];
             });
 
-        // List assigned panitia
-        $panitiaRole = Role::firstOrCreate(['name' => 'panitia_spmb', 'guard_name' => 'web']);
+        // List assigned panitia specifically for this target unit
+        Role::firstOrCreate(['name' => 'panitia_spmb', 'guard_name' => 'web', 'team_id' => null]);
         
-        $assignedPanitia = User::whereHas('roles', function ($q) {
-            $q->where('name', 'panitia_spmb');
+        $assignedPanitia = User::whereExists(function ($mq) use ($targetUnit) {
+            $mq->select(DB::raw(1))
+               ->from('model_has_roles')
+               ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+               ->whereColumn('model_has_roles.model_id', 'users.id')
+               ->where('roles.name', 'panitia_spmb')
+               ->where(function ($tq) use ($targetUnit) {
+                   $tq->where('model_has_roles.team_id', $targetUnit->id)
+                      ->orWhereNull('model_has_roles.team_id');
+               });
         })->get(['id', 'name', 'email']);
 
         $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) 
-            ? Unit::select('id', 'name', 'code')->get() 
+            ? Unit::whereIn('code', ['SD', 'SMP'])->orWhere('name', 'like', '%SD%')->orWhere('name', 'like', '%SMP%')->select('id', 'name', 'code')->get() 
             : [];
 
         return Inertia::render('SPMB/Admin/Settings', [
@@ -539,12 +547,13 @@ class AdminSpmbController extends Controller
 
         $targetUser = User::findOrFail($request->user_id);
 
-        $role = Role::firstOrCreate(['name' => 'panitia_spmb', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => 'panitia_spmb', 'guard_name' => 'web', 'team_id' => null]);
 
+        setPermissionsTeamId($targetUnit->id);
         if (!$targetUser->hasRole('panitia_spmb')) {
-            setPermissionsTeamId($targetUnit->id);
             $targetUser->assignRole('panitia_spmb');
         }
+        setPermissionsTeamId(session('active_unit_id'));
 
         return back()->with('success', "Ustadz/Ustadzah {$targetUser->name} berhasil ditugaskan sebagai Panitia SPMB {$targetUnit->name}.");
     }
@@ -572,7 +581,9 @@ class AdminSpmbController extends Controller
         }
         
         $user->removeRole('panitia_spmb');
+        setPermissionsTeamId(session('active_unit_id'));
 
-        return back()->with('success', "Penugasan Panitia SPMB untuk {$user->name} berhasil dicabut.");
+        $unitName = $targetUnit ? " {$targetUnit->name}" : '';
+        return back()->with('success', "Penugasan Panitia SPMB{$unitName} untuk {$user->name} berhasil dicabut.");
     }
 }

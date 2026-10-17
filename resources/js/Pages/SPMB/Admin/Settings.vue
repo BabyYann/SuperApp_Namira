@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { 
@@ -11,7 +11,8 @@ import {
     QrCodeIcon, 
     PhotoIcon,
     ShieldCheckIcon,
-    ArrowPathIcon
+    ArrowPathIcon,
+    BuildingLibraryIcon
 } from '@heroicons/vue/24/outline';
 import { compressImageFile } from '@/Utils/imageCompressor';
 
@@ -20,6 +21,7 @@ const props = defineProps({
     unit: Object,
     teachers: Array,
     assignedPanitia: Array,
+    availableUnits: Array,
 });
 
 const settingForm = useForm({
@@ -73,25 +75,35 @@ const submitSetting = () => {
 // Form Assign Panitia
 const panitiaForm = useForm({
     user_id: '',
+    unit_id: props.unit?.id,
+});
+
+watch(() => props.unit?.id, (newUnitId) => {
+    panitiaForm.unit_id = newUnitId;
+    settingForm.unit_id = newUnitId;
 });
 
 const assignPanitia = () => {
     if (!panitiaForm.user_id) {
-        alert('Pilih guru terlebih dahulu.');
+        alert(`Pilih guru ${props.unit?.name || 'unit'} terlebih dahulu.`);
         return;
     }
+    panitiaForm.unit_id = props.unit?.id;
     panitiaForm.post(route('spmb.admin.assign-panitia'), {
         preserveScroll: true,
         onSuccess: () => {
-            panitiaForm.reset();
-            alert('Guru berhasil ditugaskan sebagai Panitia SPMB.');
+            panitiaForm.reset('user_id');
+            alert(`Guru berhasil ditugaskan sebagai Panitia SPMB ${props.unit?.name || ''}.`);
         }
     });
 };
 
-const removePanitia = (user) => {
-    if (confirm(`Cabut wewenang Panitia SPMB untuk ${user.name}?`)) {
-        router.delete(route('spmb.admin.remove-panitia', user.id));
+const removePanitia = (panitia) => {
+    if (confirm(`Cabut wewenang Panitia SPMB ${props.unit?.name || ''} untuk ${panitia.name}?`)) {
+        router.delete(route('spmb.admin.remove-panitia', panitia.id), {
+            data: { unit_id: props.unit?.id },
+            preserveScroll: true,
+        });
     }
 };
 </script>
@@ -116,8 +128,24 @@ const removePanitia = (user) => {
                     <span>Pengaturan SPMB & Penugasan Panitia</span>
                 </h1>
                 <p class="text-xs text-slate-500 mt-0.5">
-                    Atur kuota, biaya formulir, QRIS Bank Jatim, serta delegasikan wewenang panitia kepada guru SD Namira.
+                    Atur kuota, biaya formulir, rekening transfer/QRIS, serta delegasikan wewenang panitia kepada guru {{ unit?.name || 'unit' }}.
                 </p>
+
+                <!-- Unit Tabs Switcher (If multiple units available, e.g. for Yayasan Super Admin) -->
+                <div v-if="availableUnits && availableUnits.length > 1" class="flex flex-wrap items-center gap-2 mt-4 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl w-fit border border-slate-200 dark:border-slate-700">
+                    <Link 
+                        v-for="u in availableUnits" 
+                        :key="u.id"
+                        :href="route('spmb.admin.settings', { unit_id: u.id })"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2"
+                        :class="unit?.id === u.id 
+                            ? 'bg-[#064e3b] text-white shadow-sm' 
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700'"
+                    >
+                        <BuildingLibraryIcon class="w-4 h-4" />
+                        <span>{{ u.name }}</span>
+                    </Link>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -265,9 +293,11 @@ const removePanitia = (user) => {
 
                         <!-- Form Penugasan -->
                         <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
-                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Tugaskan Guru SD:</label>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Tugaskan Guru {{ unit?.name || 'Unit' }}:
+                            </label>
                             <select v-model="panitiaForm.user_id" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200">
-                                <option value="" disabled>-- Pilih Ustadz / Ustadzah --</option>
+                                <option value="" disabled>-- Pilih Ustadz / Ustadzah {{ unit?.name || '' }} --</option>
                                 <option v-for="t in teachers" :key="t.id" :value="t.id">
                                     {{ t.name }} ({{ t.niy || '-' }})
                                 </option>
@@ -280,16 +310,18 @@ const removePanitia = (user) => {
                                 class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition disabled:opacity-50"
                             >
                                 <UserPlusIcon class="w-4 h-4" />
-                                <span>Tugaskan sebagai Panitia</span>
+                                <span>Tugaskan sebagai Panitia {{ unit?.name || '' }}</span>
                             </button>
                         </div>
 
                         <!-- Daftar Panitia Aktif -->
                         <div class="space-y-2 pt-2">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block">Daftar Panitia Saat Ini:</span>
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                                Daftar Panitia Aktif ({{ unit?.name || 'Unit' }}):
+                            </span>
                             
                             <div v-if="assignedPanitia.length === 0" class="text-xs text-slate-400 italic py-2">
-                                Belum ada guru yang ditugaskan khusus sebagai panitia.
+                                Belum ada guru {{ unit?.name || 'unit' }} yang ditugaskan khusus sebagai panitia.
                             </div>
 
                             <div 
