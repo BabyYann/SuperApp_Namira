@@ -10,6 +10,7 @@ use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class PublicSpmbController extends Controller
@@ -419,13 +420,12 @@ class PublicSpmbController extends Controller
             $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName);
 
             // D. Create Applicant record
-            $applicant = SpmbApplicant::create([
+            $applicantData = [
                 'registration_number' => $regNumber,
                 'unit_id' => $unit->id,
                 'user_id' => $user->id,
                 'category' => $request->category ?: 'eksternal_umum',
                 'status' => 'submitted',
-                'is_inden' => true,
 
                 // Calon Siswa
                 'full_name' => $request->full_name,
@@ -469,7 +469,13 @@ class PublicSpmbController extends Controller
                 'birth_cert_path' => $aktaPath,
                 'parent_id_card_path' => $ktpPath,
                 'registration_payment_proof' => $paymentProofPath,
-            ]);
+            ];
+
+            if (Schema::hasColumn('spmb_applicants', 'is_inden')) {
+                $applicantData['is_inden'] = true;
+            }
+
+            $applicant = SpmbApplicant::create($applicantData);
 
             // E. Auto login the parent user
             Auth::login($user, true);
