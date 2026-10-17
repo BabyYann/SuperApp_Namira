@@ -107,6 +107,18 @@ const onPaymentProofChange = async (e) => {
     }
 };
 
+const onCategoryChange = (val) => {
+    if (val === 'internal_sd') {
+        if (!form.previous_school || form.previous_school === '') {
+            form.previous_school = 'SD Namira Kota Probolinggo';
+        }
+    } else if (val === 'eksternal_umum') {
+        if (form.previous_school === 'SD Namira Kota Probolinggo') {
+            form.previous_school = '';
+        }
+    }
+};
+
 const copyAccountNumber = () => {
     const acc = props.setting?.bank_account_number || '0291008899';
     if (navigator?.clipboard) {
@@ -403,6 +415,52 @@ const submitRegistration = () => {
                                 placeholder="Nomor NISN dari SD/MI"
                                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm sm:text-xs focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none transition"
                             />
+                        </div>
+
+                        <!-- Kategori Pendaftar (Internal SD Namira vs Eksternal Umum) -->
+                        <div class="sm:col-span-2">
+                            <label class="block font-bold text-slate-700 mb-2">Kategori Pendaftaran *</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label 
+                                    class="flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition select-none"
+                                    :class="form.category === 'internal_sd' 
+                                        ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-500' 
+                                        : 'border-slate-200 bg-white hover:bg-slate-50'"
+                                >
+                                    <input 
+                                        type="radio" 
+                                        name="category" 
+                                        value="internal_sd" 
+                                        v-model="form.category" 
+                                        @change="onCategoryChange('internal_sd')"
+                                        class="mt-0.5 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <div>
+                                        <div class="font-bold text-xs sm:text-sm text-slate-900">Alumni SD Namira</div>
+                                        <div class="text-[11px] text-slate-500 mt-0.5">Khusus calon santri lulusan internal SD Namira Kota Probolinggo</div>
+                                    </div>
+                                </label>
+
+                                <label 
+                                    class="flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition select-none"
+                                    :class="form.category === 'eksternal_umum' 
+                                        ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-500' 
+                                        : 'border-slate-200 bg-white hover:bg-slate-50'"
+                                >
+                                    <input 
+                                        type="radio" 
+                                        name="category" 
+                                        value="eksternal_umum" 
+                                        v-model="form.category" 
+                                        @change="onCategoryChange('eksternal_umum')"
+                                        class="mt-0.5 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <div>
+                                        <div class="font-bold text-xs sm:text-sm text-slate-900">Pendaftar Umum / Luar</div>
+                                        <div class="text-[11px] text-slate-500 mt-0.5">Calon santri dari SD / MI negeri maupun swasta lainnya</div>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="sm:col-span-2">

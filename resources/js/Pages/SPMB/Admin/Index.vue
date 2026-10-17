@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -25,6 +25,12 @@ const props = defineProps({
     stats: Object,
     filters: Object,
     unit: Object,
+});
+
+const isSmp = computed(() => {
+    const name = (props.unit?.name || '').toLowerCase();
+    const code = (props.unit?.code || '').toUpperCase();
+    return code === 'SMP' || name.includes('smp');
 });
 
 const search = ref(props.filters?.search || '');
@@ -149,7 +155,7 @@ const getStatusBadgeClass = (s) => {
 </script>
 
 <template>
-    <Head title="Data Pendaftar SPMB Inden SD Namira" />
+    <Head :title="`Data Pendaftar SPMB Inden ${unit?.name || 'Namira'}`" />
 
     <AuthenticatedLayout>
         <div class="space-y-6">
@@ -185,8 +191,8 @@ const getStatusBadgeClass = (s) => {
                 </div>
 
                 <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 block uppercase">Alumni TK Namira</span>
-                    <span class="text-2xl font-black text-emerald-700 dark:text-emerald-300 block mt-1">{{ stats.internal_tk }}</span>
+                    <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 block uppercase">{{ isSmp ? 'Alumni SD Namira' : 'Alumni TK Namira' }}</span>
+                    <span class="text-2xl font-black text-emerald-700 dark:text-emerald-300 block mt-1">{{ stats.internal_tk || stats.internal }}</span>
                 </div>
 
                 <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -229,7 +235,7 @@ const getStatusBadgeClass = (s) => {
                         class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:ring-emerald-500"
                     >
                         <option value="all">Semua Kategori Asal</option>
-                        <option value="internal_tk">Khusus Alumni TK Namira</option>
+                        <option value="internal">{{ isSmp ? 'Khusus Alumni SD Namira' : 'Khusus Alumni TK Namira' }}</option>
                         <option value="eksternal_umum">Pendaftar Luar (Umum)</option>
                     </select>
 
@@ -303,9 +309,9 @@ const getStatusBadgeClass = (s) => {
                                     </span>
                                     <span 
                                         class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold mt-0.5"
-                                        :class="app.category === 'internal_tk' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'"
+                                        :class="['internal_tk', 'internal_sd', 'internal'].includes(app.category) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'"
                                     >
-                                        {{ app.category === 'internal_tk' ? 'TK Namira' : 'Umum' }}
+                                        {{ ['internal_tk', 'internal_sd', 'internal'].includes(app.category) ? (isSmp ? 'SD Namira' : 'TK Namira') : 'Umum' }}
                                     </span>
                                 </td>
 

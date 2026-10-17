@@ -190,9 +190,9 @@ const formatRupiah = (amount) => {
                             </span>
                             <span 
                                 class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                                :class="applicant.category === 'internal_tk' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'"
+                                :class="['internal_tk', 'internal_sd', 'internal'].includes(applicant.category) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'"
                             >
-                                {{ applicant.category === 'internal_tk' ? 'Alumni TK Namira' : 'Umum' }}
+                                {{ applicant.category_label || (['internal_tk', 'internal_sd', 'internal'].includes(applicant.category) ? (isSmp ? 'Alumni SD Namira' : 'Alumni TK Namira') : 'Umum') }}
                             </span>
                         </div>
                         <h2 class="text-xl font-black text-slate-900 dark:text-white">

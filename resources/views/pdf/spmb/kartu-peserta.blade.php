@@ -258,9 +258,9 @@
             <td class="value">{{ $applicant->birth_place }}, {{ $applicant->birth_date ? $applicant->birth_date->translatedFormat('d F Y') : '-' }}</td>
         </tr>
         <tr>
-            <td class="label">Asal TK / Sekolah</td>
+            <td class="label">Asal {{ $isSmp ? 'SD' : 'TK' }} / Sekolah</td>
             <td class="colon">:</td>
-            <td class="value">{{ $applicant->previous_school ?: '-' }} ({{ $applicant->category === 'internal_tk' ? 'Alumni TK Namira' : 'Umum' }})</td>
+            <td class="value">{{ $applicant->previous_school ?: '-' }} ({{ $applicant->category_label }})</td>
         </tr>
         <tr>
             <td class="label">Nama Ayah / Ibu</td>

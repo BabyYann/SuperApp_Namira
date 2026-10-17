@@ -375,3 +375,44 @@ it('tracks installment Termin 1 and settlement Termin 2 proofs separately withou
         ->and($applicant->paid_admission_amount)->toEqual(8500000)
         ->and($applicant->settlement_payment_verified_at)->not->toBeNull();
 });
+
+it('properly distinguishes internal category as Alumni SD Namira for SMP and Alumni TK Namira for SD', function () {
+    $smpApplicant = SpmbApplicant::create([
+        'unit_id' => $this->smpUnit->id,
+        'registration_number' => 'IND-SMPN-26099',
+        'full_name' => 'Santri SMP Internal',
+        'gender' => 'L',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-01-01',
+        'parent_phone' => '081234000999',
+        'address' => 'Probolinggo',
+        'category' => 'internal_sd',
+        'previous_school' => 'SD Namira Kota Probolinggo',
+    ]);
+
+    $sdApplicant = SpmbApplicant::create([
+        'unit_id' => $this->sdUnit->id,
+        'registration_number' => 'IND-SDN-26099',
+        'full_name' => 'Santri SD Internal',
+        'gender' => 'P',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2019-01-01',
+        'parent_phone' => '081234000888',
+        'address' => 'Probolinggo',
+        'category' => 'internal_tk',
+        'previous_school' => 'TK Namira Kota Probolinggo',
+    ]);
+
+    expect($smpApplicant->category_label)->toBe('Alumni SD Namira')
+        ->and($sdApplicant->category_label)->toBe('Alumni TK Namira');
+
+    // Test Admin index statistics counting internal applicants for SMP
+    $panitia = createUserWithRole('panitia_spmb', $this->smpUnit->id);
+    $response = $this->actingAs($panitia)->get(route('spmb.admin.index', ['unit' => 'smp']));
+    $response->assertInertia(fn ($page) => $page
+        ->component('SPMB/Admin/Index')
+        ->where('stats.internal_tk', 1)
+        ->where('stats.internal', 1)
+    );
+});
+

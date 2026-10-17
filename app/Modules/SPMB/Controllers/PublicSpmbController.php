@@ -327,6 +327,7 @@ class PublicSpmbController extends Controller
             'religion' => 'nullable|string|max:50',
             'child_order' => 'nullable|integer',
             'total_siblings' => 'nullable|integer',
+            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external',
             'previous_school' => 'required|string|max:255',
             'special_notes' => 'nullable|string|max:1000',
 
@@ -419,12 +420,21 @@ class PublicSpmbController extends Controller
             $parentName = $request->father_name ?: ($request->mother_name ?: $request->full_name);
             $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName);
 
+            $category = $request->category;
+            if (!$category || $category === 'eksternal_umum') {
+                if ($request->filled('previous_school') && str_contains(strtolower($request->previous_school), 'namira')) {
+                    $category = 'internal_sd';
+                } else {
+                    $category = $category ?: 'eksternal_umum';
+                }
+            }
+
             // D. Create Applicant record
             $applicantData = [
                 'registration_number' => $regNumber,
                 'unit_id' => $unit->id,
                 'user_id' => $user->id,
-                'category' => $request->category ?: 'eksternal_umum',
+                'category' => $category,
                 'status' => 'submitted',
 
                 // Calon Siswa

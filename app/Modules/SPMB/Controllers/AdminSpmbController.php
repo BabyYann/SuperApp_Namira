@@ -86,7 +86,11 @@ class AdminSpmbController extends Controller
 
         // Category Filter
         if ($request->filled('category') && $request->category !== 'all') {
-            $query->where('category', $request->category);
+            if (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
+                $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd']);
+            } else {
+                $query->where('category', $request->category);
+            }
         }
 
         // Status Filter
@@ -97,7 +101,8 @@ class AdminSpmbController extends Controller
         // Statistics
         $stats = [
             'total' => SpmbApplicant::where('unit_id', $targetUnit->id)->count(),
-            'internal_tk' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('category', 'internal_tk')->count(),
+            'internal' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('category', ['internal_tk', 'internal_sd', 'internal'])->count(),
+            'internal_tk' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('category', ['internal_tk', 'internal_sd', 'internal'])->count(),
             'external_umum' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('category', 'eksternal_umum')->count(),
             'submitted' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('status', 'submitted')->count(),
             'verified' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('status', ['verified', 'scheduled'])->count(),

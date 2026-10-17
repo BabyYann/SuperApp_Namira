@@ -168,7 +168,7 @@ const formatRupiah = (amount) => {
                             </h2>
                             <p class="text-xs text-slate-600 mt-1">
                                 Asal Sekolah: <strong>{{ applicant.previous_school || '-' }}</strong> 
-                                ({{ applicant.category === 'internal_tk' ? 'Alumni TK Namira' : 'Pendaftar Umum' }})
+                                ({{ applicant.category_label || (['internal_tk', 'internal_sd', 'internal'].includes(applicant.category) ? (isSmp ? 'Alumni SD Namira' : 'Alumni TK Namira') : 'Pendaftar Umum') }})
                             </p>
                             <p class="text-[11px] text-slate-500 mt-0.5">
                                 Orang Tua: {{ applicant.father_name || applicant.mother_name }} | No. WA: {{ applicant.parent_phone }}

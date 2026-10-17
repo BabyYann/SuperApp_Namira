@@ -123,6 +123,7 @@ class SpmbApplicant extends Model
         're_registration_payment_proof_url',
         'settlement_payment_proof_url',
         'status_label',
+        'category_label',
         'wa_link',
     ];
 
@@ -225,6 +226,15 @@ class SpmbApplicant extends Model
             'cancelled' => 'Dibatalkan',
             default => ucfirst($this->status),
         };
+    }
+
+    public function getCategoryLabelAttribute(): string
+    {
+        $isSmp = str_contains(strtolower($this->unit?->name ?? ''), 'smp');
+        if (in_array($this->category, ['internal_tk', 'internal_sd', 'internal'])) {
+            return $isSmp ? 'Alumni SD Namira' : 'Alumni TK Namira';
+        }
+        return 'Pendaftar Umum';
     }
 
     public function getWaLinkAttribute(): string
