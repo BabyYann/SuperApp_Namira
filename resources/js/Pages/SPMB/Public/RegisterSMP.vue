@@ -17,7 +17,6 @@ import {
     ClipboardIcon,
     UserIcon,
     HomeIcon,
-    SparklesIcon,
     InformationCircleIcon
 } from '@heroicons/vue/24/outline';
 
@@ -159,7 +158,7 @@ const goToStep2 = () => {
 
 const submitRegistration = () => {
     if (!form.registration_payment_proof) {
-        alert('Mohon lampirkan foto struk transfer atau bukti bayar QRIS pendaftaran.');
+        alert('Mohon lampirkan foto struk transfer atau bukti bayar pendaftaran.');
         return;
     }
 
@@ -170,11 +169,6 @@ const submitRegistration = () => {
         }
     });
 };
-
-const formatRupiah = (amount) => {
-    if (!amount) return 'Rp 0';
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
-};
 </script>
 
 <template>
@@ -182,10 +176,10 @@ const formatRupiah = (amount) => {
 
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 selection:bg-blue-100 selection:text-blue-900">
         
-        <!-- Institutional Sticky Header -->
-        <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-            <div class="max-w-4xl mx-auto px-4 py-2.5 sm:py-3 flex items-center justify-between">
-                <Link :href="route('spmb.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-700 transition">
+        <!-- Institutional Header Bar -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
+            <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+                <Link :href="route('spmb.index')" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-800 transition">
                     <ArrowLeftIcon class="w-4 h-4" />
                     <span class="hidden sm:inline">Pilihan Unit SPMB</span>
                     <span class="sm:hidden">Kembali</span>
@@ -195,110 +189,99 @@ const formatRupiah = (amount) => {
                     <img 
                         src="/images/landing/logo-smp.webp" 
                         alt="Logo SMP Namira" 
-                        class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-xs" 
+                        class="w-8 h-8 sm:w-9 sm:h-9 object-contain" 
                         onerror="this.onerror=null; this.src='/images/landing/logo-smp.png';" 
                     />
                     <div class="text-right">
-                        <span class="text-[9px] sm:text-[10px] text-blue-700 font-extrabold uppercase tracking-wider block leading-tight">SPMB Inden 2026/2027</span>
-                        <span class="text-xs sm:text-sm font-black text-slate-900 block leading-tight">SMP NAMIRA PROBOLINGGO</span>
+                        <span class="text-[10px] text-slate-500 font-medium block leading-tight">SPMB SMP Namira</span>
+                        <strong class="text-xs sm:text-sm font-bold text-slate-900 block leading-tight">Kota Probolinggo</strong>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Main Form Wrapper -->
+        <!-- Main Form Container -->
         <div class="max-w-4xl mx-auto px-3.5 sm:px-4 pt-4 sm:pt-6">
             
-            <!-- Hero Title Card with Prominent SMP Logo -->
-            <div class="bg-gradient-to-br from-[#0f2757] via-[#1e3a8a] to-[#1e1b4b] text-white rounded-3xl p-5 sm:p-7 shadow-md border border-blue-800/40 mb-5 relative overflow-hidden">
-                <!-- Background Accent Circles -->
-                <div class="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-blue-500/10 blur-2xl pointer-events-none"></div>
-                <div class="absolute right-1/3 -top-10 w-32 h-32 rounded-full bg-amber-400/10 blur-xl pointer-events-none"></div>
-
-                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 relative z-10 text-center sm:text-left">
-                    <!-- Prominent Logo Box -->
-                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-2 border-2 border-blue-200/40 flex items-center justify-center shrink-0 shadow-md">
+            <!-- Professional Institutional Title Card (Clean & Formal, No AI Slop, No Fee Banner) -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 mb-5 shadow-2xs">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 text-center sm:text-left">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-slate-50 border border-slate-200 p-2 flex items-center justify-center shrink-0">
                         <img 
                             src="/images/landing/logo-smp.webp" 
-                            alt="Logo Resmi SMP Namira" 
-                            class="w-full h-full object-contain filter drop-shadow-xs"
-                            onerror="this.onerror=null; this.src='/images/landing/logo-smp.png';"
+                            alt="Logo SMP Namira" 
+                            class="w-full h-full object-contain" 
+                            onerror="this.onerror=null; this.src='/images/landing/logo-smp.png';" 
                         />
                     </div>
 
-                    <div class="flex-1">
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-900/80 border border-blue-400/30 text-amber-300 text-[11px] font-bold mb-2 shadow-xs">
-                            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                            <span>Jalur Inden TA {{ setting?.academic_year || '2026/2027' }}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs mb-1.5">
+                            <span class="font-bold text-blue-900 tracking-wide uppercase">SMP Namira Kota Probolinggo</span>
+                            <span class="text-slate-300 hidden sm:inline">&bull;</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-800 text-[11px] font-semibold border border-blue-200/60">
+                                Jalur Inden
+                            </span>
+                            <span class="text-slate-500 text-xs">
+                                TA {{ setting?.academic_year || '2026/2027' }}
+                            </span>
                         </div>
-                        <h1 class="text-lg sm:text-2xl font-black text-white leading-tight">
+                        
+                        <h1 class="text-lg sm:text-2xl font-black text-slate-900 leading-tight">
                             Formulir Pendaftaran Calon Murid
                         </h1>
-                        <p class="text-xs sm:text-[13px] text-blue-100/90 mt-1.5 leading-relaxed max-w-xl">
-                            Khusus calon murid yang sudah tercatat pada data inden SMP Namira Kota Probolinggo.
+                        
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                            Khusus calon murid yang telah terdaftar pada data inden. Lengkapi biodata calon murid dan konfirmasi pembayaran formulir.
                         </p>
-                    </div>
-
-                    <!-- Fee Badge -->
-                    <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-2.5 text-center sm:text-right shrink-0 w-full sm:w-auto">
-                        <span class="text-[10px] uppercase font-bold text-blue-200 block tracking-wider">Biaya Formulir</span>
-                        <span class="text-base sm:text-lg font-black text-amber-300 block">
-                            {{ setting?.registration_fee ? formatRupiah(setting.registration_fee) : 'Rp 250.000' }}
-                        </span>
                     </div>
                 </div>
             </div>
 
-            <!-- Stepper Progress Bar (Mobile Friendly) -->
-            <div class="bg-white border border-slate-200 rounded-2xl p-2.5 sm:p-4 mb-5 shadow-xs">
-                <div class="grid grid-cols-2 gap-2 sm:gap-4">
-                    
-                    <!-- Step 1 Tab -->
-                    <div 
-                        class="flex items-center gap-2.5 p-2 sm:p-2.5 rounded-xl border text-xs font-bold transition cursor-pointer select-none"
+            <!-- Stepper Progress (Clean & Understated) -->
+            <div class="bg-white border border-slate-200 rounded-xl p-3 mb-5 shadow-2xs">
+                <div class="grid grid-cols-2 gap-2 max-w-md mx-auto">
+                    <!-- Step 1 Button -->
+                    <button 
+                        type="button" 
+                        class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition select-none"
                         :class="currentStep === 1 
-                            ? 'bg-blue-50 border-blue-600 text-blue-950 shadow-xs' 
-                            : (currentStep > 1 ? 'bg-slate-50 border-slate-200 text-blue-700' : 'bg-white border-slate-200 text-slate-400')"
+                            ? 'bg-blue-50 border border-blue-600 text-blue-950 shadow-2xs' 
+                            : 'bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900'"
                         @click="currentStep = 1"
                     >
-                        <div 
-                            class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                            :class="currentStep >= 1 ? 'bg-blue-700 text-white shadow-xs' : 'bg-slate-200 text-slate-500'"
+                        <span 
+                            class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold"
+                            :class="currentStep >= 1 ? 'bg-blue-700 text-white' : 'bg-slate-200 text-slate-500'"
                         >
-                            <CheckCircleIcon v-if="currentStep > 1" class="w-4 h-4" />
+                            <CheckCircleIcon v-if="currentStep > 1" class="w-3.5 h-3.5" />
                             <span v-else>1</span>
-                        </div>
-                        <div class="min-w-0">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold block sm:hidden">Langkah 1</span>
-                            <span class="truncate block text-xs">Biodata Lengkap</span>
-                        </div>
-                    </div>
+                        </span>
+                        <span>1. Biodata Calon Murid</span>
+                    </button>
 
-                    <!-- Step 2 Tab -->
-                    <div 
-                        class="flex items-center gap-2.5 p-2 sm:p-2.5 rounded-xl border text-xs font-bold transition cursor-pointer select-none"
+                    <!-- Step 2 Button -->
+                    <button 
+                        type="button" 
+                        class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition select-none"
                         :class="currentStep === 2 
-                            ? 'bg-blue-50 border-blue-600 text-blue-950 shadow-xs' 
-                            : 'bg-white border-slate-200 text-slate-400'"
+                            ? 'bg-blue-50 border border-blue-600 text-blue-950 shadow-2xs' 
+                            : 'bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800'"
                         @click="goToStep2"
                     >
-                        <div 
-                            class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                            :class="currentStep === 2 ? 'bg-blue-700 text-white shadow-xs' : 'bg-slate-200 text-slate-500'"
+                        <span 
+                            class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold"
+                            :class="currentStep === 2 ? 'bg-blue-700 text-white' : 'bg-slate-200 text-slate-500'"
                         >
-                            <span>2</span>
-                        </div>
-                        <div class="min-w-0">
-                            <span class="text-[10px] text-slate-400 uppercase font-bold block sm:hidden">Langkah 2</span>
-                            <span class="truncate block text-xs">Bukti Pembayaran</span>
-                        </div>
-                    </div>
-
+                            2
+                        </span>
+                        <span>2. Bukti Pembayaran</span>
+                    </button>
                 </div>
             </div>
 
             <!-- General Alert / Errors -->
-            <div v-if="Object.keys(form.errors).length > 0" class="mb-5 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
+            <div v-if="Object.keys(form.errors).length > 0" class="mb-5 p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
                 <strong class="block font-bold">Mohon periksa kembali kolom formulir berikut:</strong>
                 <ul class="list-disc list-inside space-y-0.5">
                     <li v-for="(err, key) in form.errors" :key="key">{{ err }}</li>
@@ -309,22 +292,22 @@ const formatRupiah = (amount) => {
             <div v-show="currentStep === 1" class="space-y-5">
                 
                 <!-- Notice Banner: Deferred Supporting Documents -->
-                <div class="bg-blue-50/90 border border-blue-200/90 rounded-2xl p-4 sm:p-5 flex items-start gap-3 text-xs text-blue-950 shadow-xs">
+                <div class="bg-blue-50/70 border border-blue-200/80 rounded-xl p-4 flex items-start gap-3 text-xs text-blue-950">
                     <InformationCircleIcon class="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
                     <div>
-                        <strong class="font-extrabold block text-blue-900 mb-0.5">Kemudahan Pendaftaran Tahap Awal:</strong>
+                        <strong class="font-bold text-blue-900 block mb-0.5">Ketentuan Pendaftaran Tahap Awal:</strong>
                         <p class="text-blue-800 leading-relaxed text-[11px] sm:text-xs">
-                            Formulir ini hanya membutuhkan kelengkapan biodata dan unggahan bukti pembayaran biaya pendaftaran. Berkas fisik pendukung (seperti Kartu Keluarga, Akta Kelahiran, dan Ijazah/SKL SD) <strong>tidak perlu diunggah sekarang</strong> dan diserahkan saat sesi wawancara komitmen orang tua sesuai jadwal panitia.
+                            Formulir ini hanya memerlukan pengisian biodata dan bukti pembayaran pendaftaran. Berkas fisik pendukung (seperti Kartu Keluarga, Akta Kelahiran, dan Ijazah/SKL SD) <strong>tidak perlu diunggah sekarang</strong> dan diserahkan saat wawancara komitmen orang tua sesuai jadwal panitia.
                         </p>
                     </div>
                 </div>
 
                 <!-- Bagian 1: Data Calon Murid -->
-                <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
+                <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-2xs space-y-4">
                     <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
                         <div>
                             <span class="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Bagian 1</span>
-                            <h2 class="text-sm font-black text-slate-900">Data Calon Murid / Santri</h2>
+                            <h2 class="text-sm font-bold text-slate-900">Data Calon Murid</h2>
                         </div>
                         <span class="text-[11px] text-slate-400 font-medium">* Kolom wajib</span>
                     </div>
@@ -336,7 +319,7 @@ const formatRupiah = (amount) => {
                                 v-model="form.full_name" 
                                 type="text" 
                                 autocomplete="name"
-                                placeholder="Contoh: Muhammad Rayhan Pratama"
+                                placeholder="Sesuai Akta Kelahiran / Kartu Keluarga"
                                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm sm:text-xs focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none transition"
                                 required
                             />
@@ -352,23 +335,27 @@ const formatRupiah = (amount) => {
                             />
                         </div>
 
-                        <!-- Touch-friendly Gender Selector -->
+                        <!-- Professional Gender Selector (No Emojis) -->
                         <div>
                             <label class="block font-bold text-slate-700 mb-1">Jenis Kelamin *</label>
                             <div class="grid grid-cols-2 gap-2.5">
                                 <label 
-                                    class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border cursor-pointer font-bold text-xs transition"
-                                    :class="form.gender === 'L' ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    class="flex items-center justify-center py-2.5 px-3 rounded-xl border cursor-pointer font-bold text-xs transition select-none text-center"
+                                    :class="form.gender === 'L' 
+                                        ? 'bg-blue-700 border-blue-700 text-white shadow-xs' 
+                                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'"
                                 >
                                     <input type="radio" v-model="form.gender" value="L" class="hidden" />
-                                    <span>👦 Laki-laki</span>
+                                    <span>Laki-laki</span>
                                 </label>
                                 <label 
-                                    class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border cursor-pointer font-bold text-xs transition"
-                                    :class="form.gender === 'P' ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                    class="flex items-center justify-center py-2.5 px-3 rounded-xl border cursor-pointer font-bold text-xs transition select-none text-center"
+                                    :class="form.gender === 'P' 
+                                        ? 'bg-blue-700 border-blue-700 text-white shadow-xs' 
+                                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'"
                                 >
                                     <input type="radio" v-model="form.gender" value="P" class="hidden" />
-                                    <span>👧 Perempuan</span>
+                                    <span>Perempuan</span>
                                 </label>
                             </div>
                         </div>
@@ -454,7 +441,7 @@ const formatRupiah = (amount) => {
                             <textarea 
                                 v-model="form.special_notes" 
                                 rows="2"
-                                placeholder="Misal: Riwayat alergi makanan, hafalan Al-Qur'an (Juz 30), prestasi lomba, dll."
+                                placeholder="Misal: Riwayat alergi, hafalan Al-Qur'an (Juz 30), dll."
                                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm sm:text-xs focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none transition"
                             ></textarea>
                         </div>
@@ -462,11 +449,11 @@ const formatRupiah = (amount) => {
                 </div>
 
                 <!-- Bagian 2: Data Orang Tua & Akun Login -->
-                <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
+                <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-2xs space-y-4">
                     <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
                         <div>
                             <span class="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Bagian 2</span>
-                            <h2 class="text-sm font-black text-slate-900">Data Orang Tua & Akun Portal Calon Santri</h2>
+                            <h2 class="text-sm font-bold text-slate-900">Data Orang Tua & Akun Portal Calon Murid</h2>
                         </div>
                     </div>
 
@@ -486,7 +473,7 @@ const formatRupiah = (amount) => {
                             <input 
                                 v-model="form.father_job" 
                                 type="text" 
-                                placeholder="Contoh: PNS / Karyawan Swasta / Wiraswasta"
+                                placeholder="Contoh: Pegawai / Wiraswasta"
                                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm sm:text-xs focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none transition"
                             />
                         </div>
@@ -506,7 +493,7 @@ const formatRupiah = (amount) => {
                             <input 
                                 v-model="form.mother_job" 
                                 type="text" 
-                                placeholder="Contoh: Ibu Rumah Tangga / Guru / Dokter"
+                                placeholder="Contoh: Ibu Rumah Tangga / Guru"
                                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm sm:text-xs focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:outline-none transition"
                             />
                         </div>
@@ -526,7 +513,7 @@ const formatRupiah = (amount) => {
                                 <PhoneIcon class="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
                             </div>
                             <p class="text-[11px] text-slate-500 mt-1">
-                                Nomor ini digunakan sebagai <strong>identitas login</strong> Anda untuk memantau status seleksi dan mengunduh Kartu Peserta.
+                                Nomor WhatsApp ini menjadi akun login Anda untuk melihat pengumuman seleksi dan mengunduh berkas pendaftaran.
                             </p>
                         </div>
 
@@ -581,10 +568,10 @@ const formatRupiah = (amount) => {
                     <button 
                         type="button" 
                         @click="goToStep2"
-                        class="w-full sm:w-auto sm:ml-auto flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 px-7 rounded-2xl text-xs sm:text-sm transition shadow-sm"
+                        class="w-full sm:w-auto sm:ml-auto flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 px-7 rounded-xl text-xs sm:text-sm transition shadow-2xs"
                     >
                         <span>Lanjut ke Langkah 2 (Pembayaran)</span>
-                        <ArrowRightIcon class="w-4 h-4 text-amber-300" />
+                        <ArrowRightIcon class="w-4 h-4 text-white" />
                     </button>
                 </div>
 
@@ -593,29 +580,19 @@ const formatRupiah = (amount) => {
             <!-- STEP 2: PEMBAYARAN BUKTI DAFTAR -->
             <div v-show="currentStep === 2" class="space-y-5">
                 
-                <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs space-y-5">
+                <div class="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-2xs space-y-5">
                     <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
                         <div>
                             <span class="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Langkah 2</span>
-                            <h2 class="text-sm font-black text-slate-900">Pembayaran Biaya Pendaftaran SMP</h2>
+                            <h2 class="text-sm font-bold text-slate-900">Pembayaran Pendaftaran</h2>
                         </div>
-                        <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 text-[10px] font-bold">
-                            Fase Awal
-                        </span>
                     </div>
 
-                    <!-- Payment Details Card -->
-                    <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-slate-50 to-blue-50/30 border border-slate-200 text-xs space-y-3.5">
-                        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
-                            <span class="text-slate-600 font-medium">Biaya Formulir & Seleksi:</span>
-                            <strong class="text-base sm:text-lg font-black text-blue-700">
-                                {{ setting?.registration_fee ? formatRupiah(setting.registration_fee) : 'Rp 250.000' }}
-                            </strong>
-                        </div>
-
+                    <!-- Payment Information Card (No Price Tag / Pure Banking Information) -->
+                    <div class="p-4 sm:p-5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-3">
                         <div class="space-y-2 text-slate-700">
                             <div class="flex items-center justify-between">
-                                <span class="text-slate-500">Bank Tujuan:</span>
+                                <span class="text-slate-500 font-medium">Bank Tujuan:</span>
                                 <strong class="text-slate-900 font-bold">{{ setting?.bank_name || 'Bank Jatim' }}</strong>
                             </div>
 
@@ -640,7 +617,7 @@ const formatRupiah = (amount) => {
                             </div>
 
                             <div class="flex items-center justify-between">
-                                <span class="text-slate-500">Atas Nama:</span>
+                                <span class="text-slate-500 font-medium">Atas Nama:</span>
                                 <strong class="text-slate-900 font-bold">{{ setting?.bank_account_holder || 'YAYASAN NAMIRA PROBOLINGGO' }}</strong>
                             </div>
 
@@ -658,14 +635,13 @@ const formatRupiah = (amount) => {
                                 <QrCodeIcon class="w-4 h-4 text-blue-700" />
                                 <span>Atau Scan QRIS Pendaftaran:</span>
                             </span>
-                            <div class="bg-white p-3 rounded-2xl border border-slate-300 shadow-xs inline-block">
+                            <div class="bg-white p-3 rounded-xl border border-slate-300 inline-block shadow-2xs">
                                 <img :src="setting.qris_image_url" alt="QRIS Pendaftaran" class="w-44 h-44 object-contain" />
                             </div>
-                            <span class="text-[10px] text-slate-400 mt-1.5">Mendukung BCA, Mandiri, BRI, BNI, GoPay, OVO, ShopeePay, Dana</span>
                         </div>
                     </div>
 
-                    <!-- Upload Box (Mobile Optimized with Photo Preview) -->
+                    <!-- Upload Box (With Clean Thumbnail Preview) -->
                     <div class="space-y-2.5">
                         <label class="block font-bold text-slate-800 text-xs sm:text-sm">
                             Unggah Bukti Transfer / Pembayaran Pendaftaran *
@@ -675,14 +651,14 @@ const formatRupiah = (amount) => {
                         </p>
 
                         <!-- Selected Preview Card -->
-                        <div v-if="paymentPreview" class="relative rounded-2xl border border-blue-200 bg-blue-50/50 p-4 flex flex-col sm:flex-row items-center gap-4">
-                            <img :src="paymentPreview" class="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl border border-slate-300 shadow-xs shrink-0 bg-white" alt="Pratinjau Bukti Bayar" />
+                        <div v-if="paymentPreview" class="rounded-xl border border-blue-200 bg-blue-50/40 p-4 flex flex-col sm:flex-row items-center gap-4">
+                            <img :src="paymentPreview" class="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-lg border border-slate-300 shadow-2xs shrink-0 bg-white" alt="Pratinjau Bukti Bayar" />
                             <div class="flex-1 text-center sm:text-left">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold mb-1">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold mb-1">
                                     <CheckCircleIcon class="w-3 h-3" /> Berkas Terpilih
                                 </span>
                                 <strong class="block text-xs font-mono text-slate-900 break-all">{{ fileNamePaymentProof }}</strong>
-                                <p class="text-[10px] text-slate-500 mt-1">Ukuran berkas telah dioptimasi otomatis agar hemat kuota.</p>
+                                <p class="text-[10px] text-slate-500 mt-1">Ukuran berkas telah dioptimasi otomatis.</p>
                                 
                                 <label for="payment_proof_input" class="inline-block mt-2.5 px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer transition shadow-2xs">
                                     Ganti Berkas
@@ -691,7 +667,7 @@ const formatRupiah = (amount) => {
                         </div>
 
                         <!-- Dropzone Empty State -->
-                        <div v-else class="border-2 border-dashed border-slate-300 rounded-2xl p-6 sm:p-8 text-center hover:border-blue-600 transition bg-slate-50/50">
+                        <div v-else class="border-2 border-dashed border-slate-300 rounded-xl p-6 sm:p-8 text-center hover:border-blue-600 transition bg-slate-50/50">
                             <input 
                                 type="file" 
                                 id="payment_proof_input"
@@ -700,31 +676,31 @@ const formatRupiah = (amount) => {
                                 @change="onPaymentProofChange"
                             />
                             <label for="payment_proof_input" class="cursor-pointer flex flex-col items-center justify-center">
-                                <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center mb-2.5">
-                                    <CameraIcon class="w-6 h-6" />
+                                <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center mb-2.5">
+                                    <CameraIcon class="w-5 h-5" />
                                 </div>
                                 <span class="text-xs sm:text-sm font-bold text-blue-700 hover:underline">
-                                    Ambil Foto Struk atau Pilih dari Galeri HP
+                                    Pilih Foto Struk atau Dokumen Bukti Bayar
                                 </span>
                                 <span class="text-[11px] text-slate-400 mt-1">
-                                    Maksimal ukuran file 10MB
+                                    Maksimal ukuran file 10MB (JPG, PNG, PDF)
                                 </span>
                             </label>
                         </div>
 
                         <div v-if="isCompressing" class="text-center py-2 text-xs font-bold text-blue-700 flex items-center justify-center gap-2">
                             <span class="w-3 h-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></span>
-                            <span>Mengoptimasi gambar bukti transfer...</span>
+                            <span>Mengoptimasi gambar bukti pembayaran...</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Navigation Controls (Mobile Stacked) -->
+                <!-- Navigation Controls -->
                 <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-2">
                     <button 
                         type="button" 
                         @click="currentStep = 1"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-5 rounded-2xl text-xs transition border border-slate-300"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-5 rounded-xl text-xs transition border border-slate-300"
                     >
                         <ArrowLeftIcon class="w-4 h-4" />
                         <span>Kembali ke Biodata</span>
@@ -734,9 +710,9 @@ const formatRupiah = (amount) => {
                         type="button" 
                         :disabled="form.processing || isCompressing"
                         @click="submitRegistration"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 px-8 rounded-2xl text-xs sm:text-sm transition shadow-sm disabled:opacity-50"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3.5 px-8 rounded-xl text-xs sm:text-sm transition shadow-2xs disabled:opacity-50"
                     >
-                        <CheckCircleIcon class="w-4 h-4 text-amber-300" />
+                        <CheckCircleIcon class="w-4 h-4 text-white" />
                         <span>{{ form.processing ? 'Menyimpan Pendaftaran...' : 'Kirim Pendaftaran Sekarang' }}</span>
                     </button>
                 </div>
