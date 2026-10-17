@@ -32,7 +32,7 @@ const settingForm = useForm({
     min_down_payment_percentage: props.setting?.min_down_payment_percentage || 60,
     bank_name: props.setting?.bank_name || 'Bank Jatim',
     bank_account_number: props.setting?.bank_account_number || '',
-    bank_account_holder: props.setting?.bank_account_holder || 'YAYASAN NAMIRA PROBOLINGGO',
+    bank_account_holder: props.setting?.bank_account_holder || 'NAMIRA SCHOOL KOTA PROBOLINGGO',
     contact_whatsapp: props.setting?.contact_whatsapp || '082332922521',
     selection_date: props.setting?.selection_date ? String(props.setting.selection_date).substring(0, 10) : '',
     announcement_date: props.setting?.announcement_date ? String(props.setting.announcement_date).substring(0, 10) : '',
@@ -174,6 +174,21 @@ const removePanitia = (user) => {
                                 <div>
                                     <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tanggal Jadwal Pengumuman</label>
                                     <input v-model="settingForm.announcement_date" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
+                                </div>
+
+                                <div>
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Bank Transfer</label>
+                                    <input v-model="settingForm.bank_name" type="text" placeholder="Contoh: Bank Jatim" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
+                                </div>
+
+                                <div>
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nomor Rekening Bank</label>
+                                    <input v-model="settingForm.bank_account_number" type="text" placeholder="Contoh: 0291008899" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs font-mono font-bold">
+                                </div>
+
+                                <div class="sm:col-span-2">
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Atas Nama Rekening Bank</label>
+                                    <input v-model="settingForm.bank_account_holder" type="text" placeholder="Contoh: NAMIRA SCHOOL KOTA PROBOLINGGO" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs font-bold">
                                 </div>
                             </div>
 

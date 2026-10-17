@@ -404,7 +404,7 @@ class AdminSpmbController extends Controller
                 'registration_fee' => 250000,
                 'bank_name' => 'Bank Jatim',
                 'bank_account_number' => '0291008899',
-                'bank_account_holder' => 'YAYASAN NAMIRA PROBOLINGGO',
+                'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
                 'admission_fee_total' => 8500000,
                 'min_down_payment_percentage' => 60,
                 'is_active' => true,

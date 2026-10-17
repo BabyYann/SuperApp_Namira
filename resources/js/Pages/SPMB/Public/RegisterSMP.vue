@@ -676,7 +676,7 @@ const submitRegistration = () => {
 
                             <div class="flex items-center justify-between">
                                 <span class="text-slate-500 font-medium">Atas Nama:</span>
-                                <strong class="text-slate-900 font-bold">{{ setting?.bank_account_holder || 'YAYASAN NAMIRA PROBOLINGGO' }}</strong>
+                                <strong class="text-slate-900 font-bold">{{ setting?.bank_account_holder || 'NAMIRA SCHOOL KOTA PROBOLINGGO' }}</strong>
                             </div>
 
                             <div v-if="setting?.contact_whatsapp" class="pt-1 text-[11px] text-slate-500 border-t border-slate-100 flex items-center justify-between">
