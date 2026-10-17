@@ -33,7 +33,10 @@ class PublicSpmbController extends Controller
 
         if ($unit) {
             $setting = SpmbSetting::where('unit_id', $unit->id)->first();
-            if ($setting && $setting->is_active) {
+            if ($setting) {
+                if (!$setting->is_active) {
+                    return true;
+                }
                 if ($setting->start_date && now()->startOfDay()->lt($setting->start_date)) {
                     return true;
                 }
@@ -42,7 +45,7 @@ class PublicSpmbController extends Controller
                 }
                 return false;
             }
-            return true;
+            return false;
         }
 
         $anyActive = SpmbSetting::where('is_active', true)->exists();
@@ -57,13 +60,42 @@ class PublicSpmbController extends Controller
         $sdUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
         $sdSetting = null;
         if ($sdUnit) {
-            $sdSetting = SpmbSetting::where('unit_id', $sdUnit->id)->first();
+            $sdSetting = SpmbSetting::firstOrCreate(
+                ['unit_id' => $sdUnit->id],
+                [
+                    'name' => 'Pendaftaran Jalur Inden SD Namira',
+                    'academic_year' => '2026/2027',
+                    'quota' => 60,
+                    'registration_fee' => 250000,
+                    'bank_name' => 'Bank Jatim',
+                    'bank_account_number' => '0291008899',
+                    'bank_account_holder' => 'YAYASAN NAMIRA PROBOLINGGO',
+                    'min_down_payment_percentage' => 60,
+                    'is_active' => true,
+                    'contact_whatsapp' => '082332922521',
+                ]
+            );
         }
 
         $smpUnit = Unit::where('code', 'SMP')->orWhere('name', 'like', '%SMP%')->first();
         $smpSetting = null;
         if ($smpUnit) {
-            $smpSetting = SpmbSetting::where('unit_id', $smpUnit->id)->first();
+            $smpSetting = SpmbSetting::firstOrCreate(
+                ['unit_id' => $smpUnit->id],
+                [
+                    'name' => 'Pendaftaran Jalur Inden SMP Namira',
+                    'academic_year' => '2026/2027',
+                    'quota' => 60,
+                    'registration_fee' => 250000,
+                    'bank_name' => 'Bank Jatim',
+                    'bank_account_number' => '0291008899',
+                    'bank_account_holder' => 'YAYASAN NAMIRA PROBOLINGGO',
+                    'admission_fee_total' => 8500000,
+                    'min_down_payment_percentage' => 60,
+                    'is_active' => true,
+                    'contact_whatsapp' => '082332922521',
+                ]
+            );
         }
 
         if ($this->isLocked()) {
@@ -287,11 +319,26 @@ class PublicSpmbController extends Controller
     {
         $unit = Unit::where('code', 'SMP')->orWhere('name', 'like', '%SMP%')->firstOrFail();
 
+        $setting = SpmbSetting::firstOrCreate(
+            ['unit_id' => $unit->id],
+            [
+                'name' => 'Pendaftaran Jalur Inden SMP Namira',
+                'academic_year' => '2026/2027',
+                'quota' => 60,
+                'registration_fee' => 250000,
+                'bank_name' => 'Bank Jatim',
+                'bank_account_number' => '0291008899',
+                'bank_account_holder' => 'YAYASAN NAMIRA PROBOLINGGO',
+                'admission_fee_total' => 8500000,
+                'min_down_payment_percentage' => 60,
+                'is_active' => true,
+                'contact_whatsapp' => '082332922521',
+            ]
+        );
+
         if ($this->isLocked($unit)) {
             return redirect()->route('spmb.index')->with('info', 'Pendaftaran SMP Namira saat ini belum dibuka atau sedang ditutup.');
         }
-
-        $setting = SpmbSetting::where('unit_id', $unit->id)->first();
 
         $totalApplicants = SpmbApplicant::where('unit_id', $unit->id)->count();
 
@@ -309,6 +356,23 @@ class PublicSpmbController extends Controller
     public function storeSMP(Request $request, SpmbService $spmbService)
     {
         $unit = Unit::where('code', 'SMP')->orWhere('name', 'like', '%SMP%')->firstOrFail();
+
+        $setting = SpmbSetting::firstOrCreate(
+            ['unit_id' => $unit->id],
+            [
+                'name' => 'Pendaftaran Jalur Inden SMP Namira',
+                'academic_year' => '2026/2027',
+                'quota' => 60,
+                'registration_fee' => 250000,
+                'bank_name' => 'Bank Jatim',
+                'bank_account_number' => '0291008899',
+                'bank_account_holder' => 'YAYASAN NAMIRA PROBOLINGGO',
+                'admission_fee_total' => 8500000,
+                'min_down_payment_percentage' => 60,
+                'is_active' => true,
+                'contact_whatsapp' => '082332922521',
+            ]
+        );
 
         if ($this->isLocked($unit)) {
             return redirect()->route('spmb.index')->with('error', 'Layanan pendaftaran SMP saat ini belum dibuka.');

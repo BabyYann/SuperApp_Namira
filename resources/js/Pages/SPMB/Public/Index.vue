@@ -107,6 +107,13 @@ const steps = [
             </div>
         </section>
 
+        <!-- Flash Messages if any -->
+        <div v-if="$page.props.flash?.error || $page.props.flash?.info" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            <div class="p-4 rounded-2xl bg-amber-600 text-white font-bold text-xs flex items-center justify-between shadow-lg">
+                <span>{{ $page.props.flash?.error || $page.props.flash?.info }}</span>
+            </div>
+        </div>
+
         <!-- Unit Selection Section -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20 pb-16 flex-1">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -151,7 +158,7 @@ const steps = [
 
                     <div class="mt-6 pt-3">
                         <Link 
-                            :href="route('spmb.register.sd')"
+                            href="/spmb/daftar/sd"
                             class="w-full inline-flex items-center justify-center gap-2 bg-[#064e3b] hover:bg-emerald-800 text-white font-bold py-3 px-4 rounded-xl text-xs transition shadow-sm"
                         >
                             <span>Daftar SD Jalur Inden</span>
@@ -246,7 +253,7 @@ const steps = [
 
                     <div class="mt-6 pt-3">
                         <Link 
-                            :href="route('spmb.register.smp')"
+                            href="/spmb/daftar/smp"
                             class="w-full inline-flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl text-xs transition shadow-sm"
                         >
                             <span>Daftar SMP Jalur Inden</span>
