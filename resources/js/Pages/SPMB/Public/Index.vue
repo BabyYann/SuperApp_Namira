@@ -118,8 +118,13 @@ const steps = [
                     </div>
 
                     <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-800 mb-4">
-                            <BuildingLibraryIcon class="w-6 h-6" />
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200/80 p-2 flex items-center justify-center mb-4 shadow-xs">
+                            <img 
+                                src="/images/landing/logo-sd.webp" 
+                                alt="Logo SD Namira" 
+                                class="w-full h-full object-contain" 
+                                onerror="this.onerror=null; this.src='/images/landing/logo-sd.png';" 
+                            />
                         </div>
 
                         <span class="text-xs font-bold text-emerald-700 uppercase tracking-wide">Jenjang Dasar</span>
@@ -158,8 +163,13 @@ const steps = [
                 <!-- 2. TK & KB NAMIRA -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition">
                     <div>
-                        <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 mb-4">
-                            <SunIcon class="w-6 h-6" />
+                        <div class="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/80 p-2 flex items-center justify-center mb-4 shadow-xs">
+                            <img 
+                                src="/images/landing/logo-tk.webp" 
+                                alt="Logo TK & KB Namira" 
+                                class="w-full h-full object-contain" 
+                                onerror="this.onerror=null; this.src='/images/landing/logo-tk.png';" 
+                            />
                         </div>
 
                         <span class="text-xs font-bold text-amber-700 uppercase tracking-wide">Pendidikan Usia Dini</span>
@@ -203,8 +213,13 @@ const steps = [
                     </div>
 
                     <div>
-                        <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 mb-4">
-                            <AcademicCapIcon class="w-6 h-6" />
+                        <div class="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200/80 p-2 flex items-center justify-center mb-4 shadow-xs">
+                            <img 
+                                src="/images/landing/logo-smp.webp" 
+                                alt="Logo SMP Namira" 
+                                class="w-full h-full object-contain" 
+                                onerror="this.onerror=null; this.src='/images/landing/logo-smp.png';" 
+                            />
                         </div>
 
                         <span class="text-xs font-bold text-blue-700 uppercase tracking-wide">Sekolah Menengah</span>

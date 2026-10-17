@@ -91,12 +91,17 @@ const formatRupiah = (amount) => {
         <!-- Top Institutional App Bar -->
         <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-bold">
-                        <AcademicCapIcon class="w-5 h-5 text-amber-300" />
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-xs">
+                        <img 
+                            :src="isSmp ? '/images/landing/logo-smp.webp' : '/images/landing/logo-sd.webp'" 
+                            :alt="`Logo ${unitDisplayName}`" 
+                            class="w-full h-full object-contain"
+                            :onerror="`this.onerror=null; this.src='${isSmp ? '/images/landing/logo-smp.png' : '/images/landing/logo-sd.png'}';`"
+                        />
                     </div>
                     <div>
-                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Portal Calon Siswa SPMB</span>
+                        <span class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Portal Calon Siswa SPMB</span>
                         <h1 class="text-xs sm:text-sm font-black text-slate-900 leading-tight uppercase">{{ unitDisplayName }}</h1>
                     </div>
                 </div>
@@ -125,16 +130,16 @@ const formatRupiah = (amount) => {
         </header>
 
         <!-- Main Portal Container -->
-        <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 flex-1 space-y-6">
+        <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex-1 space-y-5 sm:space-y-6">
             
             <!-- Announcement Gating Banner -->
-            <div v-if="!isAnnouncementReleased" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 shadow-xs flex items-start gap-4">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+            <div v-if="!isAnnouncementReleased" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 sm:p-5 shadow-xs flex items-start gap-3.5 sm:gap-4">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                     <ClockIcon class="w-5 h-5" />
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-blue-950">Tahap Seleksi & Observasi Sedang Berlangsung</h3>
-                    <p class="text-xs text-blue-800/80 mt-1 leading-relaxed">
+                    <h3 class="text-xs sm:text-sm font-bold text-blue-950">Tahap Seleksi & Observasi Sedang Berlangsung</h3>
+                    <p class="text-[11px] sm:text-xs text-blue-800/80 mt-1 leading-relaxed">
                         Pengumuman hasil seleksi dan observasi penerimaan dijadwalkan pada 
                         <strong class="font-bold text-blue-950">{{ setting?.announcement_date ? formatDate(setting.announcement_date) : (isSmp ? 'Jumat, 13 November 2026' : 'Sesuai Jadwal Panitia') }}</strong>. 
                         Silakan unduh Kartu Peserta di bawah dan hadir tepat waktu mengikuti kegiatan tatap muka di sekolah.
@@ -143,9 +148,9 @@ const formatRupiah = (amount) => {
             </div>
 
             <!-- Applicant Profile Card -->
-            <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-7 shadow-xs">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                    <div class="flex items-start sm:items-center gap-4">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-7 shadow-xs">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 sm:gap-6">
+                    <div class="flex items-start sm:items-center gap-3.5 sm:gap-4">
                         <!-- Pas Foto 3x4 -->
                         <div class="w-16 h-20 sm:w-20 sm:h-24 rounded-xl bg-slate-100 border border-slate-300 overflow-hidden shrink-0 shadow-xs">
                             <img v-if="applicant.photo_url" :src="applicant.photo_url" class="w-full h-full object-cover" alt="Pas Foto">
@@ -156,7 +161,7 @@ const formatRupiah = (amount) => {
                             <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold mb-1">
                                 <span class="font-mono">{{ applicant.registration_number }}</span>
                             </div>
-                            <h2 class="text-xl sm:text-2xl font-black text-slate-900">
+                            <h2 class="text-lg sm:text-2xl font-black text-slate-900 leading-tight">
                                 {{ applicant.full_name }}
                             </h2>
                             <p class="text-xs text-slate-600 mt-1">
@@ -170,8 +175,8 @@ const formatRupiah = (amount) => {
                     </div>
 
                     <!-- Status Highlight -->
-                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left sm:text-right shrink-0 min-w-[220px]">
-                        <span class="text-[11px] font-semibold text-slate-500 block uppercase">Status Pendaftaran:</span>
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 text-left sm:text-right shrink-0 w-full sm:w-auto sm:min-w-[200px]">
+                        <span class="text-[10px] sm:text-[11px] font-semibold text-slate-500 block uppercase">Status Pendaftaran:</span>
                         <strong class="text-sm font-extrabold text-emerald-700 block mt-0.5">
                             {{ !isAnnouncementReleased && ['accepted', 'reserve', 'rejected'].includes(applicant.status) ? 'Menunggu Pengumuman' : applicant.status_label }}
                         </strong>

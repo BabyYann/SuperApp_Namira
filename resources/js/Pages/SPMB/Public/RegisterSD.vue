@@ -221,16 +221,25 @@ const formattedFee = computed(() => {
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900">
         
         <!-- Header -->
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
-                <Link :href="route('spmb.index')" class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-emerald-700 transition">
+        <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
+                <Link :href="route('spmb.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-emerald-700 transition">
                     <ArrowLeftIcon class="w-4 h-4" />
-                    <span>Kembali ke Pilihan Unit</span>
+                    <span class="hidden sm:inline">Kembali ke Pilihan Unit</span>
+                    <span class="sm:hidden">Kembali</span>
                 </Link>
 
-                <div class="text-right">
-                    <span class="text-[11px] text-slate-500 font-medium block">Pendaftaran Siswa Baru</span>
-                    <strong class="text-xs font-bold text-emerald-900 block">SD NAMIRA</strong>
+                <div class="flex items-center gap-2.5">
+                    <img 
+                        src="/images/landing/logo-sd.webp" 
+                        alt="Logo SD Namira" 
+                        class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-xs" 
+                        onerror="this.onerror=null; this.src='/images/landing/logo-sd.png';" 
+                    />
+                    <div class="text-right">
+                        <span class="text-[9px] sm:text-[11px] text-slate-500 font-medium block leading-tight">Pendaftaran Siswa Baru</span>
+                        <strong class="text-xs sm:text-sm font-bold text-emerald-900 block leading-tight">SD NAMIRA</strong>
+                    </div>
                 </div>
             </div>
         </header>

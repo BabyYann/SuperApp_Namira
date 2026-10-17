@@ -122,12 +122,27 @@
     $docCode = $isSmp ? 'SMP' : 'SD';
     $unitLabel = $isSmp ? 'SMP Namira' : 'SD Namira';
     $selectionDesc = $isSmp ? 'seleksi akademik (Bahasa Indonesia & Matematika), serta observasi calon murid (wawancara & mengaji)' : 'observasi perkembangan dasar, serta psikotes';
+
+    $logoFile = $isSmp ? public_path('images/landing/logo-smp.png') : public_path('images/landing/logo-sd.png');
+    $logoBase64 = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
 @endphp
-<div class="header">
-    <h1>YAYASAN NAMIRA KOTA PROBOLINGGO</h1>
-    <h2>{{ strtoupper($schoolName) }}</h2>
-    <p>Jl. Mahakam No. 1, Kec. Kedopok, Kota Probolinggo - Jawa Timur | Email: {{ $schoolEmail }} | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</p>
-</div>
+<table style="width: 100%; border-bottom: 3px double #000000; padding-bottom: 8px; margin-bottom: 20px;">
+    <tr>
+        @if($logoBase64)
+        <td style="width: 70px; vertical-align: middle; text-align: left;">
+            <img src="{{ $logoBase64 }}" style="width: 60px; height: 60px; object-fit: contain;">
+        </td>
+        @endif
+        <td style="vertical-align: middle; text-align: center;">
+            <div style="font-size: 13pt; font-weight: bold; margin: 0; text-transform: uppercase;">YAYASAN NAMIRA KOTA PROBOLINGGO</div>
+            <div style="font-size: 15pt; font-weight: bold; margin: 2px 0 0 0; color: {{ $isSmp ? '#1e3a8a' : '#064e3b' }};">{{ strtoupper($schoolName) }}</div>
+            <div style="font-size: 8.5pt; margin: 2px 0 0 0; font-style: italic;">Jl. Mahakam No. 1, Kec. Kedopok, Kota Probolinggo - Jawa Timur | Email: {{ $schoolEmail }} | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</div>
+        </td>
+        @if($logoBase64)
+        <td style="width: 70px;"></td>
+        @endif
+    </tr>
+</table>
 
 <!-- Judul Dokumen -->
 <div class="doc-title">

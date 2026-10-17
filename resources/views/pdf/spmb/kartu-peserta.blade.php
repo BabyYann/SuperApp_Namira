@@ -189,17 +189,34 @@
     $agenda1Title = $isSmp ? '1. Seleksi Akademik (Bahasa Indonesia & Matematika)' : '1. Agenda Observasi Dasar Anak';
     $agenda2Title = $isSmp ? '2. Observasi Calon Murid (Wawancara & Mengaji)' : '2. Agenda Psikotes Calon Siswa';
     $defaultLocation = $isSmp ? 'Gedung SMP Namira Kota Probolinggo' : 'Gedung SD Namira';
+    $primaryColor = $isSmp ? '#1e3a8a' : '#064e3b';
+    $secondaryColor = $isSmp ? '#2563eb' : '#047857';
+
+    $logoFile = $isSmp ? public_path('images/landing/logo-smp.png') : public_path('images/landing/logo-sd.png');
+    $logoBase64 = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
 @endphp
-<div class="card-container">
-    <!-- Header -->
-    <div class="header">
-        <h1>YAYASAN NAMIRA PROBOLINGGO</h1>
-        <h2>{{ $schoolTitle }}</h2>
-        <p>Jl. Mahakam No. 1, Kota Probolinggo - Jawa Timur | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</p>
-    </div>
+<div class="card-container" style="border-color: {{ $primaryColor }};">
+    <!-- Header with Official School Logo -->
+    <table style="width: 100%; border-bottom: 2px solid {{ $primaryColor }}; padding-bottom: 8px; margin-bottom: 12px;">
+        <tr>
+            @if($logoBase64)
+            <td style="width: 55px; vertical-align: middle; text-align: left;">
+                <img src="{{ $logoBase64 }}" style="width: 48px; height: 48px; object-fit: contain;">
+            </td>
+            @endif
+            <td style="vertical-align: middle; text-align: center;">
+                <div style="font-size: 13px; font-weight: bold; color: {{ $primaryColor }}; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">YAYASAN NAMIRA PROBOLINGGO</div>
+                <div style="font-size: 11px; font-weight: bold; color: {{ $secondaryColor }}; margin: 2px 0 0 0;">{{ $schoolTitle }}</div>
+                <div style="font-size: 8px; color: #64748b; margin: 2px 0 0 0;">Jl. Mahakam No. 1, Kota Probolinggo - Jawa Timur | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</div>
+            </td>
+            @if($logoBase64)
+            <td style="width: 55px;"></td>
+            @endif
+        </tr>
+    </table>
 
     <!-- Title Badge -->
-    <div class="title-badge">
+    <div class="title-badge" style="background-color: {{ $primaryColor }};">
         Kartu Tanda Peserta SPMB - Jalur Inden (TA {{ $setting->academic_year ?? '2026/2027' }})
     </div>
 
