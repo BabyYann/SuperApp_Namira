@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
@@ -585,5 +586,60 @@ class AdminSpmbController extends Controller
 
         $unitName = $targetUnit ? " {$targetUnit->name}" : '';
         return back()->with('success', "Penugasan Panitia SPMB{$unitName} untuk {$user->name} berhasil dicabut.");
+    }
+
+    /**
+     * Delete an applicant and associated files (Super Admin, Admin Yayasan, Admin Unit).
+     */
+    public function destroy(SpmbApplicant $applicant)
+    {
+        $this->authorizeSpmb($applicant->unit_id);
+
+        $user = Auth::user();
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit'])) {
+            abort(403, 'Akses Ditolak: Hanya Administrator yang berwenang menghapus data calon siswa.');
+        }
+
+        $fullName = $applicant->full_name;
+        $regNumber = $applicant->registration_number;
+        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+        $parentUser = $applicant->user;
+
+        // 1. Hapus file-file berkas fisik dari storage
+        $fileFields = [
+            'photo_path',
+            'family_card_path',
+            'birth_cert_path',
+            'parent_id_card_path',
+            'registration_payment_proof',
+            're_registration_payment_proof',
+            'settlement_payment_proof',
+            'evaluation_document_path',
+        ];
+
+        foreach ($fileFields as $field) {
+            if ($applicant->$field && Storage::disk('public')->exists($applicant->$field)) {
+                Storage::disk('public')->delete($applicant->$field);
+            }
+        }
+
+        // Hapus folder registrasi jika ada
+        $folder = "spmb/{$unitSlug}/{$regNumber}";
+        if (Storage::disk('public')->exists($folder)) {
+            Storage::disk('public')->deleteDirectory($folder);
+        }
+
+        // 2. Hapus data applicant
+        $applicant->delete();
+
+        // 3. Bersihkan akun parent jika akun khusus SPMB dan tidak memiliki pendaftar lain
+        if ($parentUser && str_ends_with($parentUser->email, '@spmb.namiraschool.com')) {
+            $otherApplicants = SpmbApplicant::where('user_id', $parentUser->id)->count();
+            if ($otherApplicants === 0 && !$parentUser->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'guru', 'wali_kelas', 'panitia_spmb'])) {
+                $parentUser->delete();
+            }
+        }
+
+        return redirect()->route('spmb.admin.index')->with('success', "Data calon siswa {$fullName} ({$regNumber}) berhasil dihapus permanen.");
     }
 }

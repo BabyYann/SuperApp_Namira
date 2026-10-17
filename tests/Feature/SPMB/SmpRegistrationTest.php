@@ -416,3 +416,33 @@ it('properly distinguishes internal category as Alumni SD Namira for SMP and Alu
     );
 });
 
+it('allows super admin to permanently delete an applicant and clears stored files', function () {
+    $superAdmin = createUserWithRole('super_admin_yayasan');
+    
+    // Create test applicant with uploaded file
+    $filePath = 'spmb/smp-namira/IND-SMPN-26999/test_dokumen.jpg';
+    Storage::disk('public')->put($filePath, 'sample file content');
+
+    $applicant = SpmbApplicant::create([
+        'unit_id' => $this->smpUnit->id,
+        'registration_number' => 'IND-SMPN-26999',
+        'full_name' => 'Calon Siswa Dihapus',
+        'gender' => 'L',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-01-01',
+        'parent_phone' => '081234999888',
+        'address' => 'Probolinggo',
+        'category' => 'eksternal_umum',
+        'photo_path' => $filePath,
+    ]);
+
+    expect(Storage::disk('public')->exists($filePath))->toBeTrue();
+
+    $response = $this->actingAs($superAdmin)->delete(route('spmb.admin.destroy', $applicant->id));
+
+    $response->assertRedirect(route('spmb.admin.index'));
+    expect(SpmbApplicant::find($applicant->id))->toBeNull()
+        ->and(Storage::disk('public')->exists($filePath))->toBeFalse();
+});
+
+

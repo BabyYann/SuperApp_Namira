@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { 
@@ -17,7 +17,8 @@ import {
     DocumentCheckIcon,
     CreditCardIcon,
     AcademicCapIcon,
-    XMarkIcon
+    XMarkIcon,
+    TrashIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -105,6 +106,24 @@ const quickEnroll = (app) => {
     const unitName = app.unit?.name || (isSmp.value ? 'SMP Namira' : 'SD Namira');
     if (confirm(`Resmikan calon siswa ${app.full_name} menjadi Siswa Aktif ${unitName}?`)) {
         router.post(route('spmb.admin.enroll-student', app.id), {}, {
+            preserveScroll: true,
+        });
+    }
+};
+
+const page = usePage();
+const canDelete = computed(() => {
+    const roles = page.props.auth?.user?.roles || [];
+    const role = page.props.auth?.user?.role;
+    return roles.includes('super_admin_yayasan') || 
+           roles.includes('admin_yayasan') || 
+           roles.includes('admin_unit') || 
+           ['super_admin_yayasan', 'admin_yayasan', 'admin_unit'].includes(role);
+});
+
+const deleteApplicant = (app) => {
+    if (confirm(`PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN data calon siswa ${app.full_name} (${app.registration_number})?\n\nTindakan ini akan menghapus data pendaftar dan seluruh berkas/bukti transfer yang tersimpan.`)) {
+        router.delete(route('spmb.admin.destroy', app.id), {
             preserveScroll: true,
         });
     }
@@ -426,6 +445,17 @@ const getStatusBadgeClass = (s) => {
                                         >
                                             <AcademicCapIcon class="w-4 h-4" />
                                         </span>
+
+                                        <!-- 6. Hapus Data Calon Siswa (Super Admin & Admin) -->
+                                        <button 
+                                            v-if="canDelete"
+                                            @click="deleteApplicant(app)"
+                                            type="button"
+                                            title="Hapus Data Calon Siswa (Permanen)"
+                                            class="w-8.5 h-8.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 flex items-center justify-center transition shadow-xs"
+                                        >
+                                            <TrashIcon class="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

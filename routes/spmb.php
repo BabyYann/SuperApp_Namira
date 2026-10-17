@@ -35,6 +35,7 @@ Route::middleware(['auth'])->prefix('yayasan/spmb')->name('spmb.admin.')->group(
     Route::post('/pendaftar/{applicant}/simpan-va', [AdminSpmbController::class, 'setVirtualAccount'])->name('set-va');
     Route::post('/pendaftar/{applicant}/verifikasi-daftar-ulang', [AdminSpmbController::class, 'verifyAdmissionPayment'])->name('verify-admission-payment');
     Route::post('/pendaftar/{applicant}/konversi-siswa', [AdminSpmbController::class, 'enrollStudent'])->name('enroll-student');
+    Route::delete('/pendaftar/{applicant}', [AdminSpmbController::class, 'destroy'])->name('destroy');
 
     // Settings & Panitia Assignment
     Route::get('/pengaturan', [AdminSpmbController::class, 'settings'])->name('settings');
