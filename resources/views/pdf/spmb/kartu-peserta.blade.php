@@ -182,11 +182,19 @@
 </head>
 <body>
 
+@php
+    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || ($applicant->unit?->code ?? '') === 'SMP';
+    $schoolName = $applicant->unit?->name ?? ($isSmp ? 'SMP Namira Kota Probolinggo' : 'SD Namira');
+    $schoolTitle = $isSmp ? 'SMP NAMIRA (JUNIOR HIGH SCHOOL)' : 'SD NAMIRA (ELEMENTARY SCHOOL)';
+    $agenda1Title = $isSmp ? '1. Seleksi Akademik (Bahasa Indonesia & Matematika)' : '1. Agenda Observasi Dasar Anak';
+    $agenda2Title = $isSmp ? '2. Observasi Calon Murid (Wawancara & Mengaji)' : '2. Agenda Psikotes Calon Siswa';
+    $defaultLocation = $isSmp ? 'Gedung SMP Namira Kota Probolinggo' : 'Gedung SD Namira';
+@endphp
 <div class="card-container">
     <!-- Header -->
     <div class="header">
         <h1>YAYASAN NAMIRA PROBOLINGGO</h1>
-        <h2>SD NAMIRA (ELEMENTARY SCHOOL)</h2>
+        <h2>{{ $schoolTitle }}</h2>
         <p>Jl. Mahakam No. 1, Kota Probolinggo - Jawa Timur | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</p>
     </div>
 
@@ -256,15 +264,15 @@
 
     <!-- Jadwal Offline -->
     <div class="schedule-container">
-        <!-- 1. Jadwal Observasi Dasar -->
+        <!-- 1. Jadwal Agenda 1 -->
         <div class="schedule-box">
-            <h3>1. Agenda Observasi Dasar Anak</h3>
+            <h3>{{ $agenda1Title }}</h3>
             <table>
                 <tr>
                     <td style="width: 25%; font-weight: 500;">Hari / Tanggal</td>
                     <td style="width: 3%;">:</td>
                     <td style="width: 72%; font-weight: bold;">
-                        {{ $applicant->observation_date ? $applicant->observation_date->translatedFormat('l, d F Y') : 'Menunggu Penetapan Panitia' }}
+                        {{ $applicant->observation_date ? $applicant->observation_date->translatedFormat('l, d F Y') : ($isSmp ? 'Sabtu, 07 November 2026' : 'Menunggu Penetapan Panitia') }}
                     </td>
                 </tr>
                 <tr>
@@ -275,20 +283,20 @@
                 <tr>
                     <td>Tempat / Ruangan</td>
                     <td>:</td>
-                    <td>{{ $applicant->observation_location ?: 'Gedung SD Namira' }}</td>
+                    <td>{{ $applicant->observation_location ?: $defaultLocation }}</td>
                 </tr>
             </table>
         </div>
 
-        <!-- 2. Jadwal Psikotes -->
+        <!-- 2. Jadwal Agenda 2 -->
         <div class="schedule-box" style="border-left-color: #d97706;">
-            <h3 style="color: #b45309;">2. Agenda Psikotes Calon Siswa</h3>
+            <h3 style="color: #b45309;">{{ $agenda2Title }}</h3>
             <table>
                 <tr>
                     <td style="width: 25%; font-weight: 500;">Hari / Tanggal</td>
                     <td style="width: 3%;">:</td>
                     <td style="width: 72%; font-weight: bold;">
-                        {{ $applicant->psychotest_date ? $applicant->psychotest_date->translatedFormat('l, d F Y') : 'Menunggu Penetapan Panitia' }}
+                        {{ $applicant->psychotest_date ? $applicant->psychotest_date->translatedFormat('l, d F Y') : ($applicant->observation_date ? $applicant->observation_date->translatedFormat('l, d F Y') : ($isSmp ? 'Sabtu, 07 November 2026' : 'Menunggu Penetapan Panitia')) }}
                     </td>
                 </tr>
                 <tr>
@@ -299,7 +307,7 @@
                 <tr>
                     <td>Tempat / Ruangan</td>
                     <td>:</td>
-                    <td>{{ $applicant->psychotest_location ?: 'Gedung SD Namira' }}</td>
+                    <td>{{ $applicant->psychotest_location ?: $defaultLocation }}</td>
                 </tr>
             </table>
         </div>
@@ -328,7 +336,7 @@
             </td>
             <td>
                 Probolinggo, {{ date('d F Y') }}<br>
-                Panitia SPMB SD Namira,
+                Panitia SPMB {{ $schoolName }},
                 <br><br>
                 <span class="sign-line"></span>
                 <br>

@@ -27,14 +27,31 @@ class ApplicantPortalController extends Controller
             ->first();
 
         if (!$applicant) {
-            return redirect()->route('spmb.register.sd')->with('info', 'Anda belum memiliki data pendaftaran. Silakan isi formulir pendaftaran.');
+            return redirect()->route('spmb.index')->with('info', 'Anda belum memiliki data pendaftaran. Silakan pilih unit sekolah untuk melakukan pendaftaran.');
         }
 
         $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
 
+        // Gating Pengumuman Resmi: periksa flag rilis manual atau tanggal jadwal pengumuman
+        $isAnnouncementReleased = false;
+        if ($setting) {
+            if ($setting->announcement_released) {
+                $isAnnouncementReleased = true;
+            } elseif ($setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date)) {
+                $isAnnouncementReleased = true;
+            }
+        } else {
+            // Default jika belum ada konfigurasi tanggal
+            $isAnnouncementReleased = in_array($applicant->status, ['accepted', 'reserve', 'rejected', 'partial_paid', 'fully_paid', 'enrolled']);
+        }
+
+        // Amankan nilai dan catatan evaluasi internal agar tidak bocor ke browser orang tua
+        $applicant->makeHidden(['academic_score_details', 'evaluation_notes']);
+
         return Inertia::render('SPMB/Applicant/Dashboard', [
             'applicant' => $applicant,
             'setting' => $setting,
+            'isAnnouncementReleased' => $isAnnouncementReleased,
         ]);
     }
 
@@ -67,12 +84,27 @@ class ApplicantPortalController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
+        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+
+        // Gating akses surat kelulusan sebelum rilis resmi
+        $isAnnouncementReleased = false;
+        if ($setting) {
+            if ($setting->announcement_released || ($setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date))) {
+                $isAnnouncementReleased = true;
+            }
+        } else {
+            $isAnnouncementReleased = true;
+        }
+
+        if (!$isAnnouncementReleased && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
+            abort(403, 'Akses ditolak: Surat Keterangan Penerimaan belum dapat diunduh sebelum pengumuman resmi dirilis.');
+        }
+
         if (!in_array($applicant->status, ['accepted', 'partial_paid', 'fully_paid', 'enrolled'])) {
             abort(400, 'Surat Keterangan Penerimaan hanya tersedia bagi calon siswa yang telah dinyatakan Lulus/Diterima.');
         }
 
         $applicant->load('unit');
-        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
 
         $pdf = Pdf::loadView('pdf.spmb.surat-kelulusan', compact('applicant', 'setting'))
             ->setPaper('a4', 'portrait');
@@ -96,11 +128,13 @@ class ApplicantPortalController extends Controller
             'payment_proof.required' => 'Bukti pembayaran transfer wajib dipilih.',
         ]);
 
+        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+
         $proofPath = $spmbService->storeApplicantDocument(
             $request->file('payment_proof'),
             'BUKTI_BAYAR_DAFTAR_ULANG',
             $applicant->registration_number,
-            'sd-namira'
+            $unitSlug
         );
 
         $applicant->update([

@@ -20,6 +20,8 @@ const props = defineProps({
     units: Array,
     sdUnit: Object,
     sdSetting: Object,
+    smpUnit: Object,
+    smpSetting: Object,
     isLockedForPublic: Boolean,
 });
 
@@ -194,8 +196,12 @@ const steps = [
                     </div>
                 </div>
 
-                <!-- 3. SMP NAMIRA (DIRECT LINK EKSTERNAL) -->
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition">
+                <!-- 3. SMP NAMIRA -->
+                <div class="bg-white rounded-2xl border-2 border-blue-600/80 shadow-lg p-6 sm:p-7 flex flex-col justify-between hover:shadow-xl transition relative">
+                    <div v-if="smpSetting?.is_active" class="absolute -top-3 right-6 px-3 py-0.5 bg-blue-700 text-white text-[11px] font-bold rounded-full uppercase tracking-wider shadow-sm">
+                        Jalur Inden Dibuka
+                    </div>
+
                     <div>
                         <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 mb-4">
                             <AcademicCapIcon class="w-6 h-6" />
@@ -210,11 +216,11 @@ const steps = [
                         <div class="mt-5 space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
                             <div class="flex items-start gap-2">
                                 <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Formulir Pendaftaran Resmi Unit SMP</span>
+                                <span>Pendaftaran Calon Santri Jalur Inden</span>
                             </div>
                             <div class="flex items-start gap-2">
                                 <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Langsung Ditangani Tim SPMB SMP</span>
+                                <span>Seleksi Akademik & Observasi Mengaji</span>
                             </div>
                             <div class="flex items-start gap-2">
                                 <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -224,14 +230,13 @@ const steps = [
                     </div>
 
                     <div class="mt-6 pt-3">
-                        <a 
-                            href="https://wa.me/6282332922521?text=Assalamu'alaikum%20Panitia%20SPMB%20SMP%20Namira,%20mohon%20kirimkan%20link%20formulir%20pendaftaran%20SMP"
-                            target="_blank"
-                            class="w-full inline-flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold py-3 px-4 rounded-xl text-xs transition border border-blue-200"
+                        <Link 
+                            :href="route('spmb.register.smp')"
+                            class="w-full inline-flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl text-xs transition shadow-sm"
                         >
-                            <span>Buka Formulir Resmi SMP</span>
-                            <ArrowTopRightOnSquareIcon class="w-4 h-4 text-blue-700" />
-                        </a>
+                            <span>Daftar SMP Jalur Inden</span>
+                            <ArrowRightIcon class="w-4 h-4 text-amber-300" />
+                        </Link>
                     </div>
                 </div>
 

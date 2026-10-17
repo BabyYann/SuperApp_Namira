@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { 
@@ -23,6 +23,12 @@ const props = defineProps({
     setting: Object,
 });
 
+const isSmp = computed(() => {
+    const unitName = (props.applicant?.unit?.name || '').toLowerCase();
+    const unitCode = props.applicant?.unit?.code || '';
+    return unitCode === 'SMP' || unitName.includes('smp');
+});
+
 // Modals / Sections state
 const showScheduleModal = ref(false);
 const showEvaluationModal = ref(false);
@@ -33,10 +39,10 @@ const showPaymentModal = ref(false);
 const scheduleForm = useForm({
     observation_date: props.applicant.observation_date || '',
     observation_time: props.applicant.observation_time || '08:00 - 10:00 WIB',
-    observation_location: props.applicant.observation_location || 'Ruang Konseling & Bermain SD Namira',
+    observation_location: props.applicant.observation_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Ruang Konseling & Bermain SD Namira'),
     psychotest_date: props.applicant.psychotest_date || '',
-    psychotest_time: props.applicant.psychotest_time || '08:00 - 11:30 WIB',
-    psychotest_location: props.applicant.psychotest_location || 'Aula Pertemuan SD Namira',
+    psychotest_time: props.applicant.psychotest_time || (isSmp.value ? '10:00 - 12:00 WIB' : '08:00 - 11:30 WIB'),
+    psychotest_location: props.applicant.psychotest_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Aula Pertemuan SD Namira'),
     schedule_notes: props.applicant.schedule_notes || '',
 });
 
@@ -52,6 +58,10 @@ const evaluationForm = useForm({
     evaluation_result: props.applicant.evaluation_result || 'accepted',
     evaluation_notes: props.applicant.evaluation_notes || '',
     evaluation_document: null,
+    bahasa_indonesia_score: props.applicant.academic_score_details?.bahasa_indonesia ?? '',
+    matematika_score: props.applicant.academic_score_details?.matematika ?? '',
+    wawancara_notes: props.applicant.academic_score_details?.wawancara ?? '',
+    mengaji_notes: props.applicant.academic_score_details?.mengaji ?? '',
 });
 
 const submitEvaluation = () => {
@@ -328,17 +338,32 @@ const formatRupiah = (amount) => {
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                             <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                                <strong class="text-emerald-700 dark:text-emerald-400 block mb-1.5 font-bold">1. Observasi Dasar Anak</strong>
+                                <strong class="text-emerald-700 dark:text-emerald-400 block mb-1.5 font-bold">{{ isSmp ? '1. Seleksi Akademik (B. Indonesia & MTK)' : '1. Observasi Dasar Anak' }}</strong>
                                 <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ applicant.observation_date || 'Belum diatur' }}</strong></p>
                                 <p class="text-slate-700 dark:text-slate-300">Jam: {{ applicant.observation_time || '-' }}</p>
                                 <p class="text-slate-700 dark:text-slate-300">Ruang: {{ applicant.observation_location || '-' }}</p>
                             </div>
 
                             <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                                <strong class="text-amber-700 dark:text-amber-400 block mb-1.5 font-bold">2. Psikotes Calon Siswa</strong>
+                                <strong class="text-amber-700 dark:text-amber-400 block mb-1.5 font-bold">{{ isSmp ? '2. Observasi Calon Murid (Wawancara & Mengaji)' : '2. Psikotes Calon Siswa' }}</strong>
                                 <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ applicant.psychotest_date || 'Belum diatur' }}</strong></p>
                                 <p class="text-slate-700 dark:text-slate-300">Jam: {{ applicant.psychotest_time || '-' }}</p>
                                 <p class="text-slate-700 dark:text-slate-300">Ruang: {{ applicant.psychotest_location || '-' }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Nilai Seleksi Akademik & Observasi jika ada -->
+                        <div v-if="applicant.academic_score_details" class="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-300 space-y-1.5">
+                            <strong class="block font-bold">Hasil Penilaian Seleksi & Observasi:</strong>
+                            <div class="grid grid-cols-2 gap-2 text-[11px]">
+                                <div>B. Indonesia: <strong>{{ applicant.academic_score_details.bahasa_indonesia ?? '-' }}</strong></div>
+                                <div>Matematika: <strong>{{ applicant.academic_score_details.matematika ?? '-' }}</strong></div>
+                            </div>
+                            <div v-if="applicant.academic_score_details.wawancara" class="text-[11px]">
+                                Observasi Wawancara: <em>{{ applicant.academic_score_details.wawancara }}</em>
+                            </div>
+                            <div v-if="applicant.academic_score_details.mengaji" class="text-[11px]">
+                                Observasi Mengaji: <em>{{ applicant.academic_score_details.mengaji }}</em>
                             </div>
                         </div>
 
@@ -359,10 +384,10 @@ const formatRupiah = (amount) => {
 
                         <!-- 1. Pas Foto -->
                         <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
-                            <span class="font-bold text-slate-700 dark:text-slate-300 block mb-2">1. Pas Foto Latar Merah</span>
+                            <span class="font-bold text-slate-700 dark:text-slate-300 block mb-2">1. Pas Foto Calon Siswa</span>
                             <div class="w-24 h-32 rounded-xl bg-slate-200 dark:bg-slate-700 overflow-hidden border">
                                 <img v-if="applicant.photo_url" :src="applicant.photo_url" class="w-full h-full object-cover">
-                                <div v-else class="w-full h-full flex items-center justify-center text-slate-400">Belum ada</div>
+                                <div v-else class="w-full h-full flex items-center justify-center text-slate-400 text-center px-2 text-[10px]">{{ isSmp ? 'Menyusul (Tahap Lanjutan)' : 'Belum ada' }}</div>
                             </div>
                         </div>
 
@@ -372,7 +397,7 @@ const formatRupiah = (amount) => {
                             <a v-if="applicant.family_card_url" :href="applicant.family_card_url" target="_blank" class="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
                                 Buka File &rarr;
                             </a>
-                            <span v-else class="text-slate-400 italic">Belum ada</span>
+                            <span v-else class="text-slate-400 italic text-[11px]">{{ isSmp ? 'Menyusul (Wawancara Ortu)' : 'Belum ada' }}</span>
                         </div>
 
                         <!-- 3. Akta Lahir -->
@@ -381,7 +406,7 @@ const formatRupiah = (amount) => {
                             <a v-if="applicant.birth_cert_url" :href="applicant.birth_cert_url" target="_blank" class="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
                                 Buka File &rarr;
                             </a>
-                            <span v-else class="text-slate-400 italic">Belum ada</span>
+                            <span v-else class="text-slate-400 italic text-[11px]">{{ isSmp ? 'Menyusul (Wawancara Ortu)' : 'Belum ada' }}</span>
                         </div>
 
                         <!-- 4. KTP Ortu -->
@@ -390,7 +415,7 @@ const formatRupiah = (amount) => {
                             <a v-if="applicant.parent_id_card_url" :href="applicant.parent_id_card_url" target="_blank" class="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
                                 Buka File &rarr;
                             </a>
-                            <span v-else class="text-slate-400 italic">Belum ada</span>
+                            <span v-else class="text-slate-400 italic text-[11px]">{{ isSmp ? 'Menyusul (Wawancara Ortu)' : 'Belum ada' }}</span>
                         </div>
 
                         <!-- 5. Bukti QRIS Pendaftaran -->
@@ -479,7 +504,33 @@ const formatRupiah = (amount) => {
 
                         <div>
                             <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Catatan Hasil Observasi / Psikolog</label>
-                            <textarea v-model="evaluationForm.evaluation_notes" rows="3" placeholder="Catatan kesiapan belajar anak..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"></textarea>
+                            <textarea v-model="evaluationForm.evaluation_notes" rows="2" placeholder="Catatan umum kesiapan belajar anak..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"></textarea>
+                        </div>
+
+                        <!-- Nilai Seleksi Akademik & Observasi (Khusus SMP / Opsional) -->
+                        <div class="p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 space-y-2.5">
+                            <span class="block font-bold text-indigo-950 dark:text-indigo-300 text-xs">Penilaian Seleksi Akademik & Observasi:</span>
+                            
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Nilai B. Indonesia (0-100)</label>
+                                    <input v-model="evaluationForm.bahasa_indonesia_score" type="number" min="0" max="100" placeholder="Skor" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Nilai Matematika (0-100)</label>
+                                    <input v-model="evaluationForm.matematika_score" type="number" min="0" max="100" placeholder="Skor" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Catatan Observasi Wawancara</label>
+                                <input v-model="evaluationForm.wawancara_notes" type="text" placeholder="Catatan karakter & kesiapan..." class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Catatan Observasi Mengaji</label>
+                                <input v-model="evaluationForm.mengaji_notes" type="text" placeholder="Kelancaran membaca Al-Qur'an..." class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white">
+                            </div>
                         </div>
 
                         <div>

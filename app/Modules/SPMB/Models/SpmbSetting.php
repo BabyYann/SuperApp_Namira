@@ -28,6 +28,9 @@ class SpmbSetting extends Model
         'is_active',
         'start_date',
         'end_date',
+        'selection_date',
+        'announcement_date',
+        'announcement_released',
         'contact_whatsapp',
         'notes',
     ];
@@ -40,6 +43,9 @@ class SpmbSetting extends Model
         'min_down_payment_percentage' => 'integer',
         'start_date' => 'date',
         'end_date' => 'date',
+        'selection_date' => 'date',
+        'announcement_date' => 'date',
+        'announcement_released' => 'boolean',
     ];
 
     protected $appends = ['qris_image_url'];

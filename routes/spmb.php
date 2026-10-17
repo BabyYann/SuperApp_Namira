@@ -14,6 +14,9 @@ Route::get('/ppdb', function () {
 Route::get('/spmb/daftar/sd', [PublicSpmbController::class, 'registerSD'])->name('spmb.register.sd');
 Route::post('/spmb/daftar/sd', [PublicSpmbController::class, 'storeSD'])->name('spmb.store.sd');
 
+Route::get('/spmb/daftar/smp', [PublicSpmbController::class, 'registerSMP'])->name('spmb.register.smp');
+Route::post('/spmb/daftar/smp', [PublicSpmbController::class, 'storeSMP'])->name('spmb.store.smp');
+
 // Applicant Portal routes (for logged-in parents)
 Route::middleware(['auth'])->prefix('spmb/portal')->name('spmb.applicant.')->group(function () {
     Route::get('/dashboard', [ApplicantPortalController::class, 'dashboard'])->name('dashboard');

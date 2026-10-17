@@ -23,7 +23,8 @@ const props = defineProps({
 });
 
 const settingForm = useForm({
-    name: props.setting?.name || 'Pendaftaran Jalur Inden SD Namira',
+    unit_id: props.unit?.id,
+    name: props.setting?.name || 'Pendaftaran Jalur Inden',
     academic_year: props.setting?.academic_year || '2026/2027',
     quota: props.setting?.quota || 60,
     registration_fee: props.setting?.registration_fee || 250000,
@@ -33,6 +34,9 @@ const settingForm = useForm({
     bank_account_number: props.setting?.bank_account_number || '',
     bank_account_holder: props.setting?.bank_account_holder || 'YAYASAN NAMIRA PROBOLINGGO',
     contact_whatsapp: props.setting?.contact_whatsapp || '082332922521',
+    selection_date: props.setting?.selection_date ? String(props.setting.selection_date).substring(0, 10) : '',
+    announcement_date: props.setting?.announcement_date ? String(props.setting.announcement_date).substring(0, 10) : '',
+    announcement_released: Boolean(props.setting?.announcement_released ?? false),
     notes: props.setting?.notes || '',
     is_active: props.setting?.is_active ?? true,
     qris_image: null,
@@ -161,6 +165,16 @@ const removePanitia = (user) => {
                                     <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">WhatsApp Bantuan Panitia</label>
                                     <input v-model="settingForm.contact_whatsapp" type="text" placeholder="082332922521" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
                                 </div>
+
+                                <div>
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tanggal Pelaksanaan Seleksi</label>
+                                    <input v-model="settingForm.selection_date" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
+                                </div>
+
+                                <div>
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tanggal Jadwal Pengumuman</label>
+                                    <input v-model="settingForm.announcement_date" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
+                                </div>
                             </div>
 
                             <!-- Upload Gambar QRIS -->
@@ -196,6 +210,14 @@ const removePanitia = (user) => {
                                 <input type="checkbox" id="isActive" v-model="settingForm.is_active" class="rounded text-emerald-600 focus:ring-emerald-500">
                                 <label for="isActive" class="text-xs font-semibold text-slate-800 dark:text-slate-200">
                                     Pendaftaran Jalur Inden Sedang Dibuka untuk Umum
+                                </label>
+                            </div>
+
+                            <!-- Rilis Pengumuman Resmi -->
+                            <div class="flex items-center gap-3 pt-1">
+                                <input type="checkbox" id="announcementReleased" v-model="settingForm.announcement_released" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <label for="announcementReleased" class="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                    Rilis Resmi Pengumuman Kelulusan (Buka Akses Keputusan & SKL di Portal Orang Tua)
                                 </label>
                             </div>
 

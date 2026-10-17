@@ -115,20 +115,27 @@
 </head>
 <body>
 
-    <!-- Kop Surat -->
-    <div class="header">
-        <h1>YAYASAN NAMIRA KOTA PROBOLINGGO</h1>
-        <h2>SEKOLAH DASAR NAMIRA (SD NAMIRA)</h2>
-        <p>Jl. Mahakam No. 1, Kec. Kedopok, Kota Probolinggo - Jawa Timur | Email: sd@namiraschool.com | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</p>
-    </div>
+@php
+    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || ($applicant->unit?->code ?? '') === 'SMP';
+    $schoolName = $applicant->unit?->name ?? ($isSmp ? 'SMP NAMIRA KOTA PROBOLINGGO' : 'SEKOLAH DASAR NAMIRA (SD NAMIRA)');
+    $schoolEmail = $isSmp ? 'smp@namiraschool.com' : 'sd@namiraschool.com';
+    $docCode = $isSmp ? 'SMP' : 'SD';
+    $unitLabel = $isSmp ? 'SMP Namira' : 'SD Namira';
+    $selectionDesc = $isSmp ? 'seleksi akademik (Bahasa Indonesia & Matematika), serta observasi calon murid (wawancara & mengaji)' : 'observasi perkembangan dasar, serta psikotes';
+@endphp
+<div class="header">
+    <h1>YAYASAN NAMIRA KOTA PROBOLINGGO</h1>
+    <h2>{{ strtoupper($schoolName) }}</h2>
+    <p>Jl. Mahakam No. 1, Kec. Kedopok, Kota Probolinggo - Jawa Timur | Email: {{ $schoolEmail }} | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</p>
+</div>
 
-    <!-- Judul Dokumen -->
-    <div class="doc-title">
-        <h3>SURAT KETERANGAN PENERIMAAN SISWA BARU</h3>
-        <div class="num">Nomor: {{ $applicant->registration_number }}/SPMB-SD/{{ date('Y') }}</div>
-    </div>
+<!-- Judul Dokumen -->
+<div class="doc-title">
+    <h3>SURAT KETERANGAN PENERIMAAN SISWA BARU</h3>
+    <div class="num">Nomor: {{ $applicant->registration_number }}/SPMB-{{ $docCode }}/{{ date('Y') }}</div>
+</div>
 
-    <p>Berdasarkan hasil seleksi administrasi, observasi perkembangan dasar, serta psikotes calon peserta didik baru Jalur Inden SD Namira Tahun Ajaran {{ $setting->academic_year ?? '2026/2027' }}, Panitia Penerimaan Peserta Didik Baru dengan ini menerangkan bahwa:</p>
+<p>Berdasarkan hasil seleksi administrasi, {{ $selectionDesc }} calon peserta didik baru Jalur Inden {{ $unitLabel }} Tahun Ajaran {{ $setting->academic_year ?? '2026/2027' }}, Panitia Penerimaan Peserta Didik Baru dengan ini menerangkan bahwa:</p>
 
     <table class="content-table">
         <tr>
@@ -167,7 +174,7 @@
 
     <div class="status-box">
         <div class="text">★ DITERIMA SEBAGAI PESERTA DIDIK BARU ★</div>
-        <div style="font-size: 10pt; color: #166534; margin-top: 2px;">SD NAMIRA TAHUN AJARAN {{ $setting->academic_year ?? '2026/2027' }}</div>
+        <div style="font-size: 10pt; color: #166534; margin-top: 2px;">{{ strtoupper($unitLabel) }} TAHUN AJARAN {{ $setting->academic_year ?? '2026/2027' }}</div>
     </div>
 
     <p>Kepada Orang Tua / Wali murid diharapkan untuk segera menyelesaikan proses <strong>Daftar Ulang</strong> dengan ketentuan sebagai berikut:</p>
@@ -212,17 +219,22 @@
         </table>
     </div>
 
-    <p>Demikian surat keputusan penerimaan ini disampaikan. Atas kepercayaan Ayah/Bunda menitipkan pendidikan putra-putri di SD Namira, kami ucapkan terima kasih.</p>
+    <p>Demikian surat keputusan penerimaan ini disampaikan. Atas kepercayaan Ayah/Bunda menitipkan pendidikan putra-putri di {{ $unitLabel }}, kami ucapkan terima kasih.</p>
 
     <table class="signature-table">
         <tr>
             <td></td>
             <td>
                 Probolinggo, {{ date('d F Y') }}<br>
-                Kepala Sekolah SD Namira,
+                Kepala Sekolah {{ $unitLabel }},
                 <div class="sign-space"></div>
-                <strong><u>Astutik, S.Pd.I</u></strong><br>
-                NIY. 3180201380
+                @if($isSmp)
+                    <strong><u>Kepala Sekolah SMP Namira</u></strong><br>
+                    NIY. -
+                @else
+                    <strong><u>Astutik, S.Pd.I</u></strong><br>
+                    NIY. 3180201380
+                @endif
             </td>
         </tr>
     </table>

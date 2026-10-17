@@ -20,11 +20,19 @@ class AdminSpmbController extends Controller
     /**
      * Check authorization for SPMB admin access.
      */
-    protected function authorizeSpmb()
+    protected function authorizeSpmb(?int $targetUnitId = null)
     {
         $user = Auth::user();
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola SPMB.');
+        }
+
+        // Enforce unit scope if user is unit-scoped (admin_unit, kepala_sekolah, panitia_spmb)
+        if ($targetUnitId && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            $activeUnitId = session('active_unit_id');
+            if ($activeUnitId && (int)$activeUnitId !== (int)$targetUnitId) {
+                abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola pendaftar unit lain.');
+            }
         }
     }
 
@@ -33,12 +41,34 @@ class AdminSpmbController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
         $this->authorizeSpmb();
 
-        $sdUnit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->firstOrFail();
+        // Determine target unit
+        $targetUnit = null;
+        if ($request->filled('unit_id')) {
+            $targetUnit = Unit::find($request->unit_id);
+        }
+
+        if (!$targetUnit && session()->has('active_unit_id')) {
+            $targetUnit = Unit::find(session('active_unit_id'));
+        }
+
+        if (!$targetUnit) {
+            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
+        }
+
+        if (!$targetUnit) {
+            $targetUnit = Unit::firstOrFail();
+        }
+
+        // Enforce unit scope if user is not yayasan admin
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            $this->authorizeSpmb($targetUnit->id);
+        }
 
         $query = SpmbApplicant::with(['unit', 'user'])
-            ->where('unit_id', $sdUnit->id);
+            ->where('unit_id', $targetUnit->id);
 
         // Search
         if ($request->filled('search')) {
@@ -53,7 +83,7 @@ class AdminSpmbController extends Controller
             });
         }
 
-        // Category Filter (Internal TK Namira vs Umum)
+        // Category Filter
         if ($request->filled('category') && $request->category !== 'all') {
             $query->where('category', $request->category);
         }
@@ -65,22 +95,27 @@ class AdminSpmbController extends Controller
 
         // Statistics
         $stats = [
-            'total' => SpmbApplicant::where('unit_id', $sdUnit->id)->count(),
-            'internal_tk' => SpmbApplicant::where('unit_id', $sdUnit->id)->where('category', 'internal_tk')->count(),
-            'external_umum' => SpmbApplicant::where('unit_id', $sdUnit->id)->where('category', 'eksternal_umum')->count(),
-            'submitted' => SpmbApplicant::where('unit_id', $sdUnit->id)->where('status', 'submitted')->count(),
-            'verified' => SpmbApplicant::where('unit_id', $sdUnit->id)->whereIn('status', ['verified', 'scheduled'])->count(),
-            'accepted' => SpmbApplicant::where('unit_id', $sdUnit->id)->whereIn('status', ['accepted', 'partial_paid', 'fully_paid', 'enrolled'])->count(),
-            'enrolled' => SpmbApplicant::where('unit_id', $sdUnit->id)->where('status', 'enrolled')->count(),
+            'total' => SpmbApplicant::where('unit_id', $targetUnit->id)->count(),
+            'internal_tk' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('category', 'internal_tk')->count(),
+            'external_umum' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('category', 'eksternal_umum')->count(),
+            'submitted' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('status', 'submitted')->count(),
+            'verified' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('status', ['verified', 'scheduled'])->count(),
+            'accepted' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('status', ['accepted', 'partial_paid', 'fully_paid', 'enrolled'])->count(),
+            'enrolled' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('status', 'enrolled')->count(),
         ];
 
         $applicants = $query->latest()->paginate(15)->withQueryString();
 
+        $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) 
+            ? Unit::select('id', 'name', 'code')->get() 
+            : [];
+
         return Inertia::render('SPMB/Admin/Index', [
             'applicants' => $applicants,
             'stats' => $stats,
-            'filters' => $request->only(['search', 'category', 'status']),
-            'unit' => $sdUnit,
+            'filters' => $request->only(['search', 'category', 'status', 'unit_id']),
+            'unit' => $targetUnit,
+            'availableUnits' => $availableUnits,
         ]);
     }
 
@@ -89,7 +124,7 @@ class AdminSpmbController extends Controller
      */
     public function show(SpmbApplicant $applicant)
     {
-        $this->authorizeSpmb();
+        $this->authorizeSpmb($applicant->unit_id);
 
         $applicant->load([
             'unit',
@@ -114,7 +149,7 @@ class AdminSpmbController extends Controller
      */
     public function verifyPayment(Request $request, SpmbApplicant $applicant)
     {
-        $this->authorizeSpmb();
+        $this->authorizeSpmb($applicant->unit_id);
 
         $applicant->update([
             'status' => 'verified',
@@ -130,15 +165,15 @@ class AdminSpmbController extends Controller
      */
     public function setSchedule(Request $request, SpmbApplicant $applicant)
     {
-        $this->authorizeSpmb();
+        $this->authorizeSpmb($applicant->unit_id);
 
         $request->validate([
             'observation_date' => 'required|date',
             'observation_time' => 'required|string|max:50',
             'observation_location' => 'required|string|max:100',
-            'psychotest_date' => 'required|date',
-            'psychotest_time' => 'required|string|max:50',
-            'psychotest_location' => 'required|string|max:100',
+            'psychotest_date' => 'nullable|date',
+            'psychotest_time' => 'nullable|string|max:50',
+            'psychotest_location' => 'nullable|string|max:100',
             'schedule_notes' => 'nullable|string|max:500',
         ]);
 
@@ -155,7 +190,11 @@ class AdminSpmbController extends Controller
             'status' => 'scheduled',
         ]);
 
-        return back()->with('success', "Jadwal Observasi dan Psikotes untuk {$applicant->full_name} berhasil diterbitkan.");
+        $msg = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp')
+            ? 'Jadwal Seleksi Akademik dan Observasi'
+            : 'Jadwal Observasi dan Psikotes';
+
+        return back()->with('success', "{$msg} untuk {$applicant->full_name} berhasil diterbitkan.");
     }
 
     /**
@@ -163,12 +202,16 @@ class AdminSpmbController extends Controller
      */
     public function saveEvaluation(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
     {
-        $this->authorizeSpmb();
+        $this->authorizeSpmb($applicant->unit_id);
 
         $request->validate([
             'evaluation_result' => 'required|in:accepted,reserve,rejected',
             'evaluation_notes' => 'nullable|string|max:1000',
             'evaluation_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'bahasa_indonesia_score' => 'nullable|numeric|min:0|max:100',
+            'matematika_score' => 'nullable|numeric|min:0|max:100',
+            'wawancara_notes' => 'nullable|string|max:500',
+            'mengaji_notes' => 'nullable|string|max:500',
         ]);
 
         $data = [
@@ -179,12 +222,24 @@ class AdminSpmbController extends Controller
             'status' => $request->evaluation_result,
         ];
 
+        if ($request->hasAny(['bahasa_indonesia_score', 'matematika_score', 'wawancara_notes', 'mengaji_notes'])) {
+            $data['academic_score_details'] = [
+                'bahasa_indonesia' => $request->bahasa_indonesia_score,
+                'matematika' => $request->matematika_score,
+                'wawancara' => $request->wawancara_notes,
+                'mengaji' => $request->mengaji_notes,
+                'evaluator_id' => Auth::id(),
+                'evaluated_at' => now()->toIso8601String(),
+            ];
+        }
+
         if ($request->hasFile('evaluation_document')) {
+            $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
             $docPath = $spmbService->storeApplicantDocument(
                 $request->file('evaluation_document'),
                 'HASIL_EVALUASI',
                 $applicant->registration_number,
-                'sd-namira'
+                $unitSlug
             );
             $data['evaluation_document_path'] = $docPath;
         }
@@ -268,15 +323,16 @@ class AdminSpmbController extends Controller
      */
     public function enrollStudent(SpmbApplicant $applicant, SpmbService $spmbService)
     {
-        $this->authorizeSpmb();
+        $this->authorizeSpmb($applicant->unit_id);
 
         if (!in_array($applicant->status, ['accepted', 'partial_paid', 'fully_paid'])) {
             return back()->withErrors(['error' => 'Hanya calon siswa yang telah diterima atau telah daftar ulang yang dapat dipindahkan ke Data Siswa Aktif.']);
         }
 
         $student = $spmbService->enrollToAcademicStudent($applicant, Auth::user());
+        $unitName = $applicant->unit ? $applicant->unit->name : 'Namira';
 
-        return back()->with('success', "Calon siswa {$applicant->full_name} berhasil resmi dipindahkan menjadi Siswa Aktif SD Namira dengan NIS: {$student->nis}.");
+        return back()->with('success', "Calon siswa {$applicant->full_name} berhasil resmi dipindahkan menjadi Siswa Aktif {$unitName} dengan NIS: {$student->nis}.");
     }
 
     /**
@@ -284,14 +340,31 @@ class AdminSpmbController extends Controller
      */
     public function settings(Request $request)
     {
+        $user = Auth::user();
         $this->authorizeSpmb();
 
-        $sdUnit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->firstOrFail();
+        $targetUnit = null;
+        if ($request->filled('unit_id')) {
+            $targetUnit = Unit::find($request->unit_id);
+        }
+        if (!$targetUnit && session()->has('active_unit_id')) {
+            $targetUnit = Unit::find(session('active_unit_id'));
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::firstOrFail();
+        }
+
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            $this->authorizeSpmb($targetUnit->id);
+        }
 
         $setting = SpmbSetting::firstOrCreate(
-            ['unit_id' => $sdUnit->id],
+            ['unit_id' => $targetUnit->id],
             [
-                'name' => 'Pendaftaran Jalur Inden SD Namira',
+                'name' => 'Pendaftaran Jalur Inden ' . $targetUnit->name,
                 'academic_year' => '2026/2027',
                 'quota' => 60,
                 'registration_fee' => 250000,
@@ -305,9 +378,9 @@ class AdminSpmbController extends Controller
             ]
         );
 
-        // List teachers in SD Namira
+        // List teachers in target unit
         $teachers = Teacher::with('user')
-            ->where('unit_id', $sdUnit->id)
+            ->where('unit_id', $targetUnit->id)
             ->get()
             ->map(function ($t) {
                 return [
@@ -325,11 +398,16 @@ class AdminSpmbController extends Controller
             $q->where('name', 'panitia_spmb');
         })->get(['id', 'name', 'email']);
 
+        $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) 
+            ? Unit::select('id', 'name', 'code')->get() 
+            : [];
+
         return Inertia::render('SPMB/Admin/Settings', [
             'setting' => $setting,
-            'unit' => $sdUnit,
+            'unit' => $targetUnit,
             'teachers' => $teachers,
             'assignedPanitia' => $assignedPanitia,
+            'availableUnits' => $availableUnits,
         ]);
     }
 
@@ -338,10 +416,28 @@ class AdminSpmbController extends Controller
      */
     public function updateSettings(Request $request, SpmbService $spmbService)
     {
+        $user = Auth::user();
         $this->authorizeSpmb();
 
-        $sdUnit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->firstOrFail();
-        $setting = SpmbSetting::where('unit_id', $sdUnit->id)->firstOrFail();
+        $targetUnit = null;
+        if ($request->filled('unit_id')) {
+            $targetUnit = Unit::find($request->unit_id);
+        }
+        if (!$targetUnit && session()->has('active_unit_id')) {
+            $targetUnit = Unit::find(session('active_unit_id'));
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::firstOrFail();
+        }
+
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            $this->authorizeSpmb($targetUnit->id);
+        }
+
+        $setting = SpmbSetting::where('unit_id', $targetUnit->id)->firstOrFail();
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -356,6 +452,9 @@ class AdminSpmbController extends Controller
             'contact_whatsapp' => 'nullable|string|max:25',
             'notes' => 'nullable|string|max:1000',
             'is_active' => 'required|boolean',
+            'selection_date' => 'nullable|date',
+            'announcement_date' => 'nullable|date',
+            'announcement_released' => 'nullable|boolean',
             'qris_image' => 'nullable|file|image|max:10240',
         ]);
 
@@ -363,7 +462,8 @@ class AdminSpmbController extends Controller
             'name', 'academic_year', 'quota', 'registration_fee',
             'admission_fee_total', 'min_down_payment_percentage',
             'bank_name', 'bank_account_number', 'bank_account_holder',
-            'contact_whatsapp', 'notes', 'is_active'
+            'contact_whatsapp', 'notes', 'is_active',
+            'selection_date', 'announcement_date', 'announcement_released'
         ]);
 
         if ($request->hasFile('qris_image')) {
@@ -381,24 +481,38 @@ class AdminSpmbController extends Controller
      */
     public function assignPanitia(Request $request)
     {
+        $user = Auth::user();
         $this->authorizeSpmb();
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
+            'unit_id' => 'nullable|exists:units,id',
         ]);
 
-        $sdUnit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->firstOrFail();
-        $user = User::findOrFail($request->user_id);
+        $targetUnit = null;
+        if ($request->filled('unit_id')) {
+            $targetUnit = Unit::find($request->unit_id);
+        }
+        if (!$targetUnit && session()->has('active_unit_id')) {
+            $targetUnit = Unit::find(session('active_unit_id'));
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::firstOrFail();
+        }
+
+        $targetUser = User::findOrFail($request->user_id);
 
         $role = Role::firstOrCreate(['name' => 'panitia_spmb', 'guard_name' => 'web']);
 
-        if (!$user->hasRole('panitia_spmb')) {
-            // Assign with team_id if teams are enabled
-            setPermissionsTeamId($sdUnit->id);
-            $user->assignRole('panitia_spmb');
+        if (!$targetUser->hasRole('panitia_spmb')) {
+            setPermissionsTeamId($targetUnit->id);
+            $targetUser->assignRole('panitia_spmb');
         }
 
-        return back()->with('success', "Ustadz/Ustadzah {$user->name} berhasil ditugaskan sebagai Panitia SPMB SD Namira.");
+        return back()->with('success', "Ustadz/Ustadzah {$targetUser->name} berhasil ditugaskan sebagai Panitia SPMB {$targetUnit->name}.");
     }
 
     /**
@@ -406,10 +520,22 @@ class AdminSpmbController extends Controller
      */
     public function removePanitia(Request $request, User $user)
     {
+        $authUser = Auth::user();
         $this->authorizeSpmb();
 
-        $sdUnit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->firstOrFail();
-        setPermissionsTeamId($sdUnit->id);
+        $targetUnit = null;
+        if ($request->filled('unit_id')) {
+            $targetUnit = Unit::find($request->unit_id);
+        }
+        if (!$targetUnit && session()->has('active_unit_id')) {
+            $targetUnit = Unit::find(session('active_unit_id'));
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
+        }
+        if ($targetUnit) {
+            setPermissionsTeamId($targetUnit->id);
+        }
         
         $user->removeRole('panitia_spmb');
 

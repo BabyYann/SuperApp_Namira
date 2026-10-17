@@ -22,13 +22,28 @@ class SpmbService
     public function generateRegistrationNumber(Unit $unit): string
     {
         $yearCode = date('y');
-        $unitCode = match ($unit->id) {
-            1 => 'PGN',
-            2 => 'TKN',
-            3 => 'SDN',
-            4 => 'SMPN',
-            default => strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $unit->name), 0, 3)),
-        };
+        $code = strtoupper($unit->code ?? '');
+        $name = strtolower($unit->name ?? '');
+
+        if ($code === 'SMP' || str_contains($name, 'smp')) {
+            $unitCode = 'SMPN';
+        } elseif ($code === 'SD' || str_contains($name, 'sd')) {
+            $unitCode = 'SDN';
+        } elseif ($code === 'TK' || str_contains($name, 'tk')) {
+            $unitCode = 'TKN';
+        } elseif ($code === 'KB' || str_contains($name, 'kb')) {
+            $unitCode = 'KBN';
+        } else {
+            $unitCode = match ($unit->id) {
+                1 => 'PGN',
+                2 => 'TKN',
+                3 => 'SDN',
+                4 => 'SMPN',
+                6 => 'SDN',
+                7 => 'SMPN',
+                default => strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $unit->name), 0, 3)),
+            };
+        }
 
         $prefix = "IND-{$unitCode}-{$yearCode}";
 

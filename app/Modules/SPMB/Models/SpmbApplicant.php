@@ -82,12 +82,16 @@ class SpmbApplicant extends Model
         'admission_payment_status',
         'admission_payment_verified_at',
         'admission_payment_verified_by',
+        'is_inden',
+        'academic_score_details',
         'enrolled_student_id',
         'enrolled_at',
         'enrolled_by',
     ];
 
     protected $casts = [
+        'is_inden' => 'boolean',
+        'academic_score_details' => 'array',
         'birth_date' => 'date',
         'observation_date' => 'date',
         'psychotest_date' => 'date',
@@ -188,10 +192,12 @@ class SpmbApplicant extends Model
 
     public function getStatusLabelAttribute(): string
     {
+        $isSmp = str_contains(strtolower($this->unit?->name ?? ''), 'smp');
+
         return match ($this->status) {
             'submitted' => 'Menunggu Verifikasi',
             'verified' => 'Terverifikasi (Siap Jadwal)',
-            'scheduled' => 'Jadwal Observasi & Psikotes Diterbitkan',
+            'scheduled' => $isSmp ? 'Jadwal Seleksi Akademik & Observasi Diterbitkan' : 'Jadwal Observasi & Psikotes Diterbitkan',
             'evaluated' => 'Selesai Seleksi / Penilaian',
             'accepted' => 'Diterima (Lolos Seleksi)',
             'reserve' => 'Cadangan',
@@ -213,7 +219,8 @@ class SpmbApplicant extends Model
             $phone = '62' . $phone;
         }
 
-        $greeting = "Assalamu'alaikum Ayah/Bunda {$this->father_name} / {$this->mother_name},\nKami dari Panitia SPMB SD Namira menginfokan terkait pendaftaran Ananda {$this->full_name} (No. Reg: {$this->registration_number}).\n";
+        $unitName = $this->unit ? $this->unit->name : 'Sekolah Islam Namira';
+        $greeting = "Assalamu'alaikum Ayah/Bunda {$this->father_name} / {$this->mother_name},\nKami dari Panitia SPMB {$unitName} menginfokan terkait pendaftaran Ananda {$this->full_name} (No. Reg: {$this->registration_number}).\n";
 
         return "https://wa.me/{$phone}?text=" . urlencode($greeting);
     }
