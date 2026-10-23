@@ -197,8 +197,7 @@ it('allows panitia to record academic scores and observations for SMP applicant'
         ->post(route('spmb.admin.save-evaluation', $applicant->id), [
             'evaluation_result' => 'accepted',
             'evaluation_notes' => 'Sangat direkomendasikan masuk kelas unggulan',
-            'bahasa_indonesia_score' => 88.5,
-            'matematika_score' => 94.0,
+            'academic_score' => 91.5,
             'wawancara_notes' => 'Karakter santun, motivasi belajar tinggi',
             'mengaji_notes' => 'Lancar tilawah surat Al-Baqarah, makhraj fasih',
         ]);
@@ -209,8 +208,7 @@ it('allows panitia to record academic scores and observations for SMP applicant'
     expect($applicant->evaluation_result)->toBe('accepted');
     expect($applicant->status)->toBe('accepted');
     expect($applicant->academic_score_details)->not->toBeNull();
-    expect((float)$applicant->academic_score_details['bahasa_indonesia'])->toEqual(88.5);
-    expect((float)$applicant->academic_score_details['matematika'])->toEqual(94.0);
+    expect((float)$applicant->academic_score_details['academic_score'])->toEqual(91.5);
     expect($applicant->academic_score_details['wawancara'])->toBe('Karakter santun, motivasi belajar tinggi');
     expect($applicant->academic_score_details['mengaji'])->toBe('Lancar tilawah surat Al-Baqarah, makhraj fasih');
 });

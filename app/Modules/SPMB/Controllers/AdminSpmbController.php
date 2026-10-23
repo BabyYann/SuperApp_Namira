@@ -216,6 +216,7 @@ class AdminSpmbController extends Controller
             'evaluation_result' => 'required|in:accepted,reserve,rejected',
             'evaluation_notes' => 'nullable|string|max:1000',
             'evaluation_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'academic_score' => 'nullable|numeric|min:0|max:100',
             'bahasa_indonesia_score' => 'nullable|numeric|min:0|max:100',
             'matematika_score' => 'nullable|numeric|min:0|max:100',
             'wawancara_notes' => 'nullable|string|max:500',
@@ -230,10 +231,10 @@ class AdminSpmbController extends Controller
             'status' => $request->evaluation_result,
         ];
 
-        if ($request->hasAny(['bahasa_indonesia_score', 'matematika_score', 'wawancara_notes', 'mengaji_notes'])) {
+        if ($request->hasAny(['academic_score', 'bahasa_indonesia_score', 'matematika_score', 'wawancara_notes', 'mengaji_notes'])) {
+            $singleScore = $request->academic_score ?? $request->bahasa_indonesia_score;
             $data['academic_score_details'] = [
-                'bahasa_indonesia' => $request->bahasa_indonesia_score,
-                'matematika' => $request->matematika_score,
+                'academic_score' => $singleScore,
                 'wawancara' => $request->wawancara_notes,
                 'mengaji' => $request->mengaji_notes,
                 'evaluator_id' => Auth::id(),

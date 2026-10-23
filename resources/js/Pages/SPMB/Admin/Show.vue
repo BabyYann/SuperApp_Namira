@@ -59,8 +59,7 @@ const evaluationForm = useForm({
     evaluation_result: props.applicant.evaluation_result || 'accepted',
     evaluation_notes: props.applicant.evaluation_notes || '',
     evaluation_document: null,
-    bahasa_indonesia_score: props.applicant.academic_score_details?.bahasa_indonesia ?? '',
-    matematika_score: props.applicant.academic_score_details?.matematika ?? '',
+    academic_score: props.applicant.academic_score_details?.academic_score ?? props.applicant.academic_score_details?.bahasa_indonesia ?? '',
     wawancara_notes: props.applicant.academic_score_details?.wawancara ?? '',
     mengaji_notes: props.applicant.academic_score_details?.mengaji ?? '',
 });
@@ -404,9 +403,8 @@ const formatRupiah = (amount) => {
                         <!-- Nilai Seleksi Akademik & Observasi jika ada -->
                         <div v-if="applicant.academic_score_details" class="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-300 space-y-1.5">
                             <strong class="block font-bold">Hasil Penilaian Seleksi & Observasi:</strong>
-                            <div class="grid grid-cols-2 gap-2 text-[11px]">
-                                <div>B. Indonesia: <strong>{{ applicant.academic_score_details.bahasa_indonesia ?? '-' }}</strong></div>
-                                <div>Matematika: <strong>{{ applicant.academic_score_details.matematika ?? '-' }}</strong></div>
+                            <div class="text-[11px]">
+                                Nilai Seleksi Akademik (B. Indonesia & Matematika): <strong>{{ applicant.academic_score_details.academic_score ?? applicant.academic_score_details.bahasa_indonesia ?? '-' }}</strong>
                             </div>
                             <div v-if="applicant.academic_score_details.wawancara" class="text-[11px]">
                                 Observasi Wawancara: <em>{{ applicant.academic_score_details.wawancara }}</em>
@@ -603,15 +601,9 @@ const formatRupiah = (amount) => {
                         <div class="p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 space-y-2.5">
                             <span class="block font-bold text-indigo-950 dark:text-indigo-300 text-xs">Penilaian Seleksi Akademik & Observasi:</span>
                             
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Nilai B. Indonesia (0-100)</label>
-                                    <input v-model="evaluationForm.bahasa_indonesia_score" type="number" min="0" max="100" placeholder="Skor" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Nilai Matematika (0-100)</label>
-                                    <input v-model="evaluationForm.matematika_score" type="number" min="0" max="100" placeholder="Skor" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white">
-                                </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Nilai Bahasa Indonesia & Matematika (0-100)</label>
+                                <input v-model="evaluationForm.academic_score" type="number" min="0" max="100" placeholder="Masukkan skor tunggal (0-100)..." class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white">
                             </div>
 
                             <div>
