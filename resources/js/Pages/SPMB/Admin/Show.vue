@@ -404,7 +404,7 @@ const formatRupiah = (amount) => {
                         <div v-if="applicant.academic_score_details" class="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-300 space-y-1.5">
                             <strong class="block font-bold">Hasil Penilaian Seleksi & Observasi:</strong>
                             <div class="text-[11px]">
-                                Nilai Seleksi Akademik (B. Indonesia & Matematika): <strong>{{ applicant.academic_score_details.academic_score ?? applicant.academic_score_details.bahasa_indonesia ?? '-' }}</strong>
+                                Nilai Tes Akademik: <strong>{{ applicant.academic_score_details.academic_score ?? applicant.academic_score_details.bahasa_indonesia ?? '-' }}</strong>
                             </div>
                             <div v-if="applicant.academic_score_details.wawancara" class="text-[11px]">
                                 Observasi Wawancara: <em>{{ applicant.academic_score_details.wawancara }}</em>
@@ -602,7 +602,7 @@ const formatRupiah = (amount) => {
                             <span class="block font-bold text-indigo-950 dark:text-indigo-300 text-xs">Penilaian Seleksi Akademik & Observasi:</span>
                             
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Nilai Bahasa Indonesia & Matematika (0-100)</label>
+                                <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-0.5">Nilai Tes Akademik (0-100)</label>
                                 <input v-model="evaluationForm.academic_score" type="number" min="0" max="100" placeholder="Masukkan skor tunggal (0-100)..." class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white">
                             </div>
 
