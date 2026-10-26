@@ -254,10 +254,55 @@ const getStatusBadgeClass = (s) => {
     <Head :title="`Data Pendaftar SPMB Inden ${unit?.name || 'Namira'}`" />
 
     <AuthenticatedLayout>
-        <div class="space-y-6">
+        <div class="space-y-3 md:space-y-6">
             
-            <!-- Top Header & Action Buttons -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <!-- 📱 MOBILE COMPACT TOP BAR (md:hidden) -->
+            <div class="flex md:hidden items-center justify-between gap-2 bg-white dark:bg-slate-900 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
+                        <UserGroupIcon class="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <h1 class="text-xs font-black text-slate-900 dark:text-white tracking-tight truncate">
+                                SPMB Inden {{ unit?.code || '' }}
+                            </h1>
+                            <span class="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-black">
+                                {{ stats.total }}
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 truncate leading-none mt-0.5">
+                            Seleksi, QRIS & jadwal observasi
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <a 
+                        :href="route('spmb.admin.export', {
+                            unit_id: unit?.id,
+                            search: search || undefined,
+                            category: category !== 'all' ? category : undefined,
+                            status: status !== 'all' ? status : undefined,
+                        })"
+                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-extrabold transition shadow-2xs"
+                    >
+                        <ArrowDownTrayIcon class="w-3.5 h-3.5 text-white" />
+                        <span>CSV</span>
+                    </a>
+
+                    <Link 
+                        :href="route('spmb.admin.settings')"
+                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-extrabold border border-slate-200 dark:border-slate-700"
+                    >
+                        <Cog6ToothIcon class="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Atur</span>
+                    </Link>
+                </div>
+            </div>
+
+            <!-- 🖥️ DESKTOP Top Header & Action Buttons (hidden md:flex) -->
+            <div class="hidden md:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
                         <UserGroupIcon class="w-7 h-7 text-[#064e3b] dark:text-[#fbbf24]" />
@@ -292,8 +337,71 @@ const getStatusBadgeClass = (s) => {
                 </div>
             </div>
 
-            <!-- Stats Bar -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <!-- 📱 MOBILE ULTRA-COMPACT STATS STRIP (6 Kolom Klik-Filter dalam 1 Baris, md:hidden) -->
+            <div class="grid md:hidden grid-cols-6 gap-1 bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs text-center">
+                <button 
+                    type="button"
+                    @click="category = 'all'; status = 'all'"
+                    class="py-1 px-0.5 rounded-lg transition"
+                    :class="category === 'all' && status === 'all' ? 'bg-slate-900 text-white' : 'hover:bg-slate-50 text-slate-700'"
+                >
+                    <span class="text-xs font-black block leading-none">{{ stats.total }}</span>
+                    <span class="text-[8px] font-bold uppercase tracking-tighter block mt-0.5 opacity-80">Total</span>
+                </button>
+
+                <button 
+                    type="button"
+                    @click="category = category === 'internal' ? 'all' : 'internal'"
+                    class="py-1 px-0.5 rounded-lg transition"
+                    :class="category === 'internal' ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-emerald-700'"
+                >
+                    <span class="text-xs font-black block leading-none">{{ stats.internal_tk || stats.internal }}</span>
+                    <span class="text-[8px] font-bold uppercase tracking-tighter block mt-0.5">{{ isSmp ? 'Alumni' : 'TK' }}</span>
+                </button>
+
+                <button 
+                    type="button"
+                    @click="category = category === 'eksternal_umum' ? 'all' : 'eksternal_umum'"
+                    class="py-1 px-0.5 rounded-lg transition"
+                    :class="category === 'eksternal_umum' ? 'bg-blue-600 text-white' : 'hover:bg-blue-50 text-blue-700'"
+                >
+                    <span class="text-xs font-black block leading-none">{{ stats.external_umum }}</span>
+                    <span class="text-[8px] font-bold uppercase tracking-tighter block mt-0.5">Umum</span>
+                </button>
+
+                <button 
+                    type="button"
+                    @click="status = status === 'submitted' ? 'all' : 'submitted'"
+                    class="py-1 px-0.5 rounded-lg transition"
+                    :class="status === 'submitted' ? 'bg-amber-500 text-white' : 'hover:bg-amber-50 text-amber-700'"
+                >
+                    <span class="text-xs font-black block leading-none">{{ stats.submitted }}</span>
+                    <span class="text-[8px] font-bold uppercase tracking-tighter block mt-0.5">QRIS</span>
+                </button>
+
+                <button 
+                    type="button"
+                    @click="status = status === 'accepted' ? 'all' : 'accepted'"
+                    class="py-1 px-0.5 rounded-lg transition"
+                    :class="status === 'accepted' ? 'bg-purple-600 text-white' : 'hover:bg-purple-50 text-purple-700'"
+                >
+                    <span class="text-xs font-black block leading-none">{{ stats.accepted }}</span>
+                    <span class="text-[8px] font-bold uppercase tracking-tighter block mt-0.5">Lolos</span>
+                </button>
+
+                <button 
+                    type="button"
+                    @click="status = status === 'enrolled' ? 'all' : 'enrolled'"
+                    class="py-1 px-0.5 rounded-lg transition"
+                    :class="status === 'enrolled' ? 'bg-emerald-700 text-white' : 'hover:bg-emerald-50 text-emerald-700'"
+                >
+                    <span class="text-xs font-black block leading-none">{{ stats.enrolled }}</span>
+                    <span class="text-[8px] font-bold uppercase tracking-tighter block mt-0.5">Aktif</span>
+                </button>
+            </div>
+
+            <!-- 🖥️ DESKTOP Stats Bar (hidden md:grid) -->
+            <div class="hidden md:grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <span class="text-[11px] font-semibold text-slate-500 block uppercase">Total Pendaftar</span>
                     <span class="text-2xl font-black text-slate-900 dark:text-white block mt-1">{{ stats.total }}</span>
@@ -325,38 +433,38 @@ const getStatusBadgeClass = (s) => {
                 </div>
             </div>
 
-            <!-- Filters & Search Toolbar -->
-            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+            <!-- Filters & Search Toolbar (Compact di Mobile, Normal di Desktop) -->
+            <div class="bg-white dark:bg-slate-900 p-2.5 md:p-4 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs md:shadow-sm flex flex-col md:flex-row items-center justify-between gap-2 md:gap-3">
                 <div class="relative w-full md:w-80">
-                    <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <MagnifyingGlassIcon class="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input 
                         v-model="search"
                         type="text" 
                         placeholder="Cari nama siswa, no. reg, no WA..."
-                        class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:ring-emerald-500 focus:border-emerald-500"
+                        class="w-full pl-8 pr-3 py-1.5 md:py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl text-[11px] md:text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:ring-emerald-500 focus:border-emerald-500"
                     >
                 </div>
 
-                <div class="flex items-center gap-2.5 w-full md:w-auto">
+                <div class="grid grid-cols-2 md:flex items-center gap-1.5 md:gap-2.5 w-full md:w-auto">
                     <!-- Filter Kategori Asal -->
                     <select 
                         v-model="category"
-                        class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:ring-emerald-500"
+                        class="w-full min-w-0 truncate bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-[11px] md:text-xs text-slate-800 dark:text-slate-200 focus:ring-emerald-500"
                     >
-                        <option value="all">Semua Kategori Asal</option>
-                        <option value="internal">{{ isSmp ? 'Khusus Alumni SD Namira' : 'Khusus Alumni TK Namira' }}</option>
-                        <option value="eksternal_umum">Pendaftar Luar (Umum)</option>
+                        <option value="all">Semua Kategori</option>
+                        <option value="internal">{{ isSmp ? 'Alumni SD Namira' : 'Alumni TK Namira' }}</option>
+                        <option value="eksternal_umum">Pendaftar Umum</option>
                     </select>
 
                     <!-- Filter Status -->
                     <select 
                         v-model="status"
-                        class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:ring-emerald-500"
+                        class="w-full min-w-0 truncate bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-[11px] md:text-xs text-slate-800 dark:text-slate-200 focus:ring-emerald-500"
                     >
                         <option value="all">Semua Status</option>
-                        <option value="submitted">Menunggu Verifikasi QRIS</option>
-                        <option value="verified">Terverifikasi (Siap Jadwal)</option>
-                        <option value="scheduled">Jadwal Diterbitkan</option>
+                        <option value="submitted">Cek QRIS</option>
+                        <option value="verified">Terverifikasi</option>
+                        <option value="scheduled">Terjadwal</option>
                         <option value="accepted">Diterima (Lulus)</option>
                         <option value="reserve">Cadangan</option>
                         <option value="rejected">Belum Diterima</option>
@@ -367,124 +475,144 @@ const getStatusBadgeClass = (s) => {
                 </div>
             </div>
 
-            <!-- 📱 MOBILE PWA CARD LIST (block md:hidden) -->
-            <div class="block md:hidden space-y-3">
+            <!-- 📱 MOBILE PWA ULTRA-COMPACT LIST (block md:hidden) -->
+            <div class="block md:hidden space-y-2">
                 <div 
                     v-for="app in applicants.data" 
                     :key="`mobile-${app.id}`"
-                    class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3"
+                    class="bg-white dark:bg-slate-900 rounded-xl p-2.5 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-1.5"
                 >
-                    <!-- Header Siswa & Status -->
-                    <div class="flex items-start justify-between gap-2.5">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-11 h-14 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
+                    <!-- Baris 1: Avatar Kecil + Identitas Ringkas + Status Badge -->
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2 min-w-0 flex-1">
+                            <div class="w-8 h-9 rounded-lg bg-emerald-50 dark:bg-slate-800 overflow-hidden shrink-0 border border-emerald-200/70 dark:border-slate-700 flex items-center justify-center">
                                 <img v-if="app.photo_url" :src="app.photo_url" class="w-full h-full object-cover">
-                                <div v-else class="w-full h-full flex items-center justify-center text-[10px] text-slate-400">Foto</div>
-                            </div>
-                            <div class="min-w-0">
-                                <span class="text-[10px] font-mono font-extrabold text-emerald-700 dark:text-emerald-400 block">
-                                    {{ app.registration_number }}
+                                <span v-else class="text-[10px] font-black text-emerald-700 dark:text-emerald-400">
+                                    {{ (app.full_name || 'S').charAt(0).toUpperCase() }}
                                 </span>
-                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white leading-snug truncate">
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                        {{ app.registration_number }}
+                                    </span>
+                                    <span 
+                                        class="px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase"
+                                        :class="['internal_tk', 'internal_sd', 'internal'].includes(app.category) ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'"
+                                    >
+                                        {{ ['internal_tk', 'internal_sd', 'internal'].includes(app.category) ? (isSmp ? 'SD Namira' : 'TK Namira') : 'Umum' }}
+                                    </span>
+                                </div>
+                                <h4 class="font-extrabold text-xs text-slate-900 dark:text-white leading-tight truncate mt-0.5">
                                     {{ app.full_name }}
                                 </h4>
-                                <p class="text-[11px] text-slate-500 truncate mt-0.5">
-                                    {{ app.previous_school || '-' }} • {{ ['internal_tk', 'internal_sd', 'internal'].includes(app.category) ? (isSmp ? 'SD Namira' : 'TK Namira') : 'Umum' }}
+                                <p class="text-[10px] text-slate-500 truncate leading-tight">
+                                    {{ app.gender === 'L' ? 'L' : 'P' }} • {{ app.previous_school || '-' }}
                                 </p>
                             </div>
                         </div>
+
                         <span 
-                            class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                            class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold border leading-none"
                             :class="getStatusBadgeClass(app.status)"
                         >
                             {{ app.status_label }}
                         </span>
                     </div>
 
-                    <!-- Info Orang Tua & Jadwal -->
-                    <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-                        <div>
-                            <span class="text-slate-400 block text-[10px]">Orang Tua / WA</span>
-                            <span class="font-bold text-slate-800 dark:text-slate-200 block truncate">{{ app.father_name || app.mother_name || '-' }}</span>
-                            <span class="font-mono text-slate-500 text-[10px]">{{ app.parent_phone }}</span>
+                    <!-- Baris 2: Info Ortu/Jadwal di Kiri + 1 Baris Action Buttons di Kanan (Tanpa Turun Baris!) -->
+                    <div class="flex items-center justify-between gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                        <div class="min-w-0 flex-1 leading-tight">
+                            <p class="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate">
+                                {{ app.father_name || app.mother_name || '-' }}
+                                <span class="font-mono font-normal text-slate-400">• {{ app.parent_phone }}</span>
+                            </p>
+                            <p class="text-[9px] text-slate-400 truncate mt-0.5">
+                                <template v-if="app.observation_date">
+                                    Obs: <span class="text-slate-600 font-semibold">{{ formatScheduleDate(app.observation_date) }}</span>
+                                    <template v-if="app.psychotest_date"> • Psi: <span class="text-amber-600 font-semibold">{{ formatScheduleDate(app.psychotest_date) }}</span></template>
+                                </template>
+                                <template v-else>Belum dijadwalkan</template>
+                            </p>
                         </div>
-                        <div>
-                            <span class="text-slate-400 block text-[10px]">Jadwal Seleksi</span>
-                            <div v-if="app.observation_date" class="space-y-0.5">
-                                <span class="font-semibold text-slate-700 dark:text-slate-300 block">Obs: {{ formatScheduleDate(app.observation_date) }}</span>
-                                <span v-if="app.psychotest_date" class="font-semibold text-amber-600 dark:text-amber-400 block">Psi: {{ formatScheduleDate(app.psychotest_date) }}</span>
-                            </div>
-                            <span v-else class="text-slate-400 italic">Belum dijadwalkan</span>
+
+                        <div class="flex items-center gap-1 shrink-0">
+                            <!-- Detail -->
+                            <Link 
+                                :href="route('spmb.admin.show', app.id)"
+                                class="h-7 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold inline-flex items-center gap-1 shadow-2xs"
+                            >
+                                <EyeIcon class="w-3.5 h-3.5" />
+                                <span>Detail</span>
+                            </Link>
+
+                            <!-- Edit Biodata -->
+                            <button 
+                                @click="openEditBiodataModal(app)"
+                                type="button"
+                                title="Edit Biodata"
+                                class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center"
+                            >
+                                <PencilSquareIcon class="w-3.5 h-3.5" />
+                            </button>
+
+                            <!-- Bukti Transfer -->
+                            <button 
+                                v-if="app.registration_payment_proof_url || app.re_registration_payment_proof_url || app.settlement_payment_proof_url"
+                                @click="openProofModal(app)"
+                                type="button"
+                                title="Cek Bukti Transfer"
+                                class="w-7 h-7 rounded-lg border flex items-center justify-center relative"
+                                :class="!app.registration_payment_verified_at || (app.re_registration_payment_proof_url && !app.admission_payment_verified_at) || (app.settlement_payment_proof_url && !app.settlement_payment_verified_at)
+                                    ? 'bg-amber-50 text-amber-700 border-amber-300'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'"
+                            >
+                                <DocumentCheckIcon class="w-3.5 h-3.5" />
+                                <span 
+                                    v-if="!app.registration_payment_verified_at || (app.re_registration_payment_proof_url && !app.admission_payment_verified_at) || (app.settlement_payment_proof_url && !app.settlement_payment_verified_at)"
+                                    class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse"
+                                ></span>
+                            </button>
+
+                            <!-- WA Ortu -->
+                            <a 
+                                :href="app.wa_link"
+                                target="_blank"
+                                title="WA Orang Tua"
+                                class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center"
+                            >
+                                <ChatBubbleLeftRightIcon class="w-3.5 h-3.5" />
+                            </a>
+
+                            <!-- Kartu PDF -->
+                            <a 
+                                :href="route('spmb.applicant.print-card', app.id)"
+                                target="_blank"
+                                title="Kartu Peserta PDF"
+                                class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center"
+                            >
+                                <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+                            </a>
+
+                            <!-- Hapus -->
+                            <button 
+                                v-if="canDelete"
+                                @click="deleteApplicant(app)"
+                                type="button"
+                                title="Hapus"
+                                class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center"
+                            >
+                                <TrashIcon class="w-3.5 h-3.5" />
+                            </button>
                         </div>
-                    </div>
-
-                    <!-- Tombol Aksi Mobile -->
-                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-                        <Link 
-                            :href="route('spmb.admin.show', app.id)"
-                            class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs"
-                        >
-                            <EyeIcon class="w-4 h-4" />
-                            <span>Buka Detail</span>
-                        </Link>
-
-                        <button 
-                            @click="openEditBiodataModal(app)"
-                            type="button"
-                            class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold"
-                        >
-                            <PencilSquareIcon class="w-4 h-4" />
-                            <span>Edit</span>
-                        </button>
-
-                        <button 
-                            v-if="app.registration_payment_proof_url || app.re_registration_payment_proof_url || app.settlement_payment_proof_url"
-                            @click="openProofModal(app)"
-                            type="button"
-                            class="w-9 h-9 rounded-xl border flex items-center justify-center relative"
-                            :class="!app.registration_payment_verified_at || (app.re_registration_payment_proof_url && !app.admission_payment_verified_at) || (app.settlement_payment_proof_url && !app.settlement_payment_verified_at)
-                                ? 'bg-amber-50 text-amber-700 border-amber-300'
-                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'"
-                        >
-                            <DocumentCheckIcon class="w-4 h-4" />
-                            <span 
-                                v-if="!app.registration_payment_verified_at || (app.re_registration_payment_proof_url && !app.admission_payment_verified_at) || (app.settlement_payment_proof_url && !app.settlement_payment_verified_at)"
-                                class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"
-                            ></span>
-                        </button>
-
-                        <a 
-                            :href="app.wa_link"
-                            target="_blank"
-                            class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center"
-                        >
-                            <ChatBubbleLeftRightIcon class="w-4 h-4" />
-                        </a>
-
-                        <a 
-                            :href="route('spmb.applicant.print-card', app.id)"
-                            target="_blank"
-                            class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center"
-                        >
-                            <ArrowDownTrayIcon class="w-4 h-4" />
-                        </a>
-
-                        <button 
-                            v-if="canDelete"
-                            @click="deleteApplicant(app)"
-                            type="button"
-                            class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center"
-                        >
-                            <TrashIcon class="w-4 h-4" />
-                        </button>
                     </div>
                 </div>
 
-                <div v-if="applicants.data.length === 0" class="bg-white rounded-2xl p-6 text-center text-slate-400 text-xs border border-slate-200">
+                <div v-if="applicants.data.length === 0" class="bg-white rounded-xl p-4 text-center text-slate-400 text-xs border border-slate-200">
                     Tidak ada data calon siswa yang sesuai dengan filter pencarian.
                 </div>
 
-                <div v-if="applicants.total > applicants.per_page" class="pt-2 flex justify-center">
+                <div v-if="applicants.total > applicants.per_page" class="pt-1 flex justify-center">
                     <Pagination :links="applicants.links" />
                 </div>
             </div>
