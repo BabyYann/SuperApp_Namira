@@ -62,12 +62,16 @@ class LoanController extends Controller
     }
 
     /**
-     * Create new loan (by Koordinator)
+     * Create new loan (by Koordinator or Self-Service by Teacher/Staff)
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah'])) {
-            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mencatat peminjaman inventaris.');
+        $user = auth()->user();
+        $isSarparManager = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'staff_yayasan', 'admin_unit', 'koordinator_sarpar', 'kepala_sekolah']);
+
+        if (!$isSarparManager) {
+            // Self-service loan: borrower is the logged-in teacher/staff
+            $request->merge(['borrower_id' => $user->id]);
         }
 
         $validated = $request->validate([

@@ -8,7 +8,11 @@ use App\Modules\Daycare\Controllers\DaycareGrowthController;
 use App\Modules\Daycare\Controllers\DaycareJournalController;
 use App\Modules\Daycare\Controllers\DaycareReportController;
 
-Route::middleware(['auth', 'verified'])->prefix('daycare')->name('daycare.')->group(function () {
+Route::middleware([
+    'auth',
+    'verified',
+    'role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|staff_yayasan|admin_unit|staff_unit|kepala_sekolah|teacher|guru|wali_kelas|orang_tua|siswa|student',
+])->prefix('daycare')->name('daycare.')->group(function () {
     // Master Children & Profiles
     Route::get('/children', [DaycareChildrenController::class, 'index'])->name('children.index');
     Route::get('/children/create', [DaycareChildrenController::class, 'create'])->name('children.create');

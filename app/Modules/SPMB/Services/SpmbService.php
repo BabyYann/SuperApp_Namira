@@ -145,9 +145,9 @@ class SpmbService
     /**
      * Convert accepted and paid applicant into an active Academic Student.
      */
-    public function enrollToAcademicStudent(SpmbApplicant $applicant, User $enrolledBy): Student
+    public function enrollToAcademicStudent(SpmbApplicant $applicant, User $enrolledBy, ?int $classroomId = null): Student
     {
-        return DB::transaction(function () use ($applicant, $enrolledBy) {
+        return DB::transaction(function () use ($applicant, $enrolledBy, $classroomId) {
             // Find or generate student
             $existingStudent = Student::where('nik', $applicant->nik)
                 ->where('unit_id', $applicant->unit_id)
@@ -166,10 +166,11 @@ class SpmbService
 
                 $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
 
-                $student = Student::create([
+                $studentData = [
                     'unit_id' => $applicant->unit_id,
                     'user_id' => $applicant->user_id,
                     'academic_year_id' => $activeYear?->id,
+                    'classroom_id' => $classroomId,
                     'nis' => $nis,
                     'nisn' => $applicant->nisn,
                     'nik' => $applicant->nik,
@@ -181,11 +182,55 @@ class SpmbService
                     'address' => $applicant->address,
                     'father_name' => $applicant->father_name,
                     'mother_name' => $applicant->mother_name,
+                    'parent_name' => $applicant->father_name ?: $applicant->mother_name,
                     'parent_phone' => $applicant->parent_phone,
+                    'va_number' => $applicant->virtual_account_number,
                     'status' => 'active',
-                ]);
+                ];
+
+                $student = Student::create($studentData);
             } else {
                 $student = $existingStudent;
+                if ($classroomId && !$student->classroom_id) {
+                    $student->update(['classroom_id' => $classroomId]);
+                }
+            }
+
+            // Ensure the linked user account also gets 'siswa' role scoped to the unit
+            if ($applicant->user_id) {
+                $studentRole = \Spatie\Permission\Models\Role::firstOrCreate([
+                    'name' => 'siswa',
+                    'guard_name' => 'web',
+                ]);
+
+                DB::table('model_has_roles')->updateOrInsert([
+                    'role_id' => $studentRole->id,
+                    'model_type' => User::class,
+                    'model_id' => $applicant->user_id,
+                ], [
+                    'team_id' => $applicant->unit_id,
+                ]);
+            }
+
+            // Sync admission payment to Finance Transactions if paid_admission_amount > 0
+            if ($applicant->paid_admission_amount > 0 && class_exists(\App\Modules\Finance\Models\Transaction::class)) {
+                $alreadyRecorded = \App\Modules\Finance\Models\Transaction::where('student_id', $student->id)
+                    ->where('source', 'spmb_admission')
+                    ->exists();
+
+                if (!$alreadyRecorded) {
+                    \App\Modules\Finance\Models\Transaction::create([
+                        'student_id' => $student->id,
+                        'user_id' => $enrolledBy->id,
+                        'transaction_code' => 'TRX/SPMB/' . date('Y/m/') . str_pad($applicant->id, 4, '0', STR_PAD_LEFT),
+                        'amount' => $applicant->paid_admission_amount,
+                        'payment_method' => 'transfer',
+                        'source' => 'spmb_admission',
+                        'notes' => 'Daftar Ulang SPMB (' . $applicant->registration_number . ')',
+                        'transaction_date' => $applicant->admission_payment_verified_at ?? now(),
+                        'allocated_amount' => $applicant->paid_admission_amount,
+                    ]);
+                }
             }
 
             // Update applicant record

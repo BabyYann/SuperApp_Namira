@@ -26,12 +26,15 @@ class AdminSpmbController extends Controller
     protected function authorizeSpmb(?int $targetUnitId = null)
     {
         $user = Auth::user();
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
+        $globalRoles = ['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'staff_yayasan'];
+        $unitRoles = ['admin_unit', 'kepala_sekolah', 'panitia_spmb', 'humas_unit'];
+
+        if (!$user->hasAnyRole(array_merge($globalRoles, $unitRoles))) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola SPMB.');
         }
 
-        // Enforce unit scope if user is unit-scoped (admin_unit, kepala_sekolah, panitia_spmb)
-        if ($targetUnitId && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+        // Enforce unit scope if user is unit-scoped (admin_unit, kepala_sekolah, panitia_spmb, humas_unit)
+        if ($targetUnitId && !$user->hasAnyRole($globalRoles)) {
             $activeUnitId = session('active_unit_id');
             if ($activeUnitId && (int)$activeUnitId !== (int)$targetUnitId) {
                 abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengelola pendaftar unit lain.');
@@ -146,10 +149,15 @@ class AdminSpmbController extends Controller
         ]);
 
         $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+        $classrooms = \App\Modules\Academic\Models\Classroom::where('unit_id', $applicant->unit_id)
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get(['id', 'name', 'level']);
 
         return Inertia::render('SPMB/Admin/Show', [
             'applicant' => $applicant,
             'setting' => $setting,
+            'classrooms' => $classrooms,
         ]);
     }
 
@@ -358,7 +366,7 @@ class AdminSpmbController extends Controller
     /**
      * Enroll applicant to active student in Academic module.
      */
-    public function enrollStudent(SpmbApplicant $applicant, SpmbService $spmbService)
+    public function enrollStudent(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
     {
         $this->authorizeSpmb($applicant->unit_id);
 
@@ -366,7 +374,8 @@ class AdminSpmbController extends Controller
             return back()->withErrors(['error' => 'Hanya calon siswa yang telah diterima atau telah daftar ulang yang dapat dipindahkan ke Data Siswa Aktif.']);
         }
 
-        $student = $spmbService->enrollToAcademicStudent($applicant, Auth::user());
+        $classroomId = $request->filled('classroom_id') ? (int)$request->classroom_id : null;
+        $student = $spmbService->enrollToAcademicStudent($applicant, Auth::user(), $classroomId);
         $unitName = $applicant->unit ? $applicant->unit->name : 'Namira';
 
         return back()->with('success', "Calon siswa {$applicant->full_name} berhasil resmi dipindahkan menjadi Siswa Aktif {$unitName} dengan NIS: {$student->nis}.");

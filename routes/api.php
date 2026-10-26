@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\CounselingApiController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EmployeeApiController;
 use App\Http\Controllers\Api\FinanceApiController;
-use App\Http\Controllers\Api\LmsApiController;
 use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\PublicRelationsApiController;
 use App\Http\Controllers\Api\SarparApiController;
@@ -65,22 +64,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/rooms', [SarparApiController::class, 'rooms']);
         Route::get('/loans', [SarparApiController::class, 'loans']);
         Route::get('/maintenance', [SarparApiController::class, 'maintenance']);
-    });
-
-    Route::prefix('lms')->group(function () {
-        Route::get('/classrooms', [LmsApiController::class, 'classrooms']);
-        Route::get('/classrooms/{id}', [LmsApiController::class, 'classroomShow']);
-        Route::get('/materials/{id}', [LmsApiController::class, 'materialShow']);
-        Route::post('/materials', [LmsApiController::class, 'materialStore']);
-        Route::get('/assignments/{id}', [LmsApiController::class, 'assignmentShow']);
-        Route::post('/assignments', [LmsApiController::class, 'assignmentStore']);
-        Route::post('/assignments/{id}/submit', [LmsApiController::class, 'assignmentSubmit']);
-        Route::get('/submissions/{id}', [LmsApiController::class, 'submissionShow']);
-        Route::post('/submissions/{id}/grade', [LmsApiController::class, 'submissionGrade']);
-        Route::get('/gradebook/{classroom}', [LmsApiController::class, 'gradebook']);
-        Route::get('/announcements', [LmsApiController::class, 'announcements']);
-        Route::post('/announcements', [LmsApiController::class, 'announcementStore']);
-        Route::get('/my-tasks', [LmsApiController::class, 'myTasks']);
     });
 
     Route::prefix('pr')->group(function () {

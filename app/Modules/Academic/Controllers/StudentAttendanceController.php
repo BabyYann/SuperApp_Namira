@@ -21,7 +21,7 @@ class StudentAttendanceController extends Controller
         $teacherProfile = $user->teacher_profile;
         $unitId = session('active_unit_id') ?? $teacherProfile?->unit_id;
         $tab = $request->input('tab', 'daily'); // 'daily' | 'recap'
-        $isManagement = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit']);
+        $isManagement = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah', 'koordinator_kurikulum']);
         
         // 1. Role-based classrooms access
         $classroomsQuery = Classroom::query();
@@ -30,7 +30,7 @@ class StudentAttendanceController extends Controller
         }
 
         if (!$isManagement) {
-            if ($user->hasRole('teacher') || $user->hasRole('wali_kelas')) {
+            if ($user->hasAnyRole(['teacher', 'guru', 'wali_kelas'])) {
                 // Teachers (both Guru Mapel & Wali Kelas) can view classrooms within their school unit
                 $targetUnitId = $unitId ?? $teacherProfile?->unit_id;
                 if ($targetUnitId) {
@@ -217,7 +217,7 @@ class StudentAttendanceController extends Controller
     public function show(Request $request, Classroom $classroom)
     {
         $user = Auth::user();
-        $isManagement = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit']);
+        $isManagement = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah', 'koordinator_kurikulum']);
         $teacher = $user->teacher_profile;
         $unitId = session('active_unit_id') ?? $teacher?->unit_id;
         
@@ -230,7 +230,7 @@ class StudentAttendanceController extends Controller
         $isHomeroom = $teacher && ($classroom->homeroom_teacher_id === $teacher->id);
         $canEdit = $isManagement || $isHomeroom;
 
-        if (!$isManagement && !$user->hasRole('teacher') && !$user->hasRole('wali_kelas')) {
+        if (!$isManagement && !$user->hasAnyRole(['teacher', 'guru', 'wali_kelas'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk melihat data absensi.');
         }
 
@@ -270,6 +270,26 @@ class StudentAttendanceController extends Controller
                     })
                     ->get()
                     ->keyBy('student_id');
+            }
+        }
+
+        // 2b. Sync Gate Check-ins (Scanner Gerbang) as pre-filled default for students not yet recorded in classroom attendance
+        $gateCheckins = \App\Modules\Academic\Models\StudentCheckin::whereIn('student_id', $students->pluck('id'))
+            ->whereDate('checkin_date', $date)
+            ->get()
+            ->keyBy('student_id');
+
+        foreach ($gateCheckins as $studentId => $checkin) {
+            if (!$attendances->has($studentId)) {
+                $timeStr = substr($checkin->checkin_time, 0, 5);
+                $attendances->put($studentId, (object)[
+                    'student_id' => $studentId,
+                    'classroom_id' => $classroom->id,
+                    'date' => $date,
+                    'status' => 'H',
+                    'note' => "Scan Gerbang ({$timeStr})",
+                    'is_gate_prefill' => true,
+                ]);
             }
         }
 

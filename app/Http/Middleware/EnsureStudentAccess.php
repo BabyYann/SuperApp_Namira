@@ -23,14 +23,24 @@ class EnsureStudentAccess
             return redirect()->route('login');
         }
 
-        // Direct DB Check: Does this user have 'siswa' role in ANY team?
+        // Direct DB Check: Does this user have 'siswa' or 'student' role in ANY team, or is a parent linked to an active Student?
         $studentRole = DB::table('model_has_roles')
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->where('model_has_roles.model_id', $user->id)
             ->where('model_has_roles.model_type', get_class($user))
-            ->where('roles.name', 'siswa')
+            ->whereIn('roles.name', ['siswa', 'student'])
             ->select('model_has_roles.team_id')
             ->first();
+
+        if (!$studentRole) {
+            $linkedStudent = DB::table('students')
+                ->where('user_id', $user->id)
+                ->select('unit_id as team_id')
+                ->first();
+            if ($linkedStudent) {
+                $studentRole = $linkedStudent;
+            }
+        }
 
         if ($studentRole) {
             // Found it! Force the context.

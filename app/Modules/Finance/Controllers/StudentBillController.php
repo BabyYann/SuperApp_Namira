@@ -21,7 +21,7 @@ class StudentBillController extends Controller
 {
     public function index(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_admin_keuangan', 'finance'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_admin_keuangan', 'finance'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki akses ke tagihan siswa.');
         }
 
@@ -30,7 +30,7 @@ class StudentBillController extends Controller
                 ->with(['student', 'financeType']);
 
             $user = auth()->user();
-            if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan'])) {
                 $unitId = session('active_unit_id');
                 $query->whereHas('student', function ($q) use ($unitId) {
                     $q->where('unit_id', $unitId);
@@ -251,7 +251,7 @@ class StudentBillController extends Controller
 
     public function show($id)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'staff_admin_keuangan', 'finance'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_admin_keuangan', 'finance'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki akses ke tagihan siswa.');
         }
 
@@ -259,7 +259,7 @@ class StudentBillController extends Controller
         $bill = StudentBill::with(['student', 'financeType', 'transactions'])->findOrFail($id);
         
         $user = auth()->user();
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan'])) {
             $unitId = session('active_unit_id');
             if ($bill->student->unit_id !== $unitId) {
                 abort(403, 'Akses Ditolak: Unit tidak sesuai.');

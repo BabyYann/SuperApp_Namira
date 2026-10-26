@@ -22,11 +22,18 @@ class StudentPortalController extends Controller
     {
         $user = Auth::user();
         
-        // 1. Get Student Profile & Class
-        // We assume the User is linked to a Student Profile via 'user_id'
-        // Or we match by email? Best to rely on 'user_id' in students table if exists.
-        // Let's check Student model first.
-        $student = Student::where('user_id', $user->id)->with('classroom')->first();
+        // 1. Get Student Profile & Class (supports multi-child parent accounts)
+        $student = $this->getStudent();
+        $siblings = Student::where('user_id', $user->id)
+            ->with(['classroom', 'unit'])
+            ->get()
+            ->map(fn($s) => [
+                'id' => $s->id,
+                'full_name' => $s->full_name,
+                'nis' => $s->nis,
+                'classroom_name' => $s->classroom?->name ?? 'Belum Ada Kelas',
+                'unit_name' => $s->unit?->name ?? 'Namira',
+            ]);
 
         // 2. Finance: Active Bills (Unpaid)
         $activeBill = null;
@@ -228,6 +235,7 @@ class StudentPortalController extends Controller
 
         return Inertia::render('Student/Dashboard', [
             'student'      => $student,
+            'siblings'     => $siblings,
             'extracurriculars' => $myExtracurriculars,
             'activeBill'   => $activeBill,
             'schedule'     => $todaysSchedule,
@@ -264,7 +272,7 @@ class StudentPortalController extends Controller
             'longitude' => 'nullable|numeric',
         ]);
 
-        $student = Student::where('user_id', Auth::id())->with(['classroom'])->first();
+        $student = $this->getStudent();
         if (!$student) {
             return redirect()->back()->withErrors(['message' => 'Data siswa tidak ditemukan.']);
         }
@@ -525,8 +533,33 @@ class StudentPortalController extends Controller
         ]);
     }
 
+    public function switchChild(Request $request, Student $student)
+    {
+        if ($student->user_id !== Auth::id()) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        session([
+            'active_student_id' => $student->id,
+            'active_unit_id' => $student->unit_id,
+        ]);
+
+        return redirect()->back()->with('success', "Beralih ke profil Ananda {$student->full_name}.");
+    }
+
     private function getStudent()
     {
+        $activeStudentId = session('active_student_id');
+        if ($activeStudentId) {
+            $selected = Student::where('user_id', Auth::id())
+                ->where('id', $activeStudentId)
+                ->with(['classroom', 'unit'])
+                ->first();
+            if ($selected) {
+                return $selected;
+            }
+        }
+
         return Student::where('user_id', Auth::id())->with(['classroom', 'unit'])->first();
     }
 }

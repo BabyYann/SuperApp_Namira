@@ -16,7 +16,7 @@ class FinanceReportController extends Controller
 {
     public function arrears(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'staff_admin_keuangan', 'finance'])) {
+        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_admin_keuangan', 'finance'])) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang.');
         }
 

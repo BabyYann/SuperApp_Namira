@@ -677,7 +677,7 @@ const eventTypeLabels = {
                         <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><UsersIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Pegawai</span>
                     </Link>
-                    <Link :href="safeRoute('finance.dashboard', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                    <Link :href="safeRoute('yayasan.finance.dashboard', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
                         <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><BanknotesIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Keuangan</span>
                     </Link>
@@ -1116,8 +1116,8 @@ const eventTypeLabels = {
 
                     <!-- 12. Keuangan Unit (Finance) -->
                     <Link 
-                        v-if="hasRole('finance')"
-                        :href="safeRoute('finance.dashboard')"
+                        v-if="hasRole(['finance', 'staff_admin_keuangan', 'admin_unit', 'kepala_sekolah'])"
+                        :href="safeRoute('yayasan.finance.dashboard')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
                         <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-500/25 shadow-[0_8px_20px_-3px_rgba(13,148,136,0.30)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">

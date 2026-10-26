@@ -8,7 +8,6 @@ use App\Models\StudentPickupRequest;
 use App\Models\StudentTask;
 use App\Modules\Academic\Models\Student;
 use App\Modules\Finance\Models\StudentBill;
-use App\Modules\LMS\Models\LmsSubmission;
 use App\Modules\Yayasan\Models\AcademicYear;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,16 +47,15 @@ class StudentPortalApiController extends Controller
                 'status' => $b->status,
             ]);
 
-        $tasks = LmsSubmission::with(['assignment'])
-            ->where('student_id', $student->id)
-            ->latest()
+        $tasks = StudentTask::where('student_id', $student->id)
+            ->latest('date')
             ->limit(5)
             ->get()
-            ->map(fn ($s) => [
-                'id' => $s->id,
-                'title' => $s->assignment?->title,
-                'status' => $s->status,
-                'due_date' => $s->assignment?->due_date?->format('Y-m-d'),
+            ->map(fn ($t) => [
+                'id' => $t->id,
+                'title' => $t->title,
+                'status' => $t->is_completed ? 'completed' : 'pending',
+                'due_date' => $t->date ? (is_string($t->date) ? $t->date : $t->date->format('Y-m-d')) : null,
             ]);
 
         $schedule = $student->classroom?->schedules ?? [];
@@ -85,18 +83,16 @@ class StudentPortalApiController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $items = LmsSubmission::with(['assignment.classroom.classroom'])
-            ->where('student_id', $student->id)
+        $items = StudentTask::where('student_id', $student->id)
+            ->latest('date')
             ->get()
-            ->map(fn ($s) => [
-                'id' => $s->id,
-                'assignment_id' => $s->assignment?->id,
-                'title' => $s->assignment?->title,
-                'classroom' => $s->assignment?->classroom?->classroom?->name,
-                'due_date' => $s->assignment?->due_date?->format('Y-m-d H:i'),
-                'status' => $s->status,
-                'grade' => $s->grade,
-                'submitted_at' => $s->submitted_at?->format('Y-m-d H:i'),
+            ->map(fn ($t) => [
+                'id' => $t->id,
+                'title' => $t->title,
+                'classroom' => $student->classroom?->name,
+                'due_date' => $t->date ? (is_string($t->date) ? $t->date : $t->date->format('Y-m-d')) : null,
+                'status' => $t->is_completed ? 'completed' : 'pending',
+                'is_completed' => (bool) $t->is_completed,
             ]);
 
         return response()->json(['data' => $items]);
@@ -173,25 +169,7 @@ class StudentPortalApiController extends Controller
     // GET /student/grades
     public function grades(Request $request): JsonResponse
     {
-        $student = $this->currentStudent($request);
-        if (! $student) {
-            return response()->json(['data' => []]);
-        }
-
-        $items = LmsSubmission::with(['assignment.classroom.subject'])
-            ->where('student_id', $student->id)
-            ->where('status', 'graded')
-            ->get()
-            ->map(fn ($s) => [
-                'id' => $s->id,
-                'assignment' => $s->assignment?->title,
-                'subject' => $s->assignment?->classroom?->subject?->name,
-                'grade' => $s->grade,
-                'feedback' => $s->feedback,
-                'graded_at' => $s->graded_at?->format('Y-m-d'),
-            ]);
-
-        return response()->json(['data' => $items]);
+        return response()->json(['data' => []]);
     }
 
     // GET /student/schedule

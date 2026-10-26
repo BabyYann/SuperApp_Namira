@@ -45,13 +45,6 @@ const logout = () => {
                     <span class="text-sm font-bold text-gray-700">Beranda</span>
                 </Link>
 
-                <Link :href="route('lms.student.classrooms.index')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center gap-2 hover:bg-gray-50 transition-colors">
-                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                        <ComputerDesktopIcon class="w-6 h-6" />
-                    </div>
-                    <span class="text-sm font-bold text-gray-700">E-Learning (LMS)</span>
-                </Link>
-
                 <Link :href="route('student.academic')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center gap-2 hover:bg-gray-50 transition-colors">
                     <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
                         <CalendarIcon class="w-6 h-6" />

@@ -610,6 +610,29 @@ const isRouteActive = (pattern) => {
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-rose-600 transition-colors">Kalender</span>
                                 </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.student-checkin.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/70 border border-white ring-1 ring-emerald-400/25 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <QrCodeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Absen Gerbang</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['koordinator_kurikulum', 'admin_unit', 'kepala_sekolah'])"
+                                    :href="safeRoute('yayasan.academic-years.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-cyan-50/70 border border-white ring-1 ring-cyan-400/25 shadow-[0_8px_18px_-3px_rgba(6,182,212,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <CalendarDaysIcon class="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-cyan-600 transition-colors">Thn Akademik</span>
+                                </Link>
                             </div>
                         </div>
 
@@ -742,6 +765,17 @@ const isRouteActive = (pattern) => {
                                         <BuildingOfficeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600 stroke-[2.3]" />
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-indigo-600 transition-colors">Mitra</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('public-relations.banners.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-amber-50/70 border border-white ring-1 ring-amber-400/25 shadow-[0_8px_18px_-3px_rgba(245,158,11,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <MegaphoneIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Hero Banner</span>
                                 </Link>
                             </div>
                         </div>
@@ -898,11 +932,33 @@ const isRouteActive = (pattern) => {
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Daftar Ruang</span>
                                 </Link>
+
+                                <Link 
+                                    :href="safeRoute('sarpar.loans.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/70 border border-white ring-1 ring-blue-400/25 shadow-[0_8px_18px_-3px_rgba(37,99,235,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ArrowPathRoundedSquareIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Pinjam Alat</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('sarpar.maintenance.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-orange-50/70 border border-white ring-1 ring-orange-400/25 shadow-[0_8px_18px_-3px_rgba(249,115,22,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <WrenchScrewdriverIcon class="w-6 h-6 sm:w-7 sm:h-7 text-orange-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Lapor Rusak</span>
+                                </Link>
                             </div>
                         </div>
 
                         <!-- 6. KEUANGAN & SPP -->
-                        <div v-if="isGlobalAdmin || hasRole(['finance', 'staff_admin_keuangan'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                        <div v-if="isGlobalAdmin || hasRole(['finance', 'staff_admin_keuangan', 'admin_unit', 'kepala_sekolah'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
                             <div class="flex items-center gap-2 px-1">
                                 <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
                                 <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
@@ -941,6 +997,39 @@ const isRouteActive = (pattern) => {
                                         <ArrowPathRoundedSquareIcon class="w-6 h-6 sm:w-7 sm:h-7 text-sky-600 stroke-[2.3]" />
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Pembayaran</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.finance.reports.arrears')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-rose-50/70 border border-white ring-1 ring-rose-400/25 shadow-[0_8px_18px_-3px_rgba(244,63,94,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ExclamationTriangleIcon class="w-6 h-6 sm:w-7 sm:h-7 text-rose-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-rose-600 transition-colors">Tunggakan</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.finance.types.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-amber-50/70 border border-white ring-1 ring-amber-400/25 shadow-[0_8px_18px_-3px_rgba(245,158,11,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <TagIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Pos Bayar</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('yayasan.finance.accounts.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-indigo-50/70 border border-white ring-1 ring-indigo-400/25 shadow-[0_8px_18px_-3px_rgba(99,102,241,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BuildingOfficeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-indigo-600 transition-colors">Rekening</span>
                                 </Link>
                             </div>
                         </div>
@@ -1022,6 +1111,90 @@ const isRouteActive = (pattern) => {
                                         <SparklesIcon class="w-6 h-6 sm:w-7 sm:h-7 text-purple-600 stroke-[2.3]" />
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Linimasa SDM</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'staff_yayasan'])"
+                                    :href="safeRoute('yayasan.attendance-data.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-cyan-50/70 border border-white ring-1 ring-cyan-400/25 shadow-[0_8px_18px_-3px_rgba(6,182,212,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ClipboardDocumentListIcon class="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-cyan-600 transition-colors">Rekap Absen</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['staff_yayasan', 'admin_unit'])"
+                                    :href="safeRoute('yayasan.job-vacancies.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/70 border border-white ring-1 ring-blue-400/25 shadow-[0_8px_18px_-3px_rgba(37,99,235,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <MegaphoneIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Lowongan</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['staff_yayasan', 'admin_unit'])"
+                                    :href="safeRoute('yayasan.applicants.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-violet-50/70 border border-white ring-1 ring-violet-400/25 shadow-[0_8px_18px_-3px_rgba(139,92,246,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-violet-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Pelamar Kerja</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit'])"
+                                    :href="safeRoute('yayasan.monitoring.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-sky-50/70 border border-white ring-1 ring-sky-400/25 shadow-[0_8px_18px_-3px_rgba(2,132,199,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <PresentationChartBarIcon class="w-6 h-6 sm:w-7 sm:h-7 text-sky-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Monitoring</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin"
+                                    :href="safeRoute('yayasan.units.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/70 border border-white ring-1 ring-emerald-400/25 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BuildingOfficeIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Master Unit</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['admin_unit'])"
+                                    :href="safeRoute('yayasan.attendance-locations.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-orange-50/70 border border-white ring-1 ring-orange-400/25 shadow-[0_8px_18px_-3px_rgba(249,115,22,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <GlobeAltIcon class="w-6 h-6 sm:w-7 sm:h-7 text-orange-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Titik Absen</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="hasRole(['super_admin_yayasan'])"
+                                    :href="safeRoute('yayasan.settings.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-slate-200/70 border border-white ring-1 ring-slate-400/25 shadow-[0_8px_18px_-3px_rgba(71,85,105,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <Cog6ToothIcon class="w-6 h-6 sm:w-7 sm:h-7 text-slate-700 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-slate-700 transition-colors">Pengaturan</span>
                                 </Link>
 
                                 <Link 

@@ -597,21 +597,6 @@ const filteredMenuGroups = computed(() => {
         if (isFeatureEnabled('feature_extracurricular')) adminGroups.push(extracurricularMenu);
         adminGroups.push(humasMenu);
 
-        if (isTeacher) {
-            adminGroups.push({
-                title: 'LMS (E-Learning)',
-                key: 'lms_teacher',
-                items: [
-                    { 
-                        label: 'Kelas Virtual LMS', 
-                        route: 'lms.teacher.classrooms.index', 
-                        active: 'lms.teacher.classrooms.*',
-                        icon: ComputerDesktopIcon 
-                    },
-                ]
-            });
-        }
-
         return adminGroups;
     }
 
@@ -650,19 +635,6 @@ const filteredMenuGroups = computed(() => {
                     route: 'yayasan.student-attendance.index', 
                     active: 'yayasan.student-attendance.*',
                     icon: ClipboardDocumentCheckIcon 
-                },
-            ]
-        });
-
-        groups.push({
-            title: 'LMS (E-Learning)',
-            key: 'lms_teacher',
-            items: [
-                { 
-                    label: 'Kelas Virtual', 
-                    route: 'lms.teacher.classrooms.index', 
-                    active: 'lms.teacher.classrooms.*',
-                    icon: ComputerDesktopIcon 
                 },
             ]
         });
@@ -902,28 +874,6 @@ const filteredMenuGroups = computed(() => {
         });
     }
 
-    // LMS Siswa Menu
-    if (hasRole('siswa') || hasRole('student')) {
-        groups.push({
-            title: 'LMS (E-Learning)',
-            key: 'lms_student',
-            items: [
-                { 
-                    label: 'Kelas Saya', 
-                    route: 'lms.student.classrooms.index', 
-                    active: 'lms.student.classrooms.*',
-                    icon: AcademicCapIcon 
-                },
-                { 
-                    label: 'Nilai Saya', 
-                    route: 'lms.student.grades.index', 
-                    active: 'lms.student.grades.index',
-                    icon: TrophyIcon 
-                },
-            ]
-        });
-    }
-
     // G. PANITIA SPMB (Jika guru / pegawai ditugaskan sebagai Panitia SPMB)
     if (hasRole('panitia_spmb')) {
         groups.push(spmbMenu);
@@ -946,6 +896,18 @@ const filteredMenuGroups = computed(() => {
                     route: 'sarpar.rooms.index', 
                     active: 'sarpar.rooms.*',
                     icon: BuildingOffice2Icon 
+                },
+                { 
+                    label: 'Peminjaman Alat', 
+                    route: 'sarpar.loans.index', 
+                    active: 'sarpar.loans.*',
+                    icon: ArrowPathIcon 
+                },
+                { 
+                    label: 'Lapor Kerusakan', 
+                    route: 'sarpar.maintenance.index', 
+                    active: 'sarpar.maintenance.*',
+                    icon: WrenchScrewdriverIcon 
                 },
             ]
         });

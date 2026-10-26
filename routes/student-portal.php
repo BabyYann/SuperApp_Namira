@@ -16,4 +16,5 @@ Route::prefix('student')->name('student.')->middleware([\App\Http\Middleware\Ens
     Route::delete('/productivity/tasks/{task}', [\App\Http\Controllers\StudentTaskController::class, 'destroy'])->name('tasks.destroy');
 
     Route::post('/pickup-request', [\App\Http\Controllers\StudentPortalController::class, 'pickupRequest'])->name('pickup.request');
+    Route::post('/switch-child/{student}', [\App\Http\Controllers\StudentPortalController::class, 'switchChild'])->name('switch-child');
 });

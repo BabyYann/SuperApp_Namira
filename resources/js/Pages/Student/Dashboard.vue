@@ -27,6 +27,10 @@ import {
 
 const props = defineProps({
     student: Object,
+    siblings: {
+        type: Array,
+        default: () => []
+    },
     extracurriculars: {
         type: Array,
         default: () => []
@@ -186,6 +190,26 @@ onMounted(() => {
     <StudentLayout title="Portal Siswa">
         <div class="max-w-5xl mx-auto space-y-4 pb-20">
             
+            <!-- 0. SIBLING SWITCHER (Jika 1 Akun Orang Tua memiliki >1 Anak) -->
+            <div v-if="siblings && siblings.length > 1" class="bg-teal-50/80 border border-teal-200/80 rounded-2xl p-2.5 flex items-center justify-between gap-2 overflow-x-auto">
+                <span class="text-[10px] font-black uppercase tracking-wider text-teal-800 px-2 shrink-0">Pilih Ananda:</span>
+                <div class="flex items-center gap-1.5">
+                    <button
+                        v-for="sib in siblings"
+                        :key="sib.id"
+                        type="button"
+                        @click="router.post(route('student.switch-child', sib.id), {}, { preserveScroll: true })"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5"
+                        :class="sib.id === student?.id ? 'bg-teal-700 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'"
+                    >
+                        <span>{{ sib.full_name }}</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded-md font-extrabold" :class="sib.id === student?.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'">
+                            {{ sib.unit_name }}
+                        </span>
+                    </button>
+                </div>
+            </div>
+
             <!-- 1. GREETING & HEADER BAR -->
             <div class="flex items-center justify-between bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
                 <div>
@@ -205,32 +229,32 @@ onMounted(() => {
                 </div>
             </div>
 
-            <!-- 2. HERO LMS BANNER (COMPACT & SLEEK) -->
+            <!-- 2. HERO ACADEMIC & PRODUCTIVITY BANNER (COMPACT & SLEEK) -->
             <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white p-6 shadow-md border border-teal-800/50">
                 <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
                             <span class="px-2.5 py-0.5 bg-white/10 text-teal-200 text-[10px] font-bold uppercase rounded-md tracking-wider border border-white/10 backdrop-blur-sm">
-                                LMS E-Learning
+                                Portal Akademik
                             </span>
                             <span v-if="tasks?.total > 0" class="text-xs text-teal-300 font-medium">
-                                {{ tasks.completed }}/{{ tasks.total }} Tugas Selesai
+                                {{ tasks.completed }}/{{ tasks.total }} Target Hari Ini Selesai
                             </span>
                         </div>
                         <h2 class="text-lg md:text-xl font-extrabold text-white tracking-tight">
-                            Ruang Belajar Digital Namira
+                            Jadwal Pelajaran & Kehadiran Siswa
                         </h2>
                         <p class="text-xs text-teal-100/80 max-w-lg">
-                            Akses materi pelajaran interaktif, ikuti kelas virtual, dan kumpulkan tugas digital.
+                            Pantau jadwal pelajaran harian, rekap kehadiran, dan kelola target produktivitas harianmu.
                         </p>
                     </div>
                     
                     <Link 
-                        :href="route('lms.student.classrooms.index')" 
+                        :href="route('student.academic')" 
                         class="px-5 py-2.5 bg-white text-teal-900 hover:bg-teal-50 rounded-2xl font-bold text-xs shadow-sm transition-all active:scale-95 shrink-0 text-center flex items-center justify-center gap-2"
                     >
-                        <ComputerDesktopIcon class="w-4 h-4 text-namira-teal" />
-                        <span>Buka E-Learning &rarr;</span>
+                        <CalendarDaysIcon class="w-4 h-4 text-namira-teal" />
+                        <span>Buka Akademik &rarr;</span>
                     </Link>
                 </div>
             </div>

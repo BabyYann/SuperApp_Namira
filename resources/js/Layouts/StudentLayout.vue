@@ -38,7 +38,6 @@ const user = usePage().props.auth.user;
 // Navigation Items
 const navItems = [
     { name: 'Beranda', route: 'student.dashboard', icon: HomeIcon, activeIcon: HomeIconSolid },
-    { name: 'E-Learning', route: 'lms.student.classrooms.index', icon: ComputerDesktopIcon, activeIcon: ComputerDesktopIconSolid },
     { name: 'Akademik', route: 'student.academic', icon: CalendarIcon, activeIcon: CalendarIconSolid },
     { name: 'Keuangan', route: 'student.finance', icon: BanknotesIcon, activeIcon: BanknotesIconSolid },
     { name: 'Disiplin', route: 'student.counseling', icon: ExclamationTriangleIcon, activeIcon: ExclamationTriangleIconSolid },

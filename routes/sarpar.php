@@ -20,8 +20,9 @@ Route::prefix('sarpar')->name('sarpar.')->middleware([
     Route::get('maintenance', [\App\Modules\Sarpar\Controllers\MaintenanceController::class, 'index'])->name('maintenance.index');
     Route::post('maintenance', [\App\Modules\Sarpar\Controllers\MaintenanceController::class, 'store'])->name('maintenance.store');
     
-    // Loans list & consumable usage log
+    // Loans list, loan request creation & consumable usage log
     Route::get('loans', [\App\Modules\Sarpar\Controllers\LoanController::class, 'index'])->name('loans.index');
+    Route::post('loans', [\App\Modules\Sarpar\Controllers\LoanController::class, 'store'])->name('loans.store');
     Route::post('usage', [\App\Modules\Sarpar\Controllers\UsageLogController::class, 'store'])->name('usage.store');
 
     // Management Routes (Strictly for Sarpras Coordinator, Unit Admin, Principal, Foundation Admin)
@@ -43,8 +44,7 @@ Route::prefix('sarpar')->name('sarpar.')->middleware([
         Route::post('maintenance/{log}/handle', [\App\Modules\Sarpar\Controllers\MaintenanceController::class, 'handle'])->name('maintenance.handle');
         Route::post('maintenance/{log}/cancel', [\App\Modules\Sarpar\Controllers\MaintenanceController::class, 'cancel'])->name('maintenance.cancel');
 
-        // Loan processing
-        Route::post('loans', [\App\Modules\Sarpar\Controllers\LoanController::class, 'store'])->name('loans.store');
+        // Loan processing (return / lost / reminder)
         Route::post('loans/{loan}/return', [\App\Modules\Sarpar\Controllers\LoanController::class, 'return'])->name('loans.return');
         Route::post('loans/{loan}/lost', [\App\Modules\Sarpar\Controllers\LoanController::class, 'markLost'])->name('loans.lost');
         Route::post('loans/{loan}/reminder', [\App\Modules\Sarpar\Controllers\LoanController::class, 'sendReminder'])->name('loans.reminder');

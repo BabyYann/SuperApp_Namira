@@ -25,6 +25,10 @@ import {
 const props = defineProps({
     applicant: Object,
     setting: Object,
+    classrooms: {
+        type: Array,
+        default: () => []
+    },
 });
 
 const isSmp = computed(() => {
@@ -40,6 +44,11 @@ const showVaModal = ref(false);
 const showPaymentModal = ref(false);
 const showEditBiodataModal = ref(false);
 const showResetPasswordModal = ref(false);
+const showEnrollModal = ref(false);
+
+const enrollForm = useForm({
+    classroom_id: '',
+});
 
 // Form: Edit Biodata oleh Admin / Panitia
 const editBiodataForm = useForm({
@@ -194,10 +203,14 @@ const verifyQrisPayment = () => {
 
 // Konversi ke Siswa Aktif
 const enrollStudent = () => {
-    const unitName = props.applicant.unit?.name || (isSmp.value ? 'SMP Namira' : 'SD Namira');
-    if (confirm(`Pindahkan calon siswa ${props.applicant.full_name} menjadi Siswa Aktif resmi ${unitName}?`)) {
-        router.post(route('spmb.admin.enroll-student', props.applicant.id));
-    }
+    showEnrollModal.value = true;
+};
+
+const submitEnrollStudent = () => {
+    enrollForm.post(route('spmb.admin.enroll-student', props.applicant.id), {
+        preserveScroll: true,
+        onSuccess: () => showEnrollModal.value = false,
+    });
 };
 
 const page = usePage();
@@ -996,6 +1009,49 @@ const formatRupiah = (amount) => {
                             </button>
                             <button type="submit" :disabled="resetPasswordForm.processing" class="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 shadow">
                                 {{ resetPasswordForm.processing ? 'Mereset...' : 'Simpan Password Baru' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ================= MODAL 7: KONVERSI KE SISWA AKTIF & PENEMPATAN KELAS ================= -->
+            <div v-if="showEnrollModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <AcademicCapIcon class="w-5 h-5 text-emerald-600" />
+                            <span>Konversi ke Siswa Aktif</span>
+                        </h3>
+                        <button type="button" @click="showEnrollModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-700">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Pindahkan <strong>{{ applicant.full_name }}</strong> ke Data Siswa Aktif <strong>{{ applicant.unit?.name || 'Namira' }}</strong>. Sistem akan otomatis membuat NIS, memberikan akses Portal Siswa, dan mencatat pembayaran daftar ulang ke Transaksi Keuangan.
+                    </p>
+
+                    <form @submit.prevent="submitEnrollStudent" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Penempatan Kelas (Opsional)</label>
+                            <select
+                                v-model="enrollForm.classroom_id"
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white"
+                            >
+                                <option value="">-- Tempatkan Kelas Nanti --</option>
+                                <option v-for="cls in classrooms" :key="cls.id" :value="cls.id">
+                                    {{ cls.name }} (Tingkat {{ cls.level }})
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button type="button" @click="showEnrollModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700">
+                                Batal
+                            </button>
+                            <button type="submit" :disabled="enrollForm.processing" class="px-5 py-2 rounded-xl bg-emerald-700 text-white text-xs font-bold hover:bg-emerald-600 shadow">
+                                {{ enrollForm.processing ? 'Memproses...' : 'Resmikan Siswa Aktif' }}
                             </button>
                         </div>
                     </form>

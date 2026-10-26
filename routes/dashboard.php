@@ -9,7 +9,7 @@ Route::get('/dashboard', function () {
     $isStudent = \DB::table('model_has_roles')
         ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
         ->where('model_has_roles.model_id', $user->id)
-        ->where('roles.name', 'siswa')
+        ->whereIn('roles.name', ['siswa', 'student'])
         ->exists();
 
     if ($isStudent) {
@@ -37,7 +37,21 @@ Route::get('/dashboard', function () {
             'admin_unit', 
             'staff_yayasan', 
             'staff_unit', 
-            'teacher'
+            'kepala_sekolah',
+            'teacher',
+            'guru',
+            'wali_kelas',
+            'koordinator_kurikulum',
+            'koordinator_kesiswaan',
+            'koordinator_sarpar',
+            'bk',
+            'counseling',
+            'finance',
+            'staff_admin_keuangan',
+            'humas_yayasan',
+            'humas_unit',
+            'panitia_spmb',
+            'satpam',
         ])
         ->exists();
 
