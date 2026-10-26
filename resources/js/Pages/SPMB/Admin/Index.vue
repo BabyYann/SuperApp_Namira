@@ -18,7 +18,9 @@ import {
     CreditCardIcon,
     AcademicCapIcon,
     XMarkIcon,
-    TrashIcon
+    TrashIcon,
+    PencilSquareIcon,
+    KeyIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -127,6 +129,70 @@ const deleteApplicant = (app) => {
             preserveScroll: true,
         });
     }
+};
+
+// Quick Edit Biodata Modal from Table
+const showEditBiodataModal = ref(false);
+const activeEditApp = ref(null);
+const editBiodataForm = useForm({
+    full_name: '',
+    nickname: '',
+    gender: 'L',
+    nik: '',
+    nisn: '',
+    birth_place: '',
+    birth_date: '',
+    religion: 'Islam',
+    child_order: 1,
+    total_siblings: 1,
+    category: 'external_umum',
+    previous_school: '',
+    special_notes: '',
+    father_name: '',
+    father_job: '',
+    mother_name: '',
+    mother_job: '',
+    parent_phone: '',
+    address: '',
+    photo: null,
+});
+
+const openEditBiodataModal = (app) => {
+    activeEditApp.value = app;
+    editBiodataForm.full_name = app.full_name || '';
+    editBiodataForm.nickname = app.nickname || '';
+    editBiodataForm.gender = app.gender || 'L';
+    editBiodataForm.nik = app.nik || '';
+    editBiodataForm.nisn = app.nisn || '';
+    editBiodataForm.birth_place = app.birth_place || '';
+    editBiodataForm.birth_date = app.birth_date ? String(app.birth_date).substring(0, 10) : '';
+    editBiodataForm.religion = app.religion || 'Islam';
+    editBiodataForm.child_order = app.child_order || 1;
+    editBiodataForm.total_siblings = app.total_siblings || 1;
+    editBiodataForm.category = app.category || 'external_umum';
+    editBiodataForm.previous_school = app.previous_school || '';
+    editBiodataForm.special_notes = app.special_notes || '';
+    editBiodataForm.father_name = app.father_name || '';
+    editBiodataForm.father_job = app.father_job || '';
+    editBiodataForm.mother_name = app.mother_name || '';
+    editBiodataForm.mother_job = app.mother_job || '';
+    editBiodataForm.parent_phone = app.parent_phone || '';
+    editBiodataForm.address = app.address || '';
+    editBiodataForm.photo = null;
+    editBiodataForm.clearErrors();
+    showEditBiodataModal.value = true;
+};
+
+const submitEditBiodata = () => {
+    if (!activeEditApp.value) return;
+    editBiodataForm.post(route('spmb.admin.update-biodata', activeEditApp.value.id), {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            showEditBiodataModal.value = false;
+            editBiodataForm.photo = null;
+        },
+    });
 };
 
 const formatRupiah = (amount) => {
@@ -403,6 +469,16 @@ const getStatusBadgeClass = (s) => {
                                             <EyeIcon class="w-4 h-4" />
                                         </Link>
 
+                                        <!-- 1b. Quick Edit Biodata Button -->
+                                        <button 
+                                            @click="openEditBiodataModal(app)"
+                                            type="button"
+                                            title="Edit Biodata Calon Siswa & Orang Tua"
+                                            class="w-8.5 h-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center justify-center transition shadow-xs"
+                                        >
+                                            <PencilSquareIcon class="w-4 h-4" />
+                                        </button>
+
                                         <!-- 2. Bukti Transfer Modal -->
                                         <button 
                                             v-if="app.registration_payment_proof_url || app.re_registration_payment_proof_url || app.settlement_payment_proof_url"
@@ -639,6 +715,107 @@ const getStatusBadgeClass = (s) => {
                             Konfirmasi Pembayaran
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- ================= MODAL QUICK: EDIT BIODATA CALON SISWA ================= -->
+            <div v-if="showEditBiodataModal && activeEditApp" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 my-8 max-h-[90vh] overflow-y-auto space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 font-mono">{{ activeEditApp.registration_number }}</span>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">Edit Biodata & Data Orang Tua</h3>
+                            <p class="text-xs text-slate-500">Perbaiki kesalahan ketik biodata, kategori pendaftar, atau nomor WhatsApp akun tanpa menghapus data.</p>
+                        </div>
+                        <button type="button" @click="showEditBiodataModal = false" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <form @submit.prevent="submitEditBiodata" class="space-y-4 text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Calon Siswa *</label>
+                                <input v-model="editBiodataForm.full_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Panggilan</label>
+                                <input v-model="editBiodataForm.nickname" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Jenis Kelamin *</label>
+                                <select v-model="editBiodataForm.gender" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                    <option value="L">Laki-laki</option>
+                                    <option value="P">Perempuan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tempat Lahir *</label>
+                                <input v-model="editBiodataForm.birth_place" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal Lahir *</label>
+                                <input v-model="editBiodataForm.birth_date" type="date" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">NIK Anak</label>
+                                <input v-model="editBiodataForm.nik" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">NISN</label>
+                                <input v-model="editBiodataForm.nisn" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori Pendaftar *</label>
+                                <select v-model="editBiodataForm.category" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                    <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
+                                    <option value="external_umum">Pendaftar Umum (Eksternal)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Asal Sekolah</label>
+                                <input v-model="editBiodataForm.previous_school" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ayah *</label>
+                                <input v-model="editBiodataForm.father_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pekerjaan Ayah</label>
+                                <input v-model="editBiodataForm.father_job" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ibu *</label>
+                                <input v-model="editBiodataForm.mother_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pekerjaan Ibu</label>
+                                <input v-model="editBiodataForm.mother_job" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nomor WhatsApp Akun Ortu (Login) *</label>
+                                <input v-model="editBiodataForm.parent_phone" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                <p v-if="editBiodataForm.errors.parent_phone" class="text-rose-600 text-[11px] mt-1">{{ editBiodataForm.errors.parent_phone }}</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Alamat Lengkap *</label>
+                                <textarea v-model="editBiodataForm.address" rows="2" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"></textarea>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ganti Pas Foto 3x4 (Opsional)</label>
+                                <input type="file" accept=".jpg,.jpeg,.png" @change="editBiodataForm.photo = $event.target.files[0]" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-800">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <button type="button" @click="showEditBiodataModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700">
+                                Batal
+                            </button>
+                            <button type="submit" :disabled="editBiodataForm.processing" class="px-5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 shadow">
+                                {{ editBiodataForm.processing ? 'Menyimpan...' : 'Simpan Biodata' }}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 

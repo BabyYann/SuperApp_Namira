@@ -390,9 +390,19 @@ const formatRupiah = (amount) => {
                     
                     <!-- Biodata Calon Siswa -->
                     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                        <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
-                            A. Identitas Calon Siswa
-                        </h3>
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                                A. Identitas Calon Siswa
+                            </h3>
+                            <button
+                                type="button"
+                                @click="showEditBiodataModal = true"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold transition"
+                            >
+                                <PencilSquareIcon class="w-3.5 h-3.5" />
+                                <span>Edit Biodata</span>
+                            </button>
+                        </div>
 
                         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-xs">
                             <div>
@@ -432,9 +442,29 @@ const formatRupiah = (amount) => {
 
                     <!-- Biodata Orang Tua -->
                     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                        <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
-                            B. Data Orang Tua & Domisili
-                        </h3>
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                                B. Data Orang Tua & Domisili
+                            </h3>
+                            <div class="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    @click="showResetPasswordModal = true"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-bold transition"
+                                >
+                                    <KeyIcon class="w-3.5 h-3.5" />
+                                    <span>Reset Password</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="showEditBiodataModal = true"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold transition"
+                                >
+                                    <PencilSquareIcon class="w-3.5 h-3.5" />
+                                    <span>Edit Data Ortu</span>
+                                </button>
+                            </div>
+                        </div>
 
                         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-xs">
                             <div>
