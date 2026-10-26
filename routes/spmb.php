@@ -23,12 +23,17 @@ Route::middleware(['auth'])->prefix('spmb/portal')->name('spmb.applicant.')->gro
     Route::get('/kartu-peserta/{applicant}', [ApplicantPortalController::class, 'printCard'])->name('print-card');
     Route::get('/surat-penerimaan/{applicant}', [ApplicantPortalController::class, 'printAcceptedLetter'])->name('print-skl');
     Route::post('/daftar-ulang/{applicant}/upload-bukti', [ApplicantPortalController::class, 'uploadReRegistrationProof'])->name('upload-proof');
+    Route::post('/profil/{applicant}/update', [ApplicantPortalController::class, 'updateProfile'])->name('update-profile');
+    Route::post('/pendaftaran/{applicant}/upload-bukti-awal', [ApplicantPortalController::class, 'updateRegistrationProof'])->name('upload-registration-proof');
 });
 
 // Admin & Panitia SPMB routes
 Route::middleware(['auth'])->prefix('yayasan/spmb')->name('spmb.admin.')->group(function () {
     Route::get('/', [AdminSpmbController::class, 'index'])->name('index');
+    Route::get('/export', [AdminSpmbController::class, 'export'])->name('export');
     Route::get('/pendaftar/{applicant}', [AdminSpmbController::class, 'show'])->name('show');
+    Route::post('/pendaftar/{applicant}/update-biodata', [AdminSpmbController::class, 'updateApplicant'])->name('update-biodata');
+    Route::post('/pendaftar/{applicant}/reset-password', [AdminSpmbController::class, 'resetParentPassword'])->name('reset-password');
     Route::post('/pendaftar/{applicant}/verifikasi-bayar', [AdminSpmbController::class, 'verifyPayment'])->name('verify-payment');
     Route::post('/pendaftar/{applicant}/atur-jadwal', [AdminSpmbController::class, 'setSchedule'])->name('set-schedule');
     Route::post('/pendaftar/{applicant}/simpan-evaluasi', [AdminSpmbController::class, 'saveEvaluation'])->name('save-evaluation');

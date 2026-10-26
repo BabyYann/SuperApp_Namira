@@ -12,6 +12,7 @@ use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -642,5 +643,308 @@ class AdminSpmbController extends Controller
         }
 
         return redirect()->route('spmb.admin.index')->with('success', "Data calon siswa {$fullName} ({$regNumber}) berhasil dihapus permanen.");
+    }
+
+    /**
+     * Update applicant biodata by Admin / Panitia SPMB.
+     */
+    public function updateApplicant(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
+    {
+        $this->authorizeSpmb($applicant->unit_id);
+
+        $request->validate([
+            'full_name' => 'required|string|max:255',
+            'nickname' => 'nullable|string|max:100',
+            'gender' => 'required|in:L,P',
+            'nik' => 'nullable|string|max:20',
+            'nisn' => 'nullable|string|max:20',
+            'birth_place' => 'required|string|max:100',
+            'birth_date' => 'required|date',
+            'religion' => 'nullable|string|max:50',
+            'child_order' => 'nullable|integer',
+            'total_siblings' => 'nullable|integer',
+            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external',
+            'previous_school' => 'required|string|max:255',
+            'special_notes' => 'nullable|string|max:1000',
+
+            'father_name' => 'nullable|string|max:255',
+            'father_nik' => 'nullable|string|max:20',
+            'father_phone' => 'nullable|string|max:25',
+            'father_job' => 'nullable|string|max:100',
+            'father_education' => 'nullable|string|max:50',
+
+            'mother_name' => 'nullable|string|max:255',
+            'mother_nik' => 'nullable|string|max:20',
+            'mother_phone' => 'nullable|string|max:25',
+            'mother_job' => 'nullable|string|max:100',
+            'mother_education' => 'nullable|string|max:50',
+
+            'parent_phone' => 'required|string|min:9|max:25',
+            'address' => 'required|string|max:500',
+            'rt' => 'nullable|string|max:10',
+            'rw' => 'nullable|string|max:10',
+            'village' => 'nullable|string|max:100',
+            'district' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:10',
+
+            'photo' => 'nullable|file|image|max:10240',
+        ]);
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', (string)$request->parent_phone);
+        if (str_starts_with($cleanPhone, '62')) {
+            $cleanPhone = '0' . substr($cleanPhone, 2);
+        }
+
+        $duplicateApplicant = SpmbApplicant::where('unit_id', $applicant->unit_id)
+            ->where('parent_phone', $cleanPhone)
+            ->where('id', '!=', $applicant->id)
+            ->first();
+
+        if ($duplicateApplicant) {
+            return back()->withErrors([
+                'parent_phone' => "Nomor WhatsApp {$cleanPhone} sudah terdaftar pada pendaftar lain ({$duplicateApplicant->registration_number}).",
+            ])->withInput();
+        }
+
+        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+
+        $updateData = [
+            'full_name' => $request->full_name,
+            'nickname' => $request->nickname,
+            'gender' => $request->gender,
+            'nik' => $request->nik,
+            'nisn' => $request->nisn,
+            'birth_place' => $request->birth_place,
+            'birth_date' => $request->birth_date,
+            'religion' => $request->religion ?: ($applicant->religion ?: 'Islam'),
+            'child_order' => $request->child_order,
+            'total_siblings' => $request->total_siblings,
+            'category' => $request->category ?: $applicant->category,
+            'previous_school' => $request->previous_school,
+            'special_notes' => $request->special_notes,
+            'father_name' => $request->father_name,
+            'father_nik' => $request->father_nik,
+            'father_phone' => $request->father_phone,
+            'father_job' => $request->father_job,
+            'father_education' => $request->father_education,
+            'mother_name' => $request->mother_name,
+            'mother_nik' => $request->mother_nik,
+            'mother_phone' => $request->mother_phone,
+            'mother_job' => $request->mother_job,
+            'mother_education' => $request->mother_education,
+            'parent_phone' => $cleanPhone,
+            'address' => $request->address,
+            'rt' => $request->rt,
+            'rw' => $request->rw,
+            'village' => $request->village,
+            'district' => $request->district,
+            'city' => $request->city,
+            'postal_code' => $request->postal_code,
+        ];
+
+        if ($request->hasFile('photo')) {
+            if ($applicant->photo_path && Storage::disk('public')->exists($applicant->photo_path)) {
+                Storage::disk('public')->delete($applicant->photo_path);
+            }
+            $updateData['photo_path'] = $spmbService->storeApplicantDocument(
+                $request->file('photo'),
+                'PASFOTO',
+                $applicant->registration_number,
+                $unitSlug
+            );
+        }
+
+        $applicant->update($updateData);
+
+        // Sinkronisasi ke tabel users milik orang tua
+        if ($applicant->user) {
+            $parentUser = $applicant->user;
+            $phoneTaken = User::where('phone', $cleanPhone)->where('id', '!=', $parentUser->id)->exists();
+            $userUpdates = [
+                'name' => $request->father_name ?: ($request->mother_name ?: $parentUser->name),
+            ];
+            if (!$phoneTaken) {
+                $userUpdates['phone'] = $cleanPhone;
+                if (str_ends_with($parentUser->email, '@spmb.namiraschool.com')) {
+                    $newEmail = "{$cleanPhone}@spmb.namiraschool.com";
+                    if (!User::where('email', $newEmail)->where('id', '!=', $parentUser->id)->exists()) {
+                        $userUpdates['email'] = $newEmail;
+                    }
+                }
+            }
+            $parentUser->update($userUpdates);
+        }
+
+        return back()->with('success', "Biodata calon siswa {$applicant->full_name} berhasil diperbarui.");
+    }
+
+    /**
+     * Reset parent account password by Admin / Panitia SPMB.
+     */
+    public function resetParentPassword(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
+    {
+        $this->authorizeSpmb($applicant->unit_id);
+
+        $request->validate([
+            'new_password' => 'required|string|min:6|max:50',
+        ], [
+            'new_password.required' => 'Password baru wajib diisi.',
+            'new_password.min' => 'Password baru minimal 6 karakter.',
+        ]);
+
+        $parentUser = $applicant->user;
+        if (!$parentUser) {
+            $parentName = $applicant->father_name ?: ($applicant->mother_name ?: $applicant->full_name);
+            $parentUser = $spmbService->resolveParentUser($applicant->parent_phone, $request->new_password, $parentName);
+            $applicant->update(['user_id' => $parentUser->id]);
+        } else {
+            $parentUser->update([
+                'password' => Hash::make($request->new_password),
+            ]);
+        }
+
+        return back()->with('success', "Kata sandi akun orang tua untuk {$applicant->full_name} (No. WA: {$applicant->parent_phone}) berhasil direset.");
+    }
+
+    /**
+     * Export applicants and selection scores to CSV (Excel-compatible UTF-8 BOM).
+     */
+    public function export(Request $request)
+    {
+        $user = Auth::user();
+        $this->authorizeSpmb();
+
+        $targetUnit = null;
+        if ($request->filled('unit_id')) {
+            $targetUnit = Unit::find($request->unit_id);
+        }
+        if (!$targetUnit && session()->has('active_unit_id')) {
+            $targetUnit = Unit::find(session('active_unit_id'));
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
+        }
+        if (!$targetUnit) {
+            $targetUnit = Unit::firstOrFail();
+        }
+
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            $this->authorizeSpmb($targetUnit->id);
+        }
+
+        $query = SpmbApplicant::with(['unit'])
+            ->where('unit_id', $targetUnit->id);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('parent_phone', 'like', "%{$search}%")
+                    ->orWhere('father_name', 'like', "%{$search}%")
+                    ->orWhere('mother_name', 'like', "%{$search}%")
+                    ->orWhere('previous_school', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category') && $request->category !== 'all') {
+            if (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
+                $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd']);
+            } else {
+                $query->where('category', $request->category);
+            }
+        }
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        $applicants = $query->orderBy('id', 'asc')->get();
+        $unitCode = strtoupper($targetUnit->code ?: 'UNIT');
+        $filename = "Data_Pendaftar_SPMB_{$unitCode}_" . date('Y-m-d_His') . ".csv";
+
+        return response()->streamDownload(function () use ($applicants) {
+            $handle = fopen('php://output', 'w');
+            // UTF-8 BOM for Microsoft Excel compatibility
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'No',
+                'No. Registrasi',
+                'Unit Sekolah',
+                'Kategori / Jalur',
+                'Status Pendaftaran',
+                'Nama Lengkap Siswa',
+                'Nama Panggilan',
+                'L/P',
+                'NIK Siswa',
+                'NISN',
+                'Tempat Lahir',
+                'Tanggal Lahir',
+                'Asal Sekolah',
+                'Nama Ayah',
+                'Pekerjaan Ayah',
+                'Nama Ibu',
+                'Pekerjaan Ibu',
+                'No. WA Utama (Login)',
+                'Alamat Lengkap',
+                'Verifikasi Biaya Formulir',
+                'Tgl Seleksi / Observasi',
+                'Nilai Tes Akademik',
+                'Catatan Observasi Wawancara',
+                'Catatan Observasi Mengaji',
+                'Catatan Evaluasi Umum',
+                'Keputusan Seleksi',
+                'No. Virtual Account',
+                'Total Biaya Masuk',
+                'Nominal Sudah Dibayar',
+                'Status Daftar Ulang',
+            ]);
+
+            foreach ($applicants as $idx => $app) {
+                $scores = $app->academic_score_details ?? [];
+                $academicScore = $scores['academic_score'] ?? ($scores['bahasa_indonesia'] ?? '-');
+                $wawancara = $scores['wawancara'] ?? '-';
+                $mengaji = $scores['mengaji'] ?? '-';
+
+                fputcsv($handle, [
+                    $idx + 1,
+                    $app->registration_number,
+                    $app->unit?->name ?? '-',
+                    $app->category_label,
+                    $app->status_label,
+                    $app->full_name,
+                    $app->nickname ?? '-',
+                    $app->gender,
+                    $app->nik ? "'{$app->nik}" : '-',
+                    $app->nisn ? "'{$app->nisn}" : '-',
+                    $app->birth_place ?? '-',
+                    $app->birth_date ? $app->birth_date->format('Y-m-d') : '-',
+                    $app->previous_school ?? '-',
+                    $app->father_name ?? '-',
+                    $app->father_job ?? '-',
+                    $app->mother_name ?? '-',
+                    $app->mother_job ?? '-',
+                    "'{$app->parent_phone}",
+                    $app->address ?? '-',
+                    $app->registration_payment_verified_at ? 'Terverifikasi' : 'Menunggu Cek',
+                    $app->observation_date ? $app->observation_date->format('Y-m-d') : '-',
+                    $academicScore,
+                    $wawancara,
+                    $mengaji,
+                    $app->evaluation_notes ?? '-',
+                    $app->evaluation_result ? strtoupper($app->evaluation_result) : '-',
+                    $app->virtual_account_number ? "'{$app->virtual_account_number}" : '-',
+                    (float) ($app->total_admission_fee ?? 0),
+                    (float) ($app->paid_admission_amount ?? 0),
+                    $app->admission_payment_status ?? 'unpaid',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 }

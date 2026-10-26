@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { 
     AcademicCapIcon, 
@@ -14,7 +14,10 @@ import {
     UserIcon,
     MapPinIcon,
     PhoneIcon,
-    DocumentTextIcon
+    DocumentTextIcon,
+    PencilSquareIcon,
+    PhotoIcon,
+    XMarkIcon
 } from '@heroicons/vue/24/outline';
 
 import { compressImageFile } from '@/Utils/imageCompressor';
@@ -82,6 +85,96 @@ const handleUploadProof = async (e, type = 'termin_1') => {
 const formatRupiah = (amount) => {
     if (!amount) return 'Rp 0';
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+};
+
+// Self-service Edit Biodata & Pas Foto
+const showEditModal = ref(false);
+const editForm = useForm({
+    full_name: props.applicant.full_name || '',
+    nickname: props.applicant.nickname || '',
+    gender: props.applicant.gender || 'L',
+    nik: props.applicant.nik || '',
+    nisn: props.applicant.nisn || '',
+    birth_place: props.applicant.birth_place || '',
+    birth_date: props.applicant.birth_date ? String(props.applicant.birth_date).substring(0, 10) : '',
+    religion: props.applicant.religion || 'Islam',
+    child_order: props.applicant.child_order || 1,
+    total_siblings: props.applicant.total_siblings || 1,
+    category: props.applicant.category || 'external_umum',
+    previous_school: props.applicant.previous_school || '',
+    special_notes: props.applicant.special_notes || '',
+    father_name: props.applicant.father_name || '',
+    father_nik: props.applicant.father_nik || '',
+    father_phone: props.applicant.father_phone || '',
+    father_job: props.applicant.father_job || '',
+    father_education: props.applicant.father_education || '',
+    mother_name: props.applicant.mother_name || '',
+    mother_nik: props.applicant.mother_nik || '',
+    mother_phone: props.applicant.mother_phone || '',
+    mother_job: props.applicant.mother_job || '',
+    mother_education: props.applicant.mother_education || '',
+    parent_phone: props.applicant.parent_phone || '',
+    address: props.applicant.address || '',
+    rt: props.applicant.rt || '',
+    rw: props.applicant.rw || '',
+    village: props.applicant.village || '',
+    district: props.applicant.district || '',
+    city: props.applicant.city || '',
+    postal_code: props.applicant.postal_code || '',
+    photo: null,
+});
+
+const handlePhotoSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    let uploadFile = file;
+    if (file.type && file.type.startsWith('image/')) {
+        try {
+            uploadFile = await compressImageFile(file, 900, 0.8);
+        } catch (err) {
+            console.error('Kompresi foto gagal:', err);
+        }
+    }
+    editForm.photo = uploadFile;
+};
+
+const submitEditProfile = () => {
+    editForm.post(route('spmb.applicant.update-profile', props.applicant.id), {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            showEditModal.value = false;
+            editForm.photo = null;
+        },
+    });
+};
+
+// Ganti Bukti Transfer Biaya Formulir Awal (Sebelum diverifikasi Admin)
+const regProofForm = useForm({
+    registration_payment_proof: null,
+});
+
+const handleReplaceRegistrationProof = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    let uploadFile = file;
+    if (file.type && file.type.startsWith('image/')) {
+        try {
+            uploadFile = await compressImageFile(file, 1280, 0.75);
+        } catch (err) {
+            console.error('Kompresi bukti pendaftaran gagal:', err);
+        }
+    }
+
+    regProofForm.registration_payment_proof = uploadFile;
+    regProofForm.post(route('spmb.applicant.upload-registration-proof', props.applicant.id), {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            alert('Bukti transfer biaya pendaftaran berhasil diperbarui.');
+        },
+    });
 };
 </script>
 
@@ -173,6 +266,33 @@ const formatRupiah = (amount) => {
                             <p class="text-[11px] text-slate-500 mt-0.5">
                                 Orang Tua: {{ applicant.father_name || applicant.mother_name }} | No. WA: {{ applicant.parent_phone }}
                             </p>
+                            <div v-if="applicant.status !== 'enrolled'" class="mt-2.5 flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    @click="showEditModal = true"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition"
+                                >
+                                    <PencilSquareIcon class="w-3.5 h-3.5 text-emerald-700" />
+                                    <span>Edit Biodata & Pas Foto</span>
+                                </button>
+
+                                <label
+                                    v-if="!applicant.registration_payment_verified_at"
+                                    class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-bold transition"
+                                >
+                                    <DocumentTextIcon class="w-3.5 h-3.5 text-amber-700" />
+                                    <span>{{ regProofForm.processing ? 'Mengunggah...' : 'Ganti Bukti Bayar Formulir' }}</span>
+                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="handleReplaceRegistrationProof">
+                                </label>
+                                <a
+                                    v-if="applicant.registration_payment_proof_url && !applicant.registration_payment_verified_at"
+                                    :href="applicant.registration_payment_proof_url"
+                                    target="_blank"
+                                    class="text-[11px] font-bold text-slate-500 hover:text-emerald-700 underline"
+                                >
+                                    Lihat Bukti Saat Ini
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -536,6 +656,130 @@ const formatRupiah = (amount) => {
                 <p>&copy; {{ new Date().getFullYear() }} Yayasan Namira Kota Probolinggo. Bantuan SPMB: {{ setting?.contact_whatsapp || '082332922521' }}</p>
             </div>
         </footer>
+
+        <!-- Modal Edit Biodata & Pas Foto -->
+        <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
+            <div class="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border border-slate-200 my-8 max-h-[90vh] overflow-y-auto space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-900">Perbarui Biodata Calon Siswa</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Periksa dan perbaiki penulisan nama, asal sekolah, data orang tua, atau unggah pas foto 3x4.</p>
+                    </div>
+                    <button type="button" @click="showEditModal = false" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+                        <XMarkIcon class="w-5 h-5" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitEditProfile" class="space-y-5 text-xs">
+                    <!-- A. Identitas Calon Siswa -->
+                    <div class="space-y-3">
+                        <h4 class="font-bold text-emerald-800 uppercase tracking-wider text-[11px]">A. Identitas Calon Siswa</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap Sesuai Akta *</label>
+                                <input v-model="editForm.full_name" type="text" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                                <p v-if="editForm.errors.full_name" class="text-rose-600 text-[11px] mt-1">{{ editForm.errors.full_name }}</p>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Panggilan</label>
+                                <input v-model="editForm.nickname" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Jenis Kelamin *</label>
+                                <select v-model="editForm.gender" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                                    <option value="L">Laki-laki</option>
+                                    <option value="P">Perempuan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Tempat Lahir *</label>
+                                <input v-model="editForm.birth_place" type="text" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Tanggal Lahir *</label>
+                                <input v-model="editForm.birth_date" type="date" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">NIK Anak</label>
+                                <input v-model="editForm.nik" type="text" maxlength="20" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">NISN (Opsional)</label>
+                                <input v-model="editForm.nisn" type="text" maxlength="20" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Kategori Pendaftar *</label>
+                                <select v-model="editForm.category" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                                    <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
+                                    <option value="external_umum">Pendaftar Umum (Eksternal)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Asal Sekolah ({{ isSmp ? 'SD/MI' : 'TK/RA' }})</label>
+                                <input v-model="editForm.previous_school" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Anak Ke-</label>
+                                <input v-model="editForm.child_order" type="number" min="1" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Jumlah Saudara Kandung</label>
+                                <input v-model="editForm.total_siblings" type="number" min="1" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 mb-1">Pas Foto 3x4 (Opsional / Ganti Foto)</label>
+                                <input type="file" accept=".jpg,.jpeg,.png" @change="handlePhotoSelect" class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- B. Data Orang Tua & Domisili -->
+                    <div class="space-y-3 pt-3 border-t border-slate-100">
+                        <h4 class="font-bold text-emerald-800 uppercase tracking-wider text-[11px]">B. Data Orang Tua & Alamat</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Ayah Kandung *</label>
+                                <input v-model="editForm.father_name" type="text" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Pekerjaan Ayah</label>
+                                <input v-model="editForm.father_job" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Ibu Kandung *</label>
+                                <input v-model="editForm.mother_name" type="text" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Pekerjaan Ibu</label>
+                                <input v-model="editForm.mother_job" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 mb-1">Nomor WhatsApp Aktif (Digunakan untuk Login) *</label>
+                                <input v-model="editForm.parent_phone" type="text" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono">
+                                <p v-if="editForm.errors.parent_phone" class="text-rose-600 text-[11px] mt-1">{{ editForm.errors.parent_phone }}</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 mb-1">Alamat Lengkap Domisili *</label>
+                                <textarea v-model="editForm.address" rows="2" required class="w-full rounded-xl border border-slate-300 p-2.5 text-xs"></textarea>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 mb-1">Catatan Khusus / Riwayat Kesehatan (Opsional)</label>
+                                <input v-model="editForm.special_notes" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                        <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800">
+                            Batal
+                        </button>
+                        <button type="submit" :disabled="editForm.processing" class="px-5 py-2 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-xs font-bold shadow transition disabled:opacity-50">
+                            {{ editForm.processing ? 'Menyimpan...' : 'Simpan Perubahan Biodata' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
     </div>
 </template>

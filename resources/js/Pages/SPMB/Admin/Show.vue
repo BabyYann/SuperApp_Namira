@@ -16,7 +16,10 @@ import {
     ExclamationTriangleIcon,
     ClipboardDocumentCheckIcon,
     PhotoIcon,
-    TrashIcon
+    TrashIcon,
+    PencilSquareIcon,
+    KeyIcon,
+    XMarkIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -35,6 +38,69 @@ const showScheduleModal = ref(false);
 const showEvaluationModal = ref(false);
 const showVaModal = ref(false);
 const showPaymentModal = ref(false);
+const showEditBiodataModal = ref(false);
+const showResetPasswordModal = ref(false);
+
+// Form: Edit Biodata oleh Admin / Panitia
+const editBiodataForm = useForm({
+    full_name: props.applicant.full_name || '',
+    nickname: props.applicant.nickname || '',
+    gender: props.applicant.gender || 'L',
+    nik: props.applicant.nik || '',
+    nisn: props.applicant.nisn || '',
+    birth_place: props.applicant.birth_place || '',
+    birth_date: props.applicant.birth_date ? String(props.applicant.birth_date).substring(0, 10) : '',
+    religion: props.applicant.religion || 'Islam',
+    child_order: props.applicant.child_order || 1,
+    total_siblings: props.applicant.total_siblings || 1,
+    category: props.applicant.category || 'external_umum',
+    previous_school: props.applicant.previous_school || '',
+    special_notes: props.applicant.special_notes || '',
+    father_name: props.applicant.father_name || '',
+    father_nik: props.applicant.father_nik || '',
+    father_phone: props.applicant.father_phone || '',
+    father_job: props.applicant.father_job || '',
+    father_education: props.applicant.father_education || '',
+    mother_name: props.applicant.mother_name || '',
+    mother_nik: props.applicant.mother_nik || '',
+    mother_phone: props.applicant.mother_phone || '',
+    mother_job: props.applicant.mother_job || '',
+    mother_education: props.applicant.mother_education || '',
+    parent_phone: props.applicant.parent_phone || '',
+    address: props.applicant.address || '',
+    rt: props.applicant.rt || '',
+    rw: props.applicant.rw || '',
+    village: props.applicant.village || '',
+    district: props.applicant.district || '',
+    city: props.applicant.city || '',
+    postal_code: props.applicant.postal_code || '',
+    photo: null,
+});
+
+const submitEditBiodata = () => {
+    editBiodataForm.post(route('spmb.admin.update-biodata', props.applicant.id), {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            showEditBiodataModal.value = false;
+            editBiodataForm.photo = null;
+        },
+    });
+};
+
+// Form: Reset Password Akun Orang Tua
+const resetPasswordForm = useForm({
+    new_password: props.applicant.parent_phone || '',
+});
+
+const submitResetPassword = () => {
+    resetPasswordForm.post(route('spmb.admin.reset-password', props.applicant.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showResetPasswordModal.value = false;
+        },
+    });
+};
 
 // Form: Atur Jadwal
 const scheduleForm = useForm({
@@ -282,7 +348,27 @@ const formatRupiah = (amount) => {
                         <span>Pindahkan ke Data Siswa Aktif</span>
                     </button>
 
-                    <!-- 7. Tombol Hapus Data Pendaftar (Super Admin & Admin) -->
+                    <!-- 7. Tombol Edit Biodata -->
+                    <button 
+                        @click="showEditBiodataModal = true"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold shadow-xs transition"
+                    >
+                        <PencilSquareIcon class="w-4 h-4 text-emerald-600" />
+                        <span>Edit Biodata</span>
+                    </button>
+
+                    <!-- 8. Tombol Reset Password Ortu -->
+                    <button 
+                        @click="showResetPasswordModal = true"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-xs font-bold shadow-xs transition"
+                    >
+                        <KeyIcon class="w-4 h-4" />
+                        <span>Reset Password Ortu</span>
+                    </button>
+
+                    <!-- 9. Tombol Hapus Data Pendaftar (Super Admin & Admin) -->
                     <button 
                         v-if="canDelete"
                         @click="deleteApplicant"
@@ -735,6 +821,154 @@ const formatRupiah = (amount) => {
                             Konfirmasi Pembayaran
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- ================= MODAL 5: EDIT BIODATA CALON SISWA ================= -->
+            <div v-if="showEditBiodataModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 my-8 max-h-[90vh] overflow-y-auto space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">Edit Biodata & Data Orang Tua</h3>
+                            <p class="text-xs text-slate-500">Perbaiki kesalahan ketik biodata, kategori pendaftar, atau nomor WhatsApp akun tanpa menghapus data.</p>
+                        </div>
+                        <button type="button" @click="showEditBiodataModal = false" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <form @submit.prevent="submitEditBiodata" class="space-y-4 text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Calon Siswa *</label>
+                                <input v-model="editBiodataForm.full_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Panggilan</label>
+                                <input v-model="editBiodataForm.nickname" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Jenis Kelamin *</label>
+                                <select v-model="editBiodataForm.gender" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                    <option value="L">Laki-laki</option>
+                                    <option value="P">Perempuan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tempat Lahir *</label>
+                                <input v-model="editBiodataForm.birth_place" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal Lahir *</label>
+                                <input v-model="editBiodataForm.birth_date" type="date" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">NIK Anak</label>
+                                <input v-model="editBiodataForm.nik" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">NISN</label>
+                                <input v-model="editBiodataForm.nisn" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori Pendaftar *</label>
+                                <select v-model="editBiodataForm.category" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                    <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
+                                    <option value="external_umum">Pendaftar Umum (Eksternal)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Asal Sekolah</label>
+                                <input v-model="editBiodataForm.previous_school" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ayah *</label>
+                                <input v-model="editBiodataForm.father_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pekerjaan Ayah</label>
+                                <input v-model="editBiodataForm.father_job" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ibu *</label>
+                                <input v-model="editBiodataForm.mother_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pekerjaan Ibu</label>
+                                <input v-model="editBiodataForm.mother_job" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nomor WhatsApp Akun Ortu (Login) *</label>
+                                <input v-model="editBiodataForm.parent_phone" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                <p v-if="editBiodataForm.errors.parent_phone" class="text-rose-600 text-[11px] mt-1">{{ editBiodataForm.errors.parent_phone }}</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Alamat Lengkap *</label>
+                                <textarea v-model="editBiodataForm.address" rows="2" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"></textarea>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ganti Pas Foto 3x4 (Opsional)</label>
+                                <input type="file" accept=".jpg,.jpeg,.png" @change="editBiodataForm.photo = $event.target.files[0]" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-800">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <button type="button" @click="showEditBiodataModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700">
+                                Batal
+                            </button>
+                            <button type="submit" :disabled="editBiodataForm.processing" class="px-5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 shadow">
+                                {{ editBiodataForm.processing ? 'Menyimpan...' : 'Simpan Biodata' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ================= MODAL 6: RESET PASSWORD ORANG TUA ================= -->
+            <div v-if="showResetPasswordModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Reset Password Akun Orang Tua</h3>
+                        <button type="button" @click="showResetPasswordModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-700">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        Atur ulang password login Portal SPMB untuk orang tua dari <strong>{{ applicant.full_name }}</strong> (No. WA Login: <span class="font-mono font-bold text-emerald-600">{{ applicant.parent_phone }}</span>).
+                    </p>
+
+                    <form @submit.prevent="submitResetPassword" class="space-y-3 text-xs">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="font-semibold text-slate-700 dark:text-slate-300">Password Baru (Minimal 6 Karakter)</label>
+                                <button
+                                    type="button"
+                                    @click="resetPasswordForm.new_password = applicant.parent_phone"
+                                    class="text-[11px] font-bold text-emerald-600 hover:underline"
+                                >
+                                    Samakan dengan No. WA
+                                </button>
+                            </div>
+                            <input
+                                v-model="resetPasswordForm.new_password"
+                                type="text"
+                                required
+                                minlength="6"
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-white"
+                            >
+                            <p v-if="resetPasswordForm.errors.new_password" class="text-rose-600 text-[11px] mt-1">{{ resetPasswordForm.errors.new_password }}</p>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button type="button" @click="showResetPasswordModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700">
+                                Batal
+                            </button>
+                            <button type="submit" :disabled="resetPasswordForm.processing" class="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 shadow">
+                                {{ resetPasswordForm.processing ? 'Mereset...' : 'Simpan Password Baru' }}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 

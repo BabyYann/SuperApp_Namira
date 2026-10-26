@@ -443,4 +443,133 @@ it('allows super admin to permanently delete an applicant and clears stored file
         ->and(Storage::disk('public')->exists($filePath))->toBeFalse();
 });
 
+it('allows parent to edit applicant biodata and replace unverified registration payment proof', function () {
+    $parent = User::factory()->create(['phone' => '081234555666']);
+    $parent->assignRole('orang_tua');
+
+    $applicant = SpmbApplicant::create([
+        'unit_id' => $this->smpUnit->id,
+        'user_id' => $parent->id,
+        'registration_number' => 'IND-SMPN-26101',
+        'full_name' => 'Nama Lama Salah Ketik',
+        'gender' => 'L',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-05-10',
+        'father_name' => 'Ayah Lama',
+        'mother_name' => 'Ibu Lama',
+        'parent_phone' => '081234555666',
+        'address' => 'Alamat Lama',
+        'category' => 'external_umum',
+        'previous_school' => 'SD Lama',
+        'status' => 'submitted',
+    ]);
+
+    // 1. Parent updates biodata & uploads photo
+    $profileRes = $this->actingAs($parent)->post(route('spmb.applicant.update-profile', $applicant->id), [
+        'full_name' => 'Muhammad Alfatih Pratama',
+        'nickname' => 'Fatih',
+        'gender' => 'L',
+        'birth_place' => 'Kota Probolinggo',
+        'birth_date' => '2014-05-10',
+        'category' => 'internal_sd',
+        'previous_school' => 'SD Namira Kota Probolinggo',
+        'father_name' => 'H. Pratama',
+        'mother_name' => 'Hj. Rahmawati',
+        'parent_phone' => '081234555777',
+        'address' => 'Jl. Soekarno Hatta No. 99',
+        'photo' => UploadedFile::fake()->image('pas_foto_3x4.jpg', 300, 400),
+    ]);
+
+    $profileRes->assertSessionHasNoErrors();
+    $applicant->refresh();
+    $parent->refresh();
+
+    expect($applicant->full_name)->toBe('Muhammad Alfatih Pratama')
+        ->and($applicant->category)->toBe('internal_sd')
+        ->and($applicant->parent_phone)->toBe('081234555777')
+        ->and($applicant->photo_path)->not->toBeNull()
+        ->and($parent->phone)->toBe('081234555777');
+
+    // 2. Parent replaces initial registration payment proof while unverified
+    $proofRes = $this->actingAs($parent)->post(route('spmb.applicant.upload-registration-proof', $applicant->id), [
+        'registration_payment_proof' => UploadedFile::fake()->image('bukti_baru_formulir.jpg'),
+    ]);
+
+    $proofRes->assertSessionHasNoErrors();
+    $applicant->refresh();
+    expect($applicant->registration_payment_proof)->not->toBeNull();
+});
+
+it('allows panitia/admin to edit applicant biodata, reset parent password, and export CSV', function () {
+    $panitia = createUserWithRole('panitia_spmb', $this->smpUnit->id);
+
+    $parent = User::factory()->create([
+        'phone' => '081234888111',
+        'password' => bcrypt('old_password'),
+    ]);
+    $parent->assignRole('orang_tua');
+
+    $applicant = SpmbApplicant::create([
+        'unit_id' => $this->smpUnit->id,
+        'user_id' => $parent->id,
+        'registration_number' => 'IND-SMPN-26102',
+        'full_name' => 'Siswa Sebelum Edit Admin',
+        'gender' => 'P',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-08-17',
+        'father_name' => 'Ayah A',
+        'mother_name' => 'Ibu B',
+        'parent_phone' => '081234888111',
+        'address' => 'Jl. Ahmad Yani No. 1',
+        'category' => 'external_umum',
+        'status' => 'verified',
+        'academic_score_details' => [
+            'academic_score' => 88,
+            'wawancara' => 'Sangat Baik',
+            'mengaji' => 'Lancar',
+        ],
+    ]);
+
+    // 1. Admin edits biodata
+    $updateRes = $this->actingAs($panitia)->post(route('spmb.admin.update-biodata', $applicant->id), [
+        'full_name' => 'Aisyah Humaira Zahra',
+        'gender' => 'P',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-08-17',
+        'category' => 'internal_sd',
+        'previous_school' => 'SD Namira',
+        'father_name' => 'Ayah A Updated',
+        'mother_name' => 'Ibu B Updated',
+        'parent_phone' => '081234888222',
+        'address' => 'Jl. Ahmad Yani No. 10',
+    ]);
+
+    $updateRes->assertSessionHasNoErrors();
+    $applicant->refresh();
+    $parent->refresh();
+
+    expect($applicant->full_name)->toBe('Aisyah Humaira Zahra')
+        ->and($applicant->category)->toBe('internal_sd')
+        ->and($parent->phone)->toBe('081234888222');
+
+    // 2. Admin resets parent password
+    $resetRes = $this->actingAs($panitia)->post(route('spmb.admin.reset-password', $applicant->id), [
+        'new_password' => 'namira2026',
+    ]);
+
+    $resetRes->assertSessionHasNoErrors();
+    $parent->refresh();
+    expect(\Illuminate\Support\Facades\Hash::check('namira2026', $parent->password))->toBeTrue();
+
+    // 3. Admin exports CSV
+    $exportRes = $this->actingAs($panitia)->get(route('spmb.admin.export', ['unit_id' => $this->smpUnit->id]));
+    $exportRes->assertOk();
+    expect($exportRes->headers->get('content-type'))->toContain('text/csv');
+    $csvContent = $exportRes->streamedContent();
+    expect($csvContent)->toContain('IND-SMPN-26102')
+        ->and($csvContent)->toContain('Aisyah Humaira Zahra')
+        ->and($csvContent)->toContain('Nilai Tes Akademik');
+});
+
+
 

@@ -3,6 +3,7 @@
 namespace App\Modules\SPMB\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\SPMB\Models\SpmbApplicant;
 use App\Modules\SPMB\Models\SpmbSetting;
 use App\Modules\SPMB\Services\SpmbService;
@@ -10,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ApplicantPortalController extends Controller
@@ -182,5 +184,205 @@ class ApplicantPortalController extends Controller
         $applicant->update($updateData);
 
         return back()->with('success', $msg);
+    }
+
+    /**
+     * Update applicant biodata by parent (allowed before enrolled status).
+     */
+    public function updateProfile(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
+    {
+        $user = Auth::user();
+        if ($applicant->user_id !== $user->id && $applicant->parent_phone !== $user->phone) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($applicant->status === 'enrolled') {
+            return back()->with('error', 'Biodata tidak dapat diubah karena siswa telah resmi ditetapkan menjadi Siswa Aktif.');
+        }
+
+        $request->validate([
+            'full_name' => 'required|string|max:255',
+            'nickname' => 'nullable|string|max:100',
+            'gender' => 'required|in:L,P',
+            'nik' => 'nullable|string|max:20',
+            'nisn' => 'nullable|string|max:20',
+            'birth_place' => 'required|string|max:100',
+            'birth_date' => 'required|date',
+            'religion' => 'nullable|string|max:50',
+            'child_order' => 'nullable|integer',
+            'total_siblings' => 'nullable|integer',
+            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external',
+            'previous_school' => 'required|string|max:255',
+            'special_notes' => 'nullable|string|max:1000',
+
+            'father_name' => 'nullable|string|max:255',
+            'father_nik' => 'nullable|string|max:20',
+            'father_phone' => 'nullable|string|max:25',
+            'father_job' => 'nullable|string|max:100',
+            'father_education' => 'nullable|string|max:50',
+
+            'mother_name' => 'nullable|string|max:255',
+            'mother_nik' => 'nullable|string|max:20',
+            'mother_phone' => 'nullable|string|max:25',
+            'mother_job' => 'nullable|string|max:100',
+            'mother_education' => 'nullable|string|max:50',
+
+            'parent_phone' => 'required|string|min:9|max:25',
+            'address' => 'required|string|max:500',
+            'rt' => 'nullable|string|max:10',
+            'rw' => 'nullable|string|max:10',
+            'village' => 'nullable|string|max:100',
+            'district' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:10',
+
+            'photo' => 'nullable|file|image|max:10240',
+        ], [
+            'full_name.required' => 'Nama lengkap calon siswa wajib diisi.',
+            'birth_place.required' => 'Tempat lahir wajib diisi.',
+            'birth_date.required' => 'Tanggal lahir wajib diisi.',
+            'previous_school.required' => 'Asal sekolah wajib diisi.',
+            'parent_phone.required' => 'Nomor WhatsApp aktif wajib diisi.',
+            'address.required' => 'Alamat tempat tinggal wajib diisi.',
+        ]);
+
+        if (!$request->filled('father_name') && !$request->filled('mother_name')) {
+            return back()->withErrors([
+                'father_name' => 'Setidaknya salah satu nama orang tua (Ayah atau Ibu) wajib diisi.',
+            ])->withInput();
+        }
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', (string)$request->parent_phone);
+        if (str_starts_with($cleanPhone, '62')) {
+            $cleanPhone = '0' . substr($cleanPhone, 2);
+        }
+
+        // Check duplicate phone in the same unit
+        $duplicateApplicant = SpmbApplicant::where('unit_id', $applicant->unit_id)
+            ->where('parent_phone', $cleanPhone)
+            ->where('id', '!=', $applicant->id)
+            ->first();
+
+        if ($duplicateApplicant) {
+            return back()->withErrors([
+                'parent_phone' => "Nomor WhatsApp {$cleanPhone} sudah digunakan pada pendaftaran lain ({$duplicateApplicant->registration_number}).",
+            ])->withInput();
+        }
+
+        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+
+        $updateData = [
+            'full_name' => $request->full_name,
+            'nickname' => $request->nickname,
+            'gender' => $request->gender,
+            'nik' => $request->nik,
+            'nisn' => $request->nisn,
+            'birth_place' => $request->birth_place,
+            'birth_date' => $request->birth_date,
+            'religion' => $request->religion ?: ($applicant->religion ?: 'Islam'),
+            'child_order' => $request->child_order,
+            'total_siblings' => $request->total_siblings,
+            'category' => $request->category ?: $applicant->category,
+            'previous_school' => $request->previous_school,
+            'special_notes' => $request->special_notes,
+            'father_name' => $request->father_name,
+            'father_nik' => $request->father_nik,
+            'father_phone' => $request->father_phone,
+            'father_job' => $request->father_job,
+            'father_education' => $request->father_education,
+            'mother_name' => $request->mother_name,
+            'mother_nik' => $request->mother_nik,
+            'mother_phone' => $request->mother_phone,
+            'mother_job' => $request->mother_job,
+            'mother_education' => $request->mother_education,
+            'parent_phone' => $cleanPhone,
+            'address' => $request->address,
+            'rt' => $request->rt,
+            'rw' => $request->rw,
+            'village' => $request->village,
+            'district' => $request->district,
+            'city' => $request->city,
+            'postal_code' => $request->postal_code,
+        ];
+
+        if ($request->hasFile('photo')) {
+            if ($applicant->photo_path && Storage::disk('public')->exists($applicant->photo_path)) {
+                Storage::disk('public')->delete($applicant->photo_path);
+            }
+            $updateData['photo_path'] = $spmbService->storeApplicantDocument(
+                $request->file('photo'),
+                'PASFOTO',
+                $applicant->registration_number,
+                $unitSlug
+            );
+        }
+
+        $applicant->update($updateData);
+
+        // Sinkronkan akun user orang tua jika nomor WA berubah
+        if ($user) {
+            $phoneTakenByOtherUser = User::where('phone', $cleanPhone)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            $userUpdates = [
+                'name' => $request->father_name ?: ($request->mother_name ?: $user->name),
+            ];
+
+            if (!$phoneTakenByOtherUser) {
+                $userUpdates['phone'] = $cleanPhone;
+                if (str_ends_with($user->email, '@spmb.namiraschool.com')) {
+                    $newEmail = "{$cleanPhone}@spmb.namiraschool.com";
+                    if (!User::where('email', $newEmail)->where('id', '!=', $user->id)->exists()) {
+                        $userUpdates['email'] = $newEmail;
+                    }
+                }
+            }
+
+            $user->update($userUpdates);
+        }
+
+        return back()->with('success', 'Biodata calon siswa berhasil diperbarui.');
+    }
+
+    /**
+     * Replace initial registration payment proof (allowed before verified by panitia).
+     */
+    public function updateRegistrationProof(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
+    {
+        $user = Auth::user();
+        if ($applicant->user_id !== $user->id && $applicant->parent_phone !== $user->phone) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($applicant->registration_payment_verified_at) {
+            return back()->with('error', 'Bukti pembayaran pendaftaran sudah diverifikasi panitia dan tidak dapat diganti.');
+        }
+
+        $request->validate([
+            'registration_payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+        ], [
+            'registration_payment_proof.required' => 'Silakan pilih file bukti transfer pendaftaran yang baru.',
+            'registration_payment_proof.mimes' => 'Format file harus berupa JPG, PNG, atau PDF.',
+        ]);
+
+        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+
+        if ($applicant->registration_payment_proof && Storage::disk('public')->exists($applicant->registration_payment_proof)) {
+            Storage::disk('public')->delete($applicant->registration_payment_proof);
+        }
+
+        $proofPath = $spmbService->storeApplicantDocument(
+            $request->file('registration_payment_proof'),
+            'BUKTI_BAYAR_REGISTRASI',
+            $applicant->registration_number,
+            $unitSlug
+        );
+
+        $applicant->update([
+            'registration_payment_proof' => $proofPath,
+        ]);
+
+        return back()->with('success', 'Bukti transfer pendaftaran awal berhasil diperbarui.');
     }
 }
