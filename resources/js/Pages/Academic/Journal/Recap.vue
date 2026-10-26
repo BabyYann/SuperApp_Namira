@@ -73,24 +73,24 @@ const fetchRecap = () => {
     <Head :title="`Rekap Jurnal - ${monthName}`" />
 
     <AuthenticatedLayout>
-        <div class="py-4 md:py-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
+        <div class="py-2 md:py-6 max-w-4xl mx-auto space-y-2.5 md:space-y-6">
 
             <!-- Top Header & Navigation -->
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
+            <div class="flex items-center justify-between gap-2 bg-white md:bg-transparent p-2.5 md:p-0 rounded-xl border border-slate-200 md:border-0 shadow-2xs md:shadow-none">
+                <div class="flex items-center gap-2.5">
                     <Link 
                         :href="route('yayasan.teaching-journal.index')"
-                        class="w-10 h-10 rounded-2xl bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200/80 shadow-2xs transition active:scale-95 shrink-0"
+                        class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-2xl bg-slate-100 md:bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center border border-slate-200/80 transition active:scale-95 shrink-0"
                         title="Kembali ke Jurnal"
                     >
-                        <ChevronLeftIcon class="w-5 h-5 stroke-[2.5]" />
+                        <ChevronLeftIcon class="w-4 h-4 md:w-5 md:h-5 stroke-[2.5]" />
                     </Link>
                     <div>
-                        <h1 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
+                        <h1 class="text-xs sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
                             Rekap Jurnal Mengajar
                         </h1>
-                        <p class="text-xs text-slate-500 font-medium">
-                            {{ monthName }}
+                        <p class="text-[10px] sm:text-xs text-slate-500 font-medium leading-none mt-0.5">
+                            {{ monthName }} • {{ journals.length }} Sesi KBM
                         </p>
                     </div>
                 </div>
@@ -98,168 +98,144 @@ const fetchRecap = () => {
                 <!-- Opsi Export HTML/PDF -->
                 <a 
                     :href="route('yayasan.teaching-journal.export', { month: selectedMonth, year: selectedYear })"
-                    class="px-3.5 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition active:scale-95 shadow-2xs shrink-0"
+                    class="px-2.5 py-1.5 md:px-3.5 md:py-2 rounded-lg md:rounded-2xl bg-slate-900 md:bg-slate-100 text-white md:text-slate-700 text-[10px] md:text-xs font-extrabold border border-slate-200 flex items-center gap-1 transition active:scale-95 shrink-0"
                     title="Unduh File Rekap"
                 >
-                    <ArrowDownTrayIcon class="w-4 h-4 stroke-[2.2]" />
-                    <span class="hidden sm:inline">Cetak Rekap</span>
+                    <ArrowDownTrayIcon class="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.2]" />
+                    <span>Cetak</span>
                 </a>
             </div>
 
-            <!-- Month Selector Card -->
-            <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 shadow-sm flex items-center justify-between gap-2">
-                <button 
-                    @click="changeMonth(-1)"
-                    type="button" 
-                    class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
-                    title="Bulan Sebelumnya"
-                >
-                    <ChevronLeftIcon class="w-4 h-4 stroke-[2.5]" />
-                </button>
-
-                <div class="flex items-center gap-2">
-                    <select 
-                        v-model="selectedMonth" 
-                        @change="fetchRecap"
-                        class="bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800 rounded-2xl py-2 px-3 focus:ring-teal-500 focus:border-teal-500"
+            <!-- Month Selector + Stats Strip Compact on Mobile -->
+            <div class="bg-white rounded-xl md:rounded-3xl p-2.5 md:p-4 border border-slate-200 md:border-slate-100 shadow-2xs md:shadow-sm space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                    <button 
+                        @click="changeMonth(-1)"
+                        type="button" 
+                        class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
+                        title="Bulan Sebelumnya"
                     >
-                        <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
-                    </select>
+                        <ChevronLeftIcon class="w-4 h-4 stroke-[2.5]" />
+                    </button>
 
-                    <input 
-                        type="number" 
-                        v-model="selectedYear" 
-                        @change="fetchRecap"
-                        class="w-20 bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800 rounded-2xl py-2 px-3 text-center focus:ring-teal-500 focus:border-teal-500"
-                    />
+                    <div class="flex items-center gap-1.5">
+                        <select 
+                            v-model="selectedMonth" 
+                            @change="fetchRecap"
+                            class="bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800 rounded-lg md:rounded-2xl py-1.5 md:py-2 px-2.5 md:px-3 focus:ring-teal-500 focus:border-teal-500"
+                        >
+                            <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
+                        </select>
+
+                        <input 
+                            type="number" 
+                            v-model="selectedYear" 
+                            @change="fetchRecap"
+                            class="w-18 md:w-20 bg-slate-50 border border-slate-200 text-xs sm:text-sm font-black text-slate-800 rounded-lg md:rounded-2xl py-1.5 md:py-2 px-2 md:px-3 text-center focus:ring-teal-500 focus:border-teal-500"
+                        />
+                    </div>
+
+                    <button 
+                        @click="changeMonth(1)"
+                        type="button" 
+                        class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
+                        title="Bulan Berikutnya"
+                    >
+                        <ChevronRightIcon class="w-4 h-4 stroke-[2.5]" />
+                    </button>
                 </div>
 
-                <button 
-                    @click="changeMonth(1)"
-                    type="button" 
-                    class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 shrink-0"
-                    title="Bulan Berikutnya"
-                >
-                    <ChevronRightIcon class="w-4 h-4 stroke-[2.5]" />
-                </button>
-            </div>
-
-            <!-- Stats Ribbon -->
-            <div class="grid grid-cols-3 gap-2.5 sm:gap-4">
-                <div class="bg-white p-3 sm:p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
-                    <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1.5">
-                        <DocumentTextIcon class="w-4 h-4 stroke-[2.2]" />
+                <!-- Stats Ribbon Inline -->
+                <div class="grid grid-cols-3 gap-1.5 md:gap-4 pt-2 border-t border-slate-100 text-center">
+                    <div class="bg-slate-50 p-2 md:p-4 rounded-lg md:rounded-2xl border border-slate-100">
+                        <p class="text-sm sm:text-2xl font-black text-blue-700 leading-none">
+                            {{ stats?.teaching_days || 0 }}
+                        </p>
+                        <p class="text-[9px] sm:text-xs font-bold text-slate-500 mt-1">
+                            Hari Mengajar
+                        </p>
                     </div>
-                    <p class="text-lg sm:text-2xl font-black text-slate-900 leading-none">
-                        {{ stats?.teaching_days || 0 }}
-                    </p>
-                    <p class="text-[10px] sm:text-xs font-bold text-slate-500 mt-1">
-                        Hari Mengajar
-                    </p>
-                </div>
 
-                <div class="bg-white p-3 sm:p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
-                    <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5">
-                        <BookOpenIcon class="w-4 h-4 stroke-[2.2]" />
+                    <div class="bg-slate-50 p-2 md:p-4 rounded-lg md:rounded-2xl border border-slate-100">
+                        <p class="text-sm sm:text-2xl font-black text-amber-600 leading-none">
+                            {{ stats?.total_journals || 0 }}
+                        </p>
+                        <p class="text-[9px] sm:text-xs font-bold text-slate-500 mt-1">
+                            Total Jurnal
+                        </p>
                     </div>
-                    <p class="text-lg sm:text-2xl font-black text-slate-900 leading-none">
-                        {{ stats?.total_journals || 0 }}
-                    </p>
-                    <p class="text-[10px] sm:text-xs font-bold text-slate-500 mt-1">
-                        Total Jurnal
-                    </p>
-                </div>
 
-                <div class="bg-white p-3 sm:p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
-                    <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-1.5">
-                        <UserGroupIcon class="w-4 h-4 stroke-[2.2]" />
+                    <div class="bg-slate-50 p-2 md:p-4 rounded-lg md:rounded-2xl border border-slate-100">
+                        <p class="text-sm sm:text-2xl font-black text-purple-600 leading-none">
+                            {{ stats?.avg_attendance_rate || 0 }}%
+                        </p>
+                        <p class="text-[9px] sm:text-xs font-bold text-slate-500 mt-1">
+                            Kehadiran Siswa
+                        </p>
                     </div>
-                    <p class="text-lg sm:text-2xl font-black text-slate-900 leading-none">
-                        {{ stats?.avg_attendance_rate || 0 }}%
-                    </p>
-                    <p class="text-[10px] sm:text-xs font-bold text-slate-500 mt-1">
-                        Kehadiran Siswa
-                    </p>
                 </div>
             </div>
 
             <!-- Journal List -->
-            <div class="space-y-3">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider px-1">
-                    Daftar Aktivitas KBM ({{ journals.length }} Sesi)
-                </h3>
-
+            <div class="space-y-2">
                 <!-- Empty State -->
-                <div v-if="journals.length === 0" class="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 text-center flex flex-col items-center justify-center">
-                    <div class="w-16 h-16 rounded-3xl bg-slate-50 text-slate-400 flex items-center justify-center mb-3">
-                        <BookOpenIcon class="w-8 h-8 stroke-[1.8]" />
+                <div v-if="journals.length === 0" class="bg-white rounded-xl md:rounded-3xl border border-slate-200 md:border-slate-100 shadow-2xs p-6 text-center flex flex-col items-center justify-center">
+                    <div class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center mb-2">
+                        <BookOpenIcon class="w-5 h-5 stroke-[1.8]" />
                     </div>
-                    <h4 class="font-black text-sm text-slate-800">Belum Ada Jurnal di Bulan Ini</h4>
-                    <p class="text-xs text-slate-500 max-w-xs mt-1">
+                    <h4 class="font-black text-xs sm:text-sm text-slate-800">Belum Ada Jurnal di Bulan Ini</h4>
+                    <p class="text-[11px] text-slate-500 max-w-xs mt-0.5">
                         Tidak ada riwayat pengisian jurnal mengajar pada periode {{ monthName }}.
                     </p>
                 </div>
 
-                <!-- Journal Cards -->
+                <!-- Journal Micro-Cards -->
                 <div 
                     v-for="j in journals" 
                     :key="j.id"
-                    class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm hover:border-teal-200 transition-all flex flex-col gap-3 relative overflow-hidden"
+                    class="bg-white rounded-xl md:rounded-3xl p-2.5 md:p-5 border border-slate-200/90 md:border-slate-100 shadow-2xs md:shadow-sm hover:border-teal-200 transition-all space-y-1.5 relative overflow-hidden"
                 >
-                    <div class="flex items-center justify-between flex-wrap gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-800 font-extrabold text-[11px] rounded-xl border border-emerald-200/60">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 font-extrabold text-[9px] md:text-[11px] rounded border border-emerald-200/60">
                                 {{ j.classroom }}
                             </span>
-                            <span class="text-xs font-bold text-slate-400 flex items-center gap-1">
-                                <ClockIcon class="w-3.5 h-3.5" />
-                                {{ j.start_time }} - {{ j.end_time }} WIB
+                            <span class="text-[9px] md:text-xs font-bold text-slate-400 font-mono">
+                                {{ j.start_time }} - {{ j.end_time }}
                             </span>
                         </div>
-                        <span class="text-xs font-black text-slate-600">
+                        <span class="text-[10px] md:text-xs font-black text-slate-600 shrink-0">
                             {{ j.formatted_date }}
                         </span>
                     </div>
 
-                    <div>
-                        <h4 class="text-base font-black text-slate-900 leading-snug">
-                            {{ j.subject }}
-                        </h4>
-                        <p v-if="j.custom_theme" class="text-xs text-teal-700 font-bold mt-1">
-                            Tema: {{ j.custom_theme }}
-                        </p>
-                        <div v-if="j.learning_objectives && j.learning_objectives.length > 0" class="mt-1 flex flex-wrap gap-1">
-                            <span 
-                                v-for="(tp, idx) in j.learning_objectives" 
-                                :key="idx"
-                                class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg"
-                            >
-                                {{ tp.code }}: {{ tp.description }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <!-- Presensi Summary -->
-                        <div class="flex items-center gap-1.5 text-xs">
-                            <span class="font-extrabold text-emerald-700">
-                                {{ j.attendance_summary.present }} Hadir
-                            </span>
-                            <span v-if="j.attendance_summary.sick > 0" class="text-amber-600 font-bold">
-                                • {{ j.attendance_summary.sick }} Sakit
-                            </span>
-                            <span v-if="j.attendance_summary.permission > 0" class="text-blue-600 font-bold">
-                                • {{ j.attendance_summary.permission }} Izin
-                            </span>
-                            <span v-if="j.attendance_summary.alpha > 0" class="text-rose-600 font-bold">
-                                • {{ j.attendance_summary.alpha }} Alpa
-                            </span>
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-xs md:text-base font-black text-slate-900 leading-tight truncate">
+                                {{ j.subject }}
+                            </h4>
+                            <p v-if="j.custom_theme" class="text-[10px] md:text-xs text-teal-700 font-bold truncate mt-0.5">
+                                Tema: {{ j.custom_theme }}
+                            </p>
+                            <div class="flex items-center gap-1.5 text-[10px] md:text-xs mt-0.5">
+                                <span class="font-extrabold text-emerald-700">
+                                    {{ j.attendance_summary.present }} Hadir
+                                </span>
+                                <span v-if="j.attendance_summary.sick > 0" class="text-amber-600 font-bold">
+                                    • {{ j.attendance_summary.sick }}S
+                                </span>
+                                <span v-if="j.attendance_summary.permission > 0" class="text-blue-600 font-bold">
+                                    • {{ j.attendance_summary.permission }}I
+                                </span>
+                                <span v-if="j.attendance_summary.alpha > 0" class="text-rose-600 font-bold">
+                                    • {{ j.attendance_summary.alpha }}A
+                                </span>
+                            </div>
                         </div>
 
-                        <!-- Action Link -->
                         <Link 
                             :href="route('yayasan.teaching-journal.show', j.id)"
-                            class="px-3 py-1.5 bg-slate-50 hover:bg-teal-50 text-slate-700 hover:text-teal-800 text-xs font-black rounded-xl border border-slate-200 hover:border-teal-200 transition active:scale-95 flex items-center gap-1"
+                            class="shrink-0 h-7 px-2.5 bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-800 text-[10px] md:text-xs font-black rounded-lg border border-slate-200 inline-flex items-center gap-1"
                         >
                             <EyeIcon class="w-3.5 h-3.5 text-teal-600" />
                             <span>Detail</span>
