@@ -657,13 +657,17 @@ const eventTypeLabels = {
                         <SparklesIcon class="w-4 h-4 text-amber-500" />
                         <span>Pintasan Modul Pengawas</span>
                     </h4>
-                    <span class="text-[10px] font-bold text-slate-400">10 Modul</span>
+                    <span class="text-[10px] font-bold text-slate-400">11 Modul</span>
                 </div>
 
                 <div class="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-xs grid grid-cols-5 gap-y-3.5 gap-x-1 text-center">
                     <Link :href="safeRoute('yayasan.monitoring.index', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
                         <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><ChartBarIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Monitoring</span>
+                    </Link>
+                    <Link :href="safeRoute('spmb.admin.index', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><UsersIcon class="w-5 h-5 stroke-[2.2]" /></div>
+                        <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">SPMB</span>
                     </Link>
                     <Link :href="safeRoute('yayasan.classrooms.index', {}, '#')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
                         <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><AcademicCapIcon class="w-5 h-5 stroke-[2.2]" /></div>
@@ -1120,6 +1124,31 @@ const eventTypeLabels = {
                             <BanknotesIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-700 stroke-[2.3]" />
                         </div>
                         <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-teal-700 transition-colors">Keuangan</span>
+                    </Link>
+
+                    <!-- 12b. SPMB (Penerimaan Siswa Baru) -->
+                    <Link 
+                        v-if="!isDaycare && (isGlobalAdmin || hasRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb', 'staff_yayasan']))"
+                        :href="safeRoute('spmb.admin.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/80 border border-white ring-1 ring-emerald-500/30 shadow-[0_8px_20px_-3px_rgba(16,185,129,0.32)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150 relative">
+                            <UsersIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-700 stroke-[2.3]" />
+                            <span class="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[8px] font-black uppercase">SPMB</span>
+                        </div>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-emerald-700 transition-colors">SPMB Inden</span>
+                    </Link>
+
+                    <!-- 12c. Manajemen Pengguna -->
+                    <Link 
+                        v-if="isGlobalAdmin || hasRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan'])"
+                        :href="safeRoute('yayasan.users.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-indigo-50/70 border border-white ring-1 ring-indigo-400/25 shadow-[0_8px_20px_-3px_rgba(99,102,241,0.30)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <WrenchScrewdriverIcon class="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600 stroke-[2.3]" />
+                        </div>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-indigo-600 transition-colors">Manajemen User</span>
                     </Link>
 
                     <!-- 13. Semua Menu (Lainnya) -->

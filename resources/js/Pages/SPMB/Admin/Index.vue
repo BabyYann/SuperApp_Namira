@@ -367,8 +367,130 @@ const getStatusBadgeClass = (s) => {
                 </div>
             </div>
 
-            <!-- Applicants Table -->
-            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+            <!-- 📱 MOBILE PWA CARD LIST (block md:hidden) -->
+            <div class="block md:hidden space-y-3">
+                <div 
+                    v-for="app in applicants.data" 
+                    :key="`mobile-${app.id}`"
+                    class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3"
+                >
+                    <!-- Header Siswa & Status -->
+                    <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-14 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
+                                <img v-if="app.photo_url" :src="app.photo_url" class="w-full h-full object-cover">
+                                <div v-else class="w-full h-full flex items-center justify-center text-[10px] text-slate-400">Foto</div>
+                            </div>
+                            <div class="min-w-0">
+                                <span class="text-[10px] font-mono font-extrabold text-emerald-700 dark:text-emerald-400 block">
+                                    {{ app.registration_number }}
+                                </span>
+                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white leading-snug truncate">
+                                    {{ app.full_name }}
+                                </h4>
+                                <p class="text-[11px] text-slate-500 truncate mt-0.5">
+                                    {{ app.previous_school || '-' }} • {{ ['internal_tk', 'internal_sd', 'internal'].includes(app.category) ? (isSmp ? 'SD Namira' : 'TK Namira') : 'Umum' }}
+                                </p>
+                            </div>
+                        </div>
+                        <span 
+                            class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                            :class="getStatusBadgeClass(app.status)"
+                        >
+                            {{ app.status_label }}
+                        </span>
+                    </div>
+
+                    <!-- Info Orang Tua & Jadwal -->
+                    <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+                        <div>
+                            <span class="text-slate-400 block text-[10px]">Orang Tua / WA</span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200 block truncate">{{ app.father_name || app.mother_name || '-' }}</span>
+                            <span class="font-mono text-slate-500 text-[10px]">{{ app.parent_phone }}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[10px]">Jadwal Seleksi</span>
+                            <div v-if="app.observation_date" class="space-y-0.5">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300 block">Obs: {{ formatScheduleDate(app.observation_date) }}</span>
+                                <span v-if="app.psychotest_date" class="font-semibold text-amber-600 dark:text-amber-400 block">Psi: {{ formatScheduleDate(app.psychotest_date) }}</span>
+                            </div>
+                            <span v-else class="text-slate-400 italic">Belum dijadwalkan</span>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Aksi Mobile -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800">
+                        <Link 
+                            :href="route('spmb.admin.show', app.id)"
+                            class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs"
+                        >
+                            <EyeIcon class="w-4 h-4" />
+                            <span>Buka Detail</span>
+                        </Link>
+
+                        <button 
+                            @click="openEditBiodataModal(app)"
+                            type="button"
+                            class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold"
+                        >
+                            <PencilSquareIcon class="w-4 h-4" />
+                            <span>Edit</span>
+                        </button>
+
+                        <button 
+                            v-if="app.registration_payment_proof_url || app.re_registration_payment_proof_url || app.settlement_payment_proof_url"
+                            @click="openProofModal(app)"
+                            type="button"
+                            class="w-9 h-9 rounded-xl border flex items-center justify-center relative"
+                            :class="!app.registration_payment_verified_at || (app.re_registration_payment_proof_url && !app.admission_payment_verified_at) || (app.settlement_payment_proof_url && !app.settlement_payment_verified_at)
+                                ? 'bg-amber-50 text-amber-700 border-amber-300'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'"
+                        >
+                            <DocumentCheckIcon class="w-4 h-4" />
+                            <span 
+                                v-if="!app.registration_payment_verified_at || (app.re_registration_payment_proof_url && !app.admission_payment_verified_at) || (app.settlement_payment_proof_url && !app.settlement_payment_verified_at)"
+                                class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"
+                            ></span>
+                        </button>
+
+                        <a 
+                            :href="app.wa_link"
+                            target="_blank"
+                            class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center"
+                        >
+                            <ChatBubbleLeftRightIcon class="w-4 h-4" />
+                        </a>
+
+                        <a 
+                            :href="route('spmb.applicant.print-card', app.id)"
+                            target="_blank"
+                            class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center"
+                        >
+                            <ArrowDownTrayIcon class="w-4 h-4" />
+                        </a>
+
+                        <button 
+                            v-if="canDelete"
+                            @click="deleteApplicant(app)"
+                            type="button"
+                            class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center"
+                        >
+                            <TrashIcon class="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="applicants.data.length === 0" class="bg-white rounded-2xl p-6 text-center text-slate-400 text-xs border border-slate-200">
+                    Tidak ada data calon siswa yang sesuai dengan filter pencarian.
+                </div>
+
+                <div v-if="applicants.total > applicants.per_page" class="pt-2 flex justify-center">
+                    <Pagination :links="applicants.links" />
+                </div>
+            </div>
+
+            <!-- 🖥️ DESKTOP APPLICANTS TABLE (hidden md:block) -->
+            <div class="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">

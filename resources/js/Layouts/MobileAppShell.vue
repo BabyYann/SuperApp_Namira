@@ -36,7 +36,8 @@ import {
     AcademicCapIcon,
     CalendarDaysIcon,
     PencilSquareIcon,
-    TableCellsIcon
+    TableCellsIcon,
+    Cog6ToothIcon
 } from '@heroicons/vue/24/outline';
 import { 
     HomeIcon as HomeIconSolid, 
@@ -450,6 +451,42 @@ const isRouteActive = (pattern) => {
 
                     <!-- Dynamic Role-Based App Categorized Groups -->
                     <div class="space-y-5 pb-6">
+
+                        <!-- 0. SPMB (PENERIMAAN SISWA BARU) -->
+                        <div v-if="!isDaycare && (isGlobalAdmin || hasRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb', 'staff_yayasan']))" class="space-y-3 bg-emerald-50/60 rounded-3xl p-3.5 sm:p-4 border border-emerald-200/70">
+                            <div class="flex items-center justify-between px-1">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></div>
+                                    <p class="text-[11px] font-black uppercase text-emerald-900 tracking-wider">
+                                        SPMB (Penerimaan Siswa Baru)
+                                    </p>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-black uppercase tracking-wider">Inden</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
+                                <Link 
+                                    :href="safeRoute('spmb.admin.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/80 border border-white ring-1 ring-emerald-500/30 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-700 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-700 transition-colors">Data SPMB</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('spmb.admin.settings')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-amber-50/80 border border-white ring-1 ring-amber-400/30 shadow-[0_8px_18px_-3px_rgba(245,158,11,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <Cog6ToothIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Atur SPMB</span>
+                                </Link>
+                            </div>
+                        </div>
 
                         <!-- 1. AKADEMIK & KURIKULUM -->
                         <div v-if="!isDaycare && (isTeacher || isGlobalAdmin || hasRole(['teacher', 'wali_kelas', 'koordinator_kurikulum', 'admin_unit', 'kepala_sekolah']))" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
@@ -917,6 +954,18 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan'])"
+                                    :href="safeRoute('yayasan.users.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-indigo-50/70 border border-white ring-1 ring-indigo-400/25 shadow-[0_8px_18px_-3px_rgba(99,102,241,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <WrenchScrewdriverIcon class="w-6 h-6 sm:w-7 sm:h-7 text-indigo-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-indigo-600 transition-colors">Manajemen User</span>
+                                </Link>
+
                                 <Link 
                                     v-if="hasRole(['admin_unit', 'super_admin_yayasan', 'admin_yayasan'])"
                                     :href="safeRoute('yayasan.staff.index')" 
