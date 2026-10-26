@@ -112,6 +112,7 @@ const formatRoleName = (role) => {
         'teacher': 'Guru',
         'siswa': 'Siswa',
         'orang_tua': 'Orang Tua / Wali',
+        'panitia_spmb': 'Panitia SPMB',
         'pelatih_ekskul': 'Pelatih Ekskul',
         'wali_kelas': 'Wali Kelas',
         'finance': 'Keuangan',
@@ -119,6 +120,19 @@ const formatRoleName = (role) => {
         'staff_admin_keuangan': 'Staf Admin Keuangan',
     };
     return names[role] || role.replace(/_/g, ' ').toUpperCase();
+};
+
+const globalRoleNames = [
+    'super_admin_yayasan',
+    'admin_yayasan',
+    'pembina_yayasan',
+    'pengawas_yayasan',
+    'staff_yayasan',
+    'humas_yayasan',
+];
+
+const isGlobalRoleUser = (user) => {
+    return Array.isArray(user?.roles) && user.roles.some(r => globalRoleNames.includes(r));
 };
 
 // Modal State Delete
@@ -307,8 +321,11 @@ const submitResetPassword = () => {
                             <span v-if="user.units.length > 0" class="text-[9px] text-slate-400 font-bold self-center ml-auto">
                                 📍 {{ user.units.join(', ') }}
                             </span>
-                            <span v-else class="text-[9px] text-teal-600 font-bold self-center ml-auto">
+                            <span v-else-if="isGlobalRoleUser(user)" class="text-[9px] text-teal-600 font-bold self-center ml-auto">
                                 🌐 Global Yayasan
+                            </span>
+                            <span v-else class="text-[9px] text-slate-400 font-bold self-center ml-auto">
+                                Belum Ada Unit
                             </span>
                         </div>
 
@@ -465,8 +482,11 @@ const submitResetPassword = () => {
                                                  </span>
                                             </div>
                                         </template>
-                                        <span v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-bold border border-teal-200">
+                                        <span v-else-if="isGlobalRoleUser(user)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-bold border border-teal-200">
                                             🌐 Akses Global Yayasan
+                                        </span>
+                                        <span v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                                            Belum Terkait Unit
                                         </span>
                                     </td>
                                     <td class="p-6 text-right sticky right-0 bg-white/80 group-hover:bg-teal-50/30 transition-colors z-10 align-middle backdrop-blur-sm">

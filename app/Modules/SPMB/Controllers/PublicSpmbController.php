@@ -251,7 +251,7 @@ class PublicSpmbController extends Controller
 
             // C. Create / Resolve User account
             $parentName = $request->father_name ?: $request->mother_name;
-            $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName);
+            $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName, $unit->id);
 
             // D. Create Applicant record
             $applicant = SpmbApplicant::create([
@@ -482,7 +482,7 @@ class PublicSpmbController extends Controller
 
             // C. Create / Resolve User account
             $parentName = $request->father_name ?: ($request->mother_name ?: $request->full_name);
-            $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName);
+            $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName, $unit->id);
 
             $category = $request->category;
             if (!$category || $category === 'eksternal_umum') {

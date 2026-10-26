@@ -76,6 +76,20 @@ class User extends Authenticatable implements CanResetPassword
         if ($studentUnitId) {
             $teamIds[] = $studentUnitId;
         }
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('spmb_applicants')) {
+            $spmbUnitIds = \DB::table('spmb_applicants')
+                ->where(function ($q) {
+                    $q->where('user_id', $this->id);
+                    if (!empty($this->phone)) {
+                        $q->orWhere('parent_phone', $this->phone);
+                    }
+                })
+                ->whereNotNull('unit_id')
+                ->pluck('unit_id')
+                ->toArray();
+            $teamIds = array_merge($teamIds, $spmbUnitIds);
+        }
             
         $uniqueTeamIds = array_unique(array_filter($teamIds));
         return \App\Modules\Yayasan\Models\Unit::whereIn('id', $uniqueTeamIds)->get();

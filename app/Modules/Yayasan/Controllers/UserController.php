@@ -26,8 +26,61 @@ class UserController extends Controller
             ->exists();
     }
 
+    private function syncSpmbParentRoles(): void
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('spmb_applicants')) {
+            return;
+        }
+
+        $parentRole = Role::firstOrCreate([
+            'name' => 'orang_tua',
+            'guard_name' => 'web',
+        ]);
+
+        $unassignedApplicants = \DB::table('spmb_applicants')
+            ->whereNotNull('user_id')
+            ->whereNotNull('unit_id')
+            ->whereNotExists(function ($q) use ($parentRole) {
+                $q->select(\DB::raw(1))
+                  ->from('model_has_roles')
+                  ->whereColumn('model_has_roles.model_id', 'spmb_applicants.user_id')
+                  ->where('model_has_roles.role_id', $parentRole->id);
+            })
+            ->select('user_id', 'unit_id')
+            ->get();
+
+        foreach ($unassignedApplicants as $row) {
+            \DB::table('model_has_roles')->updateOrInsert([
+                'role_id' => $parentRole->id,
+                'model_type' => User::class,
+                'model_id' => $row->user_id,
+            ], [
+                'team_id' => $row->unit_id,
+            ]);
+        }
+
+        // Also fix any existing orang_tua role rows that have team_id = NULL but exist in spmb_applicants
+        $nullUnitRows = \DB::table('model_has_roles')
+            ->join('spmb_applicants', 'spmb_applicants.user_id', '=', 'model_has_roles.model_id')
+            ->where('model_has_roles.role_id', $parentRole->id)
+            ->whereNull('model_has_roles.team_id')
+            ->whereNotNull('spmb_applicants.unit_id')
+            ->select('model_has_roles.model_id', 'spmb_applicants.unit_id')
+            ->get();
+
+        foreach ($nullUnitRows as $row) {
+            \DB::table('model_has_roles')
+                ->where('role_id', $parentRole->id)
+                ->where('model_id', $row->model_id)
+                ->whereNull('team_id')
+                ->update(['team_id' => $row->unit_id]);
+        }
+    }
+
     public function index(Request $request)
     {
+        $this->syncSpmbParentRoles();
+
         $query = User::query();
 
         // Unit Isolation Check
@@ -59,6 +112,12 @@ class UserController extends Controller
                        ->from('students')
                        ->whereColumn('students.user_id', 'users.id')
                        ->where('students.unit_id', $unitId);
+                })
+                ->orWhereExists(function ($q5) use ($unitId) {
+                    $q5->select(\DB::raw(1))
+                       ->from('spmb_applicants')
+                       ->whereColumn('spmb_applicants.user_id', 'users.id')
+                       ->where('spmb_applicants.unit_id', $unitId);
                 });
             });
         }
@@ -164,6 +223,12 @@ class UserController extends Controller
                        ->from('students')
                        ->whereColumn('students.user_id', 'users.id')
                        ->where('students.unit_id', $unitId);
+                })
+                ->orWhereExists(function ($q5) use ($unitId) {
+                    $q5->select(\DB::raw(1))
+                       ->from('spmb_applicants')
+                       ->whereColumn('spmb_applicants.user_id', 'users.id')
+                       ->where('spmb_applicants.unit_id', $unitId);
                 });
             });
         });

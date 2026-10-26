@@ -81,26 +81,63 @@ class SpmbService
     /**
      * Register or resolve parent User account.
      */
-    public function resolveParentUser(string $phone, string $password, string $parentName): User
+    public function resolveParentUser(string $phone, string $password, string $parentName, ?int $unitId = null): User
     {
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
 
         // Check if user already exists with this phone or email
-        $existingUser = User::where('phone', $cleanPhone)
+        $user = User::where('phone', $cleanPhone)
             ->orWhere('email', "{$cleanPhone}@spmb.namiraschool.com")
             ->first();
 
-        if ($existingUser) {
-            return $existingUser;
+        if (!$user) {
+            // Create new user for parent
+            $user = User::create([
+                'name' => $parentName,
+                'email' => "{$cleanPhone}@spmb.namiraschool.com",
+                'phone' => $cleanPhone,
+                'password' => Hash::make($password),
+            ]);
         }
 
-        // Create new user for parent
-        $user = User::create([
-            'name' => $parentName,
-            'email' => "{$cleanPhone}@spmb.namiraschool.com",
-            'phone' => $cleanPhone,
-            'password' => Hash::make($password),
+        // Ensure 'orang_tua' role is assigned and scoped to the unit
+        $parentRole = \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => 'orang_tua',
+            'guard_name' => 'web',
         ]);
+
+        $hasParentRole = DB::table('model_has_roles')
+            ->where('role_id', $parentRole->id)
+            ->where('model_type', User::class)
+            ->where('model_id', $user->id)
+            ->when($unitId, fn ($q) => $q->where('team_id', $unitId))
+            ->exists();
+
+        if (!$hasParentRole) {
+            // If there is a role row with null team_id for orang_tua, update it instead of duplicating
+            $nullTeamRow = DB::table('model_has_roles')
+                ->where('role_id', $parentRole->id)
+                ->where('model_type', User::class)
+                ->where('model_id', $user->id)
+                ->whereNull('team_id')
+                ->exists();
+
+            if ($nullTeamRow && $unitId) {
+                DB::table('model_has_roles')
+                    ->where('role_id', $parentRole->id)
+                    ->where('model_type', User::class)
+                    ->where('model_id', $user->id)
+                    ->whereNull('team_id')
+                    ->update(['team_id' => $unitId]);
+            } elseif (!$nullTeamRow) {
+                DB::table('model_has_roles')->insert([
+                    'role_id' => $parentRole->id,
+                    'model_type' => User::class,
+                    'model_id' => $user->id,
+                    'team_id' => $unitId,
+                ]);
+            }
+        }
 
         return $user;
     }

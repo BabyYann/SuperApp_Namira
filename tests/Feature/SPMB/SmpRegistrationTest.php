@@ -118,9 +118,15 @@ it('allows registration for SMP with only biodata and payment proof without supp
     expect($applicant->family_card_path)->toBeNull();
     expect($applicant->birth_cert_path)->toBeNull();
 
-    // Assert parent User account created automatically
+    // Assert parent User account created automatically and assigned orang_tua role for SMP unit
     $this->assertDatabaseHas('users', [
         'phone' => '081234567890',
+    ]);
+    $parentUser = User::where('phone', '081234567890')->first();
+    expect($parentUser->units->pluck('id')->toArray())->toContain($this->smpUnit->id);
+    $this->assertDatabaseHas('model_has_roles', [
+        'model_id' => $parentUser->id,
+        'team_id' => $this->smpUnit->id,
     ]);
 });
 
