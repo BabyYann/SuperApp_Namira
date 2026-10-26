@@ -203,144 +203,140 @@ const deleteItem = () => {
             </div>
         </template>
 
-        <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 md:pb-6 space-y-5 md:space-y-6">
+        <div class="py-2 md:py-6 max-w-7xl mx-auto pb-20 md:pb-6 space-y-3 md:space-y-6">
 
-            <!-- ==================== MOBILE PWA VIEW (block md:hidden) ==================== -->
-            <div class="block md:hidden space-y-4 -mx-4 -mt-4 px-4 pt-4 pb-16">
-                <!-- Header Executive Card Gradient -->
-                <div class="bg-gradient-to-br from-[#009688] via-[#00796b] to-[#0f172a] rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
-                    <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-                    
-                    <div class="flex items-center justify-between gap-3 mb-3">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-sm">
-                                <BookOpenIcon class="w-5 h-5 text-teal-200" />
-                            </div>
-                            <div>
-                                <span class="text-[10px] font-black tracking-wider uppercase text-teal-200/90 block">Kurikulum Merdeka</span>
-                                <h1 class="text-xl font-black text-white leading-tight">Tujuan Pembelajaran</h1>
-                            </div>
+            <!-- ==================== 📱 MOBILE PWA ULTRA-COMPACT VIEW (block md:hidden) ==================== -->
+            <div class="block md:hidden space-y-2.5">
+                <!-- 1. Compact Header 1 Baris -->
+                <div class="flex items-center justify-between gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-200">
+                            <BookOpenIcon class="w-4 h-4 stroke-[2.2]" />
                         </div>
-                        <button 
-                            @click="openCreateModal"
-                            class="px-3.5 py-2 bg-amber-400 text-slate-900 rounded-xl text-xs font-black shadow-lg hover:bg-amber-300 transition-all flex items-center gap-1.5 active:scale-95"
-                        >
-                            <PlusIcon class="w-4 h-4 stroke-[2.5]" />
-                            <span>Tambah</span>
-                        </button>
-                    </div>
-
-                    <!-- Quick Stats Pill -->
-                    <div class="flex items-center gap-2 pt-2 border-t border-white/15">
-                        <span class="text-xs text-teal-100/90">Total Data:</span>
-                        <span class="px-2.5 py-0.5 rounded-full bg-white/20 text-white font-extrabold text-xs border border-white/20">
-                            {{ chapters.total }} Bab
-                        </span>
-                    </div>
-
-                    <!-- Mobile Search & Filter -->
-                    <div class="mt-4 space-y-2">
-                        <div class="relative">
-                            <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                            <ArrowPathIcon v-else class="w-4 h-4 absolute left-3.5 top-3 text-teal-300 animate-spin" />
-                            <input 
-                                v-model="searchQuery"
-                                type="text" 
-                                placeholder="Cari Bab atau TP..." 
-                                class="w-full bg-white/95 text-slate-800 text-xs font-medium placeholder-slate-400 pl-10 pr-4 py-2.5 rounded-2xl border-0 focus:ring-2 focus:ring-amber-400 shadow-sm"
-                            />
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <h1 class="text-xs font-black text-slate-900 tracking-tight truncate">Tujuan Pembelajaran</h1>
+                                <span class="px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-[9px] font-black">
+                                    {{ chapters.total }} Bab
+                                </span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 truncate leading-none mt-0.5">
+                                Kurikulum Merdeka • Capaian & TP
+                            </p>
                         </div>
-
-                        <select 
-                            v-model="subjectFilter" 
-                            class="w-full bg-white/95 text-slate-800 text-xs font-bold px-3.5 py-2.5 rounded-2xl border-0 focus:ring-2 focus:ring-amber-400 shadow-sm"
-                        >
-                            <option value="">Semua Mata Pelajaran</option>
-                            <option v-for="sub in subjects" :key="sub.id" :value="sub.id">{{ sub.name }}</option>
-                        </select>
                     </div>
-                </div>
 
-                <!-- Empty State Mobile -->
-                <div v-if="chapters.data.length === 0" class="bg-white rounded-3xl p-8 text-center border border-slate-100 shadow-sm">
-                    <div class="w-16 h-16 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3">
-                        <BookOpenIcon class="w-8 h-8 opacity-60" />
-                    </div>
-                    <h3 class="font-bold text-slate-800 text-base mb-1">Belum Ada Bab & TP</h3>
-                    <p class="text-xs text-slate-500 mb-4">Mulai buat Tujuan Pembelajaran untuk tiap mata pelajaran.</p>
                     <button 
                         @click="openCreateModal"
-                        class="px-5 py-2.5 bg-teal-600 text-white font-extrabold text-xs rounded-xl shadow-md active:scale-95"
+                        class="shrink-0 px-2.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-[10px] font-extrabold shadow-2xs flex items-center gap-1 active:scale-95 transition"
+                    >
+                        <PlusIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Tambah</span>
+                    </button>
+                </div>
+
+                <!-- 2. Compact 1-Row Search & Mapel Filter (grid-cols-2) -->
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-2xs grid grid-cols-2 gap-1.5">
+                    <div class="relative">
+                        <MagnifyingGlassIcon v-if="!isLoading" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <ArrowPathIcon v-else class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-teal-600 animate-spin" />
+                        <input 
+                            v-model="searchQuery"
+                            type="text" 
+                            placeholder="Cari Bab / TP..." 
+                            class="w-full bg-slate-50 text-slate-800 text-[11px] font-semibold placeholder-slate-400 pl-7 pr-2.5 py-1.5 rounded-lg border border-slate-200 focus:ring-teal-500 focus:border-teal-500"
+                        />
+                    </div>
+
+                    <select 
+                        v-model="subjectFilter" 
+                        class="w-full min-w-0 truncate bg-slate-50 text-slate-800 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                        <option value="">Semua Mapel</option>
+                        <option v-for="sub in subjects" :key="sub.id" :value="sub.id">{{ sub.name }}</option>
+                    </select>
+                </div>
+
+                <!-- 3. Empty State Mobile -->
+                <div v-if="chapters.data.length === 0" class="bg-white rounded-xl p-5 text-center border border-slate-200 shadow-2xs">
+                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-2">
+                        <BookOpenIcon class="w-5 h-5 opacity-70" />
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-xs mb-0.5">Belum Ada Bab & TP</h3>
+                    <p class="text-[10px] text-slate-500 mb-3">Mulai buat Tujuan Pembelajaran untuk tiap mata pelajaran.</p>
+                    <button 
+                        @click="openCreateModal"
+                        class="px-3.5 py-1.5 bg-teal-600 text-white font-extrabold text-[10px] rounded-lg shadow-2xs active:scale-95"
                     >
                         + Tambah Data TP
                     </button>
                 </div>
 
-                <!-- Mobile Chapters Cards Loop -->
-                <div v-else class="space-y-3">
+                <!-- 4. High-Density Mobile Chapters & TPs Micro-Cards -->
+                <div v-else class="space-y-2">
                     <div 
                         v-for="chapter in chapters.data" 
                         :key="'mob-'+chapter.id"
-                        class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden"
+                        class="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden"
                     >
-                        <!-- Chapter Header Mobile -->
-                        <div class="p-4 bg-slate-50/70 border-b border-slate-100">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-extrabold text-xs shadow-sm flex-shrink-0">
-                                        {{ chapter.subject?.code?.substring(0,3) || 'MP' }}
-                                    </div>
-                                    <div>
-                                        <h3 class="font-extrabold text-slate-900 text-sm leading-snug">{{ chapter.title }}</h3>
-                                        <p class="text-xs font-semibold text-teal-700 mt-0.5">{{ chapter.subject?.name }}</p>
-                                        <div class="flex items-center gap-1.5 mt-2 flex-wrap">
-                                            <span v-if="chapter.grade_level" class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-bold text-[10px] border border-blue-100">
-                                                Kelas {{ chapter.grade_level }}
-                                            </span>
-                                            <span class="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-bold text-[10px] border border-purple-100">
-                                                Semester {{ chapter.semester }}
-                                            </span>
-                                            <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md font-bold text-[10px] border border-emerald-100">
-                                                {{ chapter.learning_objectives?.length || 0 }} TP
-                                            </span>
-                                        </div>
+                        <!-- Chapter Header Compact -->
+                        <div class="px-2.5 py-2 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0 flex-1">
+                                <div class="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center font-black text-[10px] shrink-0">
+                                    {{ chapter.subject?.code?.substring(0,3) || 'MP' }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="font-extrabold text-slate-900 text-xs leading-tight truncate">{{ chapter.title }}</h3>
+                                    <div class="flex items-center gap-1 mt-0.5 flex-wrap leading-none">
+                                        <span class="text-[10px] font-bold text-teal-700 truncate max-w-[130px]">{{ chapter.subject?.name }}</span>
+                                        <span v-if="chapter.grade_level" class="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded font-bold text-[8px] border border-blue-100">
+                                            Kls {{ chapter.grade_level }}
+                                        </span>
+                                        <span class="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded font-bold text-[8px] border border-purple-100">
+                                            Smt {{ chapter.semester }}
+                                        </span>
+                                        <span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded font-bold text-[8px] border border-emerald-100">
+                                            {{ chapter.learning_objectives?.length || 0 }} TP
+                                        </span>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Touch Actions -->
-                                <div class="flex items-center gap-1">
-                                    <button 
-                                        @click="openEditModal(chapter)"
-                                        class="p-2 text-slate-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg active:scale-95"
-                                    >
-                                        <PencilSquareIcon class="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                        @click="confirmDelete(chapter)"
-                                        class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg active:scale-95"
-                                    >
-                                        <TrashIcon class="w-4 h-4" />
-                                    </button>
-                                </div>
+                            <!-- Touch Actions Compact -->
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button 
+                                    @click="openEditModal(chapter)"
+                                    title="Edit Bab & TP"
+                                    class="w-7 h-7 bg-white text-slate-600 hover:text-teal-600 border border-slate-200 rounded-lg flex items-center justify-center active:scale-95"
+                                >
+                                    <PencilSquareIcon class="w-3.5 h-3.5" />
+                                </button>
+                                <button 
+                                    @click="confirmDelete(chapter)"
+                                    title="Hapus Bab"
+                                    class="w-7 h-7 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg flex items-center justify-center active:scale-95"
+                                >
+                                    <TrashIcon class="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         </div>
 
-                        <!-- TPs Items Mobile -->
-                        <div class="p-3 divide-y divide-slate-100">
+                        <!-- TPs Items Ultra-Compact -->
+                        <div class="px-2.5 py-1.5 divide-y divide-slate-100">
                             <div 
                                 v-for="tp in chapter.learning_objectives" 
                                 :key="'mob-tp-'+tp.id"
-                                class="py-2.5 first:pt-0 last:pb-0 flex items-start gap-3"
+                                class="py-1.5 first:pt-0 last:pb-0 flex items-start gap-2"
                             >
-                                <span class="px-2 py-1 bg-teal-50 text-teal-800 font-mono text-[11px] font-extrabold rounded-lg border border-teal-200/80 flex-shrink-0">
+                                <span class="px-1.5 py-0.5 bg-teal-50 text-teal-800 font-mono text-[9px] font-extrabold rounded border border-teal-200/80 shrink-0 mt-0.5">
                                     {{ tp.code }}
                                 </span>
-                                <p class="text-xs text-slate-700 leading-relaxed font-normal pt-0.5">
+                                <p class="text-[11px] text-slate-700 leading-snug font-medium">
                                     {{ tp.description }}
                                 </p>
                             </div>
 
-                            <div v-if="!chapter.learning_objectives?.length" class="text-center py-4 text-xs text-slate-400 italic">
+                            <div v-if="!chapter.learning_objectives?.length" class="text-center py-2 text-[10px] text-slate-400 italic">
                                 Belum ada detail TP untuk bab ini.
                             </div>
                         </div>
@@ -348,17 +344,17 @@ const deleteItem = () => {
                 </div>
 
                 <!-- Mobile Pagination -->
-                <div v-if="chapters.links && chapters.links.length > 3" class="flex justify-center pt-2">
-                    <div class="flex gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm overflow-x-auto max-w-full">
+                <div v-if="chapters.links && chapters.links.length > 3" class="flex justify-center pt-1">
+                    <div class="flex gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs overflow-x-auto max-w-full">
                         <template v-for="(link, k) in chapters.links" :key="'mob-pg-'+k">
                             <Link 
                                 v-if="link.url" 
                                 :href="link.url" 
                                 v-html="link.label"
-                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                                :class="link.active ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                                :class="link.active ? 'bg-teal-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-50'"
                             />
-                            <span v-else v-html="link.label" class="px-3 py-1.5 text-slate-300 text-xs font-bold"></span>
+                            <span v-else v-html="link.label" class="px-2.5 py-1 text-slate-300 text-[10px] font-bold"></span>
                         </template>
                     </div>
                 </div>
@@ -496,20 +492,19 @@ const deleteItem = () => {
                             </button>
                         </div>
 
-                        <form @submit.prevent="submit" class="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-5 md:space-y-6 custom-scrollbar">
+                        <form @submit.prevent="submit" class="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-3.5 md:space-y-6 custom-scrollbar">
                             <!-- Helper Info -->
-                            <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-700 flex gap-3 items-start">
-                                <LightBulbIcon class="w-5 h-5 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p class="font-bold">Tips Efisiensi:</p>
-                                    <p class="text-xs md:text-sm">Anda bisa menambahkan banyak Tujuan Pembelajaran (TP) sekaligus dalam satu Bab. Pastikan kode TP unik (misal: TP 1.1, TP 1.2).</p>
-                                </div>
+                            <div class="bg-blue-50 border border-blue-100 rounded-xl md:rounded-2xl p-2.5 md:p-4 text-xs md:text-sm text-blue-700 flex gap-2.5 items-start">
+                                <LightBulbIcon class="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 mt-0.5" />
+                                <p class="text-[11px] md:text-sm leading-snug">
+                                    <span class="font-bold">Tips:</span> Tambahkan banyak TP sekaligus dalam satu Bab dengan kode unik (misal: TP 1.1, TP 1.2).
+                                </p>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-                                <div>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-5">
+                                <div class="col-span-2 md:col-span-1">
                                     <InputLabel for="subject" value="Mata Pelajaran *" />
-                                    <select id="subject" v-model="form.subject_id" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-sm">
+                                    <select id="subject" v-model="form.subject_id" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-xs md:text-sm py-2">
                                         <option value="">-- Pilih Mapel --</option>
                                         <option v-for="sub in subjects" :key="sub.id" :value="sub.id">{{ sub.name }}</option>
                                     </select>
@@ -517,7 +512,7 @@ const deleteItem = () => {
                                 </div>
                                 <div>
                                     <InputLabel for="grade_level" value="Tingkat Kelas *" />
-                                    <select id="grade_level" v-model="form.grade_level" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-sm" required>
+                                    <select id="grade_level" v-model="form.grade_level" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-xs md:text-sm py-2" required>
                                         <option value="">-- Pilih Tingkat --</option>
                                         <option v-for="g in availableGrades" :key="g" :value="g">
                                             {{ typeof g === 'number' ? 'Kelas ' + g : g }}
@@ -527,7 +522,7 @@ const deleteItem = () => {
                                 </div>
                                 <div>
                                     <InputLabel for="semester" value="Semester *" />
-                                    <select id="semester" v-model="form.semester" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-sm">
+                                    <select id="semester" v-model="form.semester" class="w-full mt-1 border-gray-300 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-gray-50/50 text-xs md:text-sm py-2">
                                         <option value="1">Semester 1</option>
                                         <option value="2">Semester 2</option>
                                     </select>
@@ -536,42 +531,42 @@ const deleteItem = () => {
 
                             <div>
                                 <InputLabel for="title" value="Judul Bab / Materi *" />
-                                <TextInput id="title" v-model="form.title" class="w-full mt-1 font-bold text-base md:text-lg" placeholder="Contoh: Bab 1 - Eksponen dan Logaritma" required />
+                                <TextInput id="title" v-model="form.title" class="w-full mt-1 font-bold text-sm md:text-lg py-2" placeholder="Contoh: Bab 1 - Eksponen dan Logaritma" required />
                                 <InputError :message="form.errors.title" class="mt-1" />
                             </div>
 
                             <!-- Dynamic TPs -->
-                            <div class="space-y-4 pt-4 border-t border-gray-100">
+                            <div class="space-y-3 md:space-y-4 pt-3 md:pt-4 border-t border-gray-100">
                                 <div class="flex justify-between items-center">
-                                    <InputLabel value="Daftar Tujuan Pembelajaran" class="text-base md:text-lg font-bold text-gray-800" />
-                                    <button type="button" @click="addObjectiveRow" class="px-3.5 py-1.5 md:px-4 md:py-2 bg-namira-teal/10 text-namira-teal rounded-xl text-xs md:text-sm font-bold hover:bg-namira-teal/20 transition-colors flex items-center gap-1.5 md:gap-2">
-                                        <PlusIcon class="w-4 h-4 md:w-5 md:h-5" />
-                                        Tambah TP Lain
+                                    <InputLabel value="Daftar Tujuan Pembelajaran" class="text-sm md:text-lg font-bold text-gray-800" />
+                                    <button type="button" @click="addObjectiveRow" class="px-3 py-1.5 md:px-4 md:py-2 bg-namira-teal/10 text-namira-teal rounded-lg md:rounded-xl text-[11px] md:text-sm font-bold hover:bg-namira-teal/20 transition-colors flex items-center gap-1">
+                                        <PlusIcon class="w-3.5 h-3.5 md:w-5 md:h-5" />
+                                        <span>Tambah TP</span>
                                     </button>
                                 </div>
 
-                                <div class="space-y-3 md:space-y-4">
-                                    <div v-for="(obj, index) in form.objectives" :key="index" class="p-4 md:p-5 bg-gray-50 rounded-2xl border border-gray-200 relative group transition-all hover:border-namira-teal/50 hover:shadow-sm hover:bg-white">
+                                <div class="space-y-2.5 md:space-y-4">
+                                    <div v-for="(obj, index) in form.objectives" :key="index" class="p-3 md:p-5 bg-gray-50 rounded-xl md:rounded-2xl border border-gray-200 relative group transition-all hover:border-namira-teal/50 hover:shadow-sm hover:bg-white">
                                         <!-- Remove Button (Top Right) -->
                                         <button 
                                             v-if="form.objectives.length > 1"
                                             type="button" 
                                             @click="removeObjectiveRow(index)" 
-                                            class="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-100 md:opacity-0 group-hover:opacity-100"
+                                            class="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-100 md:opacity-0 group-hover:opacity-100"
                                             title="Hapus Baris Ini"
                                         >
-                                            <XMarkIcon class="w-5 h-5" />
+                                            <XMarkIcon class="w-4 h-4 md:w-5 md:h-5" />
                                         </button>
 
-                                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 md:gap-4">
                                             <!-- Kode TP -->
                                             <div class="md:col-span-3">
-                                                <label :for="'code-'+index" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Kode TP</label>
+                                                <label :for="'code-'+index" class="block text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Kode TP</label>
                                                 <input 
                                                     :id="'code-'+index"
                                                     v-model="obj.code" 
                                                     type="text" 
-                                                    class="w-full border-gray-300 rounded-xl text-sm md:text-base font-bold text-gray-800 focus:border-namira-teal focus:ring-namira-teal py-2.5 md:py-3 px-3 md:px-4 bg-white"
+                                                    class="w-full border-gray-300 rounded-lg md:rounded-xl text-xs md:text-base font-bold text-gray-800 focus:border-namira-teal focus:ring-namira-teal py-1.5 md:py-3 px-2.5 md:px-4 bg-white"
                                                     placeholder="TP 1.1"
                                                     required
                                                 >
@@ -579,13 +574,13 @@ const deleteItem = () => {
 
                                             <!-- Deskripsi -->
                                             <div class="md:col-span-9">
-                                                <label :for="'desc-'+index" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Materi / Deskripsi</label>
+                                                <label :for="'desc-'+index" class="block text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Materi / Deskripsi</label>
                                                 <textarea 
                                                     :id="'desc-'+index"
                                                     v-model="obj.description" 
                                                     rows="2" 
                                                     placeholder="Contoh: Peserta didik mampu memahami konsep..." 
-                                                    class="w-full border-gray-300 rounded-xl text-sm text-gray-800 focus:border-namira-teal focus:ring-namira-teal py-2.5 md:py-3 px-3 md:px-4 bg-white resize-none"
+                                                    class="w-full border-gray-300 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-800 focus:border-namira-teal focus:ring-namira-teal py-1.5 md:py-3 px-2.5 md:px-4 bg-white resize-none"
                                                     required
                                                 ></textarea>
                                             </div>
