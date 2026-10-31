@@ -271,9 +271,16 @@ class PublicSpmbController extends Controller
             $parentName = $request->father_name ?: ($request->mother_name ?: $request->full_name);
             $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName, $unit->id);
 
+            // Auto-match against the 72 Master Data Inden & Angket
+            $indenMatch = $spmbService->matchSdIndenApplicant($cleanPhone, $request->full_name)
+                ?? $spmbService->matchSdIndenApplicant($request->father_phone, null)
+                ?? $spmbService->matchSdIndenApplicant($request->mother_phone, null);
+
+            $previousSchool = $request->previous_school ?: ($indenMatch['previous_school'] ?? null);
+
             $category = $request->category;
             if (!$category || $category === 'eksternal_umum') {
-                if ($request->filled('previous_school') && str_contains(strtolower($request->previous_school), 'namira')) {
+                if ($previousSchool && str_contains(strtolower($previousSchool), 'namira')) {
                     $category = 'internal_tk';
                 } else {
                     $category = $category ?: 'eksternal_umum';
@@ -299,7 +306,7 @@ class PublicSpmbController extends Controller
                 'religion' => $request->religion ?: 'Islam',
                 'child_order' => $request->child_order,
                 'total_siblings' => $request->total_siblings,
-                'previous_school' => $request->previous_school,
+                'previous_school' => $previousSchool,
                 'special_notes' => $request->special_notes,
 
                 // Orang Tua
@@ -333,7 +340,7 @@ class PublicSpmbController extends Controller
             ];
 
             if (Schema::hasColumn('spmb_applicants', 'is_inden')) {
-                $applicantData['is_inden'] = $request->boolean('is_inden', false);
+                $applicantData['is_inden'] = $indenMatch !== null;
             }
 
             $applicant = SpmbApplicant::create($applicantData);

@@ -334,50 +334,6 @@ const submitRegistration = () => {
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 text-xs">
                         
-                        <!-- Pilihan Jalur Pendaftaran (Umum vs Inden) -->
-                        <div class="sm:col-span-2">
-                            <label class="block font-bold text-slate-700 mb-2">Status Pendaftaran *</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                                <label 
-                                    class="flex items-start gap-3 p-3 sm:p-3.5 rounded-xl border cursor-pointer transition select-none"
-                                    :class="!form.is_inden 
-                                        ? 'border-emerald-600 bg-emerald-50/60 ring-1 ring-emerald-500' 
-                                        : 'border-slate-200 bg-white hover:bg-slate-50'"
-                                >
-                                    <input 
-                                        type="radio" 
-                                        name="is_inden" 
-                                        :value="false" 
-                                        v-model="form.is_inden" 
-                                        class="mt-0.5 text-emerald-600 focus:ring-emerald-500"
-                                    />
-                                    <div>
-                                        <div class="font-bold text-xs sm:text-sm text-slate-900">Pendaftar Baru (Jalur Umum)</div>
-                                        <div class="text-[11px] text-slate-500 mt-0.5">Pendaftaran reguler siswa baru Tahun Ajaran {{ setting?.academic_year || '2026/2027' }}</div>
-                                    </div>
-                                </label>
-
-                                <label 
-                                    class="flex items-start gap-3 p-3 sm:p-3.5 rounded-xl border cursor-pointer transition select-none"
-                                    :class="form.is_inden 
-                                        ? 'border-emerald-600 bg-emerald-50/60 ring-1 ring-emerald-500' 
-                                        : 'border-slate-200 bg-white hover:bg-slate-50'"
-                                >
-                                    <input 
-                                        type="radio" 
-                                        name="is_inden" 
-                                        :value="true" 
-                                        v-model="form.is_inden" 
-                                        class="mt-0.5 text-emerald-600 focus:ring-emerald-500"
-                                    />
-                                    <div>
-                                        <div class="font-bold text-xs sm:text-sm text-slate-900">Terdaftar di List Inden</div>
-                                        <div class="text-[11px] text-slate-500 mt-0.5">Pilih ini jika nama ananda/orang tua sudah tercatat di daftar Inden sebelumnya</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
                         <!-- Kategori Asal Sekolah (Internal TK Namira vs Eksternal) -->
                         <div class="sm:col-span-2">
                             <label class="block font-bold text-slate-700 mb-2">Kategori Asal Sekolah *</label>

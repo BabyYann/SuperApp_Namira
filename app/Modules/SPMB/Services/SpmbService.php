@@ -244,4 +244,125 @@ class SpmbService
             return $student;
         });
     }
+
+    /**
+     * Normalize Indonesian phone number to 08... format.
+     */
+    public function normalizePhone(?string $phone): string
+    {
+        $clean = preg_replace('/[^0-9]/', '', (string) $phone);
+        if (str_starts_with($clean, '62')) {
+            $clean = '0' . substr($clean, 2);
+        } elseif (str_starts_with($clean, '8')) {
+            $clean = '0' . $clean;
+        }
+        return $clean;
+    }
+
+    /**
+     * Master Data Angket TK Namira 2026 & Inden SD Namira (72 Entri).
+     */
+    public function getSdIndenMasterList(): array
+    {
+        return [
+            ['no' => 1, 'full_name' => 'Clemira Fachrana Zahra', 'phone' => '085234577767', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 2, 'full_name' => 'NAUFA AZZAHRA AZKAYRA ANDARU', 'phone' => '085707461592', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 3, 'full_name' => 'Reza Rahadian Basuki', 'phone' => '082330521607', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 4, 'full_name' => 'Raisa qanita Fransisca', 'phone' => '082146075750', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 5, 'full_name' => 'Keinara hafsha adzkiya farhana', 'phone' => '082334861305', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 6, 'full_name' => 'Fatih Rizky Ramadhan', 'phone' => '082237518548', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 7, 'full_name' => 'Muhammad Fatih Hasan', 'phone' => '085233041839', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 8, 'full_name' => 'Adeeva Octavia Putri Haspita', 'phone' => '081334309545', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 9, 'full_name' => 'YUSUF SAKTI WIRATAMA WIDYANTORO', 'phone' => '085231831469', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 10, 'full_name' => 'Zaskia Anjani putri Burhanuddin', 'phone' => '085334084015', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 11, 'full_name' => 'Fatiha aina salsabila', 'phone' => '082132439367', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 12, 'full_name' => 'Dhefin Adelyo Athariq', 'phone' => '081233100700', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 13, 'full_name' => 'Muhamad Dinar', 'phone' => '082314950555', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 14, 'full_name' => 'Khalisa Dafiyah Yamina', 'phone' => '082145451352', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 15, 'full_name' => 'MUHAMMAD TAUFIQ HIDAYATULLAH', 'phone' => '085230724693', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 16, 'full_name' => 'Azkiya Kayla Mardhiyah', 'phone' => '081935433075', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 17, 'full_name' => 'Amira Barroh At-Taqiyyah', 'phone' => '081335208980', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 18, 'full_name' => 'Kiara Nur Aprilia Nathania', 'phone' => '085257787838', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 19, 'full_name' => 'Raghata Angkasa Putra Wardana', 'phone' => '08113771017', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 20, 'full_name' => 'muhammad alvino Saputra', 'phone' => '082132761702', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 21, 'full_name' => "Ahmad Fatih Rif'an Aziz", 'phone' => '082301815399', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 22, 'full_name' => 'Shezi Agacia Halina Huda', 'phone' => '081230414997', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 23, 'full_name' => 'ABIDAH ADRISTI ALESHA SHAQUEENA HASAN', 'phone' => '082336697833', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 24, 'full_name' => 'Jinan Zelmira Andanila', 'phone' => '085955203909', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 25, 'full_name' => 'Arisha Daritri Almahyra', 'phone' => '082299178992', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 26, 'full_name' => 'Zavier Rashdan Habibi', 'phone' => '081212677038', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 27, 'full_name' => 'Asiqna Nur Fatimah', 'phone' => '085731519685', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 28, 'full_name' => 'ARKANA AIDAN ABDUL AZIZ', 'phone' => '082331111304', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 29, 'full_name' => 'Alesha Nafisah putri', 'phone' => '082131363661', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 30, 'full_name' => 'Atika Fithriya Tsabita Ahmad', 'phone' => '082133008641', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 31, 'full_name' => 'muhammad arshaka', 'phone' => '082302559423', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 32, 'full_name' => 'Hanin Himayatul ilah', 'phone' => '085234343336', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 33, 'full_name' => 'Labib nuha khayri faeyza al Ghani', 'phone' => '085704301547', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 34, 'full_name' => 'Hisyam Balya Nazeeh', 'phone' => '082143551955', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 35, 'full_name' => 'Salim Alwi Aljufri', 'phone' => '081232055055', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 36, 'full_name' => 'Muhammad Zafran Al Hasby', 'phone' => '081359564307', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 37, 'full_name' => 'Charissa Putri El Anwar', 'phone' => '085258833953', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 38, 'full_name' => 'ARIENDRA NAUFAL RABBANI', 'phone' => '085855114999', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 39, 'full_name' => 'Melviano Keenan Mubarak', 'phone' => '082131011181', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 40, 'full_name' => 'Queena Hagia shofia', 'phone' => '08111767080', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 41, 'full_name' => 'AHMAD THORIQ AL BAITY', 'phone' => '082214974721', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 42, 'full_name' => 'Nafisah Al Ilmi', 'phone' => '082302301003', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 43, 'full_name' => 'MUHAMMAD RHAMZA ABDUL MALIKI', 'phone' => '085231647868', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 44, 'full_name' => 'MAHREEN AIZA NUGROHO', 'phone' => '081292200530', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 45, 'full_name' => 'MUHAMMAD SYARIF HIDAYATULLAH', 'phone' => '083800665479', 'previous_school' => 'TK Namira', 'source_label' => 'Angket TK Namira'],
+            ['no' => 46, 'full_name' => 'Salwa rasyifa Aurora', 'phone' => '081348638439', 'previous_school' => 'TK tunas mulia Paiton', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 47, 'full_name' => 'Aisyah Zakiya putri satriya', 'phone' => '082136585323', 'previous_school' => 'TK khodijah semarang', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 48, 'full_name' => 'Yasmine Yumna Andrian', 'phone' => '082234953535', 'previous_school' => 'TK PKK kertosuko krucil', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 49, 'full_name' => 'Aghnia qori Aina', 'phone' => '082301815249', 'previous_school' => 'TK permata', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 50, 'full_name' => 'Muhammad Hamka Al Fatih', 'phone' => '082245923315', 'previous_school' => 'TK Argopuro 2', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 51, 'full_name' => "Zulaikha Mar'ah Faradis", 'phone' => '085243288101', 'previous_school' => 'TK Kusuma', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 52, 'full_name' => 'Arsyista Mecca', 'phone' => '082266666324', 'previous_school' => 'TK aba pendil', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 53, 'full_name' => 'Khalisa dafiyah Yamina', 'phone' => '082230991456', 'previous_school' => 'TK Namira', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 54, 'full_name' => 'Kenzio farzan arrazka', 'phone' => '085258958081', 'previous_school' => 'TK IT permata', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 55, 'full_name' => 'Haydar Arkana Aziz', 'phone' => '082229195160', 'previous_school' => 'TK PG Pajarakan', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 56, 'full_name' => 'Evano bramastha Rajendra Birowo', 'phone' => '082143603135', 'previous_school' => 'TK PG Pajarakan', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 57, 'full_name' => 'Muhammad Haidar al-Fatih', 'phone' => '081335587009', 'previous_school' => 'Cordova Islamic school Surabaya', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 58, 'full_name' => 'Muhammad arshaka alghozali', 'phone' => '082302559423', 'previous_school' => 'TK Namira', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 59, 'full_name' => 'Kashieva Aurora mahbuba', 'phone' => '082229796636', 'previous_school' => 'TK ABA harapan kraksaan', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 60, 'full_name' => 'Alvaro arzan kafeel Ahmad', 'phone' => '082261035550', 'previous_school' => 'TK Islam Siti Khadijah', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 61, 'full_name' => 'Elramdhan parvez Maulana', 'phone' => '082269631889', 'previous_school' => 'TK Islam Siti Khadijah', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 62, 'full_name' => 'Akbar Caesar nurdaffa', 'phone' => '082330514776', 'previous_school' => 'TK Nira Indria sebaung gending', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 63, 'full_name' => 'Arsalaan Ammar Shiddiq L Satrio', 'phone' => '081216089391', 'previous_school' => 'TKN II pembina', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 64, 'full_name' => 'Rafif Ibrahim Al Ghifari', 'phone' => '085233248352', 'previous_school' => 'TK kemuning suko', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 65, 'full_name' => 'El Jalaluddin rumi Hidayat', 'phone' => '082229390659', 'previous_school' => 'TK Nira Indria', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 66, 'full_name' => 'Muhammad ziyad kamali', 'phone' => '085236123591', 'previous_school' => 'RA Mambaul Irfan asembakor', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 67, 'full_name' => 'Arunika numa sandhikatullah', 'phone' => '082323263264', 'previous_school' => 'TK tunas mulia', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 68, 'full_name' => 'Ahmad farel Maulana Hasan', 'phone' => '085869518878', 'previous_school' => 'TK negeri pembina Dringu', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 69, 'full_name' => 'Danendra Shidqi hafidzan alkhalifi', 'phone' => '085204247140', 'previous_school' => 'TK permata', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 70, 'full_name' => 'Adreena Yasmine kahisha', 'phone' => '085233000034', 'previous_school' => 'TK PG Pajarakan', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 71, 'full_name' => 'Muhammad Jembar ranggalawe', 'phone' => '082301751765', 'previous_school' => 'TK alfarida Kraksaan', 'source_label' => 'Inden Tapel 2027-2028'],
+            ['no' => 72, 'full_name' => 'Juniar geo vishaka Prasetya', 'phone' => '082310300747', 'previous_school' => 'TK IT permata', 'source_label' => 'Inden Tapel 2027-2028'],
+        ];
+    }
+
+    /**
+     * Match an applicant's phone or full name against the 72 SD Inden master list.
+     */
+    public function matchSdIndenApplicant(?string $phone, ?string $fullName = null): ?array
+    {
+        $cleanPhone = $this->normalizePhone($phone);
+        $cleanName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $fullName)));
+
+        foreach ($this->getSdIndenMasterList() as $item) {
+            if ($cleanPhone !== '' && $this->normalizePhone($item['phone']) === $cleanPhone) {
+                return $item;
+            }
+        }
+
+        if ($cleanName !== '') {
+            foreach ($this->getSdIndenMasterList() as $item) {
+                $masterName = strtolower(trim(preg_replace('/\s+/', ' ', $item['full_name'])));
+                if ($masterName === $cleanName) {
+                    return $item;
+                }
+            }
+        }
+
+        return null;
+    }
 }

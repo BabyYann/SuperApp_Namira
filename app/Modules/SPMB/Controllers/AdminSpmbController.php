@@ -45,7 +45,7 @@ class AdminSpmbController extends Controller
     /**
      * Display list of applicants with search, filters, and statistics.
      */
-    public function index(Request $request)
+    public function index(Request $request, SpmbService $spmbService)
     {
         $user = Auth::user();
         $this->authorizeSpmb();
@@ -71,6 +71,78 @@ class AdminSpmbController extends Controller
         // Enforce unit scope if user is not yayasan admin
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
             $this->authorizeSpmb($targetUnit->id);
+        }
+
+        $isSdUnit = strtoupper($targetUnit->code ?? '') === 'SD' || str_contains(strtolower($targetUnit->name ?? ''), 'sd');
+        $indenMasterList = [];
+        $indenMasterStats = null;
+
+        if ($isSdUnit) {
+            $allSdApplicants = SpmbApplicant::where('unit_id', $targetUnit->id)
+                ->get(['id', 'registration_number', 'full_name', 'parent_phone', 'father_phone', 'mother_phone', 'status', 'is_inden']);
+
+            // Auto-sync is_inden flag on existing SD applicants if their phone or name matches the 72 Inden master list
+            if (Schema::hasColumn('spmb_applicants', 'is_inden')) {
+                foreach ($allSdApplicants as $sdApp) {
+                    if (!$sdApp->is_inden) {
+                        $matched = $spmbService->matchSdIndenApplicant($sdApp->parent_phone, $sdApp->full_name)
+                            ?? $spmbService->matchSdIndenApplicant($sdApp->father_phone, null)
+                            ?? $spmbService->matchSdIndenApplicant($sdApp->mother_phone, null);
+                        if ($matched) {
+                            $sdApp->update(['is_inden' => true]);
+                            $sdApp->is_inden = true;
+                        }
+                    }
+                }
+            }
+
+            $registeredCount = 0;
+            foreach ($spmbService->getSdIndenMasterList() as $item) {
+                $normPhone = $spmbService->normalizePhone($item['phone']);
+                $normName = strtolower(trim(preg_replace('/\s+/', ' ', $item['full_name'])));
+
+                $matchedApplicant = $allSdApplicants->first(function ($app) use ($spmbService, $normPhone, $normName) {
+                    if ($normPhone !== '') {
+                        if (
+                            $spmbService->normalizePhone($app->parent_phone) === $normPhone ||
+                            $spmbService->normalizePhone($app->father_phone) === $normPhone ||
+                            $spmbService->normalizePhone($app->mother_phone) === $normPhone
+                        ) {
+                            return true;
+                        }
+                    }
+                    $appName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $app->full_name)));
+                    return $normName !== '' && $appName === $normName;
+                });
+
+                if ($matchedApplicant) {
+                    $registeredCount++;
+                }
+
+                $waPhone = str_starts_with($normPhone, '0') ? '62' . substr($normPhone, 1) : $normPhone;
+                $waText = rawurlencode("Assalamu'alaikum Bapak/Ibu Orang Tua dari ananda {$item['full_name']}, menginformasikan bahwa pendaftaran online SPMB SD Namira telah dibuka. Silakan melengkapi formulir pendaftaran melalui tautan: " . url('/spmb/daftar/sd'));
+
+                $indenMasterList[] = [
+                    'no' => $item['no'],
+                    'full_name' => $item['full_name'],
+                    'phone' => $normPhone,
+                    'previous_school' => $item['previous_school'],
+                    'source_label' => $item['source_label'],
+                    'is_registered' => $matchedApplicant !== null,
+                    'applicant_id' => $matchedApplicant?->id,
+                    'registration_number' => $matchedApplicant?->registration_number,
+                    'status' => $matchedApplicant?->status,
+                    'status_label' => $matchedApplicant?->status_label,
+                    'wa_followup_link' => "https://wa.me/{$waPhone}?text={$waText}",
+                ];
+            }
+
+            $totalInden = count($indenMasterList);
+            $indenMasterStats = [
+                'total' => $totalInden,
+                'registered' => $registeredCount,
+                'unregistered' => $totalInden - $registeredCount,
+            ];
         }
 
         $query = SpmbApplicant::with(['unit', 'user'])
@@ -133,6 +205,8 @@ class AdminSpmbController extends Controller
             'filters' => $request->only(['search', 'category', 'status', 'unit_id']),
             'unit' => $targetUnit,
             'availableUnits' => $availableUnits,
+            'indenMasterList' => $indenMasterList,
+            'indenMasterStats' => $indenMasterStats,
         ]);
     }
 

@@ -28,6 +28,37 @@ const props = defineProps({
     stats: Object,
     filters: Object,
     unit: Object,
+    indenMasterList: {
+        type: Array,
+        default: () => [],
+    },
+    indenMasterStats: {
+        type: Object,
+        default: null,
+    },
+});
+
+const showIndenModal = ref(false);
+const indenFilter = ref('all'); // all, unregistered, registered
+const indenSearch = ref('');
+
+const filteredIndenMaster = computed(() => {
+    let list = props.indenMasterList || [];
+    if (indenFilter.value === 'registered') {
+        list = list.filter((i) => i.is_registered);
+    } else if (indenFilter.value === 'unregistered') {
+        list = list.filter((i) => !i.is_registered);
+    }
+    if (indenSearch.value.trim() !== '') {
+        const q = indenSearch.value.toLowerCase().trim();
+        list = list.filter(
+            (i) =>
+                (i.full_name || '').toLowerCase().includes(q) ||
+                (i.phone || '').includes(q) ||
+                (i.previous_school || '').toLowerCase().includes(q)
+        );
+    }
+    return list;
 });
 
 const isSmp = computed(() => {
@@ -436,6 +467,41 @@ const getStatusBadgeClass = (s) => {
             </div>
 
             <!-- Filters & Search Toolbar (Compact di Mobile, Normal di Desktop) -->
+            <div v-if="indenMasterStats" class="bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/70 rounded-xl md:rounded-2xl p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs">
+                        {{ indenMasterStats.total }}
+                    </div>
+                    <div>
+                        <h3 class="text-xs md:text-sm font-extrabold text-purple-950 dark:text-purple-200 leading-tight">
+                            Pantauan Master Data Angket &amp; Inden SD Namira
+                        </h3>
+                        <p class="text-[11px] text-purple-800/80 dark:text-purple-300/80 mt-0.5">
+                            Sudah Daftar Online: <strong class="text-emerald-700 dark:text-emerald-400">{{ indenMasterStats.registered }} anak</strong> &bull;
+                            Belum Daftar / Bayar: <strong class="text-rose-600 dark:text-rose-400">{{ indenMasterStats.unregistered }} anak</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                        type="button"
+                        @click="category = category === 'inden' ? 'all' : 'inden'"
+                        class="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-[11px] font-bold border transition"
+                        :class="category === 'inden' ? 'bg-purple-700 text-white border-purple-700' : 'bg-white dark:bg-slate-800 text-purple-800 dark:text-purple-300 border-purple-300 hover:bg-purple-100'"
+                    >
+                        {{ category === 'inden' ? 'Tampilkan Semua' : 'Filter Pendaftar Inden' }}
+                    </button>
+                    <button
+                        type="button"
+                        @click="showIndenModal = true"
+                        class="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition shadow-2xs"
+                    >
+                        Cek 72 Data Inden &amp; Follow-Up WA
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white dark:bg-slate-900 p-2.5 md:p-4 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs md:shadow-sm flex flex-col md:flex-row items-center justify-between gap-2 md:gap-3">
                 <div class="relative w-full md:w-80">
                     <MagnifyingGlassIcon class="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1095,6 +1161,131 @@ const getStatusBadgeClass = (s) => {
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- ================= MODAL PANTAUAN 72 DATA INDEN & ANGKET SD ================= -->
+            <div v-if="showIndenModal && indenMasterStats" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs overflow-y-auto" @click.self="showIndenModal = false">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 my-6 max-h-[90vh] flex flex-col space-y-4">
+                    <div class="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-400 block">Rekonsiliasi Otomatis Nomor WA &amp; Nama</span>
+                            <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                                Master Data Angket &amp; Inden SD Namira ({{ indenMasterStats.total }} Calon Siswa)
+                            </h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">
+                                Sistem otomatis menandai pendaftar sebagai <strong>Jalur Inden</strong> apabila Nomor WA atau Nama Lengkap cocok dengan daftar ini.
+                            </p>
+                        </div>
+                        <button type="button" @click="showIndenModal = false" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- Filter Tabs & Search -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                        <div class="grid grid-cols-3 gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[11px] font-bold">
+                            <button
+                                type="button"
+                                @click="indenFilter = 'all'"
+                                class="py-1.5 px-2.5 rounded-lg transition text-center"
+                                :class="indenFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs' : 'text-slate-500'"
+                            >
+                                Semua ({{ indenMasterStats.total }})
+                            </button>
+                            <button
+                                type="button"
+                                @click="indenFilter = 'unregistered'"
+                                class="py-1.5 px-2.5 rounded-lg transition text-center"
+                                :class="indenFilter === 'unregistered' ? 'bg-rose-600 text-white shadow-2xs' : 'text-rose-600'"
+                            >
+                                Belum Daftar ({{ indenMasterStats.unregistered }})
+                            </button>
+                            <button
+                                type="button"
+                                @click="indenFilter = 'registered'"
+                                class="py-1.5 px-2.5 rounded-lg transition text-center"
+                                :class="indenFilter === 'registered' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-emerald-700'"
+                            >
+                                Sudah Daftar ({{ indenMasterStats.registered }})
+                            </button>
+                        </div>
+
+                        <div class="relative flex-1 sm:max-w-xs">
+                            <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                v-model="indenSearch"
+                                type="text"
+                                placeholder="Cari nama anak, no WA, asal TK..."
+                                class="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Scrollable List -->
+                    <div class="overflow-y-auto flex-1 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-100 dark:divide-slate-800">
+                        <div
+                            v-for="item in filteredIndenMaster"
+                            :key="`inden-${item.no}`"
+                            class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs"
+                        >
+                            <div class="flex items-start gap-2.5 min-w-0">
+                                <span class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                    {{ item.no }}
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <strong class="font-bold text-slate-900 dark:text-white truncate">{{ item.full_name }}</strong>
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                            {{ item.previous_school }}
+                                        </span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 font-mono mt-0.5">
+                                        WA: {{ item.phone }} &bull; <span class="font-sans">{{ item.source_label }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                <template v-if="item.is_registered">
+                                    <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-[10px] inline-flex items-center gap-1">
+                                        <CheckCircleIcon class="w-3.5 h-3.5" />
+                                        <span>Sudah Daftar ({{ item.registration_number }})</span>
+                                    </span>
+                                    <Link
+                                        v-if="item.applicant_id"
+                                        :href="route('spmb.admin.show', item.applicant_id)"
+                                        class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold text-[10px] hover:bg-slate-800"
+                                    >
+                                        Buka Detail
+                                    </Link>
+                                </template>
+                                <template v-else>
+                                    <span class="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[10px]">
+                                        Belum Isi Form
+                                    </span>
+                                    <a
+                                        :href="item.wa_followup_link"
+                                        target="_blank"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition shadow-2xs"
+                                    >
+                                        <ChatBubbleLeftRightIcon class="w-3.5 h-3.5" />
+                                        <span>Follow-Up WA</span>
+                                    </a>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div v-if="filteredIndenMaster.length === 0" class="p-6 text-center text-xs text-slate-400">
+                            Tidak ada data Inden yang cocok dengan pencarian.
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <button type="button" @click="showIndenModal = false" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">
+                            Tutup
+                        </button>
+                    </div>
                 </div>
             </div>
 
