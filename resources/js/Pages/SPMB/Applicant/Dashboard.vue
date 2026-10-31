@@ -176,6 +176,48 @@ const handleReplaceRegistrationProof = async (e) => {
         },
     });
 };
+
+// Unggah Fleksibel Berkas Persyaratan (Pas Foto, KK, Akta, KTP)
+const uploadingDocType = ref(null);
+const docUploadForm = useForm({
+    doc_type: '',
+    file: null,
+});
+
+const handleSupportingDocUpload = async (e, docType) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    uploadingDocType.value = docType;
+    let uploadFile = file;
+    if (file.type && file.type.startsWith('image/')) {
+        try {
+            uploadFile = await compressImageFile(file, docType === 'photo' ? 900 : 1280, 0.8);
+        } catch (err) {
+            console.error(`Kompresi berkas ${docType} gagal:`, err);
+        }
+    }
+
+    docUploadForm.doc_type = docType;
+    docUploadForm.file = uploadFile;
+    docUploadForm.post(route('spmb.applicant.upload-document', props.applicant.id), {
+        preserveScroll: true,
+        forceFormData: true,
+        onFinish: () => {
+            uploadingDocType.value = null;
+            e.target.value = '';
+        },
+    });
+};
+
+const supportingDocsCompletedCount = computed(() => {
+    let count = 0;
+    if (props.applicant?.photo_url) count++;
+    if (props.applicant?.family_card_url) count++;
+    if (props.applicant?.birth_cert_url) count++;
+    if (props.applicant?.parent_id_card_url) count++;
+    return count;
+});
 </script>
 
 <template>
@@ -302,8 +344,211 @@ const handleReplaceRegistrationProof = async (e) => {
                         <strong class="text-sm font-extrabold text-emerald-700 block mt-0.5">
                             {{ !isAnnouncementReleased && ['accepted', 'reserve', 'rejected'].includes(applicant.status) ? 'Menunggu Pengumuman' : applicant.status_label }}
                         </strong>
-                        <span class="text-[10px] text-slate-400 block mt-1">Jalur Inden TA {{ setting?.academic_year || '2026/2027' }}</span>
+                        <span class="text-[10px] text-slate-400 block mt-1">
+                            {{ applicant.is_inden ? 'Jalur Inden' : 'Jalur Umum' }} &bull; TA {{ setting?.academic_year || '2026/2027' }}
+                        </span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Flexible Supporting Documents Upload Section (Pas Foto, KK, Akta, KTP) -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                            <DocumentTextIcon class="w-4 h-4 text-emerald-700" />
+                            <span>Kelengkapan Berkas Persyaratan</span>
+                        </h3>
+                        <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+                            Unggah atau perbarui berkas persyaratan ananda di bawah ini secara fleksibel (Format JPG, PNG, atau PDF).
+                        </p>
+                    </div>
+                    <span 
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold self-start sm:self-auto shrink-0 border"
+                        :class="supportingDocsCompletedCount === 4 
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                            : 'bg-amber-50 text-amber-800 border-amber-200'"
+                    >
+                        <CheckCircleIcon v-if="supportingDocsCompletedCount === 4" class="w-3.5 h-3.5 text-emerald-600" />
+                        <ClockIcon v-else class="w-3.5 h-3.5 text-amber-600" />
+                        <span>{{ supportingDocsCompletedCount }} / 4 Berkas Terunggah</span>
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs">
+                    
+                    <!-- 1. Pas Foto 3x4 -->
+                    <div 
+                        class="p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition"
+                        :class="applicant.photo_url ? 'bg-emerald-50/40 border-emerald-200' : 'bg-slate-50 border-slate-200'"
+                    >
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <strong class="font-bold text-slate-900">1. Pas Foto 3x4</strong>
+                                <span 
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="applicant.photo_url ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                >
+                                    {{ applicant.photo_url ? 'Lengkap' : 'Belum Ada' }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-snug">Pas foto rapi latar merah/biru.</p>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70">
+                            <a 
+                                v-if="applicant.photo_url" 
+                                :href="applicant.photo_url" 
+                                target="_blank" 
+                                class="text-[11px] font-bold text-emerald-700 hover:underline"
+                            >
+                                Lihat Foto
+                            </a>
+                            <span v-else class="text-[10px] text-slate-400">JPG / PNG</span>
+
+                            <label 
+                                v-if="applicant.status !== 'enrolled'"
+                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition shadow-2xs"
+                                :class="applicant.photo_url 
+                                    ? 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-300' 
+                                    : 'bg-[#064e3b] hover:bg-emerald-800 text-white'"
+                            >
+                                <PhotoIcon class="w-3.5 h-3.5" />
+                                <span>{{ uploadingDocType === 'photo' ? 'Mengunggah...' : (applicant.photo_url ? 'Ganti' : 'Unggah') }}</span>
+                                <input type="file" accept="image/*" class="hidden" :disabled="uploadingDocType !== null" @change="(e) => handleSupportingDocUpload(e, 'photo')">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 2. Kartu Keluarga (KK) -->
+                    <div 
+                        class="p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition"
+                        :class="applicant.family_card_url ? 'bg-emerald-50/40 border-emerald-200' : 'bg-slate-50 border-slate-200'"
+                    >
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <strong class="font-bold text-slate-900">2. Kartu Keluarga</strong>
+                                <span 
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="applicant.family_card_url ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                >
+                                    {{ applicant.family_card_url ? 'Lengkap' : 'Belum Ada' }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-snug">Foto atau scan Kartu Keluarga (KK).</p>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70">
+                            <a 
+                                v-if="applicant.family_card_url" 
+                                :href="applicant.family_card_url" 
+                                target="_blank" 
+                                class="text-[11px] font-bold text-emerald-700 hover:underline"
+                            >
+                                Lihat KK
+                            </a>
+                            <span v-else class="text-[10px] text-slate-400">JPG / PNG / PDF</span>
+
+                            <label 
+                                v-if="applicant.status !== 'enrolled'"
+                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition shadow-2xs"
+                                :class="applicant.family_card_url 
+                                    ? 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-300' 
+                                    : 'bg-[#064e3b] hover:bg-emerald-800 text-white'"
+                            >
+                                <DocumentTextIcon class="w-3.5 h-3.5" />
+                                <span>{{ uploadingDocType === 'family_card' ? 'Mengunggah...' : (applicant.family_card_url ? 'Ganti' : 'Unggah') }}</span>
+                                <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" :disabled="uploadingDocType !== null" @change="(e) => handleSupportingDocUpload(e, 'family_card')">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 3. Akta Kelahiran -->
+                    <div 
+                        class="p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition"
+                        :class="applicant.birth_cert_url ? 'bg-emerald-50/40 border-emerald-200' : 'bg-slate-50 border-slate-200'"
+                    >
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <strong class="font-bold text-slate-900">3. Akta Kelahiran</strong>
+                                <span 
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="applicant.birth_cert_url ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                >
+                                    {{ applicant.birth_cert_url ? 'Lengkap' : 'Belum Ada' }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-snug">Foto atau scan Akta Kelahiran asli.</p>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70">
+                            <a 
+                                v-if="applicant.birth_cert_url" 
+                                :href="applicant.birth_cert_url" 
+                                target="_blank" 
+                                class="text-[11px] font-bold text-emerald-700 hover:underline"
+                            >
+                                Lihat Akta
+                            </a>
+                            <span v-else class="text-[10px] text-slate-400">JPG / PNG / PDF</span>
+
+                            <label 
+                                v-if="applicant.status !== 'enrolled'"
+                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition shadow-2xs"
+                                :class="applicant.birth_cert_url 
+                                    ? 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-300' 
+                                    : 'bg-[#064e3b] hover:bg-emerald-800 text-white'"
+                            >
+                                <DocumentTextIcon class="w-3.5 h-3.5" />
+                                <span>{{ uploadingDocType === 'birth_cert' ? 'Mengunggah...' : (applicant.birth_cert_url ? 'Ganti' : 'Unggah') }}</span>
+                                <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" :disabled="uploadingDocType !== null" @change="(e) => handleSupportingDocUpload(e, 'birth_cert')">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 4. KTP Orang Tua -->
+                    <div 
+                        class="p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition"
+                        :class="applicant.parent_id_card_url ? 'bg-emerald-50/40 border-emerald-200' : 'bg-slate-50 border-slate-200'"
+                    >
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <strong class="font-bold text-slate-900">4. KTP Orang Tua</strong>
+                                <span 
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="applicant.parent_id_card_url ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                >
+                                    {{ applicant.parent_id_card_url ? 'Lengkap' : 'Belum Ada' }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 leading-snug">Foto KTP Ayah atau Ibu kandung.</p>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70">
+                            <a 
+                                v-if="applicant.parent_id_card_url" 
+                                :href="applicant.parent_id_card_url" 
+                                target="_blank" 
+                                class="text-[11px] font-bold text-emerald-700 hover:underline"
+                            >
+                                Lihat KTP
+                            </a>
+                            <span v-else class="text-[10px] text-slate-400">JPG / PNG / PDF</span>
+
+                            <label 
+                                v-if="applicant.status !== 'enrolled'"
+                                class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition shadow-2xs"
+                                :class="applicant.parent_id_card_url 
+                                    ? 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-300' 
+                                    : 'bg-[#064e3b] hover:bg-emerald-800 text-white'"
+                            >
+                                <DocumentTextIcon class="w-3.5 h-3.5" />
+                                <span>{{ uploadingDocType === 'parent_id_card' ? 'Mengunggah...' : (applicant.parent_id_card_url ? 'Ganti' : 'Unggah') }}</span>
+                                <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" :disabled="uploadingDocType !== null" @change="(e) => handleSupportingDocUpload(e, 'parent_id_card')">
+                            </label>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

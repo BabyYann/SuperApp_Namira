@@ -25,6 +25,7 @@ Route::middleware(['auth'])->prefix('spmb/portal')->name('spmb.applicant.')->gro
     Route::post('/daftar-ulang/{applicant}/upload-bukti', [ApplicantPortalController::class, 'uploadReRegistrationProof'])->name('upload-proof');
     Route::post('/profil/{applicant}/update', [ApplicantPortalController::class, 'updateProfile'])->name('update-profile');
     Route::post('/pendaftaran/{applicant}/upload-bukti-awal', [ApplicantPortalController::class, 'updateRegistrationProof'])->name('upload-registration-proof');
+    Route::post('/berkas/{applicant}/upload', [ApplicantPortalController::class, 'uploadSupportingDocument'])->name('upload-document');
 });
 
 // Admin & Panitia SPMB routes

@@ -91,7 +91,13 @@ class AdminSpmbController extends Controller
 
         // Category Filter
         if ($request->filled('category') && $request->category !== 'all') {
-            if (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
+            if ($request->category === 'inden') {
+                $query->where('is_inden', true);
+            } elseif ($request->category === 'umum_reguler') {
+                $query->where(function ($q) {
+                    $q->where('is_inden', false)->orWhereNull('is_inden');
+                });
+            } elseif (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
                 $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd']);
             } else {
                 $query->where('category', $request->category);
@@ -673,7 +679,8 @@ class AdminSpmbController extends Controller
             'child_order' => 'nullable|integer',
             'total_siblings' => 'nullable|integer',
             'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external',
-            'previous_school' => 'required|string|max:255',
+            'is_inden' => 'nullable|boolean',
+            'previous_school' => 'nullable|string|max:255',
             'special_notes' => 'nullable|string|max:1000',
 
             'father_name' => 'nullable|string|max:255',
@@ -751,6 +758,10 @@ class AdminSpmbController extends Controller
             'city' => $request->city,
             'postal_code' => $request->postal_code,
         ];
+
+        if ($request->has('is_inden') && Schema::hasColumn('spmb_applicants', 'is_inden')) {
+            $updateData['is_inden'] = $request->boolean('is_inden');
+        }
 
         if ($request->hasFile('photo')) {
             if ($applicant->photo_path && Storage::disk('public')->exists($applicant->photo_path)) {

@@ -124,13 +124,10 @@ class PublicSpmbController extends Controller
     {
         $unit = Unit::where('id', 3)->orWhere('code', 'SD')->orWhere('name', 'like', '%SD%')->firstOrFail();
 
-        if ($this->isLocked($unit)) {
-            return redirect()->route('spmb.index');
-        }
         $setting = SpmbSetting::firstOrCreate(
             ['unit_id' => $unit->id],
             [
-                'name' => 'Pendaftaran Jalur Inden SD Namira',
+                'name' => 'Pendaftaran Murid Baru SD Namira',
                 'academic_year' => '2026/2027',
                 'quota' => 60,
                 'registration_fee' => 250000,
@@ -138,10 +135,14 @@ class PublicSpmbController extends Controller
                 'bank_account_number' => '0291008899',
                 'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
                 'min_down_payment_percentage' => 60,
-                'is_active' => false,
+                'is_active' => true,
                 'contact_whatsapp' => '082332922521',
             ]
         );
+
+        if ($this->isLocked($unit)) {
+            return redirect()->route('spmb.index')->with('info', 'Pendaftaran SD Namira saat ini belum dibuka atau sedang ditutup.');
+        }
 
         $totalApplicants = SpmbApplicant::where('unit_id', $unit->id)->count();
 
@@ -149,7 +150,7 @@ class PublicSpmbController extends Controller
             'unit' => $unit,
             'setting' => $setting,
             'totalApplicants' => $totalApplicants,
-            'isLockedForPublic' => true,
+            'isLockedForPublic' => false,
         ]);
     }
 
@@ -158,11 +159,11 @@ class PublicSpmbController extends Controller
      */
     public function storeSD(Request $request, SpmbService $spmbService)
     {
-        if ($this->isLocked()) {
-            return redirect()->route('spmb.index')->with('error', 'Layanan pendaftaran online saat ini sedang ditutup sementara untuk penyesuaian sistem.');
-        }
+        $unit = Unit::where('id', 3)->orWhere('code', 'SD')->orWhere('name', 'like', '%SD%')->firstOrFail();
 
-        $unit = Unit::where('id', 3)->orWhere('name', 'like', '%SD%')->firstOrFail();
+        if ($this->isLocked($unit)) {
+            return redirect()->route('spmb.index')->with('error', 'Layanan pendaftaran online SD saat ini sedang ditutup sementara.');
+        }
 
         // 1. Validate input
         $request->validate([
@@ -170,26 +171,27 @@ class PublicSpmbController extends Controller
             'full_name' => 'required|string|max:255',
             'nickname' => 'nullable|string|max:100',
             'gender' => 'required|in:L,P',
-            'nik' => 'nullable|string|size:16',
+            'nik' => 'nullable|string|max:20',
             'nisn' => 'nullable|string|max:20',
             'birth_place' => 'required|string|max:100',
             'birth_date' => 'required|date',
             'religion' => 'nullable|string|max:50',
             'child_order' => 'nullable|integer',
             'total_siblings' => 'nullable|integer',
-            'category' => 'required|in:internal_tk,eksternal_umum',
+            'category' => 'nullable|string|in:internal_tk,internal,eksternal_umum,external',
+            'is_inden' => 'nullable|boolean',
             'previous_school' => 'nullable|string|max:255',
             'special_notes' => 'nullable|string|max:1000',
 
             // Data Orang Tua
-            'father_name' => 'required|string|max:255',
-            'father_nik' => 'nullable|string|size:16',
+            'father_name' => 'nullable|string|max:255',
+            'father_nik' => 'nullable|string|max:20',
             'father_phone' => 'nullable|string|max:25',
             'father_job' => 'nullable|string|max:100',
             'father_education' => 'nullable|string|max:50',
 
-            'mother_name' => 'required|string|max:255',
-            'mother_nik' => 'nullable|string|size:16',
+            'mother_name' => 'nullable|string|max:255',
+            'mother_nik' => 'nullable|string|max:20',
             'mother_phone' => 'nullable|string|max:25',
             'mother_job' => 'nullable|string|max:100',
             'mother_education' => 'nullable|string|max:50',
@@ -204,21 +206,32 @@ class PublicSpmbController extends Controller
             'city' => 'nullable|string|max:100',
             'postal_code' => 'nullable|string|max:10',
 
-            // Upload Berkas
-            'photo' => 'required|file|image|max:10240', // Max 10MB
-            'family_card' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
-            'birth_cert' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
-            'parent_id_card' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            // Upload Bukti Bayar: Wajib pada fase awal
             'registration_payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+
+            // Berkas Pendukung: Fleksibel / dapat dilengkapi setelah masuk portal
+            'photo' => 'nullable|file|image|max:10240',
+            'family_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'birth_cert' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'parent_id_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ], [
-            'photo.required' => 'Pas foto anak berlatar merah wajib diunggah.',
-            'family_card.required' => 'Kartu Keluarga (KK) wajib diunggah.',
-            'birth_cert.required' => 'Akta Kelahiran wajib diunggah.',
-            'parent_id_card.required' => 'KTP Orang Tua wajib diunggah.',
-            'registration_payment_proof.required' => 'Bukti transfer/scan QRIS biaya pendaftaran wajib diunggah.',
+            'full_name.required' => 'Nama lengkap calon murid wajib diisi.',
+            'gender.required' => 'Jenis kelamin wajib dipilih.',
+            'birth_place.required' => 'Tempat lahir wajib diisi.',
+            'birth_date.required' => 'Tanggal lahir wajib diisi.',
             'parent_phone.required' => 'Nomor WhatsApp aktif wajib diisi sebagai akun login.',
             'password.required' => 'Kata sandi akun wajib diisi minimal 6 karakter.',
+            'address.required' => 'Alamat tempat tinggal wajib diisi.',
+            'registration_payment_proof.required' => 'Bukti transfer/scan QRIS biaya pendaftaran wajib diunggah.',
+            'registration_payment_proof.mimes' => 'Format bukti pembayaran harus berupa file JPG, PNG, atau PDF.',
+            'registration_payment_proof.max' => 'Ukuran file bukti pembayaran maksimal 10MB.',
         ]);
+
+        if (!$request->filled('father_name') && !$request->filled('mother_name')) {
+            return back()->withErrors([
+                'father_name' => 'Setidaknya salah satu nama orang tua (Ayah atau Ibu) wajib diisi.',
+            ])->withInput();
+        }
 
         // Standardize clean phone number
         $cleanPhone = preg_replace('/[^0-9]/', '', (string)$request->parent_phone);
@@ -226,14 +239,14 @@ class PublicSpmbController extends Controller
             $cleanPhone = '0' . substr($cleanPhone, 2);
         }
 
-        // 2. Check duplicate phone number in SPMB
+        // 2. Check duplicate phone number in SPMB SD
         $existingApplicant = SpmbApplicant::where('unit_id', $unit->id)
             ->where('parent_phone', $cleanPhone)
             ->first();
 
         if ($existingApplicant) {
             return back()->withErrors([
-                'parent_phone' => "Nomor WhatsApp {$cleanPhone} sudah terdaftar dengan Nomor Registrasi: {$existingApplicant->registration_number}. Silakan gunakan menu Login untuk melihat dashboard Anda."
+                'parent_phone' => "Nomor WhatsApp {$cleanPhone} sudah terdaftar di SD Namira dengan Nomor Registrasi: {$existingApplicant->registration_number}. Silakan gunakan menu Login untuk melihat dashboard Anda."
             ])->withInput();
         }
 
@@ -241,24 +254,38 @@ class PublicSpmbController extends Controller
             // A. Generate Unique Registration Number
             $regNumber = $spmbService->generateRegistrationNumber($unit);
 
-            // B. Store documents into neat structured folder
-            // storage/app/public/spmb/sd-namira/{reg_number}/...
-            $photoPath = $spmbService->storeApplicantDocument($request->file('photo'), 'PASFOTO', $regNumber, 'sd-namira');
-            $kkPath = $spmbService->storeApplicantDocument($request->file('family_card'), 'KK', $regNumber, 'sd-namira');
-            $aktaPath = $spmbService->storeApplicantDocument($request->file('birth_cert'), 'AKTA', $regNumber, 'sd-namira');
-            $ktpPath = $spmbService->storeApplicantDocument($request->file('parent_id_card'), 'KTP_ORTU', $regNumber, 'sd-namira');
-            $paymentProofPath = $spmbService->storeApplicantDocument($request->file('registration_payment_proof'), 'BUKTI_BAYAR_REGISTRASI', $regNumber, 'sd-namira');
+            // B. Store documents into neat structured folder: storage/app/public/spmb/sd-namira/{reg_number}/...
+            $paymentProofPath = $spmbService->storeApplicantDocument(
+                $request->file('registration_payment_proof'),
+                'BUKTI_BAYAR_REGISTRASI',
+                $regNumber,
+                'sd-namira'
+            );
+
+            $photoPath = $request->hasFile('photo') ? $spmbService->storeApplicantDocument($request->file('photo'), 'PASFOTO', $regNumber, 'sd-namira') : null;
+            $kkPath = $request->hasFile('family_card') ? $spmbService->storeApplicantDocument($request->file('family_card'), 'KK', $regNumber, 'sd-namira') : null;
+            $aktaPath = $request->hasFile('birth_cert') ? $spmbService->storeApplicantDocument($request->file('birth_cert'), 'AKTA', $regNumber, 'sd-namira') : null;
+            $ktpPath = $request->hasFile('parent_id_card') ? $spmbService->storeApplicantDocument($request->file('parent_id_card'), 'KTP_ORTU', $regNumber, 'sd-namira') : null;
 
             // C. Create / Resolve User account
-            $parentName = $request->father_name ?: $request->mother_name;
+            $parentName = $request->father_name ?: ($request->mother_name ?: $request->full_name);
             $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName, $unit->id);
 
+            $category = $request->category;
+            if (!$category || $category === 'eksternal_umum') {
+                if ($request->filled('previous_school') && str_contains(strtolower($request->previous_school), 'namira')) {
+                    $category = 'internal_tk';
+                } else {
+                    $category = $category ?: 'eksternal_umum';
+                }
+            }
+
             // D. Create Applicant record
-            $applicant = SpmbApplicant::create([
+            $applicantData = [
                 'registration_number' => $regNumber,
                 'unit_id' => $unit->id,
                 'user_id' => $user->id,
-                'category' => $request->category,
+                'category' => $category,
                 'status' => 'submitted',
 
                 // Calon Siswa
@@ -303,12 +330,20 @@ class PublicSpmbController extends Controller
                 'birth_cert_path' => $aktaPath,
                 'parent_id_card_path' => $ktpPath,
                 'registration_payment_proof' => $paymentProofPath,
-            ]);
+            ];
+
+            if (Schema::hasColumn('spmb_applicants', 'is_inden')) {
+                $applicantData['is_inden'] = $request->boolean('is_inden', false);
+            }
+
+            $applicant = SpmbApplicant::create($applicantData);
 
             // E. Auto login the parent user
             Auth::login($user, true);
 
-            return redirect()->route('spmb.applicant.dashboard')->with('success', "Pendaftaran berhasil! Nomor Registrasi Ananda: {$regNumber}. Berkas Anda sedang menunggu verifikasi panitia.");
+            return redirect()->route('spmb.applicant.dashboard')
+                ->with('success', "Pendaftaran SD Namira berhasil! Nomor Registrasi Ananda: {$regNumber}. Silakan lengkapi berkas pendukung (Pas Foto, KK, Akta, KTP) di bawah ini sambil menunggu verifikasi pembayaran oleh panitia.")
+                ->with('registration_number', $regNumber);
         });
     }
 

@@ -26,8 +26,8 @@ const props = defineProps({
 });
 
 const steps = [
-    { num: '01', title: 'Isi Formulir Online', desc: 'Lengkapi biodata calon siswa, data orang tua, dan buat kata sandi akun pendaftar.' },
-    { num: '02', title: 'Unggah Berkas & QRIS', desc: 'Upload pas foto latar merah, KK, Akta Lahir, KTP ortu, dan bukti pembayaran QRIS.' },
+    { num: '01', title: 'Isi Biodata & QRIS', desc: 'Lengkapi biodata calon murid, buat kata sandi akun, dan unggah bukti pembayaran QRIS.' },
+    { num: '02', title: 'Lengkapi Berkas di Portal', desc: 'Unggah Pas Foto, KK, Akta Lahir, dan KTP orang tua secara fleksibel di Portal Calon Siswa.' },
     { num: '03', title: 'Observasi & Psikotes', desc: 'Hadir ke sekolah sesuai jadwal tatap muka untuk observasi dasar dan psikotes anak.' },
     { num: '04', title: 'Pengumuman Hasil', desc: 'Cek status kelulusan di portal dan unduh Surat Keterangan Penerimaan resmi.' },
     { num: '05', title: 'Daftar Ulang (VA)', desc: 'Lakukan pembayaran biaya masuk bertahap (Termin 60%) melalui VA Bank Jatim.' },
@@ -121,7 +121,7 @@ const steps = [
                 <!-- 1. SD NAMIRA (PRIMARY FEATURED UNIT) -->
                 <div class="bg-white rounded-2xl border-2 border-emerald-600/80 shadow-lg p-6 sm:p-7 flex flex-col justify-between hover:shadow-xl transition relative">
                     <div class="absolute -top-3 right-6 px-3 py-0.5 bg-emerald-700 text-white text-[11px] font-bold rounded-full uppercase tracking-wider shadow-sm">
-                        Jalur Inden Dibuka
+                        Pendaftaran Dibuka
                     </div>
 
                     <div>
@@ -143,11 +143,11 @@ const steps = [
                         <div class="mt-5 space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
                             <div class="flex items-start gap-2">
                                 <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Kuota Jalur Inden: <strong>60 Kursi</strong></span>
+                                <span>Gelombang Umum &amp; Konfirmasi Inden (Kuota: <strong>60 Kursi</strong>)</span>
                             </div>
                             <div class="flex items-start gap-2">
                                 <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Observasi Dasar & Psikotes Tatap Muka</span>
+                                <span>Observasi Dasar &amp; Psikotes Tatap Muka</span>
                             </div>
                             <div class="flex items-start gap-2">
                                 <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -161,7 +161,7 @@ const steps = [
                             href="/spmb/daftar/sd"
                             class="w-full inline-flex items-center justify-center gap-2 bg-[#064e3b] hover:bg-emerald-800 text-white font-bold py-3 px-4 rounded-xl text-xs transition shadow-sm"
                         >
-                            <span>Daftar SD Jalur Inden</span>
+                            <span>Daftar SD Namira Sekarang</span>
                             <ArrowRightIcon class="w-4 h-4 text-amber-300" />
                         </Link>
                     </div>

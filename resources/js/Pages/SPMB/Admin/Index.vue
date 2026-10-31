@@ -145,6 +145,7 @@ const editBiodataForm = useForm({
     religion: 'Islam',
     child_order: 1,
     total_siblings: 1,
+    is_inden: false,
     category: 'external_umum',
     previous_school: '',
     special_notes: '',
@@ -169,6 +170,7 @@ const openEditBiodataModal = (app) => {
     editBiodataForm.religion = app.religion || 'Islam';
     editBiodataForm.child_order = app.child_order || 1;
     editBiodataForm.total_siblings = app.total_siblings || 1;
+    editBiodataForm.is_inden = Boolean(app.is_inden);
     editBiodataForm.category = app.category || 'external_umum';
     editBiodataForm.previous_school = app.previous_school || '';
     editBiodataForm.special_notes = app.special_notes || '';
@@ -451,9 +453,11 @@ const getStatusBadgeClass = (s) => {
                         v-model="category"
                         class="w-full min-w-0 truncate bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-[11px] md:text-xs text-slate-800 dark:text-slate-200 focus:ring-emerald-500"
                     >
-                        <option value="all">Semua Kategori</option>
+                        <option value="all">Semua Kategori &amp; Jalur</option>
+                        <option value="inden">Jalur Inden</option>
+                        <option value="umum_reguler">Jalur Umum (Reguler)</option>
                         <option value="internal">{{ isSmp ? 'Alumni SD Namira' : 'Alumni TK Namira' }}</option>
-                        <option value="eksternal_umum">Pendaftar Umum</option>
+                        <option value="eksternal_umum">Asal Sekolah Luar</option>
                     </select>
 
                     <!-- Filter Status -->
@@ -495,6 +499,12 @@ const getStatusBadgeClass = (s) => {
                                 <div class="flex items-center gap-1.5">
                                     <span class="text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
                                         {{ app.registration_number }}
+                                    </span>
+                                    <span 
+                                        v-if="app.is_inden"
+                                        class="px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-200"
+                                    >
+                                        INDEN
                                     </span>
                                     <span 
                                         class="px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase"
@@ -656,8 +666,20 @@ const getStatusBadgeClass = (s) => {
 
                                 <!-- Reg Number -->
                                 <td class="py-3.5 px-4">
-                                    <span class="font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                    <span class="font-mono font-bold text-emerald-700 dark:text-emerald-400 block">
                                         {{ app.registration_number }}
+                                    </span>
+                                    <span 
+                                        v-if="app.is_inden"
+                                        class="inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-200 mt-0.5"
+                                    >
+                                        Jalur Inden
+                                    </span>
+                                    <span 
+                                        v-else
+                                        class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-slate-100 text-slate-600 mt-0.5"
+                                    >
+                                        Jalur Umum
                                     </span>
                                 </td>
 
@@ -1014,6 +1036,13 @@ const getStatusBadgeClass = (s) => {
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">NISN</label>
                                 <input v-model="editBiodataForm.nisn" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Jalur Pendaftaran *</label>
+                                <select v-model="editBiodataForm.is_inden" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                    <option :value="false">Jalur Umum (Reguler)</option>
+                                    <option :value="true">Jalur Inden</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori Pendaftar *</label>

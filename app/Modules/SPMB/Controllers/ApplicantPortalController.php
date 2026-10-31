@@ -212,7 +212,7 @@ class ApplicantPortalController extends Controller
             'child_order' => 'nullable|integer',
             'total_siblings' => 'nullable|integer',
             'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external',
-            'previous_school' => 'required|string|max:255',
+            'previous_school' => 'nullable|string|max:255',
             'special_notes' => 'nullable|string|max:1000',
 
             'father_name' => 'nullable|string|max:255',
@@ -384,5 +384,58 @@ class ApplicantPortalController extends Controller
         ]);
 
         return back()->with('success', 'Bukti transfer pendaftaran awal berhasil diperbarui.');
+    }
+
+    /**
+     * Upload or replace supporting documents (Pas Foto, KK, Akta Kelahiran, KTP Orang Tua) from Portal.
+     */
+    public function uploadSupportingDocument(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
+    {
+        $user = Auth::user();
+        if ($applicant->user_id !== $user->id && $applicant->parent_phone !== $user->phone) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($applicant->status === 'enrolled') {
+            return back()->with('error', 'Berkas tidak dapat diubah karena siswa telah resmi ditetapkan menjadi Siswa Aktif.');
+        }
+
+        $request->validate([
+            'doc_type' => 'required|in:photo,family_card,birth_cert,parent_id_card',
+            'file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+        ], [
+            'file.required' => 'Silakan pilih file berkas yang akan diunggah.',
+            'file.mimes' => 'Format berkas harus berupa JPG, PNG, atau PDF.',
+            'file.max' => 'Ukuran file maksimal 10MB.',
+        ]);
+
+        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+
+        $mapping = [
+            'photo' => ['column' => 'photo_path', 'tag' => 'PASFOTO', 'label' => 'Pas Foto Anak'],
+            'family_card' => ['column' => 'family_card_path', 'tag' => 'KK', 'label' => 'Kartu Keluarga (KK)'],
+            'birth_cert' => ['column' => 'birth_cert_path', 'tag' => 'AKTA', 'label' => 'Akta Kelahiran'],
+            'parent_id_card' => ['column' => 'parent_id_card_path', 'tag' => 'KTP_ORTU', 'label' => 'KTP Orang Tua'],
+        ];
+
+        $docInfo = $mapping[$request->doc_type];
+        $column = $docInfo['column'];
+
+        if ($applicant->{$column} && Storage::disk('public')->exists($applicant->{$column})) {
+            Storage::disk('public')->delete($applicant->{$column});
+        }
+
+        $storedPath = $spmbService->storeApplicantDocument(
+            $request->file('file'),
+            $docInfo['tag'],
+            $applicant->registration_number,
+            $unitSlug
+        );
+
+        $applicant->update([
+            $column => $storedPath,
+        ]);
+
+        return back()->with('success', "Berkas {$docInfo['label']} berhasil diunggah dan tersimpan.");
     }
 }
