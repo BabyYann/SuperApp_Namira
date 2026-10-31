@@ -490,12 +490,12 @@ class AdminSpmbController extends Controller
         $setting = SpmbSetting::firstOrCreate(
             ['unit_id' => $targetUnit->id],
             [
-                'name' => 'Pendaftaran Jalur Inden ' . $targetUnit->name,
-                'academic_year' => '2026/2027',
+                'name' => 'Pendaftaran Murid Baru ' . $targetUnit->name,
+                'academic_year' => '2027/2028',
                 'quota' => 60,
                 'registration_fee' => 250000,
                 'bank_name' => 'Bank Jatim',
-                'bank_account_number' => '0291008899',
+                'bank_account_number' => null,
                 'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
                 'admission_fee_total' => 8500000,
                 'min_down_payment_percentage' => 60,
@@ -503,6 +503,17 @@ class AdminSpmbController extends Controller
                 'contact_whatsapp' => '082332922521',
             ]
         );
+        $settingUpdates = [];
+        if ($setting->academic_year === '2026/2027') {
+            $settingUpdates['academic_year'] = '2027/2028';
+        }
+        $isSdTarget = ($targetUnit->code === 'SD') || str_contains(strtolower($targetUnit->name ?? ''), 'sd');
+        if ($isSdTarget && $setting->bank_account_number === '0291008899') {
+            $settingUpdates['bank_account_number'] = null;
+        }
+        if (!empty($settingUpdates)) {
+            $setting->update($settingUpdates);
+        }
 
         // List teachers in target unit
         $teachers = Teacher::with('user')

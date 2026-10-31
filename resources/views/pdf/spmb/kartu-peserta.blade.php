@@ -217,7 +217,7 @@
 
     <!-- Title Badge -->
     <div class="title-badge" style="background-color: {{ $primaryColor }};">
-        Kartu Tanda Peserta SPMB - Jalur Inden (TA {{ $setting->academic_year ?? '2026/2027' }})
+        Kartu Tanda Peserta SPMB (TA {{ $setting->academic_year ?? '2027/2028' }})
     </div>
 
     <!-- Nomor Registrasi -->

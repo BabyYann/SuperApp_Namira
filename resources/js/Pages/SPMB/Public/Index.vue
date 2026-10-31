@@ -78,7 +78,7 @@ const steps = [
             <div class="max-w-4xl mx-auto text-center relative z-10">
                 <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-800/80 border border-emerald-400/30 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-5">
                     <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                    <span>Tahun Ajaran 2026 / 2027</span>
+                    <span>Tahun Ajaran {{ sdSetting?.academic_year || '2027 / 2028' }}</span>
                 </div>
 
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight mb-4 text-white">

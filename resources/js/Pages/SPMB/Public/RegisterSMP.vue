@@ -235,7 +235,7 @@ const submitRegistration = () => {
                                 Jalur Inden
                             </span>
                             <span class="text-slate-500 text-xs">
-                                TA {{ setting?.academic_year || '2026/2027' }}
+                                TA {{ setting?.academic_year || '2027/2028' }}
                             </span>
                         </div>
                         

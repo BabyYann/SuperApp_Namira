@@ -26,8 +26,8 @@ const props = defineProps({
 
 const settingForm = useForm({
     unit_id: props.unit?.id,
-    name: props.setting?.name || 'Pendaftaran Jalur Inden',
-    academic_year: props.setting?.academic_year || '2026/2027',
+    name: props.setting?.name || 'Pendaftaran Murid Baru',
+    academic_year: props.setting?.academic_year || '2027/2028',
     quota: props.setting?.quota || 60,
     registration_fee: props.setting?.registration_fee || 250000,
     admission_fee_total: props.setting?.admission_fee_total || 8500000,
@@ -166,7 +166,7 @@ const removePanitia = (panitia) => {
 
                                 <div>
                                     <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tahun Ajaran</label>
-                                    <input v-model="settingForm.academic_year" type="text" placeholder="2026/2027" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
+                                    <input v-model="settingForm.academic_year" type="text" placeholder="2027/2028" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
                                 </div>
 
                                 <div>

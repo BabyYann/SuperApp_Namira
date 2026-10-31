@@ -345,7 +345,7 @@ const supportingDocsCompletedCount = computed(() => {
                             {{ !isAnnouncementReleased && ['accepted', 'reserve', 'rejected'].includes(applicant.status) ? 'Menunggu Pengumuman' : applicant.status_label }}
                         </strong>
                         <span class="text-[10px] text-slate-400 block mt-1">
-                            {{ applicant.is_inden ? 'Jalur Inden' : 'Jalur Umum' }} &bull; TA {{ setting?.academic_year || '2026/2027' }}
+                            {{ applicant.is_inden ? 'Jalur Inden' : 'Jalur Umum' }} &bull; TA {{ setting?.academic_year || '2027/2028' }}
                         </span>
                     </div>
                 </div>

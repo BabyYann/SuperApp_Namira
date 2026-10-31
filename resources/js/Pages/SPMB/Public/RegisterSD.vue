@@ -10,8 +10,6 @@ import {
     PhoneIcon,
     EyeIcon,
     EyeSlashIcon,
-    ClipboardDocumentCheckIcon,
-    ClipboardIcon,
     InformationCircleIcon,
     ArrowDownTrayIcon,
     MagnifyingGlassPlusIcon,
@@ -28,7 +26,6 @@ const props = defineProps({
 
 const currentStep = ref(1);
 const isCompressing = ref(false);
-const isCopied = ref(false);
 const showPassword = ref(false);
 const paymentPreview = ref(null);
 const showQrisModal = ref(false);
@@ -120,16 +117,6 @@ const onCategoryChange = (val) => {
         if (form.previous_school === 'TK Namira Kota Probolinggo') {
             form.previous_school = '';
         }
-    }
-};
-
-const copyAccountNumber = () => {
-    const acc = props.setting?.bank_account_number || '0291008899';
-    if (navigator?.clipboard) {
-        navigator.clipboard.writeText(acc).then(() => {
-            isCopied.value = true;
-            setTimeout(() => { isCopied.value = false; }, 2500);
-        });
     }
 };
 
@@ -243,7 +230,7 @@ const submitRegistration = () => {
                                 Gelombang Umum &amp; Inden
                             </span>
                             <span class="text-slate-500 text-xs">
-                                TA {{ setting?.academic_year || '2026/2027' }}
+                                TA {{ setting?.academic_year || '2027/2028' }}
                             </span>
                         </div>
                         
@@ -693,45 +680,30 @@ const submitRegistration = () => {
                             </p>
                         </div>
 
-                        <!-- 2. Alternative Bank Transfer & Instructions -->
+                        <!-- 2. QRIS Merchant Info & Instructions -->
                         <div class="space-y-4 text-xs">
                             <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                                 <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
-                                    Atau Transfer Rekening Bank:
+                                    Rincian Pembayaran QRIS Resmi:
                                 </span>
 
-                                <div class="space-y-2 text-slate-700">
+                                <div class="space-y-2.5 text-slate-700">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-slate-500 font-medium">Bank Tujuan:</span>
-                                        <strong class="text-slate-900 font-bold">{{ setting?.bank_name || 'Bank Jatim' }}</strong>
-                                    </div>
-
-                                    <!-- Interactive Copy Account Number -->
-                                    <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
-                                        <div>
-                                            <span class="text-[10px] text-slate-400 font-bold block uppercase">Nomor Rekening:</span>
-                                            <strong class="font-mono text-sm sm:text-base text-emerald-900 font-bold">
-                                                {{ setting?.bank_account_number || '0291008899' }}
-                                            </strong>
-                                        </div>
-                                        <button 
-                                            type="button" 
-                                            @click="copyAccountNumber"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition"
-                                            :class="isCopied ? 'bg-emerald-600 text-white' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'"
-                                        >
-                                            <ClipboardDocumentCheckIcon v-if="isCopied" class="w-3.5 h-3.5" />
-                                            <ClipboardIcon v-else class="w-3.5 h-3.5" />
-                                            <span>{{ isCopied ? 'Tersalin!' : 'Salin Rekening' }}</span>
-                                        </button>
+                                        <span class="text-slate-500 font-medium">Nama Merchant QRIS:</span>
+                                        <strong class="text-slate-900 font-bold text-right">SD NAMIRA PENDAFTARAN</strong>
                                     </div>
 
                                     <div class="flex items-center justify-between">
-                                        <span class="text-slate-500 font-medium">Atas Nama:</span>
-                                        <strong class="text-slate-900 font-bold text-right">{{ setting?.bank_account_holder || 'NAMIRA SCHOOL KOTA PROBOLINGGO' }}</strong>
+                                        <span class="text-slate-500 font-medium">Bank Penyelenggara:</span>
+                                        <strong class="text-slate-900 font-bold">Bank Jatim (JConnect)</strong>
                                     </div>
 
-                                    <div class="flex items-center justify-between pt-1 border-t border-slate-200/80">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-500 font-medium">NMID Resmi:</span>
+                                        <strong class="font-mono text-slate-800 font-bold">ID1026552922373 (A01)</strong>
+                                    </div>
+
+                                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/80">
                                         <span class="text-slate-500 font-medium">Nominal Biaya Pendaftaran:</span>
                                         <strong class="text-emerald-800 font-black text-sm">{{ formattedFee }}</strong>
                                     </div>
@@ -740,10 +712,10 @@ const submitRegistration = () => {
 
                             <!-- Guide Box -->
                             <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-950 space-y-1.5">
-                                <strong class="font-bold block text-xs">Panduan Cepat Pembayaran via HP:</strong>
+                                <strong class="font-bold block text-xs">Panduan Cepat Pembayaran QRIS via HP:</strong>
                                 <ol class="list-decimal pl-4 space-y-1 text-[11px] text-slate-700 leading-relaxed">
-                                    <li>Klik tombol <strong>Simpan Gambar QRIS ke HP</strong> di samping (atau salin nomor rekening Bank Jatim).</li>
-                                    <li>Buka aplikasi m-Banking / E-Wallet Anda, pilih menu <strong>QRIS</strong> lalu ambil gambar dari galeri.</li>
+                                    <li>Klik tombol <strong>Simpan Gambar QRIS ke HP</strong> di samping (atau scan langsung dari layar).</li>
+                                    <li>Buka aplikasi m-Banking / E-Wallet Anda, pilih menu <strong>QRIS</strong> lalu ambil gambar QRIS dari galeri.</li>
                                     <li>Pastikan nama tujuan adalah <strong>SD NAMIRA PENDAFTARAN</strong> dan masukkan nominal <strong>{{ formattedFee }}</strong>.</li>
                                     <li>Simpan <em>screenshot</em> bukti pembayaran berhasil, lalu unggah pada kotak di bawah ini.</li>
                                 </ol>

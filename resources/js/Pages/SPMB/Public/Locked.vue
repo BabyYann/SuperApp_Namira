@@ -14,7 +14,7 @@ const props = defineProps({
     },
     academicYear: {
         type: String,
-        default: '2026/2027'
+        default: '2027/2028'
     }
 });
 

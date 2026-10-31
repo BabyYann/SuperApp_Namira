@@ -63,18 +63,28 @@ class PublicSpmbController extends Controller
             $sdSetting = SpmbSetting::firstOrCreate(
                 ['unit_id' => $sdUnit->id],
                 [
-                    'name' => 'Pendaftaran Jalur Inden SD Namira',
-                    'academic_year' => '2026/2027',
+                    'name' => 'Pendaftaran Murid Baru SD Namira',
+                    'academic_year' => '2027/2028',
                     'quota' => 60,
                     'registration_fee' => 250000,
                     'bank_name' => 'Bank Jatim',
-                    'bank_account_number' => '0291008899',
-                    'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
+                    'bank_account_number' => null,
+                    'bank_account_holder' => 'SD NAMIRA PENDAFTARAN',
                     'min_down_payment_percentage' => 60,
                     'is_active' => true,
                     'contact_whatsapp' => '082332922521',
                 ]
             );
+            $sdUpdates = [];
+            if ($sdSetting->academic_year === '2026/2027') {
+                $sdUpdates['academic_year'] = '2027/2028';
+            }
+            if ($sdSetting->bank_account_number === '0291008899') {
+                $sdUpdates['bank_account_number'] = null;
+            }
+            if (!empty($sdUpdates)) {
+                $sdSetting->update($sdUpdates);
+            }
         }
 
         $smpUnit = Unit::where('code', 'SMP')->orWhere('name', 'like', '%SMP%')->first();
@@ -84,7 +94,7 @@ class PublicSpmbController extends Controller
                 ['unit_id' => $smpUnit->id],
                 [
                     'name' => 'Pendaftaran Jalur Inden SMP Namira',
-                    'academic_year' => '2026/2027',
+                    'academic_year' => '2027/2028',
                     'quota' => 60,
                     'registration_fee' => 250000,
                     'bank_name' => 'Bank Jatim',
@@ -96,12 +106,15 @@ class PublicSpmbController extends Controller
                     'contact_whatsapp' => '082332922521',
                 ]
             );
+            if ($smpSetting->academic_year === '2026/2027') {
+                $smpSetting->update(['academic_year' => '2027/2028']);
+            }
         }
 
         if ($this->isLocked()) {
             return Inertia::render('SPMB/Public/Locked', [
                 'contactWhatsapp' => $sdSetting->contact_whatsapp ?? ($smpSetting->contact_whatsapp ?? '082332922521'),
-                'academicYear' => $sdSetting->academic_year ?? ($smpSetting->academic_year ?? '2026/2027'),
+                'academicYear' => $sdSetting->academic_year ?? ($smpSetting->academic_year ?? '2027/2028'),
             ]);
         }
 
@@ -128,17 +141,27 @@ class PublicSpmbController extends Controller
             ['unit_id' => $unit->id],
             [
                 'name' => 'Pendaftaran Murid Baru SD Namira',
-                'academic_year' => '2026/2027',
+                'academic_year' => '2027/2028',
                 'quota' => 60,
                 'registration_fee' => 250000,
                 'bank_name' => 'Bank Jatim',
-                'bank_account_number' => '0291008899',
-                'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
+                'bank_account_number' => null,
+                'bank_account_holder' => 'SD NAMIRA PENDAFTARAN',
                 'min_down_payment_percentage' => 60,
                 'is_active' => true,
                 'contact_whatsapp' => '082332922521',
             ]
         );
+        $sdUpdates = [];
+        if ($setting->academic_year === '2026/2027') {
+            $sdUpdates['academic_year'] = '2027/2028';
+        }
+        if ($setting->bank_account_number === '0291008899') {
+            $sdUpdates['bank_account_number'] = null;
+        }
+        if (!empty($sdUpdates)) {
+            $setting->update($sdUpdates);
+        }
 
         if ($this->isLocked($unit)) {
             return redirect()->route('spmb.index')->with('info', 'Pendaftaran SD Namira saat ini belum dibuka atau sedang ditutup.');
@@ -365,7 +388,7 @@ class PublicSpmbController extends Controller
             ['unit_id' => $unit->id],
             [
                 'name' => 'Pendaftaran Jalur Inden SMP Namira',
-                'academic_year' => '2026/2027',
+                'academic_year' => '2027/2028',
                 'quota' => 60,
                 'registration_fee' => 250000,
                 'bank_name' => 'Bank Jatim',
@@ -377,6 +400,9 @@ class PublicSpmbController extends Controller
                 'contact_whatsapp' => '082332922521',
             ]
         );
+        if ($setting->academic_year === '2026/2027') {
+            $setting->update(['academic_year' => '2027/2028']);
+        }
 
         if ($this->isLocked($unit)) {
             return redirect()->route('spmb.index')->with('info', 'Pendaftaran SMP Namira saat ini belum dibuka atau sedang ditutup.');
@@ -403,7 +429,7 @@ class PublicSpmbController extends Controller
             ['unit_id' => $unit->id],
             [
                 'name' => 'Pendaftaran Jalur Inden SMP Namira',
-                'academic_year' => '2026/2027',
+                'academic_year' => '2027/2028',
                 'quota' => 60,
                 'registration_fee' => 250000,
                 'bank_name' => 'Bank Jatim',
@@ -415,6 +441,9 @@ class PublicSpmbController extends Controller
                 'contact_whatsapp' => '082332922521',
             ]
         );
+        if ($setting->academic_year === '2026/2027') {
+            $setting->update(['academic_year' => '2027/2028']);
+        }
 
         if ($this->isLocked($unit)) {
             return redirect()->route('spmb.index')->with('error', 'Layanan pendaftaran SMP saat ini belum dibuka.');

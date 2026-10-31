@@ -150,7 +150,7 @@
     <div class="num">Nomor: {{ $applicant->registration_number }}/SPMB-{{ $docCode }}/{{ date('Y') }}</div>
 </div>
 
-<p>Berdasarkan hasil seleksi administrasi, {{ $selectionDesc }} calon peserta didik baru Jalur Inden {{ $unitLabel }} Tahun Ajaran {{ $setting->academic_year ?? '2026/2027' }}, Panitia Penerimaan Peserta Didik Baru dengan ini menerangkan bahwa:</p>
+<p>Berdasarkan hasil seleksi administrasi, {{ $selectionDesc }} calon peserta didik baru {{ $unitLabel }} Tahun Ajaran {{ $setting->academic_year ?? '2027/2028' }}, Panitia Penerimaan Peserta Didik Baru dengan ini menerangkan bahwa:</p>
 
     <table class="content-table">
         <tr>
@@ -189,7 +189,7 @@
 
     <div class="status-box">
         <div class="text">★ DITERIMA SEBAGAI PESERTA DIDIK BARU ★</div>
-        <div style="font-size: 10pt; color: #166534; margin-top: 2px;">{{ strtoupper($unitLabel) }} TAHUN AJARAN {{ $setting->academic_year ?? '2026/2027' }}</div>
+        <div style="font-size: 10pt; color: #166534; margin-top: 2px;">{{ strtoupper($unitLabel) }} TAHUN AJARAN {{ $setting->academic_year ?? '2027/2028' }}</div>
     </div>
 
     <p>Kepada Orang Tua / Wali murid diharapkan untuk segera menyelesaikan proses <strong>Daftar Ulang</strong> dengan ketentuan sebagai berikut:</p>
