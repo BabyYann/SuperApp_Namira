@@ -53,17 +53,57 @@ class PublicSpmbController extends Controller
     }
 
     /**
+     * Resolve SD Namira Kraksaan unit (code = 'SD').
+     */
+    protected function resolveSdKraksaanUnit(): Unit
+    {
+        $unit = Unit::where('code', 'SD')->first();
+        if (!$unit) {
+            $unit = Unit::where('name', 'like', '%SD%')
+                ->where('code', '!=', 'SD-02')
+                ->where('name', 'not like', '%KOTA%')
+                ->firstOrFail();
+        }
+        return $unit;
+    }
+
+    /**
+     * Resolve or create SD Namira Kota Probolinggo unit (code = 'SD-02').
+     */
+    protected function resolveSdKotaUnit(): Unit
+    {
+        $unit = Unit::where('code', 'SD-02')
+            ->orWhere(function ($q) {
+                $q->where('name', 'like', '%SD%')
+                  ->where('name', 'like', '%KOTA%');
+            })
+            ->first();
+
+        if (!$unit) {
+            $unit = Unit::create([
+                'name' => 'SD NAMIRA KOTA PROBOLINGGO',
+                'code' => 'SD-02',
+                'category' => 'formal',
+                'level' => 'SD',
+            ]);
+        }
+
+        return $unit;
+    }
+
+    /**
      * Display public landing / portal for choosing unit.
      */
     public function index()
     {
-        $sdUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
+        $sdUnit = Unit::where('code', 'SD')->first()
+            ?? Unit::where('name', 'like', '%SD%')->where('code', '!=', 'SD-02')->first();
         $sdSetting = null;
         if ($sdUnit) {
             $sdSetting = SpmbSetting::firstOrCreate(
                 ['unit_id' => $sdUnit->id],
                 [
-                    'name' => 'Pendaftaran Murid Baru SD Namira',
+                    'name' => 'Pendaftaran Murid Baru SD Namira Kraksaan',
                     'academic_year' => '2027/2028',
                     'quota' => 60,
                     'registration_fee' => 250000,
@@ -85,6 +125,27 @@ class PublicSpmbController extends Controller
             if (!empty($sdUpdates)) {
                 $sdSetting->update($sdUpdates);
             }
+        }
+
+        // Ensure SD Namira Kota Probolinggo (SD-02) unit & setting also exist
+        $sdKotaUnit = $this->resolveSdKotaUnit();
+        $sdKotaSetting = SpmbSetting::firstOrCreate(
+            ['unit_id' => $sdKotaUnit->id],
+            [
+                'name' => 'Pendaftaran Jalur Inden SD Namira Kota Probolinggo',
+                'academic_year' => '2027/2028',
+                'quota' => 60,
+                'registration_fee' => 250000,
+                'bank_name' => 'Bank Jatim',
+                'bank_account_number' => null,
+                'bank_account_holder' => 'SD NAMIRA KOTA PROBOLINGGO',
+                'min_down_payment_percentage' => 60,
+                'is_active' => true,
+                'contact_whatsapp' => '082332922521',
+            ]
+        );
+        if ($sdKotaSetting->academic_year === '2026/2027') {
+            $sdKotaSetting->update(['academic_year' => '2027/2028']);
         }
 
         $smpUnit = Unit::where('code', 'SMP')->orWhere('name', 'like', '%SMP%')->first();
@@ -131,16 +192,16 @@ class PublicSpmbController extends Controller
     }
 
     /**
-     * Display the registration form for SD Namira.
+     * Display the registration form for SD Namira Kraksaan.
      */
     public function registerSD()
     {
-        $unit = Unit::where('id', 3)->orWhere('code', 'SD')->orWhere('name', 'like', '%SD%')->firstOrFail();
+        $unit = $this->resolveSdKraksaanUnit();
 
         $setting = SpmbSetting::firstOrCreate(
             ['unit_id' => $unit->id],
             [
-                'name' => 'Pendaftaran Murid Baru SD Namira',
+                'name' => 'Pendaftaran Murid Baru SD Namira Kraksaan',
                 'academic_year' => '2027/2028',
                 'quota' => 60,
                 'registration_fee' => 250000,
@@ -164,7 +225,7 @@ class PublicSpmbController extends Controller
         }
 
         if ($this->isLocked($unit)) {
-            return redirect()->route('spmb.index')->with('info', 'Pendaftaran SD Namira saat ini belum dibuka atau sedang ditutup.');
+            return redirect()->route('spmb.index')->with('info', 'Pendaftaran SD Namira Kraksaan saat ini belum dibuka atau sedang ditutup.');
         }
 
         $totalApplicants = SpmbApplicant::where('unit_id', $unit->id)->count();
@@ -178,14 +239,14 @@ class PublicSpmbController extends Controller
     }
 
     /**
-     * Store new applicant registration.
+     * Store new applicant registration for SD Namira Kraksaan.
      */
     public function storeSD(Request $request, SpmbService $spmbService)
     {
-        $unit = Unit::where('id', 3)->orWhere('code', 'SD')->orWhere('name', 'like', '%SD%')->firstOrFail();
+        $unit = $this->resolveSdKraksaanUnit();
 
         if ($this->isLocked($unit)) {
-            return redirect()->route('spmb.index')->with('error', 'Layanan pendaftaran online SD saat ini sedang ditutup sementara.');
+            return redirect()->route('spmb.index')->with('error', 'Layanan pendaftaran online SD Namira Kraksaan saat ini sedang ditutup sementara.');
         }
 
         // 1. Validate input
@@ -372,7 +433,229 @@ class PublicSpmbController extends Controller
             Auth::login($user, true);
 
             return redirect()->route('spmb.applicant.dashboard')
-                ->with('success', "Pendaftaran SD Namira berhasil! Nomor Registrasi Ananda: {$regNumber}. Silakan lengkapi berkas pendukung (Pas Foto, KK, Akta, KTP) di bawah ini sambil menunggu verifikasi pembayaran oleh panitia.")
+                ->with('success', "Pendaftaran SD Namira Kraksaan berhasil! Nomor Registrasi Ananda: {$regNumber}. Silakan lengkapi berkas pendukung (Pas Foto, KK, Akta, KTP) di bawah ini sambil menunggu verifikasi pembayaran oleh panitia.")
+                ->with('registration_number', $regNumber);
+        });
+    }
+
+    /**
+     * Display the private registration form for SD Namira Kota Probolinggo (Unit SD-02 - Inden).
+     */
+    public function registerSDKota()
+    {
+        $unit = $this->resolveSdKotaUnit();
+
+        $setting = SpmbSetting::firstOrCreate(
+            ['unit_id' => $unit->id],
+            [
+                'name' => 'Pendaftaran Jalur Inden SD Namira Kota Probolinggo',
+                'academic_year' => '2027/2028',
+                'quota' => 60,
+                'registration_fee' => 250000,
+                'bank_name' => 'Bank Jatim',
+                'bank_account_number' => null,
+                'bank_account_holder' => 'SD NAMIRA KOTA PROBOLINGGO',
+                'min_down_payment_percentage' => 60,
+                'is_active' => true,
+                'contact_whatsapp' => '082332922521',
+            ]
+        );
+        if ($setting->academic_year === '2026/2027') {
+            $setting->update(['academic_year' => '2027/2028']);
+        }
+
+        if ($this->isLocked($unit)) {
+            return redirect()->route('spmb.index')->with('info', 'Pendaftaran SD Namira Kota Probolinggo saat ini sedang ditutup.');
+        }
+
+        $totalApplicants = SpmbApplicant::where('unit_id', $unit->id)->count();
+
+        return Inertia::render('SPMB/Public/RegisterSDKota', [
+            'unit' => $unit,
+            'setting' => $setting,
+            'totalApplicants' => $totalApplicants,
+            'isLockedForPublic' => false,
+        ]);
+    }
+
+    /**
+     * Store new applicant registration for SD Namira Kota Probolinggo (Unit SD-02 - Inden).
+     */
+    public function storeSDKota(Request $request, SpmbService $spmbService)
+    {
+        $unit = $this->resolveSdKotaUnit();
+
+        if ($this->isLocked($unit)) {
+            return redirect()->route('spmb.index')->with('error', 'Layanan pendaftaran SD Namira Kota Probolinggo saat ini sedang ditutup.');
+        }
+
+        $request->validate([
+            // Data Calon Siswa
+            'full_name' => 'required|string|max:255',
+            'nickname' => 'nullable|string|max:100',
+            'gender' => 'required|in:L,P',
+            'nik' => 'nullable|string|max:20',
+            'nisn' => 'nullable|string|max:20',
+            'birth_place' => 'required|string|max:100',
+            'birth_date' => 'required|date',
+            'religion' => 'nullable|string|max:50',
+            'child_order' => 'nullable|integer',
+            'total_siblings' => 'nullable|integer',
+            'category' => 'nullable|string|in:internal_tk,internal,eksternal_umum,external',
+            'previous_school' => 'nullable|string|max:255',
+            'special_notes' => 'nullable|string|max:1000',
+
+            // Data Orang Tua
+            'father_name' => 'nullable|string|max:255',
+            'father_nik' => 'nullable|string|max:20',
+            'father_phone' => 'nullable|string|max:25',
+            'father_job' => 'nullable|string|max:100',
+            'father_education' => 'nullable|string|max:50',
+
+            'mother_name' => 'nullable|string|max:255',
+            'mother_nik' => 'nullable|string|max:20',
+            'mother_phone' => 'nullable|string|max:25',
+            'mother_job' => 'nullable|string|max:100',
+            'mother_education' => 'nullable|string|max:50',
+
+            'parent_phone' => 'required|string|min:9|max:25',
+            'password' => 'required|string|min:6',
+            'address' => 'required|string|max:500',
+            'rt' => 'nullable|string|max:10',
+            'rw' => 'nullable|string|max:10',
+            'village' => 'nullable|string|max:100',
+            'district' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:10',
+
+            // Upload Bukti Pembayaran Inden
+            'registration_payment_proof' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
+
+            // Berkas Pendukung: Fleksibel menyusul di portal
+            'photo' => 'nullable|file|image|max:10240',
+            'family_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'birth_cert' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'parent_id_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+        ], [
+            'full_name.required' => 'Nama lengkap calon murid wajib diisi.',
+            'gender.required' => 'Jenis kelamin wajib dipilih.',
+            'birth_place.required' => 'Tempat lahir wajib diisi.',
+            'birth_date.required' => 'Tanggal lahir wajib diisi.',
+            'parent_phone.required' => 'Nomor WhatsApp aktif wajib diisi sebagai akun login.',
+            'password.required' => 'Kata sandi akun wajib diisi minimal 6 karakter.',
+            'address.required' => 'Alamat tempat tinggal wajib diisi.',
+            'registration_payment_proof.required' => 'Bukti pembayaran pendaftaran inden wajib diunggah.',
+            'registration_payment_proof.mimes' => 'Format bukti pembayaran harus berupa file JPG, PNG, atau PDF.',
+            'registration_payment_proof.max' => 'Ukuran file bukti pembayaran maksimal 10MB.',
+        ]);
+
+        if (!$request->filled('father_name') && !$request->filled('mother_name')) {
+            return back()->withErrors([
+                'father_name' => 'Setidaknya salah satu nama orang tua (Ayah atau Ibu) wajib diisi.',
+            ])->withInput();
+        }
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', (string)$request->parent_phone);
+        if (str_starts_with($cleanPhone, '62')) {
+            $cleanPhone = '0' . substr($cleanPhone, 2);
+        }
+
+        $existingApplicant = SpmbApplicant::where('unit_id', $unit->id)
+            ->where('parent_phone', $cleanPhone)
+            ->first();
+
+        if ($existingApplicant) {
+            return back()->withErrors([
+                'parent_phone' => "Nomor WhatsApp {$cleanPhone} sudah terdaftar di SD Namira Kota Probolinggo dengan Nomor Registrasi: {$existingApplicant->registration_number}. Silakan gunakan menu Login untuk masuk ke portal Anda."
+            ])->withInput();
+        }
+
+        return DB::transaction(function () use ($request, $unit, $cleanPhone, $spmbService) {
+            $regNumber = $spmbService->generateRegistrationNumber($unit);
+
+            $paymentProofPath = $spmbService->storeApplicantDocument(
+                $request->file('registration_payment_proof'),
+                'BUKTI_BAYAR_REGISTRASI',
+                $regNumber,
+                'sd-kota'
+            );
+
+            $photoPath = $request->hasFile('photo') ? $spmbService->storeApplicantDocument($request->file('photo'), 'PASFOTO', $regNumber, 'sd-kota') : null;
+            $kkPath = $request->hasFile('family_card') ? $spmbService->storeApplicantDocument($request->file('family_card'), 'KK', $regNumber, 'sd-kota') : null;
+            $aktaPath = $request->hasFile('birth_cert') ? $spmbService->storeApplicantDocument($request->file('birth_cert'), 'AKTA', $regNumber, 'sd-kota') : null;
+            $ktpPath = $request->hasFile('parent_id_card') ? $spmbService->storeApplicantDocument($request->file('parent_id_card'), 'KTP_ORTU', $regNumber, 'sd-kota') : null;
+
+            $parentName = $request->father_name ?: ($request->mother_name ?: $request->full_name);
+            $user = $spmbService->resolveParentUser($cleanPhone, $request->password, $parentName, $unit->id);
+
+            $previousSchool = $request->previous_school;
+            $category = $request->category;
+            if (!$category || $category === 'eksternal_umum') {
+                if ($previousSchool && str_contains(strtolower($previousSchool), 'namira')) {
+                    $category = 'internal_tk';
+                } else {
+                    $category = $category ?: 'eksternal_umum';
+                }
+            }
+
+            $applicantData = [
+                'registration_number' => $regNumber,
+                'unit_id' => $unit->id,
+                'user_id' => $user->id,
+                'category' => $category,
+                'status' => 'submitted',
+
+                'full_name' => $request->full_name,
+                'nickname' => $request->nickname,
+                'gender' => $request->gender,
+                'nik' => $request->nik,
+                'nisn' => $request->nisn,
+                'birth_place' => $request->birth_place,
+                'birth_date' => $request->birth_date,
+                'religion' => $request->religion ?: 'Islam',
+                'child_order' => $request->child_order,
+                'total_siblings' => $request->total_siblings,
+                'previous_school' => $previousSchool,
+                'special_notes' => $request->special_notes,
+
+                'father_name' => $request->father_name,
+                'father_nik' => $request->father_nik,
+                'father_phone' => $request->father_phone,
+                'father_job' => $request->father_job,
+                'father_education' => $request->father_education,
+
+                'mother_name' => $request->mother_name,
+                'mother_nik' => $request->mother_nik,
+                'mother_phone' => $request->mother_phone,
+                'mother_job' => $request->mother_job,
+                'mother_education' => $request->mother_education,
+
+                'parent_phone' => $cleanPhone,
+                'address' => $request->address,
+                'rt' => $request->rt,
+                'rw' => $request->rw,
+                'village' => $request->village,
+                'district' => $request->district,
+                'city' => $request->city ?: 'Kota Probolinggo',
+                'postal_code' => $request->postal_code,
+
+                'photo_path' => $photoPath,
+                'family_card_path' => $kkPath,
+                'birth_cert_path' => $aktaPath,
+                'parent_id_card_path' => $ktpPath,
+                'registration_payment_proof' => $paymentProofPath,
+            ];
+
+            if (Schema::hasColumn('spmb_applicants', 'is_inden')) {
+                $applicantData['is_inden'] = true;
+            }
+
+            SpmbApplicant::create($applicantData);
+
+            Auth::login($user, true);
+
+            return redirect()->route('spmb.applicant.dashboard')
+                ->with('success', "Pendaftaran Inden SD Namira Kota Probolinggo berhasil! Nomor Registrasi Ananda: {$regNumber}. Silakan lengkapi berkas pendukung (Pas Foto, KK, Akta, KTP) di bawah ini.")
                 ->with('registration_number', $regNumber);
         });
     }

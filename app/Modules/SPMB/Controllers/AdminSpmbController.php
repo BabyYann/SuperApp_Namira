@@ -73,11 +73,15 @@ class AdminSpmbController extends Controller
             $this->authorizeSpmb($targetUnit->id);
         }
 
-        $isSdUnit = strtoupper($targetUnit->code ?? '') === 'SD' || str_contains(strtolower($targetUnit->name ?? ''), 'sd');
+        $unitCode = strtoupper($targetUnit->code ?? '');
+        $unitNameLower = strtolower($targetUnit->name ?? '');
+        $isSdKota = $unitCode === 'SD-02' || (str_contains($unitNameLower, 'sd') && str_contains($unitNameLower, 'kota'));
+        $isSdKraksaan = !$isSdKota && ($unitCode === 'SD' || str_contains($unitNameLower, 'sd'));
+
         $indenMasterList = [];
         $indenMasterStats = null;
 
-        if ($isSdUnit) {
+        if ($isSdKraksaan) {
             $allSdApplicants = SpmbApplicant::where('unit_id', $targetUnit->id)
                 ->get(['id', 'registration_number', 'full_name', 'parent_phone', 'father_phone', 'mother_phone', 'status', 'is_inden']);
 
@@ -195,6 +199,16 @@ class AdminSpmbController extends Controller
 
         $applicants = $query->latest()->paginate(15)->withQueryString();
 
+        // Ensure SD-02 exists so it always appears in availableUnits
+        Unit::firstOrCreate(
+            ['code' => 'SD-02'],
+            [
+                'name' => 'SD NAMIRA KOTA PROBOLINGGO',
+                'category' => 'formal',
+                'level' => 'SD',
+            ]
+        );
+
         $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) 
             ? Unit::select('id', 'name', 'code')->get() 
             : [];
@@ -207,6 +221,7 @@ class AdminSpmbController extends Controller
             'availableUnits' => $availableUnits,
             'indenMasterList' => $indenMasterList,
             'indenMasterStats' => $indenMasterStats,
+            'privateRegistrationUrl' => $isSdKota ? url('/spmb/daftar/sd-kota') : null,
         ]);
     }
 
@@ -332,7 +347,7 @@ class AdminSpmbController extends Controller
         }
 
         if ($request->hasFile('evaluation_document')) {
-            $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+            $unitSlug = app(SpmbService::class)->resolveUnitSlug($applicant->unit);
             $docPath = $spmbService->storeApplicantDocument(
                 $request->file('evaluation_document'),
                 'HASIL_EVALUASI',
@@ -543,8 +558,17 @@ class AdminSpmbController extends Controller
                });
         })->get(['id', 'name', 'email']);
 
+        Unit::firstOrCreate(
+            ['code' => 'SD-02'],
+            [
+                'name' => 'SD NAMIRA KOTA PROBOLINGGO',
+                'category' => 'formal',
+                'level' => 'SD',
+            ]
+        );
+
         $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) 
-            ? Unit::whereIn('code', ['SD', 'SMP'])->orWhere('name', 'like', '%SD%')->orWhere('name', 'like', '%SMP%')->select('id', 'name', 'code')->get() 
+            ? Unit::whereIn('code', ['SD', 'SD-02', 'SMP'])->orWhere('name', 'like', '%SD%')->orWhere('name', 'like', '%SMP%')->select('id', 'name', 'code')->get() 
             : [];
 
         return Inertia::render('SPMB/Admin/Settings', [
@@ -704,7 +728,7 @@ class AdminSpmbController extends Controller
 
         $fullName = $applicant->full_name;
         $regNumber = $applicant->registration_number;
-        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+        $unitSlug = app(SpmbService::class)->resolveUnitSlug($applicant->unit);
         $parentUser = $applicant->user;
 
         // 1. Hapus file-file berkas fisik dari storage
@@ -808,7 +832,7 @@ class AdminSpmbController extends Controller
             ])->withInput();
         }
 
-        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+        $unitSlug = app(SpmbService::class)->resolveUnitSlug($applicant->unit);
 
         $updateData = [
             'full_name' => $request->full_name,

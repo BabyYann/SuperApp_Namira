@@ -38,10 +38,17 @@ const isSmp = computed(() => {
 });
 
 const unitDisplayName = computed(() => {
+    const code = (props.applicant?.unit?.code || '').toUpperCase();
+    if (code === 'SD') {
+        return 'SD Namira Kraksaan';
+    }
+    if (code === 'SD-02') {
+        return 'SD Namira Kota Probolinggo';
+    }
     if (props.applicant?.unit?.name) {
         return props.applicant.unit.name;
     }
-    return isSmp.value ? 'SMP Namira Kota Probolinggo' : 'SD Namira Kota Probolinggo';
+    return isSmp.value ? 'SMP Namira Kota Probolinggo' : 'SD Namira Kraksaan';
 });
 
 const formatDate = (dateStr) => {

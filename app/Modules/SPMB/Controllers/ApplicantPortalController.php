@@ -24,8 +24,12 @@ class ApplicantPortalController extends Controller
         $user = Auth::user();
 
         $applicant = SpmbApplicant::with(['unit'])
-            ->where('user_id', $user->id)
-            ->orWhere('parent_phone', $user->phone)
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+                if (!empty($user->phone)) {
+                    $q->orWhere('parent_phone', $user->phone);
+                }
+            })
             ->latest()
             ->first();
 
@@ -136,7 +140,7 @@ class ApplicantPortalController extends Controller
             'payment_proof.required' => 'Bukti pembayaran transfer wajib dipilih.',
         ]);
 
-        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+        $unitSlug = $spmbService->resolveUnitSlug($applicant->unit);
 
         // Deteksi apakah ini pembayaran Termin 1 atau Pelunasan (Termin 2)
         $isSettlement = ($request->payment_type === 'termin_2' || $request->payment_type === 'pelunasan')
@@ -269,7 +273,7 @@ class ApplicantPortalController extends Controller
             ])->withInput();
         }
 
-        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+        $unitSlug = $spmbService->resolveUnitSlug($applicant->unit);
 
         $updateData = [
             'full_name' => $request->full_name,
@@ -366,7 +370,7 @@ class ApplicantPortalController extends Controller
             'registration_payment_proof.mimes' => 'Format file harus berupa JPG, PNG, atau PDF.',
         ]);
 
-        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+        $unitSlug = $spmbService->resolveUnitSlug($applicant->unit);
 
         if ($applicant->registration_payment_proof && Storage::disk('public')->exists($applicant->registration_payment_proof)) {
             Storage::disk('public')->delete($applicant->registration_payment_proof);
@@ -409,7 +413,7 @@ class ApplicantPortalController extends Controller
             'file.max' => 'Ukuran file maksimal 10MB.',
         ]);
 
-        $unitSlug = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') ? 'smp-namira' : 'sd-namira';
+        $unitSlug = $spmbService->resolveUnitSlug($applicant->unit);
 
         $mapping = [
             'photo' => ['column' => 'photo_path', 'tag' => 'PASFOTO', 'label' => 'Pas Foto Anak'],

@@ -20,7 +20,10 @@ import {
     XMarkIcon,
     TrashIcon,
     PencilSquareIcon,
-    KeyIcon
+    KeyIcon,
+    ClipboardDocumentCheckIcon,
+    ClipboardIcon,
+    LinkIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -28,6 +31,10 @@ const props = defineProps({
     stats: Object,
     filters: Object,
     unit: Object,
+    availableUnits: {
+        type: Array,
+        default: () => [],
+    },
     indenMasterList: {
         type: Array,
         default: () => [],
@@ -36,7 +43,28 @@ const props = defineProps({
         type: Object,
         default: null,
     },
+    privateRegistrationUrl: {
+        type: String,
+        default: null,
+    },
 });
+
+const spmbUnits = computed(() => {
+    return (props.availableUnits || []).filter((u) => {
+        const c = (u.code || '').toUpperCase();
+        const n = (u.name || '').toLowerCase();
+        return ['SD', 'SD-02', 'SMP'].includes(c) || n.includes('sd') || n.includes('smp');
+    });
+});
+
+const isLinkCopied = ref(false);
+const copyPrivateLink = () => {
+    if (!props.privateRegistrationUrl || !navigator?.clipboard) return;
+    navigator.clipboard.writeText(props.privateRegistrationUrl).then(() => {
+        isLinkCopied.value = true;
+        setTimeout(() => { isLinkCopied.value = false; }, 2500);
+    });
+};
 
 const showIndenModal = ref(false);
 const indenFilter = ref('all'); // all, unregistered, registered
@@ -248,6 +276,7 @@ let searchTimeout = null;
 
 const applyFilters = () => {
     router.get(route('spmb.admin.index'), {
+        unit_id: props.unit?.id || undefined,
         search: search.value || undefined,
         category: category.value !== 'all' ? category.value : undefined,
         status: status.value !== 'all' ? status.value : undefined,
@@ -325,7 +354,7 @@ const getStatusBadgeClass = (s) => {
                     </a>
 
                     <Link 
-                        :href="route('spmb.admin.settings')"
+                        :href="route('spmb.admin.settings', { unit_id: unit?.id })"
                         class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-extrabold border border-slate-200 dark:border-slate-700"
                     >
                         <Cog6ToothIcon class="w-3.5 h-3.5 text-emerald-700" />
@@ -339,10 +368,10 @@ const getStatusBadgeClass = (s) => {
                 <div>
                     <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
                         <UserGroupIcon class="w-7 h-7 text-[#064e3b] dark:text-[#fbbf24]" />
-                        <span>Penerimaan Siswa Baru (SPMB Inden)</span>
+                        <span>Penerimaan Siswa Baru (SPMB — {{ unit?.name || 'Namira' }})</span>
                     </h1>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Kelola seleksi pendaftar, verifikasi pembayaran QRIS, jadwal observasi & psikotes, serta penetapan siswa aktif.
+                        Kelola seleksi pendaftar, verifikasi pembayaran, jadwal observasi & psikotes, serta penetapan siswa aktif.
                     </p>
                 </div>
 
@@ -361,12 +390,65 @@ const getStatusBadgeClass = (s) => {
                     </a>
 
                     <Link 
-                        :href="route('spmb.admin.settings')"
+                        :href="route('spmb.admin.settings', { unit_id: unit?.id })"
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition border border-slate-300 dark:border-slate-700"
                     >
                         <Cog6ToothIcon class="w-4 h-4 text-[#064e3b] dark:text-[#fbbf24]" />
                         <span>Pengaturan & Panitia</span>
                     </Link>
+                </div>
+            </div>
+
+            <!-- Unit Switcher Pills (SD Namira Kraksaan | SD Namira Kota Probolinggo | SMP Namira) -->
+            <div v-if="spmbUnits.length > 1" class="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                <span class="text-[11px] font-bold text-slate-400 px-2 uppercase tracking-wider">Pilih Unit SPMB:</span>
+                <Link
+                    v-for="u in spmbUnits"
+                    :key="u.id"
+                    :href="route('spmb.admin.index', { unit_id: u.id })"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition border"
+                    :class="unit?.id === u.id
+                        ? 'bg-[#064e3b] text-white border-[#064e3b] shadow-2xs'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'"
+                >
+                    {{ u.code === 'SD' ? 'SD Namira Kraksaan' : u.name }} ({{ u.code }})
+                </Link>
+            </div>
+
+            <!-- Banner Link Private Khusus SD Namira Kota Probolinggo (SD-02) -->
+            <div v-if="privateRegistrationUrl" class="bg-emerald-50/90 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/70 rounded-xl md:rounded-2xl p-3.5 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div class="flex items-start sm:items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-[#064e3b] text-amber-300 flex items-center justify-center shrink-0 shadow-xs">
+                        <LinkIcon class="w-5 h-5" />
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-xs md:text-sm font-extrabold text-emerald-950 dark:text-emerald-200 leading-tight">
+                            Link Private Formulir Inden — SD Namira Kota Probolinggo (SD-02)
+                        </h3>
+                        <p class="text-[11px] text-emerald-800/90 dark:text-emerald-300/80 mt-0.5 truncate font-mono">
+                            {{ privateRegistrationUrl }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <button
+                        type="button"
+                        @click="copyPrivateLink"
+                        class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-2xs"
+                        :class="isLinkCopied ? 'bg-emerald-600 text-white' : 'bg-[#064e3b] hover:bg-emerald-800 text-white'"
+                    >
+                        <ClipboardDocumentCheckIcon v-if="isLinkCopied" class="w-4 h-4 text-amber-300" />
+                        <ClipboardIcon v-else class="w-4 h-4 text-amber-300" />
+                        <span>{{ isLinkCopied ? 'Link Tersalin!' : 'Salin Link Private' }}</span>
+                    </button>
+                    <a
+                        :href="privateRegistrationUrl"
+                        target="_blank"
+                        class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 text-xs font-bold transition"
+                    >
+                        Buka Form
+                    </a>
                 </div>
             </div>
 

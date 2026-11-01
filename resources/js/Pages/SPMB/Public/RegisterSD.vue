@@ -111,10 +111,10 @@ const onPaymentProofChange = async (e) => {
 const onCategoryChange = (val) => {
     if (val === 'internal_tk') {
         if (!form.previous_school || form.previous_school === '') {
-            form.previous_school = 'TK Namira Kota Probolinggo';
+            form.previous_school = 'TK Namira Kraksaan';
         }
     } else if (val === 'eksternal_umum') {
-        if (form.previous_school === 'TK Namira Kota Probolinggo') {
+        if (form.previous_school === 'TK Namira Kraksaan' || form.previous_school === 'TK Namira Kota Probolinggo') {
             form.previous_school = '';
         }
     }
@@ -179,7 +179,7 @@ const submitRegistration = () => {
 </script>
 
 <template>
-    <Head title="Formulir Pendaftaran Siswa Baru - SD Namira Kota Probolinggo" />
+    <Head title="Formulir Pendaftaran Siswa Baru - SD Namira Kraksaan" />
 
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 selection:bg-emerald-100 selection:text-emerald-900">
         
@@ -201,7 +201,7 @@ const submitRegistration = () => {
                     />
                     <div class="text-right">
                         <span class="text-[10px] text-slate-500 font-medium block leading-tight">SPMB SD Namira</span>
-                        <strong class="text-xs sm:text-sm font-bold text-slate-900 block leading-tight">Kota Probolinggo</strong>
+                        <strong class="text-xs sm:text-sm font-bold text-slate-900 block leading-tight">Kraksaan</strong>
                     </div>
                 </div>
             </div>
@@ -224,7 +224,7 @@ const submitRegistration = () => {
 
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs mb-1.5">
-                            <span class="font-bold text-emerald-900 tracking-wide uppercase">SD Namira Kota Probolinggo</span>
+                            <span class="font-bold text-emerald-900 tracking-wide uppercase">SD Namira Kraksaan</span>
                             <span class="text-slate-300 hidden sm:inline">&bull;</span>
                             <span class="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-200/60">
                                 Gelombang Umum &amp; Inden
@@ -314,7 +314,7 @@ const submitRegistration = () => {
                     <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
                         <div>
                             <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">Bagian 1</span>
-                            <h2 class="text-sm font-bold text-slate-900">Data Calon Murid SD Namira</h2>
+                            <h2 class="text-sm font-bold text-slate-900">Data Calon Murid SD Namira Kraksaan</h2>
                         </div>
                         <span class="text-[11px] text-slate-400 font-medium">* Kolom wajib</span>
                     </div>
@@ -340,8 +340,8 @@ const submitRegistration = () => {
                                         class="mt-0.5 text-emerald-600 focus:ring-emerald-500"
                                     />
                                     <div>
-                                        <div class="font-bold text-xs sm:text-sm text-slate-900">Alumni TK / KB Namira</div>
-                                        <div class="text-[11px] text-slate-500 mt-0.5">Calon murid lulusan internal TK / KB Namira</div>
+                                        <div class="font-bold text-xs sm:text-sm text-slate-900">Alumni TK / KB Namira Kraksaan</div>
+                                        <div class="text-[11px] text-slate-500 mt-0.5">Calon murid lulusan internal TK / KB Namira Kraksaan</div>
                                     </div>
                                 </label>
 

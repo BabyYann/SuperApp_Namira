@@ -134,8 +134,8 @@ const steps = [
                             />
                         </div>
 
-                        <span class="text-xs font-bold text-emerald-700 uppercase tracking-wide">Jenjang Dasar</span>
-                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">SD Namira</h2>
+                        <span class="text-xs font-bold text-emerald-700 uppercase tracking-wide">Jenjang Dasar (Kraksaan)</span>
+                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">SD Namira Kraksaan</h2>
                         <p class="text-xs text-slate-600 mt-2 leading-relaxed">
                             Sekolah Dasar Islam berstandar keunggulan akademik, tahfidz Al-Qur'an, dan pembentukan adab islami mandiri.
                         </p>

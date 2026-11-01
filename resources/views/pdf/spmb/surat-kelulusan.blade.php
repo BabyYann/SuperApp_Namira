@@ -116,11 +116,13 @@
 <body>
 
 @php
-    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || ($applicant->unit?->code ?? '') === 'SMP';
-    $schoolName = $applicant->unit?->name ?? ($isSmp ? 'SMP NAMIRA KOTA PROBOLINGGO' : 'SEKOLAH DASAR NAMIRA (SD NAMIRA)');
+    $unitCode = strtoupper($applicant->unit?->code ?? '');
+    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || $unitCode === 'SMP';
+    $isSdKota = $unitCode === 'SD-02' || str_contains(strtolower($applicant->unit?->name ?? ''), 'kota');
+    $schoolName = $applicant->unit?->name ?? ($isSmp ? 'SMP NAMIRA KOTA PROBOLINGGO' : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN'));
     $schoolEmail = $isSmp ? 'smp@namiraschool.com' : 'sd@namiraschool.com';
-    $docCode = $isSmp ? 'SMP' : 'SD';
-    $unitLabel = $isSmp ? 'SMP Namira' : 'SD Namira';
+    $docCode = $isSmp ? 'SMP' : ($isSdKota ? 'SD-02' : 'SD');
+    $unitLabel = $isSmp ? 'SMP Namira' : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan');
     $selectionDesc = $isSmp ? 'seleksi akademik (Bahasa Indonesia & Matematika), serta observasi calon murid (wawancara & mengaji)' : 'observasi perkembangan dasar, serta psikotes';
 
     $logoFile = $isSmp ? public_path('images/landing/logo-smp.png') : public_path('images/landing/logo-sd.png');

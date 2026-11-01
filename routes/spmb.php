@@ -14,6 +14,10 @@ Route::get('/ppdb', function () {
 Route::get('/spmb/daftar/sd', [PublicSpmbController::class, 'registerSD'])->name('spmb.register.sd');
 Route::post('/spmb/daftar/sd', [PublicSpmbController::class, 'storeSD'])->name('spmb.store.sd');
 
+// Private Registration Link for SD Namira Kota Probolinggo (Unit SD-02 - Inden)
+Route::get('/spmb/daftar/sd-kota', [PublicSpmbController::class, 'registerSDKota'])->name('spmb.register.sd-kota');
+Route::post('/spmb/daftar/sd-kota', [PublicSpmbController::class, 'storeSDKota'])->name('spmb.store.sd-kota');
+
 Route::get('/spmb/daftar/smp', [PublicSpmbController::class, 'registerSMP'])->name('spmb.register.smp');
 Route::post('/spmb/daftar/smp', [PublicSpmbController::class, 'storeSMP'])->name('spmb.store.smp');
 

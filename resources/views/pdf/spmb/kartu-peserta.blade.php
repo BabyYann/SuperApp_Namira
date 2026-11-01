@@ -183,12 +183,14 @@
 <body>
 
 @php
-    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || ($applicant->unit?->code ?? '') === 'SMP';
-    $schoolName = $applicant->unit?->name ?? ($isSmp ? 'SMP Namira Kota Probolinggo' : 'SD Namira');
-    $schoolTitle = $isSmp ? 'SMP NAMIRA (JUNIOR HIGH SCHOOL)' : 'SD NAMIRA (ELEMENTARY SCHOOL)';
+    $unitCode = strtoupper($applicant->unit?->code ?? '');
+    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || $unitCode === 'SMP';
+    $isSdKota = $unitCode === 'SD-02' || str_contains(strtolower($applicant->unit?->name ?? ''), 'kota');
+    $schoolName = $applicant->unit?->name ?? ($isSmp ? 'SMP Namira Kota Probolinggo' : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan'));
+    $schoolTitle = $isSmp ? 'SMP NAMIRA (JUNIOR HIGH SCHOOL)' : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN (ELEMENTARY SCHOOL)');
     $agenda1Title = $isSmp ? '1. Seleksi Akademik (Bahasa Indonesia & Matematika)' : '1. Agenda Observasi Dasar Anak';
     $agenda2Title = $isSmp ? '2. Observasi Calon Murid (Wawancara & Mengaji)' : '2. Agenda Psikotes Calon Siswa';
-    $defaultLocation = $isSmp ? 'Gedung SMP Namira Kota Probolinggo' : 'Gedung SD Namira';
+    $defaultLocation = $isSmp ? 'Gedung SMP Namira Kota Probolinggo' : ($isSdKota ? 'Gedung SD Namira Kota Probolinggo' : 'Gedung SD Namira Kraksaan');
     $primaryColor = $isSmp ? '#1e3a8a' : '#064e3b';
     $secondaryColor = $isSmp ? '#2563eb' : '#047857';
 

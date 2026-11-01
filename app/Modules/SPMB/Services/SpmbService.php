@@ -27,6 +27,8 @@ class SpmbService
 
         if ($code === 'SMP' || str_contains($name, 'smp')) {
             $unitCode = 'SMPN';
+        } elseif ($code === 'SD-02' || str_contains($name, 'sd namira kota') || (str_contains($name, 'sd') && str_contains($name, 'kota'))) {
+            $unitCode = 'SDK';
         } elseif ($code === 'SD' || str_contains($name, 'sd')) {
             $unitCode = 'SDN';
         } elseif ($code === 'TK' || str_contains($name, 'tk')) {
@@ -59,6 +61,26 @@ class SpmbService
         }
 
         return "{$prefix}{$newSequence}";
+    }
+
+    /**
+     * Resolve storage folder slug for an applicant's unit.
+     */
+    public function resolveUnitSlug(?Unit $unit): string
+    {
+        if (!$unit) {
+            return 'sd-namira';
+        }
+        $code = strtoupper($unit->code ?? '');
+        $name = strtolower($unit->name ?? '');
+
+        if ($code === 'SMP' || str_contains($name, 'smp')) {
+            return 'smp-namira';
+        }
+        if ($code === 'SD-02' || (str_contains($name, 'sd') && str_contains($name, 'kota'))) {
+            return 'sd-kota';
+        }
+        return 'sd-namira';
     }
 
     /**
