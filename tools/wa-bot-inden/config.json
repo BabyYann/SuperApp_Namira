@@ -4,11 +4,11 @@
   "schoolName": "SD Namira Kraksaan",
   "academicYear": "2027/2028",
   "contactPerson": "Panitia SPMB SD Namira Kraksaan",
-  "minDelaySeconds": 45,
-  "maxDelaySeconds": 85,
-  "batchBreakEvery": 15,
-  "batchBreakMinMinutes": 3,
-  "batchBreakMaxMinutes": 5,
-  "maxMessagesPerRun": 75,
-  "testPhone": ""
+  "minDelaySeconds": 95,
+  "maxDelaySeconds": 165,
+  "batchBreakEvery": 8,
+  "batchBreakMinMinutes": 4,
+  "batchBreakMaxMinutes": 6,
+  "maxMessagesPerRun": 25,
+  "testPhone": "082140560121"
 }

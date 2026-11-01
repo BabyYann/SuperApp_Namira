@@ -24,6 +24,7 @@ const args = new Set(process.argv.slice(2));
 const isTestMode = args.has('--test');
 const isDryRun = args.has('--dry-run');
 const isStatusMode = args.has('--status');
+const isExportSisa = args.has('--export-sisa');
 const isResetLog = args.has('--reset-log');
 const isLogout = args.has('--logout');
 
@@ -308,6 +309,111 @@ if (isStatusMode) {
     console.log(`• Sisa Belum Dikirim          : ${pendingCount} nomor`);
     console.log(`• Link Grup WA Saat Ini       : ${config.groupInviteLink}`);
     console.log('============================================================\n');
+    process.exit(0);
+}
+
+if (isExportSisa) {
+    const pendingList = recipients.filter(
+        (r) => !sentLog.sent[r.phone62] && !sentLog.invalid_wa[r.phone62]
+    );
+    const htmlPath = path.join(__dirname, 'SISA_BELUM_TERKIRIM.html');
+    const rowsHtml = pendingList
+        .map((item, idx) => {
+            const msg = buildPersonalizedMessage(item, config);
+            const waUrl = `https://wa.me/${item.phone62}?text=${encodeURIComponent(msg)}`;
+            return `
+            <tr id="row-${item.no}" class="item-row">
+                <td class="num">${idx + 1} <span class="sub">(Excel #${item.no})</span></td>
+                <td>
+                    <strong>${item.full_name}</strong>
+                    <div class="sub">${item.previous_school} &bull; ${item.source_label}</div>
+                </td>
+                <td class="mono">${item.phone08}</td>
+                <td class="actions">
+                    <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn-wa" onclick="markDone(${item.no})">
+                        Kirim WA Manual (1-Klik)
+                    </a>
+                    <label class="chk">
+                        <input type="checkbox" id="chk-${item.no}" onchange="toggleDone(${item.no}, this.checked)"> Selesai
+                    </label>
+                </td>
+            </tr>`;
+        })
+        .join('\n');
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sisa ${pendingList.length} Nomor Inden Belum Terkirim - SD Namira Kraksaan</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 24px; }
+  .wrap { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  h1 { margin: 0 0 6px; font-size: 20px; color: #064e3b; }
+  p { margin: 0 0 16px; font-size: 13px; color: #475569; line-height: 1.5; }
+  .alert { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 12px 16px; border-radius: 12px; font-size: 13px; margin-bottom: 18px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; background: #f1f5f9; padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #475569; border-bottom: 1px solid #cbd5e1; }
+  td { padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+  tr.done { background: #f0fdf4; opacity: 0.65; }
+  .sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .mono { font-family: ui-monospace, monospace; font-weight: 700; }
+  .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .btn-wa { display: inline-block; background: #16a34a; color: #fff; text-decoration: none; font-weight: 700; font-size: 12px; padding: 8px 14px; border-radius: 10px; }
+  .btn-wa:hover { background: #15803d; }
+  .chk { font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Daftar Sisa ${pendingList.length} Nomor Inden SD Namira Kraksaan (Belum Terkirim)</h1>
+    <p>54 dari 71 nomor unik sudah berhasil terkirim otomatis oleh bot. Untuk <strong>${pendingList.length} nomor sisa</strong> di bawah ini, Anda dapat mengirimkannya secara manual 1-klik lewat WhatsApp Web / HP Panitia lain (beri jeda santai 1–2 menit per klik agar 100% aman).</p>
+    <div class="alert">
+      <strong>Tips Aman:</strong> File ini bisa dibuka di Laptop (WhatsApp Web nomor panitia ke-2) atau dikirim ke HP Panitia lain lalu dibuka di Chrome HP. Centang otomatis tersimpan saat tombol diklik.
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Calon Murid & Asal Sekolah</th>
+          <th>No. WhatsApp</th>
+          <th>Aksi Manual 1-Klik</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowsHtml}
+      </tbody>
+    </table>
+  </div>
+<script>
+  const KEY = 'spmb_sdn_sisa_done_v1';
+  const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
+  function applyState() {
+    Object.keys(saved).forEach(no => {
+      const tr = document.getElementById('row-' + no);
+      const chk = document.getElementById('chk-' + no);
+      if (tr && chk) {
+        chk.checked = !!saved[no];
+        tr.classList.toggle('done', !!saved[no]);
+      }
+    });
+  }
+  function toggleDone(no, val) {
+    saved[no] = val;
+    localStorage.setItem(KEY, JSON.stringify(saved));
+    applyState();
+  }
+  function markDone(no) {
+    toggleDone(no, true);
+  }
+  applyState();
+</script>
+</body>
+</html>`;
+
+    fs.writeFileSync(htmlPath, htmlContent, 'utf-8');
+    console.log(`✅ File daftar sisa (${pendingList.length} nomor) berhasil dibuat: ${htmlPath}`);
     process.exit(0);
 }
 

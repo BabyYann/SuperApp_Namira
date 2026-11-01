@@ -9,6 +9,7 @@
     "test-pesan": "node bot.js --test",
     "dry-run": "node bot.js --dry-run",
     "status": "node bot.js --status",
+    "export-sisa": "node bot.js --export-sisa",
     "reset-log": "node bot.js --reset-log",
     "logout": "node bot.js --logout"
   },
