@@ -82,6 +82,11 @@ class AdminSpmbController extends Controller
         $indenMasterStats = null;
 
         if ($isSdKraksaan) {
+            $unitSetting = SpmbSetting::where('unit_id', $targetUnit->id)->first();
+            $groupInviteSuffix = !empty($unitSetting?->whatsapp_group_link)
+                ? "\n\nSilakan juga bergabung ke Grup WhatsApp Resmi Orang Tua Calon Murid SD Namira Kraksaan melalui tautan berikut:\n" . $unitSetting->whatsapp_group_link
+                : '';
+
             $allSdApplicants = SpmbApplicant::where('unit_id', $targetUnit->id)
                 ->get(['id', 'registration_number', 'full_name', 'parent_phone', 'father_phone', 'mother_phone', 'status', 'is_inden']);
 
@@ -124,7 +129,7 @@ class AdminSpmbController extends Controller
                 }
 
                 $waPhone = str_starts_with($normPhone, '0') ? '62' . substr($normPhone, 1) : $normPhone;
-                $waText = rawurlencode("Assalamu'alaikum Bapak/Ibu Orang Tua dari ananda {$item['full_name']}, menginformasikan bahwa pendaftaran online SPMB SD Namira telah dibuka. Silakan melengkapi formulir pendaftaran melalui tautan: " . url('/spmb/daftar/sd'));
+                $waText = rawurlencode("Assalamu'alaikum Bapak/Ibu Orang Tua dari ananda {$item['full_name']}, menginformasikan bahwa pendaftaran online SPMB SD Namira Kraksaan Tahun Ajaran 2027/2028 telah dibuka. Silakan melengkapi formulir pendaftaran melalui tautan: " . url('/spmb/daftar/sd') . $groupInviteSuffix);
 
                 $indenMasterList[] = [
                     'no' => $item['no'],
@@ -619,6 +624,7 @@ class AdminSpmbController extends Controller
             'bank_account_number' => 'nullable|string|max:50',
             'bank_account_holder' => 'nullable|string|max:150',
             'contact_whatsapp' => 'nullable|string|max:25',
+            'whatsapp_group_link' => 'nullable|url|max:500',
             'notes' => 'nullable|string|max:1000',
             'is_active' => 'required|boolean',
             'selection_date' => 'nullable|date',
@@ -634,6 +640,10 @@ class AdminSpmbController extends Controller
             'contact_whatsapp', 'notes', 'is_active',
             'selection_date', 'announcement_date', 'announcement_released'
         ]);
+
+        if (Schema::hasColumn('spmb_settings', 'whatsapp_group_link')) {
+            $data['whatsapp_group_link'] = $request->input('whatsapp_group_link');
+        }
 
         if ($request->hasFile('qris_image')) {
             $path = $request->file('qris_image')->store('spmb/qris', 'public');

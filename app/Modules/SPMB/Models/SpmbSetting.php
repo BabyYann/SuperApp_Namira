@@ -32,6 +32,7 @@ class SpmbSetting extends Model
         'announcement_date',
         'announcement_released',
         'contact_whatsapp',
+        'whatsapp_group_link',
         'notes',
     ];
 

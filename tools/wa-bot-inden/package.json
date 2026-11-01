@@ -1,0 +1,20 @@
+{
+  "name": "wa-bot-inden-sd-namira",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bot WhatsApp Anti-Ban Undangan Grup & Follow-Up Pendaftaran Inden SD Namira Kraksaan",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js",
+    "test-pesan": "node bot.js --test",
+    "dry-run": "node bot.js --dry-run",
+    "status": "node bot.js --status",
+    "reset-log": "node bot.js --reset-log",
+    "logout": "node bot.js --logout"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.16",
+    "pino": "^9.6.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

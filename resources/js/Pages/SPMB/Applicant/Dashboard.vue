@@ -358,6 +358,43 @@ const supportingDocsCompletedCount = computed(() => {
                 </div>
             </div>
 
+            <!-- Official WhatsApp Group Invitation Banner -->
+            <div 
+                v-if="setting?.whatsapp_group_link" 
+                class="bg-gradient-to-r from-[#064e3b] via-emerald-800 to-teal-800 text-white rounded-2xl p-4 sm:p-6 shadow-sm border border-emerald-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+            >
+                <div class="flex items-start gap-3.5 sm:gap-4">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 backdrop-blur-xs border border-white/20 flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12.031 2c-5.516 0-9.998 4.485-10 10.003-.001 1.765.46 3.488 1.337 5.008L2 22l5.123-1.343a9.963 9.963 0 0 0 4.904 1.292h.004c5.515 0 9.998-4.485 10-10.002A9.938 9.938 0 0 0 19.103 4.93 9.936 9.936 0 0 0 12.031 2Zm5.847 14.303c-.246.693-1.434 1.326-1.988 1.409-.508.076-1.15.108-1.856-.116-.428-.136-.977-.317-1.68-.621-2.957-1.277-4.888-4.254-5.036-4.451-.147-.197-1.202-1.599-1.202-3.05 0-1.451.761-2.164 1.031-2.459.27-.295.589-.369.786-.369.196 0 .393.002.565.01.181.009.424-.069.663.507.246.59.835 2.041.909 2.189.073.147.122.319.024.516-.098.197-.147.32-.295.492-.147.172-.31.384-.442.516-.148.148-.301.308-.13.603.172.295.763 1.26 1.639 2.041 1.127 1.005 2.076 1.316 2.371 1.464.295.147.467.123.639-.074.172-.197.737-.861.933-1.156.197-.295.393-.246.663-.147.27.098 1.719.811 2.014.959.295.147.491.221.565.344.074.123.074.713-.172 1.406Z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-100 text-[10px] font-bold uppercase tracking-wider mb-1">
+                            Grup Resmi Orang Tua / Wali
+                        </span>
+                        <h3 class="text-sm sm:text-base font-black text-white leading-snug">
+                            Gabung Grup WhatsApp Resmi SPMB {{ unitDisplayName }}
+                        </h3>
+                        <p class="text-[11px] sm:text-xs text-emerald-100/90 mt-1 leading-relaxed max-w-2xl">
+                            Seluruh informasi jadwal observasi, pengumuman resmi, dan koordinasi orang tua calon murid baru Tahun Ajaran {{ setting?.academic_year || '2027/2028' }} disampaikan melalui grup WhatsApp resmi ini.
+                        </p>
+                    </div>
+                </div>
+
+                <a 
+                    :href="setting.whatsapp_group_link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-slate-950 font-black text-xs sm:text-sm shadow-md transition shrink-0"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12.031 2c-5.516 0-9.998 4.485-10 10.003-.001 1.765.46 3.488 1.337 5.008L2 22l5.123-1.343a9.963 9.963 0 0 0 4.904 1.292h.004c5.515 0 9.998-4.485 10-10.002A9.938 9.938 0 0 0 19.103 4.93 9.936 9.936 0 0 0 12.031 2Zm5.847 14.303c-.246.693-1.434 1.326-1.988 1.409-.508.076-1.15.108-1.856-.116-.428-.136-.977-.317-1.68-.621-2.957-1.277-4.888-4.254-5.036-4.451-.147-.197-1.202-1.599-1.202-3.05 0-1.451.761-2.164 1.031-2.459.27-.295.589-.369.786-.369.196 0 .393.002.565.01.181.009.424-.069.663.507.246.59.835 2.041.909 2.189.073.147.122.319.024.516-.098.197-.147.32-.295.492-.147.172-.31.384-.442.516-.148.148-.301.308-.13.603.172.295.763 1.26 1.639 2.041 1.127 1.005 2.076 1.316 2.371 1.464.295.147.467.123.639-.074.172-.197.737-.861.933-1.156.197-.295.393-.246.663-.147.27.098 1.719.811 2.014.959.295.147.491.221.565.344.074.123.074.713-.172 1.406Z"/>
+                    </svg>
+                    <span>Gabung Grup WhatsApp Sekarang</span>
+                </a>
+            </div>
+
             <!-- Flexible Supporting Documents Upload Section (Pas Foto, KK, Akta, KTP) -->
             <div class="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">

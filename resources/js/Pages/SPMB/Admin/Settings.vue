@@ -36,6 +36,7 @@ const settingForm = useForm({
     bank_account_number: props.setting?.bank_account_number || '',
     bank_account_holder: props.setting?.bank_account_holder || 'NAMIRA SCHOOL KOTA PROBOLINGGO',
     contact_whatsapp: props.setting?.contact_whatsapp || '082332922521',
+    whatsapp_group_link: props.setting?.whatsapp_group_link || '',
     selection_date: props.setting?.selection_date ? String(props.setting.selection_date).substring(0, 10) : '',
     announcement_date: props.setting?.announcement_date ? String(props.setting.announcement_date).substring(0, 10) : '',
     announcement_released: Boolean(props.setting?.announcement_released ?? false),
@@ -78,9 +79,27 @@ const panitiaForm = useForm({
     unit_id: props.unit?.id,
 });
 
-watch(() => props.unit?.id, (newUnitId) => {
-    panitiaForm.unit_id = newUnitId;
-    settingForm.unit_id = newUnitId;
+watch(() => [props.unit?.id, props.setting?.id], () => {
+    panitiaForm.unit_id = props.unit?.id;
+    settingForm.unit_id = props.unit?.id;
+    settingForm.name = props.setting?.name || 'Pendaftaran Murid Baru';
+    settingForm.academic_year = props.setting?.academic_year || '2027/2028';
+    settingForm.quota = props.setting?.quota || 60;
+    settingForm.registration_fee = props.setting?.registration_fee || 250000;
+    settingForm.admission_fee_total = props.setting?.admission_fee_total || 8500000;
+    settingForm.min_down_payment_percentage = props.setting?.min_down_payment_percentage || 60;
+    settingForm.bank_name = props.setting?.bank_name || 'Bank Jatim';
+    settingForm.bank_account_number = props.setting?.bank_account_number || '';
+    settingForm.bank_account_holder = props.setting?.bank_account_holder || 'NAMIRA SCHOOL KOTA PROBOLINGGO';
+    settingForm.contact_whatsapp = props.setting?.contact_whatsapp || '082332922521';
+    settingForm.whatsapp_group_link = props.setting?.whatsapp_group_link || '';
+    settingForm.selection_date = props.setting?.selection_date ? String(props.setting.selection_date).substring(0, 10) : '';
+    settingForm.announcement_date = props.setting?.announcement_date ? String(props.setting.announcement_date).substring(0, 10) : '';
+    settingForm.announcement_released = Boolean(props.setting?.announcement_released ?? false);
+    settingForm.notes = props.setting?.notes || '';
+    settingForm.is_active = props.setting?.is_active ?? true;
+    settingForm.qris_image = null;
+    qrisPreview.value = props.setting?.qris_image_url || null;
 });
 
 const assignPanitia = () => {
@@ -217,6 +236,24 @@ const removePanitia = (panitia) => {
                                 <div class="sm:col-span-2">
                                     <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Atas Nama Rekening Bank</label>
                                     <input v-model="settingForm.bank_account_holder" type="text" placeholder="Contoh: NAMIRA SCHOOL KOTA PROBOLINGGO" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs font-bold">
+                                </div>
+
+                                <div class="sm:col-span-2 p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 space-y-1.5">
+                                    <label class="block font-bold text-emerald-900 dark:text-emerald-300">
+                                        Link Undangan Grup WhatsApp Resmi Calon Murid ({{ unit?.name || 'Unit' }})
+                                    </label>
+                                    <input 
+                                        v-model="settingForm.whatsapp_group_link" 
+                                        type="url" 
+                                        placeholder="https://chat.whatsapp.com/xxxxxxxxxxxxxxxxxxxxxx" 
+                                        class="w-full bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs font-medium focus:ring-emerald-500 focus:border-emerald-500"
+                                    >
+                                    <p class="text-[11px] text-emerald-800/80 dark:text-emerald-400/80 leading-relaxed">
+                                        Jika diisi, tombol <strong>"Gabung Grup WhatsApp Resmi Orang Tua"</strong> akan otomatis tampil di halaman <strong>Portal Calon Siswa</strong> begitu orang tua selesai mendaftar (aman dari pemblokiran WA karena orang tua bergabung mandiri).
+                                    </p>
+                                    <p v-if="settingForm.errors.whatsapp_group_link" class="text-[11px] font-bold text-rose-600">
+                                        {{ settingForm.errors.whatsapp_group_link }}
+                                    </p>
                                 </div>
                             </div>
 
