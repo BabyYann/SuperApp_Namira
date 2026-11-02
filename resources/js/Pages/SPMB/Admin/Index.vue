@@ -190,6 +190,13 @@ const deleteApplicant = (app) => {
     }
 };
 
+const normalizeCategoryValue = (cat) => {
+    if (cat === 'external_umum' || cat === 'external' || !cat) {
+        return 'eksternal_umum';
+    }
+    return cat;
+};
+
 // Quick Edit Biodata Modal from Table
 const showEditBiodataModal = ref(false);
 const activeEditApp = ref(null);
@@ -205,7 +212,7 @@ const editBiodataForm = useForm({
     child_order: 1,
     total_siblings: 1,
     is_inden: false,
-    category: 'external_umum',
+    category: 'eksternal_umum',
     previous_school: '',
     special_notes: '',
     father_name: '',
@@ -230,7 +237,7 @@ const openEditBiodataModal = (app) => {
     editBiodataForm.child_order = app.child_order || 1;
     editBiodataForm.total_siblings = app.total_siblings || 1;
     editBiodataForm.is_inden = Boolean(app.is_inden);
-    editBiodataForm.category = app.category || 'external_umum';
+    editBiodataForm.category = normalizeCategoryValue(app.category);
     editBiodataForm.previous_school = app.previous_school || '';
     editBiodataForm.special_notes = app.special_notes || '';
     editBiodataForm.father_name = app.father_name || '';
@@ -246,6 +253,10 @@ const openEditBiodataModal = (app) => {
 
 const submitEditBiodata = () => {
     if (!activeEditApp.value) return;
+    if (!editBiodataForm.father_name && !editBiodataForm.mother_name) {
+        alert('Mohon isi setidaknya salah satu nama orang tua (Ayah atau Ibu).');
+        return;
+    }
     editBiodataForm.post(route('spmb.admin.update-biodata', activeEditApp.value.id), {
         preserveScroll: true,
         forceFormData: true,
@@ -1196,24 +1207,26 @@ const getStatusBadgeClass = (s) => {
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori Pendaftar *</label>
                                 <select v-model="editBiodataForm.category" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                                     <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
-                                    <option value="external_umum">Pendaftar Umum (Eksternal)</option>
+                                    <option value="eksternal_umum">Pendaftar Umum (Eksternal)</option>
                                 </select>
+                                <p v-if="editBiodataForm.errors.category" class="text-rose-600 text-[11px] mt-1">{{ editBiodataForm.errors.category }}</p>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Asal Sekolah</label>
                                 <input v-model="editBiodataForm.previous_school" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ayah *</label>
-                                <input v-model="editBiodataForm.father_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ayah / Wali</label>
+                                <input v-model="editBiodataForm.father_name" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <p v-if="editBiodataForm.errors.father_name" class="text-rose-600 text-[11px] mt-1">{{ editBiodataForm.errors.father_name }}</p>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pekerjaan Ayah</label>
                                 <input v-model="editBiodataForm.father_job" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ibu *</label>
-                                <input v-model="editBiodataForm.mother_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ibu / Wali</label>
+                                <input v-model="editBiodataForm.mother_name" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pekerjaan Ibu</label>

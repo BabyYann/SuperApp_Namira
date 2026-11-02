@@ -17,25 +17,57 @@ use Inertia\Inertia;
 class ApplicantPortalController extends Controller
 {
     /**
+     * Check whether the authenticated user owns this applicant record (by user_id or normalized parent_phone),
+     * or optionally holds a staff/panitia role.
+     */
+    private function isApplicantOwner(SpmbApplicant $applicant, User $user): bool
+    {
+        if ((int) $applicant->user_id === (int) $user->id) {
+            return true;
+        }
+
+        if (!empty($user->phone) && !empty($applicant->parent_phone)) {
+            $spmbService = app(SpmbService::class);
+            return $spmbService->normalizePhone($applicant->parent_phone) === $spmbService->normalizePhone($user->phone);
+        }
+
+        return false;
+    }
+
+    /**
      * Display the applicant dashboard for the logged-in parent.
      */
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $user = Auth::user();
 
-        $applicant = SpmbApplicant::with(['unit'])
+        $allApplicants = SpmbApplicant::with(['unit'])
             ->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id);
                 if (!empty($user->phone)) {
-                    $q->orWhere('parent_phone', $user->phone);
+                    $normPhone = app(SpmbService::class)->normalizePhone($user->phone);
+                    $q->orWhereIn('parent_phone', array_unique(array_filter([$user->phone, $normPhone])));
                 }
             })
             ->latest()
-            ->first();
+            ->get();
 
-        if (!$applicant) {
+        if ($allApplicants->isEmpty()) {
             return redirect()->route('spmb.index')->with('info', 'Anda belum memiliki data pendaftaran. Silakan pilih unit sekolah untuk melakukan pendaftaran.');
         }
+
+        $requestedId = $request->integer('applicant_id');
+        $applicant = $requestedId
+            ? ($allApplicants->firstWhere('id', $requestedId) ?? $allApplicants->first())
+            : $allApplicants->first();
+
+        $siblings = $allApplicants->map(fn (SpmbApplicant $item) => [
+            'id' => $item->id,
+            'registration_number' => $item->registration_number,
+            'full_name' => $item->full_name,
+            'unit_name' => $item->unit?->code === 'SD' ? 'SD Namira Kraksaan' : ($item->unit?->name ?? 'Namira'),
+            'status_label' => $item->status_label,
+        ])->values();
 
         $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
 
@@ -61,6 +93,7 @@ class ApplicantPortalController extends Controller
 
         return Inertia::render('SPMB/Applicant/Dashboard', [
             'applicant' => $applicant,
+            'siblings' => $siblings,
             'setting' => $setting,
             'isAnnouncementReleased' => $isAnnouncementReleased,
         ]);
@@ -72,7 +105,7 @@ class ApplicantPortalController extends Controller
     public function printCard(SpmbApplicant $applicant)
     {
         $user = Auth::user();
-        if ($applicant->user_id !== $user->id && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
+        if (!$this->isApplicantOwner($applicant, $user) && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -91,7 +124,7 @@ class ApplicantPortalController extends Controller
     public function printAcceptedLetter(SpmbApplicant $applicant)
     {
         $user = Auth::user();
-        if ($applicant->user_id !== $user->id && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
+        if (!$this->isApplicantOwner($applicant, $user) && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -129,12 +162,12 @@ class ApplicantPortalController extends Controller
     public function uploadReRegistrationProof(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
     {
         $user = Auth::user();
-        if ($applicant->user_id !== $user->id) {
+        if (!$this->isApplicantOwner($applicant, $user)) {
             abort(403, 'Akses ditolak.');
         }
 
         $request->validate([
-            'payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'payment_proof' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
             'payment_type' => 'nullable|in:termin_1,termin_2,pelunasan',
         ], [
             'payment_proof.required' => 'Bukti pembayaran transfer wajib dipilih.',
@@ -196,7 +229,7 @@ class ApplicantPortalController extends Controller
     public function updateProfile(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
     {
         $user = Auth::user();
-        if ($applicant->user_id !== $user->id && $applicant->parent_phone !== $user->phone) {
+        if (!$this->isApplicantOwner($applicant, $user)) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -215,7 +248,7 @@ class ApplicantPortalController extends Controller
             'religion' => 'nullable|string|max:50',
             'child_order' => 'nullable|integer',
             'total_siblings' => 'nullable|integer',
-            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external',
+            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external_umum,external',
             'previous_school' => 'nullable|string|max:255',
             'special_notes' => 'nullable|string|max:1000',
 
@@ -256,24 +289,29 @@ class ApplicantPortalController extends Controller
             ])->withInput();
         }
 
-        $cleanPhone = preg_replace('/[^0-9]/', '', (string)$request->parent_phone);
-        if (str_starts_with($cleanPhone, '62')) {
-            $cleanPhone = '0' . substr($cleanPhone, 2);
-        }
+        $cleanPhone = $spmbService->normalizePhone($request->parent_phone);
+        $normalizedInputName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $request->full_name)));
 
-        // Check duplicate phone in the same unit
+        // Check duplicate phone + same child name in the same unit (allows twins/siblings)
         $duplicateApplicant = SpmbApplicant::where('unit_id', $applicant->unit_id)
             ->where('parent_phone', $cleanPhone)
             ->where('id', '!=', $applicant->id)
-            ->first();
+            ->get()
+            ->first(function ($app) use ($normalizedInputName) {
+                $existingName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $app->full_name)));
+                return $existingName === $normalizedInputName;
+            });
 
         if ($duplicateApplicant) {
             return back()->withErrors([
-                'parent_phone' => "Nomor WhatsApp {$cleanPhone} sudah digunakan pada pendaftaran lain ({$duplicateApplicant->registration_number}).",
+                'parent_phone' => "Data Ananda {$duplicateApplicant->full_name} dengan Nomor WhatsApp {$cleanPhone} sudah digunakan pada pendaftaran lain ({$duplicateApplicant->registration_number}).",
             ])->withInput();
         }
 
         $unitSlug = $spmbService->resolveUnitSlug($applicant->unit);
+        $normalizedCategory = in_array($request->category, ['external_umum', 'external'], true)
+            ? 'eksternal_umum'
+            : ($request->category ?: $applicant->category);
 
         $updateData = [
             'full_name' => $request->full_name,
@@ -286,7 +324,7 @@ class ApplicantPortalController extends Controller
             'religion' => $request->religion ?: ($applicant->religion ?: 'Islam'),
             'child_order' => $request->child_order,
             'total_siblings' => $request->total_siblings,
-            'category' => $request->category ?: $applicant->category,
+            'category' => $normalizedCategory,
             'previous_school' => $request->previous_school,
             'special_notes' => $request->special_notes,
             'father_name' => $request->father_name,
@@ -355,7 +393,7 @@ class ApplicantPortalController extends Controller
     public function updateRegistrationProof(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
     {
         $user = Auth::user();
-        if ($applicant->user_id !== $user->id && $applicant->parent_phone !== $user->phone) {
+        if (!$this->isApplicantOwner($applicant, $user)) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -364,10 +402,10 @@ class ApplicantPortalController extends Controller
         }
 
         $request->validate([
-            'registration_payment_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'registration_payment_proof' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
         ], [
             'registration_payment_proof.required' => 'Silakan pilih file bukti transfer pendaftaran yang baru.',
-            'registration_payment_proof.mimes' => 'Format file harus berupa JPG, PNG, atau PDF.',
+            'registration_payment_proof.mimes' => 'Format file harus berupa JPG, PNG, WEBP, atau PDF.',
         ]);
 
         $unitSlug = $spmbService->resolveUnitSlug($applicant->unit);
@@ -396,7 +434,7 @@ class ApplicantPortalController extends Controller
     public function uploadSupportingDocument(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)
     {
         $user = Auth::user();
-        if ($applicant->user_id !== $user->id && $applicant->parent_phone !== $user->phone) {
+        if (!$this->isApplicantOwner($applicant, $user)) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -406,10 +444,10 @@ class ApplicantPortalController extends Controller
 
         $request->validate([
             'doc_type' => 'required|in:photo,family_card,birth_cert,parent_id_card',
-            'file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'file' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
         ], [
             'file.required' => 'Silakan pilih file berkas yang akan diunggah.',
-            'file.mimes' => 'Format berkas harus berupa JPG, PNG, atau PDF.',
+            'file.mimes' => 'Format berkas harus berupa JPG, PNG, WEBP, atau PDF.',
             'file.max' => 'Ukuran file maksimal 10MB.',
         ]);
 

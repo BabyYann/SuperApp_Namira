@@ -50,6 +50,13 @@ const enrollForm = useForm({
     classroom_id: '',
 });
 
+const normalizeCategoryValue = (cat) => {
+    if (cat === 'external_umum' || cat === 'external' || !cat) {
+        return 'eksternal_umum';
+    }
+    return cat;
+};
+
 // Form: Edit Biodata oleh Admin / Panitia
 const editBiodataForm = useForm({
     full_name: props.applicant.full_name || '',
@@ -62,7 +69,7 @@ const editBiodataForm = useForm({
     religion: props.applicant.religion || 'Islam',
     child_order: props.applicant.child_order || 1,
     total_siblings: props.applicant.total_siblings || 1,
-    category: props.applicant.category || 'external_umum',
+    category: normalizeCategoryValue(props.applicant.category),
     previous_school: props.applicant.previous_school || '',
     special_notes: props.applicant.special_notes || '',
     father_name: props.applicant.father_name || '',
@@ -87,6 +94,10 @@ const editBiodataForm = useForm({
 });
 
 const submitEditBiodata = () => {
+    if (!editBiodataForm.father_name && !editBiodataForm.mother_name) {
+        alert('Mohon isi setidaknya salah satu nama orang tua (Ayah atau Ibu).');
+        return;
+    }
     editBiodataForm.post(route('spmb.admin.update-biodata', props.applicant.id), {
         preserveScroll: true,
         forceFormData: true,
@@ -726,8 +737,8 @@ const formatRupiah = (amount) => {
                             <textarea v-model="evaluationForm.evaluation_notes" rows="2" placeholder="Catatan umum kesiapan belajar anak..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"></textarea>
                         </div>
 
-                        <!-- Nilai Seleksi Akademik & Observasi (Khusus SMP / Opsional) -->
-                        <div class="p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 space-y-2.5">
+                        <!-- Nilai Seleksi Akademik & Observasi (Khusus SMP) -->
+                        <div v-if="isSmp" class="p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 space-y-2.5">
                             <span class="block font-bold text-indigo-950 dark:text-indigo-300 text-xs">Penilaian Seleksi Akademik & Observasi:</span>
                             
                             <div>
@@ -917,24 +928,26 @@ const formatRupiah = (amount) => {
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori Pendaftar *</label>
                                 <select v-model="editBiodataForm.category" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                                     <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
-                                    <option value="external_umum">Pendaftar Umum (Eksternal)</option>
+                                    <option value="eksternal_umum">Pendaftar Umum (Eksternal)</option>
                                 </select>
+                                <p v-if="editBiodataForm.errors.category" class="text-rose-600 text-[11px] mt-1">{{ editBiodataForm.errors.category }}</p>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Asal Sekolah</label>
                                 <input v-model="editBiodataForm.previous_school" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ayah *</label>
-                                <input v-model="editBiodataForm.father_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ayah / Wali</label>
+                                <input v-model="editBiodataForm.father_name" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <p v-if="editBiodataForm.errors.father_name" class="text-rose-600 text-[11px] mt-1">{{ editBiodataForm.errors.father_name }}</p>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pekerjaan Ayah</label>
                                 <input v-model="editBiodataForm.father_job" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ibu *</label>
-                                <input v-model="editBiodataForm.mother_name" type="text" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Ibu / Wali</label>
+                                <input v-model="editBiodataForm.mother_name" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pekerjaan Ibu</label>

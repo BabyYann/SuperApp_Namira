@@ -180,6 +180,8 @@ class AdminSpmbController extends Controller
                 });
             } elseif (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
                 $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd']);
+            } elseif (in_array($request->category, ['eksternal_umum', 'external_umum', 'external'])) {
+                $query->whereIn('category', ['eksternal_umum', 'external_umum', 'external']);
             } else {
                 $query->where('category', $request->category);
             }
@@ -195,7 +197,7 @@ class AdminSpmbController extends Controller
             'total' => SpmbApplicant::where('unit_id', $targetUnit->id)->count(),
             'internal' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('category', ['internal_tk', 'internal_sd', 'internal'])->count(),
             'internal_tk' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('category', ['internal_tk', 'internal_sd', 'internal'])->count(),
-            'external_umum' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('category', 'eksternal_umum')->count(),
+            'external_umum' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('category', ['eksternal_umum', 'external_umum', 'external'])->count(),
             'submitted' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('status', 'submitted')->count(),
             'verified' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('status', ['verified', 'scheduled'])->count(),
             'accepted' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('status', ['accepted', 'partial_paid', 'fully_paid', 'enrolled'])->count(),
@@ -388,7 +390,7 @@ class AdminSpmbController extends Controller
      */
     public function setVirtualAccount(Request $request, SpmbApplicant $applicant)
     {
-        $this->authorizeSpmb();
+        $this->authorizeSpmb($applicant->unit_id);
 
         $request->validate([
             'virtual_account_number' => 'required|string|max:50',
@@ -414,7 +416,7 @@ class AdminSpmbController extends Controller
      */
     public function verifyAdmissionPayment(Request $request, SpmbApplicant $applicant)
     {
-        $this->authorizeSpmb();
+        $this->authorizeSpmb($applicant->unit_id);
 
         $request->validate([
             'paid_admission_amount' => 'required|numeric|min:0',
@@ -797,7 +799,7 @@ class AdminSpmbController extends Controller
             'religion' => 'nullable|string|max:50',
             'child_order' => 'nullable|integer',
             'total_siblings' => 'nullable|integer',
-            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external',
+            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external_umum,external',
             'is_inden' => 'nullable|boolean',
             'previous_school' => 'nullable|string|max:255',
             'special_notes' => 'nullable|string|max:1000',
@@ -826,23 +828,34 @@ class AdminSpmbController extends Controller
             'photo' => 'nullable|file|image|max:10240',
         ]);
 
-        $cleanPhone = preg_replace('/[^0-9]/', '', (string)$request->parent_phone);
-        if (str_starts_with($cleanPhone, '62')) {
-            $cleanPhone = '0' . substr($cleanPhone, 2);
+        if (!$request->filled('father_name') && !$request->filled('mother_name')) {
+            return back()->withErrors([
+                'father_name' => 'Setidaknya salah satu nama orang tua (Ayah atau Ibu) wajib diisi.',
+            ])->withInput();
         }
+
+        $cleanPhone = $spmbService->normalizePhone($request->parent_phone);
+        $normalizedInputName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $request->full_name)));
 
         $duplicateApplicant = SpmbApplicant::where('unit_id', $applicant->unit_id)
             ->where('parent_phone', $cleanPhone)
             ->where('id', '!=', $applicant->id)
-            ->first();
+            ->get()
+            ->first(function ($app) use ($normalizedInputName) {
+                $existingName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $app->full_name)));
+                return $existingName === $normalizedInputName;
+            });
 
         if ($duplicateApplicant) {
             return back()->withErrors([
-                'parent_phone' => "Nomor WhatsApp {$cleanPhone} sudah terdaftar pada pendaftar lain ({$duplicateApplicant->registration_number}).",
+                'parent_phone' => "Data Ananda {$duplicateApplicant->full_name} dengan Nomor WhatsApp {$cleanPhone} sudah terdaftar pada pendaftar lain ({$duplicateApplicant->registration_number}).",
             ])->withInput();
         }
 
         $unitSlug = app(SpmbService::class)->resolveUnitSlug($applicant->unit);
+        $normalizedCategory = in_array($request->category, ['external_umum', 'external'], true)
+            ? 'eksternal_umum'
+            : ($request->category ?: $applicant->category);
 
         $updateData = [
             'full_name' => $request->full_name,
@@ -855,7 +868,7 @@ class AdminSpmbController extends Controller
             'religion' => $request->religion ?: ($applicant->religion ?: 'Islam'),
             'child_order' => $request->child_order,
             'total_siblings' => $request->total_siblings,
-            'category' => $request->category ?: $applicant->category,
+            'category' => $normalizedCategory,
             'previous_school' => $request->previous_school,
             'special_notes' => $request->special_notes,
             'father_name' => $request->father_name,

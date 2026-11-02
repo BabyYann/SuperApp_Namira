@@ -41,15 +41,24 @@ class LoginRequest extends FormRequest
     {
         $login = trim($this->input('login'));
 
-        // If it starts with + or 08 or 62, or looks like phone number:
+        // If it starts with +, 08, 628, or 8 (Indonesian mobile phone format):
         $cleanPhone = preg_replace('/[^0-9]/', '', $login);
-        if (strlen($cleanPhone) >= 9 && (str_starts_with($cleanPhone, '08') || str_starts_with($cleanPhone, '628'))) {
-            $normalizedPhone = str_starts_with($cleanPhone, '62') ? ('0' . substr($cleanPhone, 2)) : $cleanPhone;
-            
-            $user = \App\Models\User::where('phone', $cleanPhone)
-                ->orWhere('phone', $normalizedPhone)
-                ->orWhere('email', "{$cleanPhone}@spmb.namiraschool.com")
-                ->orWhere('email', "{$normalizedPhone}@spmb.namiraschool.com")
+        if (strlen($cleanPhone) >= 9 && (str_starts_with($cleanPhone, '08') || str_starts_with($cleanPhone, '628') || str_starts_with($cleanPhone, '8'))) {
+            if (str_starts_with($cleanPhone, '62')) {
+                $normalizedPhone = '0' . substr($cleanPhone, 2);
+            } elseif (str_starts_with($cleanPhone, '8')) {
+                $normalizedPhone = '0' . $cleanPhone;
+            } else {
+                $normalizedPhone = $cleanPhone;
+            }
+            $intlPhone = '62' . ltrim($normalizedPhone, '0');
+
+            $user = \App\Models\User::whereIn('phone', [$cleanPhone, $normalizedPhone, $intlPhone])
+                ->orWhereIn('email', [
+                    "{$cleanPhone}@spmb.namiraschool.com",
+                    "{$normalizedPhone}@spmb.namiraschool.com",
+                    "{$intlPhone}@spmb.namiraschool.com",
+                ])
                 ->first();
 
             if ($user) {

@@ -70,7 +70,12 @@ Route::get('/dashboard', function () {
     }
 
     $isSpmbApplicant = \DB::table('spmb_applicants')
-        ->where('user_id', $user->id)
+        ->where(function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+            if (!empty($user->phone)) {
+                $q->orWhere('parent_phone', $user->phone);
+            }
+        })
         ->exists();
 
     if ($isSpmbApplicant) {

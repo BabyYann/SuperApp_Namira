@@ -186,8 +186,16 @@
     $unitCode = strtoupper($applicant->unit?->code ?? '');
     $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || $unitCode === 'SMP';
     $isSdKota = $unitCode === 'SD-02' || str_contains(strtolower($applicant->unit?->name ?? ''), 'kota');
-    $schoolName = $applicant->unit?->name ?? ($isSmp ? 'SMP Namira Kota Probolinggo' : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan'));
+    $schoolName = $isSmp
+        ? ($applicant->unit?->name ?? 'SMP Namira Kota Probolinggo')
+        : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan');
     $schoolTitle = $isSmp ? 'SMP NAMIRA (JUNIOR HIGH SCHOOL)' : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN (ELEMENTARY SCHOOL)');
+    $schoolAddress = $applicant->unit?->address ?: (
+        $isSmp
+            ? 'Jl. KH. Ahmad Dahlan, Kota Probolinggo - Jawa Timur'
+            : ($isSdKota ? 'Kota Probolinggo - Jawa Timur' : 'Kec. Kraksaan, Kabupaten Probolinggo - Jawa Timur')
+    );
+    $signCity = (!$isSmp && !$isSdKota) ? 'Kraksaan' : 'Probolinggo';
     $agenda1Title = $isSmp ? '1. Seleksi Akademik (Bahasa Indonesia & Matematika)' : '1. Agenda Observasi Dasar Anak';
     $agenda2Title = $isSmp ? '2. Observasi Calon Murid (Wawancara & Mengaji)' : '2. Agenda Psikotes Calon Siswa';
     $defaultLocation = $isSmp ? 'Gedung SMP Namira Kota Probolinggo' : ($isSdKota ? 'Gedung SD Namira Kota Probolinggo' : 'Gedung SD Namira Kraksaan');
@@ -207,9 +215,9 @@
             </td>
             @endif
             <td style="vertical-align: middle; text-align: center;">
-                <div style="font-size: 13px; font-weight: bold; color: {{ $primaryColor }}; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">YAYASAN NAMIRA PROBOLINGGO</div>
+                <div style="font-size: 13px; font-weight: bold; color: {{ $primaryColor }}; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">YAYASAN PENDIDIKAN NAMIRA</div>
                 <div style="font-size: 11px; font-weight: bold; color: {{ $secondaryColor }}; margin: 2px 0 0 0;">{{ $schoolTitle }}</div>
-                <div style="font-size: 8px; color: #64748b; margin: 2px 0 0 0;">Jl. Mahakam No. 1, Kota Probolinggo - Jawa Timur | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</div>
+                <div style="font-size: 8px; color: #64748b; margin: 2px 0 0 0;">{{ $schoolAddress }} | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</div>
             </td>
             @if($logoBase64)
             <td style="width: 55px;"></td>
@@ -354,7 +362,7 @@
                 ( {{ $applicant->father_name ?: $applicant->mother_name }} )
             </td>
             <td>
-                Probolinggo, {{ date('d F Y') }}<br>
+                {{ $signCity }}, {{ date('d F Y') }}<br>
                 Panitia SPMB {{ $schoolName }},
                 <br><br>
                 <span class="sign-line"></span>

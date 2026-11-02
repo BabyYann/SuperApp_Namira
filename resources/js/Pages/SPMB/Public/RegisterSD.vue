@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { 
     ArrowLeftIcon, 
     ArrowRightIcon, 
@@ -160,20 +160,37 @@ const goToStep2 = () => {
     }
 };
 
+const submitErrorBanner = ref('');
+
 const submitRegistration = () => {
+    submitErrorBanner.value = '';
     if (!form.registration_payment_proof) {
         alert('Mohon lampirkan foto struk transfer atau screenshot bukti pembayaran QRIS pendaftaran.');
         return;
     }
 
+    const removeExceptionListener = router.on('exception', (event) => {
+        event.preventDefault();
+        submitErrorBanner.value = 'Koneksi internet terputus atau jaringan sedang tidak stabil. Mohon periksa sinyal internet/Wi-Fi Anda lalu klik tombol "Kirim Pendaftaran & Masuk Portal" sekali lagi.';
+        alert(submitErrorBanner.value);
+    });
+
     form.post(route('spmb.store.sd'), {
-        preserveScroll: true,
+        forceFormData: true,
+        preserveScroll: false,
         onError: (errors) => {
-            if (errors.parent_phone) {
+            const errorKeys = Object.keys(errors || {});
+            const hasStep1Error = errorKeys.some((k) => k !== 'registration_payment_proof');
+            if (hasStep1Error) {
                 currentStep.value = 1;
             }
+            const firstMessage = errorKeys.length > 0 ? errors[errorKeys[0]] : 'Mohon periksa kembali isian formulir Anda.';
+            submitErrorBanner.value = firstMessage;
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        },
+        onFinish: () => {
+            removeExceptionListener();
+        },
     });
 };
 </script>
@@ -285,6 +302,11 @@ const submitRegistration = () => {
                         <span class="truncate">2. QRIS &amp; Bukti Bayar</span>
                     </button>
                 </div>
+            </div>
+
+            <!-- Flash / Network Error Alert -->
+            <div v-if="$page.props.flash?.error || submitErrorBanner" class="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-300 text-xs text-amber-950 font-semibold">
+                {{ $page.props.flash?.error || submitErrorBanner }}
             </div>
 
             <!-- General Alert / Errors -->
@@ -777,6 +799,11 @@ const submitRegistration = () => {
                             <span>Mengoptimasi gambar bukti pembayaran...</span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Inline Error Feedback Right Above Submit Button (Visible Immediately on Mobile) -->
+                <div v-if="$page.props.flash?.error || submitErrorBanner || form.errors.registration_payment_proof" class="p-3.5 rounded-xl bg-rose-50 border border-rose-300 text-xs text-rose-900 font-semibold">
+                    {{ form.errors.registration_payment_proof || $page.props.flash?.error || submitErrorBanner }}
                 </div>
 
                 <!-- Navigation Controls -->

@@ -10,65 +10,102 @@ export const compressImageFile = (file, maxDim = 1280, quality = 0.75) => {
             return;
         }
 
-        const objectUrl = URL.createObjectURL(file);
+        let settled = false;
+        const safeResolve = (result) => {
+            if (!settled) {
+                settled = true;
+                clearTimeout(safetyTimer);
+                resolve(result);
+            }
+        };
+
+        // Safety timeout so older mobile WebViews never hang forever during canvas compression
+        const safetyTimer = setTimeout(() => {
+            safeResolve(file);
+        }, 8000);
+
+        let objectUrl = null;
+        try {
+            objectUrl = URL.createObjectURL(file);
+        } catch (e) {
+            safeResolve(file);
+            return;
+        }
+
         const img = new Image();
 
         img.onload = () => {
-            URL.revokeObjectURL(objectUrl);
-            let width = img.width;
-            let height = img.height;
+            try {
+                URL.revokeObjectURL(objectUrl);
+                let width = img.width;
+                let height = img.height;
 
-            if (width > height && width > maxDim) {
-                height = Math.round((height * maxDim) / width);
-                width = maxDim;
-            } else if (height > maxDim) {
-                width = Math.round((width * maxDim) / height);
-                height = maxDim;
-            }
+                if (width > height && width > maxDim) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
 
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
 
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    safeResolve(file);
+                    return;
+                }
+                ctx.drawImage(img, 0, 0, width, height);
 
-            canvas.toBlob(
-                (blob) => {
-                    if (blob) {
-                        const cleanName = (file.name || 'image').replace(/\.[^/.]+$/, '') + '.jpg';
-                        const compressedFile = new File([blob], cleanName, {
-                            type: 'image/jpeg',
-                            lastModified: Date.now(),
-                        });
-                        resolve(compressedFile);
-                    } else {
-                        // Fallback via toDataURL if canvas.toBlob returns null
-                        try {
-                            const dataUrl = canvas.toDataURL('image/jpeg', quality);
-                            const arr = dataUrl.split(',');
-                            const mime = arr[0].match(/:(.*?);/)[1];
-                            const bstr = atob(arr[1]);
-                            let n = bstr.length;
-                            const u8arr = new Uint8Array(n);
-                            while (n--) {
-                                u8arr[n] = bstr.charCodeAt(n);
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            try {
+                                const cleanName = (file.name || 'image').replace(/\.[^/.]+$/, '') + '.jpg';
+                                const compressedFile = new File([blob], cleanName, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now(),
+                                });
+                                safeResolve(compressedFile);
+                            } catch (fileErr) {
+                                // Fallback for older WebViews where new File() constructor is unsupported
+                                blob.name = (file.name || 'image').replace(/\.[^/.]+$/, '') + '.jpg';
+                                safeResolve(blob);
                             }
-                            const cleanName = (file.name || 'image').replace(/\.[^/.]+$/, '') + '.jpg';
-                            resolve(new File([u8arr], cleanName, { type: mime, lastModified: Date.now() }));
-                        } catch (e) {
-                            resolve(file);
+                        } else {
+                            // Fallback via toDataURL if canvas.toBlob returns null
+                            try {
+                                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                                const arr = dataUrl.split(',');
+                                const mime = arr[0].match(/:(.*?);/)[1];
+                                const bstr = atob(arr[1]);
+                                let n = bstr.length;
+                                const u8arr = new Uint8Array(n);
+                                while (n--) {
+                                    u8arr[n] = bstr.charCodeAt(n);
+                                }
+                                const cleanName = (file.name || 'image').replace(/\.[^/.]+$/, '') + '.jpg';
+                                safeResolve(new File([u8arr], cleanName, { type: mime, lastModified: Date.now() }));
+                            } catch (e) {
+                                safeResolve(file);
+                            }
                         }
-                    }
-                },
-                'image/jpeg',
-                quality
-            );
+                    },
+                    'image/jpeg',
+                    quality
+                );
+            } catch (err) {
+                safeResolve(file);
+            }
         };
 
         img.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            resolve(file);
+            if (objectUrl) {
+                try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+            }
+            safeResolve(file);
         };
 
         img.src = objectUrl;

@@ -119,11 +119,20 @@
     $unitCode = strtoupper($applicant->unit?->code ?? '');
     $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || $unitCode === 'SMP';
     $isSdKota = $unitCode === 'SD-02' || str_contains(strtolower($applicant->unit?->name ?? ''), 'kota');
-    $schoolName = $applicant->unit?->name ?? ($isSmp ? 'SMP NAMIRA KOTA PROBOLINGGO' : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN'));
+    $schoolName = $isSmp
+        ? ($applicant->unit?->name ?? 'SMP NAMIRA KOTA PROBOLINGGO')
+        : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN');
+    $schoolAddress = $applicant->unit?->address ?: (
+        $isSmp
+            ? 'Jl. KH. Ahmad Dahlan, Kota Probolinggo - Jawa Timur'
+            : ($isSdKota ? 'Kota Probolinggo - Jawa Timur' : 'Kec. Kraksaan, Kabupaten Probolinggo - Jawa Timur')
+    );
+    $signCity = (!$isSmp && !$isSdKota) ? 'Kraksaan' : 'Probolinggo';
     $schoolEmail = $isSmp ? 'smp@namiraschool.com' : 'sd@namiraschool.com';
     $docCode = $isSmp ? 'SMP' : ($isSdKota ? 'SD-02' : 'SD');
     $unitLabel = $isSmp ? 'SMP Namira' : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan');
     $selectionDesc = $isSmp ? 'seleksi akademik (Bahasa Indonesia & Matematika), serta observasi calon murid (wawancara & mengaji)' : 'observasi perkembangan dasar, serta psikotes';
+    $parentsDisplay = collect([$applicant->father_name, $applicant->mother_name])->filter()->implode(' / ') ?: '-';
 
     $logoFile = $isSmp ? public_path('images/landing/logo-smp.png') : public_path('images/landing/logo-sd.png');
     $logoBase64 = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
@@ -136,9 +145,9 @@
         </td>
         @endif
         <td style="vertical-align: middle; text-align: center;">
-            <div style="font-size: 13pt; font-weight: bold; margin: 0; text-transform: uppercase;">YAYASAN NAMIRA KOTA PROBOLINGGO</div>
+            <div style="font-size: 13pt; font-weight: bold; margin: 0; text-transform: uppercase;">YAYASAN PENDIDIKAN NAMIRA</div>
             <div style="font-size: 15pt; font-weight: bold; margin: 2px 0 0 0; color: {{ $isSmp ? '#1e3a8a' : '#064e3b' }};">{{ strtoupper($schoolName) }}</div>
-            <div style="font-size: 8.5pt; margin: 2px 0 0 0; font-style: italic;">Jl. Mahakam No. 1, Kec. Kedopok, Kota Probolinggo - Jawa Timur | Email: {{ $schoolEmail }} | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</div>
+            <div style="font-size: 8.5pt; margin: 2px 0 0 0; font-style: italic;">{{ $schoolAddress }} | Email: {{ $schoolEmail }} | Telp/WA: {{ $setting->contact_whatsapp ?? '082332922521' }}</div>
         </td>
         @if($logoBase64)
         <td style="width: 70px;"></td>
@@ -183,7 +192,7 @@
         <tr>
             <td class="lbl">Nama Orang Tua / Wali</td>
             <td class="col">:</td>
-            <td class="val">{{ $applicant->father_name }} / {{ $applicant->mother_name }}</td>
+            <td class="val">{{ $parentsDisplay }}</td>
         </tr>
     </table>
 
@@ -242,11 +251,14 @@
         <tr>
             <td></td>
             <td>
-                Probolinggo, {{ date('d F Y') }}<br>
+                {{ $signCity }}, {{ date('d F Y') }}<br>
                 Kepala Sekolah {{ $unitLabel }},
                 <div class="sign-space"></div>
                 @if($isSmp)
                     <strong><u>Kepala Sekolah SMP Namira</u></strong><br>
+                    NIY. -
+                @elseif($isSdKota)
+                    <strong><u>Kepala Sekolah SD Namira Kota Probolinggo</u></strong><br>
                     NIY. -
                 @else
                     <strong><u>Astutik, S.Pd.I</u></strong><br>

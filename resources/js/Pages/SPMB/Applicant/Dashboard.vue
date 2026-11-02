@@ -24,11 +24,34 @@ import { compressImageFile } from '@/Utils/imageCompressor';
 
 const props = defineProps({
     applicant: Object,
+    siblings: {
+        type: Array,
+        default: () => [],
+    },
     setting: Object,
     isAnnouncementReleased: {
         type: Boolean,
         default: false,
     },
+});
+
+const normalizeCategoryValue = (cat) => {
+    if (cat === 'external_umum' || cat === 'external' || !cat) {
+        return 'eksternal_umum';
+    }
+    return cat;
+};
+
+const panitiaWaLink = computed(() => {
+    const raw = String(props.setting?.contact_whatsapp || '6282332922521').replace(/[^0-9]/g, '');
+    let intl = raw || '6282332922521';
+    if (intl.startsWith('0')) {
+        intl = '62' + intl.slice(1);
+    } else if (!intl.startsWith('62')) {
+        intl = '62' + intl;
+    }
+    const msg = `Assalamu'alaikum Panitia SPMB ${unitDisplayName.value}, saya orang tua dari ${props.applicant?.full_name || ''} (Reg: ${props.applicant?.registration_number || ''})`;
+    return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
 });
 
 const isSmp = computed(() => {
@@ -107,7 +130,7 @@ const editForm = useForm({
     religion: props.applicant.religion || 'Islam',
     child_order: props.applicant.child_order || 1,
     total_siblings: props.applicant.total_siblings || 1,
-    category: props.applicant.category || 'external_umum',
+    category: normalizeCategoryValue(props.applicant.category),
     previous_school: props.applicant.previous_school || '',
     special_notes: props.applicant.special_notes || '',
     father_name: props.applicant.father_name || '',
@@ -146,6 +169,10 @@ const handlePhotoSelect = async (e) => {
 };
 
 const submitEditProfile = () => {
+    if (!editForm.father_name && !editForm.mother_name) {
+        alert('Mohon isi setidaknya salah satu nama orang tua (Ayah atau Ibu).');
+        return;
+    }
     editForm.post(route('spmb.applicant.update-profile', props.applicant.id), {
         preserveScroll: true,
         forceFormData: true,
@@ -252,7 +279,7 @@ const supportingDocsCompletedCount = computed(() => {
 
                 <div class="flex items-center gap-2 sm:gap-3">
                     <a 
-                        :href="`https://wa.me/${setting?.contact_whatsapp || '6282332922521'}?text=Assalamu'alaikum%20Panitia%20SPMB,%20saya%20orang%20tua%20dari%20${applicant.full_name}%20(Reg:%20${applicant.registration_number})`"
+                        :href="panitiaWaLink"
                         target="_blank"
                         class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition border border-emerald-200"
                     >
@@ -276,6 +303,30 @@ const supportingDocsCompletedCount = computed(() => {
         <!-- Main Portal Container -->
         <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex-1 space-y-5 sm:space-y-6">
             
+            <!-- Multi-Child / Sibling Switcher (For Twins or Multiple Registered Children) -->
+            <div v-if="siblings && siblings.length > 1" class="bg-white border border-emerald-200 rounded-2xl p-3.5 sm:p-4 shadow-2xs flex flex-wrap items-center gap-2">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Pilih Data Ananda:</span>
+                <a
+                    v-for="sib in siblings"
+                    :key="sib.id"
+                    :href="route('spmb.applicant.dashboard', { applicant_id: sib.id })"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition border"
+                    :class="sib.id === applicant.id
+                        ? 'bg-[#064e3b] text-white border-[#064e3b] shadow-2xs'
+                        : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 border-slate-200'"
+                >
+                    {{ sib.full_name }} ({{ sib.unit_name }})
+                </a>
+            </div>
+
+            <!-- Flash Messages -->
+            <div v-if="$page.props.flash?.success" class="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-xs text-emerald-900 font-semibold">
+                {{ $page.props.flash.success }}
+            </div>
+            <div v-if="$page.props.flash?.error" class="p-4 rounded-2xl bg-rose-50 border border-rose-300 text-xs text-rose-900 font-semibold">
+                {{ $page.props.flash.error }}
+            </div>
+
             <!-- Announcement Gating Banner -->
             <div v-if="!isAnnouncementReleased" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 sm:p-5 shadow-xs flex items-start gap-3.5 sm:gap-4">
                 <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -812,7 +863,7 @@ const supportingDocsCompletedCount = computed(() => {
                         <div class="space-y-1 text-slate-600 pt-1">
                             <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.observation_date ? formatDate(applicant.observation_date) : (isSmp ? 'Sabtu, 07 November 2026' : 'Menunggu Penetapan') }}</strong></div>
                             <div>Waktu: <strong class="text-slate-900">{{ applicant.observation_time || (isSmp ? '08:00 - 10:00 WIB' : 'Akan diinfokan via WA') }}</strong></div>
-                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.observation_location || (isSmp ? 'Gedung SMP Namira Kota Probolinggo' : 'Gedung SD Namira') }}</strong></div>
+                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.observation_location || `Gedung ${unitDisplayName}` }}</strong></div>
                         </div>
                     </div>
 
@@ -825,7 +876,7 @@ const supportingDocsCompletedCount = computed(() => {
                         <div class="space-y-1 text-slate-600 pt-1">
                             <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.psychotest_date ? formatDate(applicant.psychotest_date) : (applicant.observation_date ? formatDate(applicant.observation_date) : (isSmp ? 'Sabtu, 07 November 2026' : 'Menunggu Penetapan')) }}</strong></div>
                             <div>Waktu: <strong class="text-slate-900">{{ applicant.psychotest_time || (isSmp ? '10:00 - 12:00 WIB' : 'Akan diinfokan via WA') }}</strong></div>
-                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.psychotest_location || (isSmp ? 'Gedung SMP Namira Kota Probolinggo' : 'Gedung SD Namira') }}</strong></div>
+                            <div>Lokasi: <strong class="text-slate-900">{{ applicant.psychotest_location || `Gedung ${unitDisplayName}` }}</strong></div>
                         </div>
                     </div>
                 </div>
@@ -942,7 +993,7 @@ const supportingDocsCompletedCount = computed(() => {
         <!-- Footer -->
         <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
             <div class="max-w-6xl mx-auto px-4">
-                <p>&copy; {{ new Date().getFullYear() }} Yayasan Namira Kota Probolinggo. Bantuan SPMB: {{ setting?.contact_whatsapp || '082332922521' }}</p>
+                <p>&copy; {{ new Date().getFullYear() }} Yayasan Pendidikan Namira — {{ unitDisplayName }}. Bantuan SPMB: {{ setting?.contact_whatsapp || '082332922521' }}</p>
             </div>
         </footer>
 
@@ -1000,8 +1051,9 @@ const supportingDocsCompletedCount = computed(() => {
                                 <label class="block font-semibold text-slate-700 mb-1">Kategori Pendaftar *</label>
                                 <select v-model="editForm.category" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
                                     <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
-                                    <option value="external_umum">Pendaftar Umum (Eksternal)</option>
+                                    <option value="eksternal_umum">Pendaftar Umum (Eksternal)</option>
                                 </select>
+                                <p v-if="editForm.errors.category" class="text-rose-600 text-[11px] mt-1">{{ editForm.errors.category }}</p>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 mb-1">Asal Sekolah ({{ isSmp ? 'SD/MI' : 'TK/RA' }})</label>
@@ -1027,16 +1079,18 @@ const supportingDocsCompletedCount = computed(() => {
                         <h4 class="font-bold text-emerald-800 uppercase tracking-wider text-[11px]">B. Data Orang Tua & Alamat</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="block font-semibold text-slate-700 mb-1">Nama Ayah Kandung *</label>
-                                <input v-model="editForm.father_name" type="text" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Ayah Kandung / Wali</label>
+                                <input v-model="editForm.father_name" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                                <p v-if="editForm.errors.father_name" class="text-rose-600 text-[11px] mt-1">{{ editForm.errors.father_name }}</p>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 mb-1">Pekerjaan Ayah</label>
                                 <input v-model="editForm.father_job" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
                             </div>
                             <div>
-                                <label class="block font-semibold text-slate-700 mb-1">Nama Ibu Kandung *</label>
-                                <input v-model="editForm.mother_name" type="text" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Ibu Kandung / Wali</label>
+                                <input v-model="editForm.mother_name" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
+                                <p v-if="editForm.errors.mother_name" class="text-rose-600 text-[11px] mt-1">{{ editForm.errors.mother_name }}</p>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 mb-1">Pekerjaan Ibu</label>

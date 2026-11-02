@@ -105,11 +105,15 @@ class SpmbService
      */
     public function resolveParentUser(string $phone, string $password, string $parentName, ?int $unitId = null): User
     {
-        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        $cleanPhone = $this->normalizePhone($phone);
+        $intlPhone = '62' . ltrim($cleanPhone, '0');
 
         // Check if user already exists with this phone or email
-        $user = User::where('phone', $cleanPhone)
-            ->orWhere('email', "{$cleanPhone}@spmb.namiraschool.com")
+        $user = User::whereIn('phone', array_unique(array_filter([$cleanPhone, $intlPhone])))
+            ->orWhereIn('email', [
+                "{$cleanPhone}@spmb.namiraschool.com",
+                "{$intlPhone}@spmb.namiraschool.com",
+            ])
             ->first();
 
         if (!$user) {
@@ -120,6 +124,54 @@ class SpmbService
                 'phone' => $cleanPhone,
                 'password' => Hash::make($password),
             ]);
+            $user->forceFill(['email_verified_at' => now()])->save();
+        } else {
+            // Protect staff/teacher/admin accounts from having their password overwritten on public SPMB form,
+            // while ensuring existing parent/student accounts (e.g. TK Namira parents) get the password they just set!
+            $staffRoles = [
+                'super_admin_yayasan',
+                'admin_yayasan',
+                'pembina_yayasan',
+                'pengawas_yayasan',
+                'admin_unit',
+                'staff_yayasan',
+                'staff_unit',
+                'kepala_sekolah',
+                'teacher',
+                'guru',
+                'wali_kelas',
+                'koordinator_kurikulum',
+                'koordinator_kesiswaan',
+                'koordinator_sarpar',
+                'bk',
+                'counseling',
+                'finance',
+                'staff_admin_keuangan',
+                'humas_yayasan',
+                'humas_unit',
+                'panitia_spmb',
+                'satpam',
+                'pelatih_ekskul',
+            ];
+
+            $isStaffAccount = DB::table('model_has_roles')
+                ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                ->where('model_has_roles.model_id', $user->id)
+                ->whereIn('roles.name', $staffRoles)
+                ->exists();
+
+            if (!$isStaffAccount && !empty($password)) {
+                $updates = [
+                    'password' => Hash::make($password),
+                ];
+                if (empty($user->phone) || $user->phone === $intlPhone) {
+                    $updates['phone'] = $cleanPhone;
+                }
+                if (empty($user->email_verified_at)) {
+                    $updates['email_verified_at'] = now();
+                }
+                $user->forceFill($updates)->save();
+            }
         }
 
         // Ensure 'orang_tua' role is assigned and scoped to the unit
@@ -170,10 +222,17 @@ class SpmbService
     public function enrollToAcademicStudent(SpmbApplicant $applicant, User $enrolledBy, ?int $classroomId = null): Student
     {
         return DB::transaction(function () use ($applicant, $enrolledBy, $classroomId) {
-            // Find or generate student
-            $existingStudent = Student::where('nik', $applicant->nik)
-                ->where('unit_id', $applicant->unit_id)
-                ->first();
+            // Find existing enrolled student (guard against null/empty NIK matching unrelated students!)
+            $existingStudent = null;
+            if (!empty($applicant->enrolled_student_id)) {
+                $existingStudent = Student::find($applicant->enrolled_student_id);
+            }
+            $cleanNik = trim((string) $applicant->nik);
+            if (!$existingStudent && $cleanNik !== '') {
+                $existingStudent = Student::where('nik', $cleanNik)
+                    ->where('unit_id', $applicant->unit_id)
+                    ->first();
+            }
 
             if (!$existingStudent) {
                 // Generate a temporary / preliminary NIS

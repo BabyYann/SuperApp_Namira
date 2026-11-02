@@ -34,6 +34,16 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, \Illuminate\Http\Request $request) {
-            return redirect()->back()->with('error', 'Ukuran file atau data yang diunggah terlalu besar (Melebihi limit php.ini). Silakan kompres gambar atau ubah limit php.ini.');
+            return redirect()->back()->with('error', 'Ukuran file atau data yang diunggah terlalu besar (Melebihi limit server). Silakan pilih gambar dengan ukuran lebih kecil.');
+        });
+
+        $exceptions->respond(function (\Symfony\Component\HttpFoundation\Response $response) {
+            if ($response->getStatusCode() === 419) {
+                return back()->with([
+                    'error' => 'Sesi halaman sempat berakhir karena halaman terlalu lama terbuka. Data Anda tetap aman, silakan klik tombol Kirim sekali lagi.',
+                ]);
+            }
+
+            return $response;
         });
     })->create();
