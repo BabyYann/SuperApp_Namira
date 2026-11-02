@@ -21,6 +21,7 @@ import {
 } from '@heroicons/vue/24/outline';
 
 import { compressImageFile } from '@/Utils/imageCompressor';
+import { toDateInputValue, formatIndonesianDate } from '@/Utils/dateHelper';
 
 const props = defineProps({
     applicant: Object,
@@ -76,12 +77,7 @@ const unitDisplayName = computed(() => {
 
 const formatDate = (dateStr) => {
     if (!dateStr) return null;
-    try {
-        const d = new Date(dateStr);
-        return new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(d);
-    } catch (e) {
-        return dateStr;
-    }
+    return formatIndonesianDate(dateStr, { dateStyle: 'full' }) || String(dateStr);
 };
 
 const uploadForm = useForm({
@@ -126,7 +122,7 @@ const editForm = useForm({
     nik: props.applicant.nik || '',
     nisn: props.applicant.nisn || '',
     birth_place: props.applicant.birth_place || '',
-    birth_date: props.applicant.birth_date ? String(props.applicant.birth_date).substring(0, 10) : '',
+    birth_date: toDateInputValue(props.applicant.birth_date),
     religion: props.applicant.religion || 'Islam',
     child_order: props.applicant.child_order || 1,
     total_siblings: props.applicant.total_siblings || 1,
@@ -153,6 +149,43 @@ const editForm = useForm({
     postal_code: props.applicant.postal_code || '',
     photo: null,
 });
+
+const openEditModal = () => {
+    editForm.full_name = props.applicant.full_name || '';
+    editForm.nickname = props.applicant.nickname || '';
+    editForm.gender = props.applicant.gender || 'L';
+    editForm.nik = props.applicant.nik || '';
+    editForm.nisn = props.applicant.nisn || '';
+    editForm.birth_place = props.applicant.birth_place || '';
+    editForm.birth_date = toDateInputValue(props.applicant.birth_date);
+    editForm.religion = props.applicant.religion || 'Islam';
+    editForm.child_order = props.applicant.child_order || 1;
+    editForm.total_siblings = props.applicant.total_siblings || 1;
+    editForm.category = normalizeCategoryValue(props.applicant.category);
+    editForm.previous_school = props.applicant.previous_school || '';
+    editForm.special_notes = props.applicant.special_notes || '';
+    editForm.father_name = props.applicant.father_name || '';
+    editForm.father_nik = props.applicant.father_nik || '';
+    editForm.father_phone = props.applicant.father_phone || '';
+    editForm.father_job = props.applicant.father_job || '';
+    editForm.father_education = props.applicant.father_education || '';
+    editForm.mother_name = props.applicant.mother_name || '';
+    editForm.mother_nik = props.applicant.mother_nik || '';
+    editForm.mother_phone = props.applicant.mother_phone || '';
+    editForm.mother_job = props.applicant.mother_job || '';
+    editForm.mother_education = props.applicant.mother_education || '';
+    editForm.parent_phone = props.applicant.parent_phone || '';
+    editForm.address = props.applicant.address || '';
+    editForm.rt = props.applicant.rt || '';
+    editForm.rw = props.applicant.rw || '';
+    editForm.village = props.applicant.village || '';
+    editForm.district = props.applicant.district || '';
+    editForm.city = props.applicant.city || '';
+    editForm.postal_code = props.applicant.postal_code || '';
+    editForm.photo = null;
+    editForm.clearErrors();
+    showEditModal.value = true;
+};
 
 const handlePhotoSelect = async (e) => {
     const file = e.target.files[0];
@@ -369,7 +402,7 @@ const supportingDocsCompletedCount = computed(() => {
                             <div v-if="applicant.status !== 'enrolled'" class="mt-2.5 flex flex-wrap items-center gap-2">
                                 <button
                                     type="button"
-                                    @click="showEditModal = true"
+                                    @click="openEditModal"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition"
                                 >
                                     <PencilSquareIcon class="w-3.5 h-3.5 text-emerald-700" />
@@ -922,7 +955,7 @@ const supportingDocsCompletedCount = computed(() => {
                             </div>
                             <div v-if="applicant.down_payment_deadline" class="flex justify-between text-rose-600">
                                 <span>Batas Bayar Termin 1:</span>
-                                <strong>{{ applicant.down_payment_deadline }}</strong>
+                                <strong>{{ formatIndonesianDate(applicant.down_payment_deadline) || applicant.down_payment_deadline }}</strong>
                             </div>
                         </div>
                     </div>

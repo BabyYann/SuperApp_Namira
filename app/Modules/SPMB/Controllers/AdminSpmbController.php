@@ -825,7 +825,7 @@ class AdminSpmbController extends Controller
             'city' => 'nullable|string|max:100',
             'postal_code' => 'nullable|string|max:10',
 
-            'photo' => 'nullable|file|image|max:10240',
+            'photo' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
         ]);
 
         if (!$request->filled('father_name') && !$request->filled('mother_name')) {
@@ -872,23 +872,23 @@ class AdminSpmbController extends Controller
             'previous_school' => $request->previous_school,
             'special_notes' => $request->special_notes,
             'father_name' => $request->father_name,
-            'father_nik' => $request->father_nik,
-            'father_phone' => $request->father_phone,
-            'father_job' => $request->father_job,
-            'father_education' => $request->father_education,
+            'father_nik' => $request->has('father_nik') ? $request->father_nik : $applicant->father_nik,
+            'father_phone' => $request->has('father_phone') ? $request->father_phone : $applicant->father_phone,
+            'father_job' => $request->has('father_job') ? $request->father_job : $applicant->father_job,
+            'father_education' => $request->has('father_education') ? $request->father_education : $applicant->father_education,
             'mother_name' => $request->mother_name,
-            'mother_nik' => $request->mother_nik,
-            'mother_phone' => $request->mother_phone,
-            'mother_job' => $request->mother_job,
-            'mother_education' => $request->mother_education,
+            'mother_nik' => $request->has('mother_nik') ? $request->mother_nik : $applicant->mother_nik,
+            'mother_phone' => $request->has('mother_phone') ? $request->mother_phone : $applicant->mother_phone,
+            'mother_job' => $request->has('mother_job') ? $request->mother_job : $applicant->mother_job,
+            'mother_education' => $request->has('mother_education') ? $request->mother_education : $applicant->mother_education,
             'parent_phone' => $cleanPhone,
             'address' => $request->address,
-            'rt' => $request->rt,
-            'rw' => $request->rw,
-            'village' => $request->village,
-            'district' => $request->district,
-            'city' => $request->city,
-            'postal_code' => $request->postal_code,
+            'rt' => $request->has('rt') ? $request->rt : $applicant->rt,
+            'rw' => $request->has('rw') ? $request->rw : $applicant->rw,
+            'village' => $request->has('village') ? $request->village : $applicant->village,
+            'district' => $request->has('district') ? $request->district : $applicant->district,
+            'city' => $request->has('city') ? $request->city : $applicant->city,
+            'postal_code' => $request->has('postal_code') ? $request->postal_code : $applicant->postal_code,
         ];
 
         if ($request->has('is_inden') && Schema::hasColumn('spmb_applicants', 'is_inden')) {

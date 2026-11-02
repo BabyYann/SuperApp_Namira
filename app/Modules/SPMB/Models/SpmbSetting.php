@@ -42,10 +42,10 @@ class SpmbSetting extends Model
         'registration_fee' => 'decimal:2',
         'admission_fee_total' => 'decimal:2',
         'min_down_payment_percentage' => 'integer',
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'selection_date' => 'date',
-        'announcement_date' => 'date',
+        'start_date' => 'date:Y-m-d',
+        'end_date' => 'date:Y-m-d',
+        'selection_date' => 'date:Y-m-d',
+        'announcement_date' => 'date:Y-m-d',
         'announcement_released' => 'boolean',
     ];
 

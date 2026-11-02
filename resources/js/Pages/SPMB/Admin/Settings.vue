@@ -15,6 +15,7 @@ import {
     BuildingLibraryIcon
 } from '@heroicons/vue/24/outline';
 import { compressImageFile } from '@/Utils/imageCompressor';
+import { toDateInputValue } from '@/Utils/dateHelper';
 
 const props = defineProps({
     setting: Object,
@@ -37,8 +38,8 @@ const settingForm = useForm({
     bank_account_holder: props.setting?.bank_account_holder || 'NAMIRA SCHOOL KOTA PROBOLINGGO',
     contact_whatsapp: props.setting?.contact_whatsapp || '082332922521',
     whatsapp_group_link: props.setting?.whatsapp_group_link || '',
-    selection_date: props.setting?.selection_date ? String(props.setting.selection_date).substring(0, 10) : '',
-    announcement_date: props.setting?.announcement_date ? String(props.setting.announcement_date).substring(0, 10) : '',
+    selection_date: toDateInputValue(props.setting?.selection_date),
+    announcement_date: toDateInputValue(props.setting?.announcement_date),
     announcement_released: Boolean(props.setting?.announcement_released ?? false),
     notes: props.setting?.notes || '',
     is_active: props.setting?.is_active ?? true,
@@ -93,8 +94,8 @@ watch(() => [props.unit?.id, props.setting?.id], () => {
     settingForm.bank_account_holder = props.setting?.bank_account_holder || 'NAMIRA SCHOOL KOTA PROBOLINGGO';
     settingForm.contact_whatsapp = props.setting?.contact_whatsapp || '082332922521';
     settingForm.whatsapp_group_link = props.setting?.whatsapp_group_link || '';
-    settingForm.selection_date = props.setting?.selection_date ? String(props.setting.selection_date).substring(0, 10) : '';
-    settingForm.announcement_date = props.setting?.announcement_date ? String(props.setting.announcement_date).substring(0, 10) : '';
+    settingForm.selection_date = toDateInputValue(props.setting?.selection_date);
+    settingForm.announcement_date = toDateInputValue(props.setting?.announcement_date);
     settingForm.announcement_released = Boolean(props.setting?.announcement_released ?? false);
     settingForm.notes = props.setting?.notes || '';
     settingForm.is_active = props.setting?.is_active ?? true;

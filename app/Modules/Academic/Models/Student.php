@@ -34,7 +34,7 @@ class Student extends Model
     ];
 
     protected $casts = [
-        'dob' => 'date',
+        'dob' => 'date:Y-m-d',
     ];
 
     protected static function newFactory()

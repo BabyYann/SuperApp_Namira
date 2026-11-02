@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
+import { toDateInputValue, formatIndonesianDate } from '@/Utils/dateHelper';
 import { 
     MagnifyingGlassIcon, 
     FunnelIcon, 
@@ -232,7 +233,7 @@ const openEditBiodataModal = (app) => {
     editBiodataForm.nik = app.nik || '';
     editBiodataForm.nisn = app.nisn || '';
     editBiodataForm.birth_place = app.birth_place || '';
-    editBiodataForm.birth_date = app.birth_date ? String(app.birth_date).substring(0, 10) : '';
+    editBiodataForm.birth_date = toDateInputValue(app.birth_date);
     editBiodataForm.religion = app.religion || 'Islam';
     editBiodataForm.child_order = app.child_order || 1;
     editBiodataForm.total_siblings = app.total_siblings || 1;
@@ -274,13 +275,7 @@ const formatRupiah = (amount) => {
 
 const formatScheduleDate = (dateStr) => {
     if (!dateStr) return '-';
-    try {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return dateStr;
-        return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
-    } catch (e) {
-        return dateStr;
-    }
+    return formatIndonesianDate(dateStr, { day: 'numeric', month: 'short', year: 'numeric' }) || String(dateStr);
 };
 
 let searchTimeout = null;

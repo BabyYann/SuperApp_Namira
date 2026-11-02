@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { toDateInputValue, formatIndonesianDate } from '@/Utils/dateHelper';
 import { 
     ArrowLeftIcon,
     CheckCircleIcon,
@@ -65,7 +66,7 @@ const editBiodataForm = useForm({
     nik: props.applicant.nik || '',
     nisn: props.applicant.nisn || '',
     birth_place: props.applicant.birth_place || '',
-    birth_date: props.applicant.birth_date ? String(props.applicant.birth_date).substring(0, 10) : '',
+    birth_date: toDateInputValue(props.applicant.birth_date),
     religion: props.applicant.religion || 'Islam',
     child_order: props.applicant.child_order || 1,
     total_siblings: props.applicant.total_siblings || 1,
@@ -92,6 +93,43 @@ const editBiodataForm = useForm({
     postal_code: props.applicant.postal_code || '',
     photo: null,
 });
+
+const openEditBiodataModal = () => {
+    editBiodataForm.full_name = props.applicant.full_name || '';
+    editBiodataForm.nickname = props.applicant.nickname || '';
+    editBiodataForm.gender = props.applicant.gender || 'L';
+    editBiodataForm.nik = props.applicant.nik || '';
+    editBiodataForm.nisn = props.applicant.nisn || '';
+    editBiodataForm.birth_place = props.applicant.birth_place || '';
+    editBiodataForm.birth_date = toDateInputValue(props.applicant.birth_date);
+    editBiodataForm.religion = props.applicant.religion || 'Islam';
+    editBiodataForm.child_order = props.applicant.child_order || 1;
+    editBiodataForm.total_siblings = props.applicant.total_siblings || 1;
+    editBiodataForm.category = normalizeCategoryValue(props.applicant.category);
+    editBiodataForm.previous_school = props.applicant.previous_school || '';
+    editBiodataForm.special_notes = props.applicant.special_notes || '';
+    editBiodataForm.father_name = props.applicant.father_name || '';
+    editBiodataForm.father_nik = props.applicant.father_nik || '';
+    editBiodataForm.father_phone = props.applicant.father_phone || '';
+    editBiodataForm.father_job = props.applicant.father_job || '';
+    editBiodataForm.father_education = props.applicant.father_education || '';
+    editBiodataForm.mother_name = props.applicant.mother_name || '';
+    editBiodataForm.mother_nik = props.applicant.mother_nik || '';
+    editBiodataForm.mother_phone = props.applicant.mother_phone || '';
+    editBiodataForm.mother_job = props.applicant.mother_job || '';
+    editBiodataForm.mother_education = props.applicant.mother_education || '';
+    editBiodataForm.parent_phone = props.applicant.parent_phone || '';
+    editBiodataForm.address = props.applicant.address || '';
+    editBiodataForm.rt = props.applicant.rt || '';
+    editBiodataForm.rw = props.applicant.rw || '';
+    editBiodataForm.village = props.applicant.village || '';
+    editBiodataForm.district = props.applicant.district || '';
+    editBiodataForm.city = props.applicant.city || '';
+    editBiodataForm.postal_code = props.applicant.postal_code || '';
+    editBiodataForm.photo = null;
+    editBiodataForm.clearErrors();
+    showEditBiodataModal.value = true;
+};
 
 const submitEditBiodata = () => {
     if (!editBiodataForm.father_name && !editBiodataForm.mother_name) {
@@ -124,14 +162,26 @@ const submitResetPassword = () => {
 
 // Form: Atur Jadwal
 const scheduleForm = useForm({
-    observation_date: props.applicant.observation_date || '',
+    observation_date: toDateInputValue(props.applicant.observation_date),
     observation_time: props.applicant.observation_time || '08:00 - 10:00 WIB',
     observation_location: props.applicant.observation_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Ruang Konseling & Bermain SD Namira'),
-    psychotest_date: props.applicant.psychotest_date || '',
+    psychotest_date: toDateInputValue(props.applicant.psychotest_date),
     psychotest_time: props.applicant.psychotest_time || (isSmp.value ? '10:00 - 12:00 WIB' : '08:00 - 11:30 WIB'),
     psychotest_location: props.applicant.psychotest_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Aula Pertemuan SD Namira'),
     schedule_notes: props.applicant.schedule_notes || '',
 });
+
+const openScheduleModal = () => {
+    scheduleForm.observation_date = toDateInputValue(props.applicant.observation_date);
+    scheduleForm.observation_time = props.applicant.observation_time || '08:00 - 10:00 WIB';
+    scheduleForm.observation_location = props.applicant.observation_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Ruang Konseling & Bermain SD Namira');
+    scheduleForm.psychotest_date = toDateInputValue(props.applicant.psychotest_date);
+    scheduleForm.psychotest_time = props.applicant.psychotest_time || (isSmp.value ? '10:00 - 12:00 WIB' : '08:00 - 11:30 WIB');
+    scheduleForm.psychotest_location = props.applicant.psychotest_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Aula Pertemuan SD Namira');
+    scheduleForm.schedule_notes = props.applicant.schedule_notes || '';
+    scheduleForm.clearErrors();
+    showScheduleModal.value = true;
+};
 
 const submitSchedule = () => {
     scheduleForm.post(route('spmb.admin.set-schedule', props.applicant.id), {
@@ -162,9 +212,19 @@ const vaForm = useForm({
     virtual_account_number: props.applicant.virtual_account_number || '',
     total_admission_fee: props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000),
     min_down_payment: props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * 0.6),
-    down_payment_deadline: props.applicant.down_payment_deadline || '',
-    full_payment_deadline: props.applicant.full_payment_deadline || '',
+    down_payment_deadline: toDateInputValue(props.applicant.down_payment_deadline),
+    full_payment_deadline: toDateInputValue(props.applicant.full_payment_deadline),
 });
+
+const openVaModal = () => {
+    vaForm.virtual_account_number = props.applicant.virtual_account_number || '';
+    vaForm.total_admission_fee = props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000);
+    vaForm.min_down_payment = props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * 0.6);
+    vaForm.down_payment_deadline = toDateInputValue(props.applicant.down_payment_deadline);
+    vaForm.full_payment_deadline = toDateInputValue(props.applicant.full_payment_deadline);
+    vaForm.clearErrors();
+    showVaModal.value = true;
+};
 
 const submitVa = () => {
     vaForm.post(route('spmb.admin.set-va', props.applicant.id), {
@@ -326,7 +386,7 @@ const formatRupiah = (amount) => {
 
                     <!-- 2. Tombol Atur Jadwal -->
                     <button 
-                        @click="showScheduleModal = true"
+                        @click="openScheduleModal"
                         class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow"
                     >
                         <CalendarDaysIcon class="w-4 h-4" />
@@ -345,7 +405,7 @@ const formatRupiah = (amount) => {
                     <!-- 4. Tombol Virtual Account -->
                     <button 
                         v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)"
-                        @click="showVaModal = true"
+                        @click="openVaModal"
                         class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold shadow-xs transition"
                     >
                         <CreditCardIcon class="w-4 h-4" />
@@ -374,7 +434,7 @@ const formatRupiah = (amount) => {
 
                     <!-- 7. Tombol Edit Biodata -->
                     <button 
-                        @click="showEditBiodataModal = true"
+                        @click="openEditBiodataModal"
                         type="button"
                         class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold shadow-xs transition"
                     >
@@ -420,7 +480,7 @@ const formatRupiah = (amount) => {
                             </h3>
                             <button
                                 type="button"
-                                @click="showEditBiodataModal = true"
+                                @click="openEditBiodataModal"
                                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold transition"
                             >
                                 <PencilSquareIcon class="w-3.5 h-3.5" />
@@ -443,7 +503,7 @@ const formatRupiah = (amount) => {
                             </div>
                             <div>
                                 <dt class="text-slate-400">Tempat, Tanggal Lahir</dt>
-                                <dd class="font-medium text-slate-800 dark:text-slate-200">{{ applicant.birth_place }}, {{ applicant.birth_date || '-' }}</dd>
+                                <dd class="font-medium text-slate-800 dark:text-slate-200">{{ applicant.birth_place }}, {{ formatIndonesianDate(applicant.birth_date) || '-' }}</dd>
                             </div>
                             <div>
                                 <dt class="text-slate-400">NIK Calon Siswa</dt>
@@ -481,7 +541,7 @@ const formatRupiah = (amount) => {
                                 </button>
                                 <button
                                     type="button"
-                                    @click="showEditBiodataModal = true"
+                                    @click="openEditBiodataModal"
                                     class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold transition"
                                 >
                                     <PencilSquareIcon class="w-3.5 h-3.5" />
@@ -527,14 +587,14 @@ const formatRupiah = (amount) => {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                             <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                                 <strong class="text-emerald-700 dark:text-emerald-400 block mb-1.5 font-bold">{{ isSmp ? '1. Seleksi Akademik (B. Indonesia & MTK)' : '1. Observasi Dasar Anak' }}</strong>
-                                <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ applicant.observation_date || 'Belum diatur' }}</strong></p>
+                                <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ formatIndonesianDate(applicant.observation_date) || 'Belum diatur' }}</strong></p>
                                 <p class="text-slate-700 dark:text-slate-300">Jam: {{ applicant.observation_time || '-' }}</p>
                                 <p class="text-slate-700 dark:text-slate-300">Ruang: {{ applicant.observation_location || '-' }}</p>
                             </div>
 
                             <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                                 <strong class="text-amber-700 dark:text-amber-400 block mb-1.5 font-bold">{{ isSmp ? '2. Observasi Calon Murid (Wawancara & Mengaji)' : '2. Psikotes Calon Siswa' }}</strong>
-                                <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ applicant.psychotest_date || 'Belum diatur' }}</strong></p>
+                                <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ formatIndonesianDate(applicant.psychotest_date) || 'Belum diatur' }}</strong></p>
                                 <p class="text-slate-700 dark:text-slate-300">Jam: {{ applicant.psychotest_time || '-' }}</p>
                                 <p class="text-slate-700 dark:text-slate-300">Ruang: {{ applicant.psychotest_location || '-' }}</p>
                             </div>
