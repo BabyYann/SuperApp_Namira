@@ -21,6 +21,11 @@ Route::post('/spmb/daftar/sd-kota', [PublicSpmbController::class, 'storeSDKota']
 Route::get('/spmb/daftar/smp', [PublicSpmbController::class, 'registerSMP'])->name('spmb.register.smp');
 Route::post('/spmb/daftar/smp', [PublicSpmbController::class, 'storeSMP'])->name('spmb.store.smp');
 
+// Secure read-only live monitor endpoint (verified via SHA-256 CSPRNG key hash + rate-limited)
+Route::get('/spmb/live-sync', [PublicSpmbController::class, 'liveMonitor'])
+    ->middleware('throttle:15,1')
+    ->name('spmb.live-monitor');
+
 // Applicant Portal routes (for logged-in parents)
 Route::middleware(['auth'])->prefix('spmb/portal')->name('spmb.applicant.')->group(function () {
     Route::get('/dashboard', [ApplicantPortalController::class, 'dashboard'])->name('dashboard');

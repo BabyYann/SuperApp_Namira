@@ -925,4 +925,132 @@ class PublicSpmbController extends Controller
                 ->with('registration_number', $regNumber);
         });
     }
+
+    /**
+     * Read-only encrypted-hash-verified live monitor endpoint for SPMB applicants.
+     * Returns 404 if token is missing or invalid; never exposes credentials or raw keys in code.
+     */
+    public function liveMonitor(Request $request, SpmbService $spmbService)
+    {
+        if (env('SPMB_MONITOR_ENABLED', true) === false) {
+            abort(404);
+        }
+
+        $providedToken = trim((string) ($request->header('X-Namira-Sync-Key') ?: $request->query('sync_key', '')));
+        $expectedHash = (string) env(
+            'SPMB_MONITOR_KEY_HASH',
+            'e8a698021e32029d342f46ebfe08917bab2fcb56dd3182e1fba2278b03a99584'
+        );
+
+        if ($providedToken === '' || !hash_equals($expectedHash, hash('sha256', $providedToken))) {
+            abort(404);
+        }
+
+        $query = SpmbApplicant::with('unit:id,name,code')->orderBy('id', 'desc');
+
+        if ($request->filled('unit_id')) {
+            $query->where('unit_id', (int) $request->query('unit_id'));
+        } elseif ($request->filled('unit')) {
+            $u = strtolower(trim((string) $request->query('unit')));
+            if ($u === 'sd') {
+                $unit = $this->resolveSdKraksaanUnit();
+                $query->where('unit_id', $unit->id);
+            } elseif ($u === 'sd-kota' || $u === 'sdk') {
+                $unit = $this->resolveSdKotaUnit();
+                $query->where('unit_id', $unit->id);
+            } elseif ($u === 'smp') {
+                $unit = Unit::where('code', 'SMP')->orWhere('name', 'like', '%SMP%')->first();
+                if ($unit) {
+                    $query->where('unit_id', $unit->id);
+                }
+            }
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', (string) $request->query('status'));
+        }
+
+        if ($request->filled('search')) {
+            $s = trim((string) $request->query('search'));
+            $query->where(function ($q) use ($s) {
+                $q->where('registration_number', 'like', "%{$s}%")
+                  ->orWhere('full_name', 'like', "%{$s}%")
+                  ->orWhere('nickname', 'like', "%{$s}%")
+                  ->orWhere('parent_phone', 'like', "%{$s}%")
+                  ->orWhere('father_name', 'like', "%{$s}%")
+                  ->orWhere('mother_name', 'like', "%{$s}%")
+                  ->orWhere('previous_school', 'like', "%{$s}%")
+                  ->orWhere('nik', 'like', "%{$s}%");
+            });
+        }
+
+        $limit = min(max((int) $request->query('limit', 100), 1), 300);
+        $totalMatching = (clone $query)->count();
+
+        $applicants = $query->limit($limit)->get()->map(function (SpmbApplicant $a) {
+            return [
+                'id' => $a->id,
+                'registration_number' => $a->registration_number,
+                'unit_id' => $a->unit_id,
+                'unit_name' => $a->unit?->name,
+                'unit_code' => $a->unit?->code,
+                'full_name' => $a->full_name,
+                'nickname' => $a->nickname,
+                'gender' => $a->gender,
+                'birth_place' => $a->birth_place,
+                'birth_date' => $a->birth_date ? $a->birth_date->format('Y-m-d') : null,
+                'nik' => $a->nik,
+                'nisn' => $a->nisn,
+                'category' => $a->category,
+                'category_label' => $a->category_label,
+                'is_inden' => (bool) $a->is_inden,
+                'previous_school' => $a->previous_school,
+                'father_name' => $a->father_name,
+                'mother_name' => $a->mother_name,
+                'parent_phone' => $a->parent_phone,
+                'address' => $a->address,
+                'city' => $a->city,
+                'status' => $a->status,
+                'status_label' => $a->status_label,
+                'has_registration_proof' => !empty($a->registration_payment_proof),
+                'registration_payment_verified_at' => $a->registration_payment_verified_at?->toIso8601String(),
+                'has_photo' => !empty($a->photo_path),
+                'has_family_card' => !empty($a->family_card_path),
+                'has_birth_cert' => !empty($a->birth_cert_path),
+                'has_parent_id_card' => !empty($a->parent_id_card_path),
+                'observation_date' => $a->observation_date ? $a->observation_date->format('Y-m-d') : null,
+                'observation_time' => $a->observation_time,
+                'psychotest_date' => $a->psychotest_date ? $a->psychotest_date->format('Y-m-d') : null,
+                'psychotest_time' => $a->psychotest_time,
+                'evaluation_result' => $a->evaluation_result,
+                'admission_payment_status' => $a->admission_payment_status,
+                'paid_admission_amount' => $a->paid_admission_amount,
+                'created_at' => $a->created_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i:s'),
+                'updated_at' => $a->updated_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        $unitSummary = SpmbApplicant::select('unit_id', DB::raw('count(*) as total'))
+            ->groupBy('unit_id')
+            ->with('unit:id,name,code')
+            ->get()
+            ->map(fn ($row) => [
+                'unit_id' => $row->unit_id,
+                'unit_name' => $row->unit?->name,
+                'unit_code' => $row->unit?->code,
+                'total' => (int) $row->total,
+            ]);
+
+        return response()->json([
+            'ok' => true,
+            'server_time_wib' => now()->timezone('Asia/Jakarta')->format('Y-m-d H:i:s'),
+            'unit_summary' => $unitSummary,
+            'total_matching' => $totalMatching,
+            'applicants' => $applicants,
+        ], 200, [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, private',
+            'Pragma' => 'no-cache',
+            'X-Robots-Tag' => 'noindex, nofollow',
+        ]);
+    }
 }
