@@ -225,7 +225,12 @@
         .badge.late { background: #fee2e2; color: #991b1b; }
         .badge.sick { background: #dbeafe; color: #1e40af; }
         .badge.permit { background: #fef3c7; color: #92400e; }
+        .badge.cuti { background: #ede9fe; color: #6d28d9; }
         .badge.business_trip { background: #e0e7ff; color: #3730a3; }
+        .badge.alpha { background: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; }
+        .badge.weekend { background: #f1f5f9; color: #64748b; }
+        .badge.holiday { background: #fef08a; color: #854d0e; }
+        .badge.upcoming { background: #f8fafc; color: #94a3b8; }
         .badge.not_recorded { background: #f1f5f9; color: #475569; }
 
         /* Footer signatures */
@@ -360,9 +365,9 @@
         </thead>
         <tbody>
             @forelse($attendances as $index => $att)
-                <tr>
+                <tr style="{{ $att->status === 'alpha' ? 'background: #fff1f2;' : ($att->status === 'weekend' ? 'background: #f8fafc;' : '') }}">
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ \Carbon\Carbon::parse($att->date)->translatedFormat('d M Y') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($att->date)->translatedFormat('d M Y') }} ({{ $att->day_name ?? \Carbon\Carbon::parse($att->date)->translatedFormat('l') }})</td>
                     <td style="font-weight: bold;">{{ $att->check_in_time ? substr($att->check_in_time, 0, 5) : '-' }}</td>
                     <td style="font-weight: bold;">{{ $att->check_out_time ? substr($att->check_out_time, 0, 5) : '-' }}</td>
                     <td style="color: {{ $att->late_minutes > 0 ? '#b91c1c' : '#333' }}; font-weight: {{ $att->late_minutes > 0 ? 'bold' : 'normal' }}">
@@ -370,7 +375,18 @@
                     </td>
                     <td>
                         <span class="badge {{ $att->status }}">
-                            {{ $att->status === 'present' ? 'Hadir WFO' : ($att->status === 'late' ? 'Telat' : ($att->status === 'sick' ? 'Sakit' : ($att->status === 'permit' ? 'Izin' : ($att->status === 'cuti' ? 'Cuti' : ($att->status === 'business_trip' ? 'Dinas Luar' : 'Belum Absen'))))) }}
+                            @if($att->status === 'present') Hadir WFO
+                            @elseif($att->status === 'late') Telat
+                            @elseif($att->status === 'sick') Sakit
+                            @elseif($att->status === 'permit') Izin
+                            @elseif($att->status === 'cuti') Cuti
+                            @elseif($att->status === 'business_trip') Dinas Luar
+                            @elseif($att->status === 'alpha') Alpha
+                            @elseif($att->status === 'weekend') Libur Minggu
+                            @elseif($att->status === 'holiday') Libur Resmi
+                            @elseif($att->status === 'upcoming') Belum Berlangsung
+                            @else Belum Absen
+                            @endif
                         </span>
                         @if($att->approval_status === 'pending')
                             <div style="font-size: 7px; color: #b45309; font-weight: bold; margin-top: 2px;">(Menunggu)</div>

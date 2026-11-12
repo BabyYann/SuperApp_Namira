@@ -591,7 +591,7 @@ class AttendanceDataController extends Controller
             ?? $user->units->first()?->id 
             ?? null;
 
-        $holidays = Holiday::where(function($q) {
+        $holidayDetails = Holiday::where(function($q) {
                 $q->where('event_type', 'libur')->orWhereNull('event_type');
             })
             ->where(function($q) use ($unitId) {
@@ -601,9 +601,10 @@ class AttendanceDataController extends Controller
                 }
             })
             ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
-            ->pluck('date')
-            ->map(fn($d) => Carbon::parse($d)->toDateString())
-            ->toArray();
+            ->get()
+            ->keyBy(fn($h) => Carbon::parse($h->date)->toDateString());
+
+        $holidays = $holidayDetails->keys()->toArray();
 
         $today = Carbon::today();
         $isCurrentMonth = ($month == $today->month && $year == $today->year);
@@ -681,6 +682,114 @@ class AttendanceDataController extends Controller
             'total_activity_logs' => $activityLogs->count(),
         ];
 
+        // Generate full chronological sequence for the month
+        $dailyRecords = [];
+        $cursor = $start->copy();
+
+        while ($cursor <= $end) {
+            $cDateStr = $cursor->toDateString();
+            $dayName = $cursor->translatedFormat('l');
+            $dateFormatted = $cursor->translatedFormat('d M Y');
+            $isSunday = $cursor->isSunday();
+            $isHoliday = isset($holidayDetails[$cDateStr]);
+            $isPastOrToday = ($cursor <= $today);
+
+            $dayRecords = $userAttGrouped->get($cDateStr);
+
+            if ($dayRecords && $dayRecords->isNotEmpty()) {
+                $mainAtt = $dayRecords->first();
+                $dailyRecords[] = [
+                    'id' => $mainAtt->id,
+                    'date' => $cDateStr,
+                    'day_name' => $dayName,
+                    'date_formatted' => $dateFormatted,
+                    'status' => $mainAtt->status,
+                    'approval_status' => $mainAtt->approval_status,
+                    'check_in_time' => $mainAtt->check_in_time,
+                    'check_out_time' => $mainAtt->check_out_time,
+                    'late_minutes' => (int) $mainAtt->late_minutes,
+                    'note' => $mainAtt->note,
+                    'check_in_photo' => $mainAtt->check_in_photo,
+                    'permit_file' => $mainAtt->permit_file,
+                    'is_actionable' => true,
+                    'type' => 'record',
+                ];
+            } else {
+                if ($isSunday) {
+                    $dailyRecords[] = [
+                        'id' => null,
+                        'date' => $cDateStr,
+                        'day_name' => $dayName,
+                        'date_formatted' => $dateFormatted,
+                        'status' => 'weekend',
+                        'approval_status' => null,
+                        'check_in_time' => null,
+                        'check_out_time' => null,
+                        'late_minutes' => 0,
+                        'note' => 'Libur Akhir Pekan (Minggu)',
+                        'check_in_photo' => null,
+                        'permit_file' => null,
+                        'is_actionable' => false,
+                        'type' => 'weekend',
+                    ];
+                } elseif ($isHoliday) {
+                    $holidayTitle = $holidayDetails[$cDateStr]->name ?? 'Libur Resmi';
+                    $dailyRecords[] = [
+                        'id' => null,
+                        'date' => $cDateStr,
+                        'day_name' => $dayName,
+                        'date_formatted' => $dateFormatted,
+                        'status' => 'holiday',
+                        'approval_status' => null,
+                        'check_in_time' => null,
+                        'check_out_time' => null,
+                        'late_minutes' => 0,
+                        'note' => 'Libur: ' . $holidayTitle,
+                        'check_in_photo' => null,
+                        'permit_file' => null,
+                        'is_actionable' => false,
+                        'type' => 'holiday',
+                    ];
+                } elseif ($isPastOrToday) {
+                    $dailyRecords[] = [
+                        'id' => null,
+                        'date' => $cDateStr,
+                        'day_name' => $dayName,
+                        'date_formatted' => $dateFormatted,
+                        'status' => 'alpha',
+                        'approval_status' => null,
+                        'check_in_time' => null,
+                        'check_out_time' => null,
+                        'late_minutes' => 0,
+                        'note' => 'Tidak Hadir / Tanpa Keterangan',
+                        'check_in_photo' => null,
+                        'permit_file' => null,
+                        'is_actionable' => true,
+                        'type' => 'alpha',
+                    ];
+                } else {
+                    $dailyRecords[] = [
+                        'id' => null,
+                        'date' => $cDateStr,
+                        'day_name' => $dayName,
+                        'date_formatted' => $dateFormatted,
+                        'status' => 'upcoming',
+                        'approval_status' => null,
+                        'check_in_time' => null,
+                        'check_out_time' => null,
+                        'late_minutes' => 0,
+                        'note' => 'Belum Berlangsung',
+                        'check_in_photo' => null,
+                        'permit_file' => null,
+                        'is_actionable' => false,
+                        'type' => 'upcoming',
+                    ];
+                }
+            }
+
+            $cursor->addDay();
+        }
+
         return response()->json([
             'employee' => [
                 'id' => $user->id,
@@ -688,8 +797,10 @@ class AttendanceDataController extends Controller
                 'email' => $user->email,
                 'role' => $user->roles->first()?->name ?? '-',
                 'photo' => $user->profile_photo_url,
+                'nip' => $user->teacher_profile?->nip ?? $user->staff?->nip ?? '-',
+                'unit_name' => $user->teacher_profile?->unit?->name ?? $user->staff?->unit?->name ?? '-',
             ],
-            'attendances' => $attendances,
+            'attendances' => $dailyRecords,
             'activity_logs' => $activityLogs,
             'stats' => $stats,
             'month' => $month,
@@ -725,7 +836,7 @@ class AttendanceDataController extends Controller
             ?? $user->staff?->unit_id 
             ?? null;
 
-        $holidays = Holiday::where(function($q) {
+        $holidayDetails = Holiday::where(function($q) {
                 $q->where('event_type', 'libur')->orWhereNull('event_type');
             })
             ->where(function($q) use ($unitId) {
@@ -735,9 +846,10 @@ class AttendanceDataController extends Controller
                 }
             })
             ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
-            ->pluck('date')
-            ->map(fn($d) => Carbon::parse($d)->toDateString())
-            ->toArray();
+            ->get()
+            ->keyBy(fn($h) => Carbon::parse($h->date)->toDateString());
+
+        $holidays = $holidayDetails->keys()->toArray();
 
         $today = Carbon::today();
         $isCurrentMonth = ($month == $today->month && $year == $today->year);
@@ -808,12 +920,98 @@ class AttendanceDataController extends Controller
             'attendance_percentage' => $attendancePercentage,
         ];
 
+        // Generate full daily records for PDF report
+        $dailyRecords = [];
+        $cursor = $start->copy();
+        while ($cursor <= $end) {
+            $cDateStr = $cursor->toDateString();
+            $dayName = $cursor->translatedFormat('l');
+            $dateFormatted = $cursor->translatedFormat('d M Y');
+            $isSunday = $cursor->isSunday();
+            $isHoliday = isset($holidayDetails[$cDateStr]);
+            $isPastOrToday = ($cursor <= $today);
+
+            $dayRecords = $userAttGrouped->get($cDateStr);
+
+            if ($dayRecords && $dayRecords->isNotEmpty()) {
+                $mainAtt = $dayRecords->first();
+                $dailyRecords[] = (object) [
+                    'date' => $cDateStr,
+                    'day_name' => $dayName,
+                    'date_formatted' => $dateFormatted,
+                    'status' => $mainAtt->status,
+                    'approval_status' => $mainAtt->approval_status,
+                    'check_in_time' => $mainAtt->check_in_time,
+                    'check_out_time' => $mainAtt->check_out_time,
+                    'late_minutes' => (int) $mainAtt->late_minutes,
+                    'note' => $mainAtt->note,
+                    'type' => 'record',
+                ];
+            } else {
+                if ($isSunday) {
+                    $dailyRecords[] = (object) [
+                        'date' => $cDateStr,
+                        'day_name' => $dayName,
+                        'date_formatted' => $dateFormatted,
+                        'status' => 'weekend',
+                        'approval_status' => null,
+                        'check_in_time' => null,
+                        'check_out_time' => null,
+                        'late_minutes' => 0,
+                        'note' => 'Libur Akhir Pekan (Minggu)',
+                        'type' => 'weekend',
+                    ];
+                } elseif ($isHoliday) {
+                    $holidayTitle = $holidayDetails[$cDateStr]->name ?? 'Libur Resmi';
+                    $dailyRecords[] = (object) [
+                        'date' => $cDateStr,
+                        'day_name' => $dayName,
+                        'date_formatted' => $dateFormatted,
+                        'status' => 'holiday',
+                        'approval_status' => null,
+                        'check_in_time' => null,
+                        'check_out_time' => null,
+                        'late_minutes' => 0,
+                        'note' => 'Libur: ' . $holidayTitle,
+                        'type' => 'holiday',
+                    ];
+                } elseif ($isPastOrToday) {
+                    $dailyRecords[] = (object) [
+                        'date' => $cDateStr,
+                        'day_name' => $dayName,
+                        'date_formatted' => $dateFormatted,
+                        'status' => 'alpha',
+                        'approval_status' => null,
+                        'check_in_time' => null,
+                        'check_out_time' => null,
+                        'late_minutes' => 0,
+                        'note' => 'Tidak Hadir / Tanpa Keterangan',
+                        'type' => 'alpha',
+                    ];
+                } else {
+                    $dailyRecords[] = (object) [
+                        'date' => $cDateStr,
+                        'day_name' => $dayName,
+                        'date_formatted' => $dateFormatted,
+                        'status' => 'upcoming',
+                        'approval_status' => null,
+                        'check_in_time' => null,
+                        'check_out_time' => null,
+                        'late_minutes' => 0,
+                        'note' => 'Belum Berlangsung',
+                        'type' => 'upcoming',
+                    ];
+                }
+            }
+            $cursor->addDay();
+        }
+
         $monthName = $start->translatedFormat('F Y');
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.individual-attendance-report', [
             'unit' => $unit,
             'employee' => $user,
-            'attendances' => $attendances,
+            'attendances' => $dailyRecords,
             'stats' => $stats,
             'monthName' => $monthName,
         ]);
