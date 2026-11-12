@@ -7,6 +7,7 @@ use App\Models\EmployeeAttendance;
 use App\Models\User;
 use App\Modules\Yayasan\Models\Holiday;
 use App\Modules\Yayasan\Models\Unit;
+use App\Services\NotificationDispatcher;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -822,5 +823,86 @@ class AttendanceDataController extends Controller
         $filename = "Rapor_Absensi_" . str_replace(' ', '_', $user->name) . "_" . $start->format('M_Y') . ".pdf";
         
         return $pdf->download($filename);
+    }
+
+    public function storeManualAttendance(Request $request)
+    {
+        if (!auth()->user()->hasRole('super_admin_yayasan')) {
+            abort(403, 'Akses Ditolak: Fitur Input/Koreksi Presensi Manual khusus untuk Super Admin Yayasan.');
+        }
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'date' => 'required|date|before_or_equal:today',
+            'status' => 'required|in:present,business_trip,permit,sick,cuti',
+            'check_in_time' => 'nullable|string',
+            'check_out_time' => 'nullable|string',
+            'late_minutes' => 'nullable|integer|min:0',
+            'note' => 'required|string|max:500',
+        ], [
+            'user_id.required' => 'Pilih karyawan/guru terlebih dahulu.',
+            'date.required' => 'Tanggal presensi wajib dipilih.',
+            'date.before_or_equal' => 'Tanggal presensi tidak boleh di masa depan.',
+            'status.required' => 'Status kehadiran wajib dipilih.',
+            'note.required' => 'Alasan atau keterangan koreksi wajib diisi.',
+        ]);
+
+        $employee = User::findOrFail($request->user_id);
+        $dateFormatted = Carbon::parse($request->date)->toDateString();
+
+        // Standardize time formatting
+        $checkIn = $request->check_in_time ? (strlen($request->check_in_time) === 5 ? $request->check_in_time . ':00' : $request->check_in_time) : null;
+        $checkOut = $request->check_out_time ? (strlen($request->check_out_time) === 5 ? $request->check_out_time . ':00' : $request->check_out_time) : null;
+
+        // If status is present without time, provide reasonable default school check-in time (e.g. 07:00:00 & 15:30:00)
+        if ($request->status === 'present') {
+            if (!$checkIn) $checkIn = '07:00:00';
+            if (!$checkOut) $checkOut = '15:30:00';
+        } elseif ($request->status === 'business_trip') {
+            if (!$checkIn) $checkIn = '07:30:00';
+            if (!$checkOut) $checkOut = '15:30:00';
+        }
+
+        $adminName = auth()->user()->name;
+        $noteText = "[Koreksi Super Admin - {$adminName}]: " . trim($request->note);
+
+        $attendance = EmployeeAttendance::updateOrCreate(
+            [
+                'user_id' => $employee->id,
+                'date' => $dateFormatted,
+            ],
+            [
+                'status' => $request->status,
+                'check_in_time' => $checkIn,
+                'check_out_time' => $checkOut,
+                'late_minutes' => (int) ($request->late_minutes ?? 0),
+                'approval_status' => 'approved',
+                'approved_by' => auth()->id(),
+                'note' => $noteText,
+            ]
+        );
+
+        // Send Notification to Employee
+        try {
+            $statusLabel = [
+                'present' => 'Hadir WFO',
+                'business_trip' => 'Dinas Luar',
+                'permit' => 'Izin',
+                'sick' => 'Sakit',
+                'cuti' => 'Cuti',
+            ][$request->status] ?? $request->status;
+
+            NotificationDispatcher::sendToUser(
+                $employee,
+                '📝 Presensi Dikoreksi oleh Super Admin',
+                "Presensi Anda untuk tanggal " . Carbon::parse($dateFormatted)->translatedFormat('d F Y') . " telah disesuaikan menjadi '{$statusLabel}'. Catatan: {$request->note}",
+                'employee',
+                ['attendance_id' => $attendance->id, 'date' => $dateFormatted]
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending manual attendance notification: ' . $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', "Presensi {$employee->name} tanggal " . Carbon::parse($dateFormatted)->translatedFormat('d M Y') . " berhasil disimpan dan disetujui.");
     }
 }

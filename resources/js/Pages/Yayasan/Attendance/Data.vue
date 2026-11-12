@@ -1,13 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, useForm, Link } from '@inertiajs/vue3';
+import { Head, router, useForm, Link, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import { 
     ClipboardDocumentListIcon, EyeIcon, PaperClipIcon, ArrowDownTrayIcon,
     CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, UserGroupIcon,
     CalendarDaysIcon, ChartBarIcon, DocumentTextIcon, XMarkIcon, ArrowPathIcon,
     FunnelIcon, AcademicCapIcon, BriefcaseIcon, PlusCircleIcon, UsersIcon, CalendarIcon,
-    ChevronLeftIcon, ChevronRightIcon, CameraIcon
+    ChevronLeftIcon, ChevronRightIcon, CameraIcon, PencilSquareIcon
 } from '@heroicons/vue/24/outline';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -175,6 +175,60 @@ const downloadIndividualPdf = () => {
                 `?month=${detailMonth.value}&year=${detailYear.value}`;
     window.location.href = url;
     setTimeout(() => { downloadingIndividualPdf.value = false; }, 3000);
+};
+
+// --- AUTH ROLE CHECK ---
+const page = usePage();
+const isSuperAdmin = computed(() => {
+    const roles = page.props.auth?.user?.roles?.map(r => typeof r === 'string' ? r : r.name) || [];
+    return roles.includes('super_admin_yayasan');
+});
+
+// --- MANUAL ATTENDANCE ENTRY (SUPER ADMIN OVERRIDE) ---
+const showManualModal = ref(false);
+const manualForm = useForm({
+    user_id: '',
+    date: dayjs().format('YYYY-MM-DD'),
+    status: 'present',
+    check_in_time: '07:00',
+    check_out_time: '15:30',
+    late_minutes: 0,
+    note: '',
+});
+
+const openManualEntryModal = (employee = null, prefillDate = null) => {
+    manualForm.clearErrors();
+    if (employee) {
+        manualForm.user_id = employee.id;
+    } else {
+        manualForm.user_id = props.recapData.length > 0 ? props.recapData[0].id : '';
+    }
+    
+    if (prefillDate) {
+        manualForm.date = dayjs(prefillDate).format('YYYY-MM-DD');
+    } else {
+        manualForm.date = dayjs().format('YYYY-MM-DD');
+    }
+    
+    manualForm.status = 'present';
+    manualForm.check_in_time = '07:00';
+    manualForm.check_out_time = '15:30';
+    manualForm.late_minutes = 0;
+    manualForm.note = '';
+    showManualModal.value = true;
+};
+
+const submitManualEntry = () => {
+    manualForm.post(route('yayasan.attendance-data.manual-entry'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showManualModal.value = false;
+            manualForm.reset();
+            if (showDetailDrawer.value && selectedEmployee.value) {
+                fetchEmployeeHistory();
+            }
+        }
+    });
 };
 
 // --- DATA HELPERS ---
@@ -427,6 +481,15 @@ const getPercentageClass = (pct) => {
                         <p class="text-xs text-gray-500 mt-0.5">Akumulasi presensi, absensi, dan persentase kehadiran guru dan staf.</p>
                     </div>
                     <div class="flex items-center gap-2">
+                        <button 
+                            v-if="isSuperAdmin"
+                            @click="openManualEntryModal()"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-namira-teal text-white rounded-xl font-bold text-xs shadow-sm hover:bg-teal-600 transition-all cursor-pointer active:scale-95"
+                        >
+                            <PlusCircleIcon class="w-4 h-4" />
+                            <span>Input Presensi Manual</span>
+                        </button>
+
                         <button 
                             @click="refreshData"
                             class="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-500 shadow-sm transition-all hover:shadow cursor-pointer"
@@ -742,15 +805,27 @@ const getPercentageClass = (pct) => {
                                         </div>
                                     </div>
 
-                                    <button 
-                                        @click="downloadIndividualPdf"
-                                        :disabled="loadingDetail || !employeeStats || downloadingIndividualPdf"
-                                        class="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-400 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 h-10 cursor-pointer text-xs"
-                                    >
-                                        <NamiraLoader :visible="downloadingIndividualPdf" variant="button" />
-                                        <DocumentTextIcon v-if="!downloadingIndividualPdf" class="w-4 h-4" />
-                                        <span>{{ downloadingIndividualPdf ? 'Memproses...' : 'Cetak PDF' }}</span>
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <button 
+                                            v-if="isSuperAdmin"
+                                            @click="openManualEntryModal(selectedEmployee)"
+                                            class="flex items-center justify-center gap-1.5 bg-namira-teal hover:bg-teal-700 text-white font-bold py-2.5 px-3.5 rounded-xl transition-all shadow-md active:scale-95 h-10 cursor-pointer text-xs"
+                                            title="Koreksi presensi pegawai ini"
+                                        >
+                                            <PlusCircleIcon class="w-4 h-4" />
+                                            <span>Koreksi Presensi</span>
+                                        </button>
+
+                                        <button 
+                                            @click="downloadIndividualPdf"
+                                            :disabled="loadingDetail || !employeeStats || downloadingIndividualPdf"
+                                            class="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-400 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 h-10 cursor-pointer text-xs"
+                                        >
+                                            <NamiraLoader :visible="downloadingIndividualPdf" variant="button" />
+                                            <DocumentTextIcon v-if="!downloadingIndividualPdf" class="w-4 h-4" />
+                                            <span>{{ downloadingIndividualPdf ? 'Memproses...' : 'Cetak PDF' }}</span>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div v-if="loadingDetail" class="min-h-[300px] flex items-center justify-center relative">
@@ -830,6 +905,7 @@ const getPercentageClass = (pct) => {
                                                         <th class="px-4 py-3">Status</th>
                                                         <th class="px-4 py-3 text-center">Foto / Bukti</th>
                                                         <th class="px-4 py-3">Keterangan</th>
+                                                        <th v-if="isSuperAdmin" class="px-3 py-3 text-center">Aksi</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody class="divide-y divide-slate-100">
@@ -878,6 +954,17 @@ const getPercentageClass = (pct) => {
                                                             <span v-else class="text-gray-300 font-mono text-[10px]">-</span>
                                                         </td>
                                                         <td class="px-4 py-3 text-slate-500 italic max-w-[150px] truncate" :title="att.note || ''">{{ att.note || '-' }}</td>
+                                                        <td v-if="isSuperAdmin" class="px-3 py-3 text-center">
+                                                            <button 
+                                                                @click="openManualEntryModal(selectedEmployee, att.date)"
+                                                                type="button"
+                                                                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 text-namira-teal hover:bg-teal-100 border border-teal-200 text-[10px] font-bold cursor-pointer transition active:scale-95 shadow-2xs"
+                                                                title="Koreksi data tanggal ini"
+                                                            >
+                                                                <PencilSquareIcon class="w-3 h-3" />
+                                                                <span>Koreksi</span>
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -959,6 +1046,161 @@ const getPercentageClass = (pct) => {
                             Buka Foto Asli ↗
                         </a>
                     </div>
+                </div>
+            </div>
+
+            <!-- Manual Attendance Entry Modal (Super Admin Exclusive) -->
+            <div 
+                v-if="showManualModal" 
+                class="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in duration-150" 
+                @click.self="showManualModal = false"
+            >
+                <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl p-6 space-y-5">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-2xl bg-namira-teal/10 text-namira-teal flex items-center justify-center font-bold">
+                                <PlusCircleIcon class="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 class="font-black text-slate-900 text-base leading-tight">Input Presensi Manual</h4>
+                                <p class="text-[11px] text-slate-400 font-semibold mt-0.5">
+                                    Koreksi kehadiran pegawai yang lupa absen / kendala teknis (Super Admin)
+                                </p>
+                            </div>
+                        </div>
+                        <button @click="showManualModal = false" class="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- Modal Form Body -->
+                    <form @submit.prevent="submitManualEntry" class="space-y-4">
+                        <!-- Pegawai / Guru Selection -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                Pilih Karyawan / Guru <span class="text-rose-500">*</span>
+                            </label>
+                            <select 
+                                v-model="manualForm.user_id" 
+                                class="w-full bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:border-namira-teal focus:ring focus:ring-namira-teal/20"
+                                required
+                            >
+                                <option value="" disabled>-- Pilih Pegawai --</option>
+                                <option v-for="emp in recapData" :key="emp.id" :value="emp.id">
+                                    {{ emp.name }} ({{ emp.nip || '-' }}) - {{ emp.unit_name }}
+                                </option>
+                            </select>
+                            <span v-if="manualForm.errors.user_id" class="text-[11px] text-rose-500 font-semibold mt-1 block">
+                                {{ manualForm.errors.user_id }}
+                            </span>
+                        </div>
+
+                        <!-- Tanggal & Status -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                    Tanggal Presensi <span class="text-rose-500">*</span>
+                                </label>
+                                <input 
+                                    v-model="manualForm.date" 
+                                    type="date" 
+                                    :max="dayjs().format('YYYY-MM-DD')" 
+                                    class="w-full bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:border-namira-teal focus:ring focus:ring-namira-teal/20"
+                                    required 
+                                />
+                                <span v-if="manualForm.errors.date" class="text-[11px] text-rose-500 font-semibold mt-1 block">
+                                    {{ manualForm.errors.date }}
+                                </span>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                    Status Kehadiran <span class="text-rose-500">*</span>
+                                </label>
+                                <select 
+                                    v-model="manualForm.status" 
+                                    class="w-full bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:border-namira-teal focus:ring focus:ring-namira-teal/20"
+                                    required
+                                >
+                                    <option value="present">Hadir WFO</option>
+                                    <option value="business_trip">Dinas Luar</option>
+                                    <option value="permit">Izin</option>
+                                    <option value="sick">Sakit</option>
+                                    <option value="cuti">Cuti</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Jam Masuk & Jam Pulang (Only if present / business_trip) -->
+                        <div v-if="['present', 'business_trip'].includes(manualForm.status)" class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Jam Masuk</label>
+                                <input 
+                                    v-model="manualForm.check_in_time" 
+                                    type="time" 
+                                    class="w-full bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 text-center" 
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Jam Pulang</label>
+                                <input 
+                                    v-model="manualForm.check_out_time" 
+                                    type="time" 
+                                    class="w-full bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 text-center" 
+                                />
+                            </div>
+
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Telat (Menit)</label>
+                                <input 
+                                    v-model="manualForm.late_minutes" 
+                                    type="number" 
+                                    min="0"
+                                    class="w-full bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 text-center" 
+                                    placeholder="0"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Catatan / Alasan Koreksi -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                Alasan / Keterangan Koreksi <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea 
+                                v-model="manualForm.note" 
+                                rows="3" 
+                                class="w-full bg-white border border-gray-200 rounded-xl text-xs p-3 focus:border-namira-teal focus:ring focus:ring-namira-teal/20 resize-none font-medium"
+                                placeholder="Jelaskan alasan koreksi (misal: Guru hadir di sekolah namun kendala jaringan/lupa absen)..."
+                                required
+                            ></textarea>
+                            <span v-if="manualForm.errors.note" class="text-[11px] text-rose-500 font-semibold mt-1 block">
+                                {{ manualForm.errors.note }}
+                            </span>
+                        </div>
+
+                        <!-- Modal Actions -->
+                        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                            <button 
+                                type="button" 
+                                @click="showManualModal = false" 
+                                class="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-50 transition cursor-pointer"
+                            >
+                                Batal
+                            </button>
+                            <button 
+                                type="submit" 
+                                :disabled="manualForm.processing"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 bg-namira-teal hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                            >
+                                <NamiraLoader :visible="manualForm.processing" variant="button" />
+                                <CheckCircleIcon v-if="!manualForm.processing" class="w-4 h-4" />
+                                <span>{{ manualForm.processing ? 'Menyimpan...' : 'Simpan & Setujui Presensi' }}</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 

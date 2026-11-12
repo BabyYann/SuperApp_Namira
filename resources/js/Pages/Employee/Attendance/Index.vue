@@ -417,6 +417,29 @@
                     </button>
                 </div>
 
+                <!-- CARD 1D: BANNER KLAIM LUPA ABSEN / KENDALA SISTEM -->
+                <div class="bg-gradient-to-r from-amber-500/10 via-amber-50/70 to-orange-50/50 border border-amber-200/90 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-xs">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            <ExclamationTriangleIcon class="w-5 h-5 text-amber-700" />
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-amber-950">Lupa Absen atau Kendala Aplikasi?</h4>
+                            <p class="text-xs text-amber-800/80 mt-0.5 leading-relaxed">
+                                Anda hadir namun tidak terdata? Ajukan klaim presensi susulan (maks. 7 hari ke belakang).
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        @click="openClaimModal"
+                        type="button"
+                        class="w-full sm:w-auto px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                        <DocumentPlusIcon class="w-4 h-4" />
+                        <span>Klaim Lupa Absen</span>
+                    </button>
+                </div>
+
                 <!-- CARD 2: KALENDER ABSENSI SAYA -->
                 <div class="bg-white rounded-3xl border border-gray-100 shadow-xs p-5 sm:p-6">
                     <!-- Calendar Header with Month Navigation -->
@@ -651,6 +674,155 @@
             </div>
         </div>
 
+        <!-- Modal Form Klaim Lupa Absen / Presensi Susulan -->
+        <div v-if="showClaimModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="showClaimModal = false">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
+                <!-- Modal Header -->
+                <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-amber-50/50">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                            <ExclamationTriangleIcon class="w-5 h-5 stroke-[2]" />
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 leading-tight">Pengajuan Klaim Lupa Absen</h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Diverifikasi & disetujui langsung oleh Super Admin Yayasan</p>
+                        </div>
+                    </div>
+                    <button @click="showClaimModal = false" class="w-8 h-8 rounded-full bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer border border-slate-200">
+                        <XMarkIcon class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <form @submit.prevent="submitClaim" class="p-5 space-y-4 overflow-y-auto flex-1">
+                    <div class="p-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-xs text-amber-900 leading-relaxed">
+                        <InformationCircleIcon class="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                        <span>Gunakan formulir ini jika Anda hadir bekerja tetapi lupa atau terkendala saat melakukan absensi. Persetujuan akan otomatis menghapus status Alpha.</span>
+                    </div>
+
+                    <!-- Tanggal Presensi -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            Tanggal Kehadiran <span class="text-rose-500">*</span>
+                        </label>
+                        <input
+                            v-model="claimForm.date"
+                            type="date"
+                            :min="getMinClaimDate()"
+                            :max="todayIso"
+                            required
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-2.5 focus:border-[#00584b] focus:ring-[#00584b] font-medium"
+                        />
+                        <p class="text-[11px] text-slate-400 mt-1">Maksimal 7 hari ke belakang dalam bulan berjalan.</p>
+                    </div>
+
+                    <!-- Tipe Kehadiran -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            Jenis Kehadiran <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label :class="['flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs font-bold transition-all', claimForm.type === 'present' ? 'bg-[#00584b]/10 border-[#00584b] text-[#00584b]' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100']">
+                                <input type="radio" value="present" v-model="claimForm.type" class="sr-only">
+                                <span>🏢 Hadir WFO</span>
+                            </label>
+                            <label :class="['flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs font-bold transition-all', claimForm.type === 'business_trip' ? 'bg-[#00584b]/10 border-[#00584b] text-[#00584b]' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100']">
+                                <input type="radio" value="business_trip" v-model="claimForm.type" class="sr-only">
+                                <span>✈️ Dinas Luar</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Jam Masuk & Jam Pulang -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                Jam Masuk <span class="text-rose-500">*</span>
+                            </label>
+                            <input
+                                v-model="claimForm.check_in_time"
+                                type="time"
+                                required
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-2.5 focus:border-[#00584b] focus:ring-[#00584b] font-mono font-bold"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                Jam Pulang
+                            </label>
+                            <input
+                                v-model="claimForm.check_out_time"
+                                type="time"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-2.5 focus:border-[#00584b] focus:ring-[#00584b] font-mono font-bold"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Alasan / Penjelasan Kendala -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            Alasan / Penjelasan Kendala <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea
+                            v-model="claimForm.note"
+                            rows="2"
+                            required
+                            placeholder="Contoh: HP kehabisan baterai saat pagi hari / GPS tidak akurat di gerbang sekolah..."
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs p-2.5 focus:border-[#00584b] focus:ring-[#00584b] resize-none"
+                        ></textarea>
+                    </div>
+
+                    <!-- Upload Dokumen / Foto Bukti Pendukung -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            Lampiran Bukti (Opsional / Dianjurkan)
+                        </label>
+                        <div v-if="isCompressingClaimDoc" class="w-full py-3 px-3 rounded-xl border border-dashed border-amber-300 bg-amber-50 flex items-center justify-center gap-2 text-amber-700 text-xs font-bold">
+                            <span class="animate-spin text-sm">⏳</span> Mengompres foto bukti...
+                        </div>
+                        <div v-else-if="claimDocPreviewUrl && claimDocIsImage" class="relative rounded-xl border border-slate-200 p-2 bg-slate-50">
+                            <img :src="claimDocPreviewUrl" class="w-full max-h-36 object-contain rounded-lg bg-white" />
+                            <div class="mt-2 flex items-center justify-between text-xs">
+                                <span class="text-slate-600 truncate max-w-[200px]">📎 {{ claimForm.document?.name }}</span>
+                                <button type="button" @click="removeClaimDocument" class="text-rose-600 font-bold hover:underline">Hapus</button>
+                            </div>
+                        </div>
+                        <div v-else-if="claimForm.document && !claimDocIsImage" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+                            <span class="truncate text-slate-700 font-medium">📄 {{ claimForm.document.name }}</span>
+                            <button type="button" @click="removeClaimDocument" class="text-rose-600 font-bold hover:underline">Hapus</button>
+                        </div>
+                        <div v-else>
+                            <input
+                                ref="claimDocInputRef"
+                                type="file"
+                                accept="image/*,application/pdf"
+                                @change="handleClaimDocChange"
+                                class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                        <button
+                            @click="showClaimModal = false"
+                            type="button"
+                            class="px-4 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="claimForm.processing || isCompressingClaimDoc"
+                            class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                            <span>{{ claimForm.processing ? 'Mengirim...' : 'Kirim Pengajuan Klaim' }}</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </AuthenticatedLayout>
 </template>
 
@@ -667,7 +839,7 @@ import {
     ClipboardDocumentCheckIcon, CameraIcon, CheckIcon, XMarkIcon, ClockIcon, 
     CheckCircleIcon, UserIcon, UserGroupIcon, DocumentPlusIcon,
     CalendarDaysIcon, DocumentTextIcon, MapPinIcon, ArrowPathIcon, ChevronLeftIcon,
-    ChevronRightIcon, ExclamationCircleIcon, InformationCircleIcon
+    ChevronRightIcon, ExclamationCircleIcon, InformationCircleIcon, ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline';
 import { compressImageFile } from '@/Utils/imageCompressor';
 
@@ -931,6 +1103,124 @@ const removeDocument = () => {
     docPreviewUrl.value = null;
     docIsImage.value = false;
     if (docInputRef.value) docInputRef.value.value = '';
+};
+
+// Klaim Lupa Absen / Presensi Susulan State & Handlers
+const todayIso = new Date().toISOString().substring(0, 10);
+
+const getMinClaimDate = () => {
+    const now = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(now.getDate() - 7);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const minDate = startOfMonth < sevenDaysAgo ? startOfMonth : sevenDaysAgo;
+    return minDate.toISOString().substring(0, 10);
+};
+
+const showClaimModal = ref(false);
+const claimForm = useForm({
+    date: todayIso,
+    type: 'present',
+    check_in_time: '07:00',
+    check_out_time: '15:30',
+    note: '',
+    document: null,
+});
+
+const claimDocInputRef = ref(null);
+const isCompressingClaimDoc = ref(false);
+const claimDocPreviewUrl = ref(null);
+const claimDocIsImage = ref(false);
+
+const handleClaimDocChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type === 'application/pdf') {
+        if (file.size > 10 * 1024 * 1024) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Ukuran Dokumen Terlalu Besar',
+                text: 'Maksimal ukuran file PDF adalah 10 MB.',
+                confirmButtonColor: '#00584b',
+            });
+            removeClaimDocument();
+            return;
+        }
+        claimForm.document = file;
+        claimDocPreviewUrl.value = null;
+        claimDocIsImage.value = false;
+        return;
+    }
+
+    try {
+        isCompressingClaimDoc.value = true;
+        const compressed = await compressImageFile(file, 1280, 0.75);
+        claimForm.document = compressed;
+        claimDocIsImage.value = true;
+        claimDocPreviewUrl.value = URL.createObjectURL(compressed);
+    } catch (err) {
+        console.error('Kompresi dokumen klaim gagal:', err);
+        claimForm.document = file;
+        claimDocPreviewUrl.value = URL.createObjectURL(file);
+        claimDocIsImage.value = true;
+    } finally {
+        isCompressingClaimDoc.value = false;
+    }
+};
+
+const removeClaimDocument = () => {
+    claimForm.document = null;
+    claimDocPreviewUrl.value = null;
+    claimDocIsImage.value = false;
+    if (claimDocInputRef.value) claimDocInputRef.value.value = '';
+};
+
+const openClaimModal = () => {
+    claimForm.reset();
+    claimForm.date = todayIso;
+    claimForm.type = 'present';
+    claimForm.check_in_time = '07:00';
+    claimForm.check_out_time = '15:30';
+    claimForm.note = '';
+    removeClaimDocument();
+    showClaimModal.value = true;
+};
+
+const submitClaim = () => {
+    if (!claimForm.note || !claimForm.note.trim()) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Alasan Wajib Diisi',
+            text: 'Harap jelaskan alasan lupa absen atau kendala presensi Anda.',
+            confirmButtonColor: '#00584b',
+        });
+        return;
+    }
+
+    claimForm.post(route('employee.attendance.claim-missing'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showClaimModal.value = false;
+            removeClaimDocument();
+            claimForm.reset();
+            Swal.fire({
+                icon: 'success',
+                title: 'Klaim Berhasil Dikirim',
+                text: 'Pengajuan klaim lupa absen telah dikirimkan ke Super Admin Yayasan untuk diverifikasi.',
+                confirmButtonColor: '#00584b',
+            });
+        },
+        onError: (errors) => {
+            const errorMsg = Object.values(errors).flat().join('<br>') || 'Gagal mengirim klaim lupa absen.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Mengajukan Klaim',
+                html: errorMsg,
+                confirmButtonColor: '#00584b',
+            });
+        }
+    });
 };
 
 // State

@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import MobileAppShell from '@/Layouts/MobileAppShell.vue';
 import Pagination from '@/Components/Pagination.vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { 
     ClockIcon, 
@@ -60,6 +60,22 @@ const approvalsList = computed(() => {
     return [];
 });
 
+const page = usePage();
+const userRoles = computed(() => {
+    const roles = page.props.auth?.user?.roles || [];
+    return roles.map(r => typeof r === 'string' ? r : (r.name || ''));
+});
+const isSuperAdmin = computed(() => userRoles.value.includes('super_admin_yayasan'));
+
+const isMissingClaim = (att) => {
+    return !!(att && att.note && att.note.includes('[Klaim Lupa Absen]'));
+};
+
+const selectableApprovals = computed(() => {
+    if (isSuperAdmin.value) return approvalsList.value;
+    return approvalsList.value.filter(item => !isMissingClaim(item));
+});
+
 const activeTab = ref(props.activeTab || 'pending');
 const search = ref(props.filters?.search || '');
 const selectedType = ref(props.filters?.type || 'all');
@@ -68,7 +84,7 @@ const selectedType = ref(props.filters?.type || 'all');
 const selectedIds = ref([]);
 
 const isAllSelected = computed(() => {
-    const list = approvalsList.value;
+    const list = selectableApprovals.value;
     if (!list.length) return false;
     return list.every(item => selectedIds.value.includes(item.id));
 });
@@ -77,7 +93,7 @@ const toggleSelectAll = () => {
     if (isAllSelected.value) {
         selectedIds.value = [];
     } else {
-        selectedIds.value = approvalsList.value.map(item => item.id);
+        selectedIds.value = selectableApprovals.value.map(item => item.id);
     }
 };
 
@@ -170,6 +186,13 @@ const submitReject = () => {
 // Bulk Actions Handlers
 const bulkApprove = () => {
     if (!selectedIds.value.length) return;
+    if (!isSuperAdmin.value) {
+        const containsClaim = approvalsList.value.some(a => selectedIds.value.includes(a.id) && isMissingClaim(a));
+        if (containsClaim) {
+            alert('Pengajuan Klaim Lupa Absen hanya dapat diproses oleh Super Admin Yayasan.');
+            return;
+        }
+    }
     if (!confirm(`Apakah Anda yakin ingin menyetujui ${selectedIds.value.length} pengajuan absensi yang dipilih sekaligus?`)) return;
 
     isBulkProcessing.value = true;
@@ -189,6 +212,13 @@ const bulkApprove = () => {
 
 const openBulkRejectModal = () => {
     if (!selectedIds.value.length) return;
+    if (!isSuperAdmin.value) {
+        const containsClaim = approvalsList.value.some(a => selectedIds.value.includes(a.id) && isMissingClaim(a));
+        if (containsClaim) {
+            alert('Pengajuan Klaim Lupa Absen hanya dapat diproses oleh Super Admin Yayasan.');
+            return;
+        }
+    }
     bulkRejectionReason.value = '';
     bulkRejectModalOpen.value = true;
 };
@@ -502,7 +532,9 @@ const getAvatarColor = (name) => {
                                 type="checkbox" 
                                 :value="att.id" 
                                 v-model="selectedIds" 
-                                class="rounded border-slate-300 text-[#0B7068] focus:ring-[#0B7068]/20 w-4 h-4 cursor-pointer shrink-0" 
+                                :disabled="isMissingClaim(att) && !isSuperAdmin"
+                                :class="isMissingClaim(att) && !isSuperAdmin ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'"
+                                class="rounded border-slate-300 text-[#0B7068] focus:ring-[#0B7068]/20 w-4 h-4 shrink-0" 
                             />
 
                             <!-- Staff Avatar / Initials Circle -->
@@ -524,9 +556,18 @@ const getAvatarColor = (name) => {
 
                             <!-- Name & Date -->
                             <div class="min-w-0">
-                                <h4 class="font-bold text-slate-900 text-sm leading-tight truncate">
-                                    {{ att.user?.name || '-' }}
-                                </h4>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h4 class="font-bold text-slate-900 text-sm leading-tight truncate">
+                                        {{ att.user?.name || '-' }}
+                                    </h4>
+                                    <span 
+                                        v-if="isMissingClaim(att)"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs"
+                                    >
+                                        <ShieldExclamationIcon class="w-3 h-3 text-amber-700" />
+                                        <span>Klaim Lupa Absen</span>
+                                    </span>
+                                </div>
                                 <p class="text-xs text-slate-400 mt-0.5 font-medium truncate">
                                     {{ formatDate(att.date) }}
                                 </p>
@@ -591,22 +632,32 @@ const getAvatarColor = (name) => {
                         <div class="flex items-center gap-2 shrink-0">
                             <!-- Pending Actions: Tolak & Setujui -->
                             <template v-if="activeTab === 'pending'">
-                                <button 
-                                    @click="openRejectModal(att)" 
-                                    type="button"
-                                    class="px-3.5 py-1.5 bg-white border border-rose-400 hover:bg-rose-50 text-rose-500 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                                <div 
+                                    v-if="isMissingClaim(att) && !isSuperAdmin" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-xs font-semibold shadow-2xs" 
+                                    title="Hanya Super Admin Yayasan yang memiliki hak untuk memvalidasi klaim lupa absen"
                                 >
-                                    <XMarkIcon class="w-3.5 h-3.5 stroke-[2.5]" />
-                                    <span>Tolak</span>
-                                </button>
-                                <button 
-                                    @click="approve(att)" 
-                                    type="button"
-                                    class="px-4 py-1.5 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0"
-                                >
-                                    <CheckIcon class="w-3.5 h-3.5 stroke-[2.5]" />
-                                    <span>Setujui</span>
-                                </button>
+                                    <ShieldExclamationIcon class="w-4 h-4 text-amber-600 shrink-0" />
+                                    <span class="text-[11px]">Khusus Super Admin</span>
+                                </div>
+                                <template v-else>
+                                    <button 
+                                        @click="openRejectModal(att)" 
+                                        type="button"
+                                        class="px-3.5 py-1.5 bg-white border border-rose-400 hover:bg-rose-50 text-rose-500 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                                    >
+                                        <XMarkIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                                        <span>Tolak</span>
+                                    </button>
+                                    <button 
+                                        @click="approve(att)" 
+                                        type="button"
+                                        class="px-4 py-1.5 bg-[#0B7068] hover:bg-[#095c55] active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0"
+                                    >
+                                        <CheckIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                                        <span>Setujui</span>
+                                    </button>
+                                </template>
                             </template>
 
                             <!-- History Badges -->

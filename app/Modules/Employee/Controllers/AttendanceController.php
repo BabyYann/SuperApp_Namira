@@ -781,4 +781,89 @@ class AttendanceController extends Controller
 
         return $liveAttendance;
     }
+
+    public function claimMissingAttendance(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date|before_or_equal:today',
+            'type' => 'required|in:present,business_trip',
+            'check_in_time' => 'required|string',
+            'check_out_time' => 'nullable|string',
+            'note' => 'required|string|min:5|max:500',
+            'document' => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:10240',
+        ], [
+            'date.required' => 'Tanggal presensi wajib dipilih.',
+            'date.before_or_equal' => 'Tanggal tidak boleh di masa mendatang.',
+            'type.required' => 'Pilih jenis kehadiran (Hadir WFO / Dinas Luar).',
+            'check_in_time.required' => 'Jam masuk perkiraan wajib diisi.',
+            'note.required' => 'Alasan atau kronologi lupa/gagal absen wajib diisi.',
+            'document.mimes' => 'Format bukti harus JPG, PNG, WebP, atau PDF.',
+            'document.max' => 'Ukuran file bukti maksimal 10MB.',
+        ]);
+
+        $claimDate = Carbon::parse($request->date)->startOfDay();
+        $today = Carbon::today();
+        $startOfMonth = $today->copy()->startOfMonth();
+        $sevenDaysAgo = $today->copy()->subDays(7);
+
+        // Limit claims to current month or past 7 days
+        if ($claimDate->lt($startOfMonth) && $claimDate->lt($sevenDaysAgo)) {
+            return redirect()->back()->withErrors([
+                'date' => 'Klaim lupa absen hanya dapat diajukan untuk tanggal dalam bulan berjalan atau maksimal 7 hari terakhir.'
+            ]);
+        }
+
+        // Check if user already has an approved presence on that date
+        $existing = EmployeeAttendance::where('user_id', Auth::id())->where('date', $claimDate->toDateString())->first();
+        if ($existing && $existing->approval_status === 'approved' && in_array($existing->status, ['present', 'late', 'business_trip', 'permit', 'sick', 'cuti'])) {
+            return redirect()->back()->withErrors([
+                'date' => 'Anda sudah memiliki catatan presensi yang telah disetujui pada tanggal tersebut.'
+            ]);
+        }
+
+        // Handle file upload
+        $permitPath = null;
+        if ($request->hasFile('document')) {
+            $permitPath = $request->file('document')->store('attendance_claims', 'public');
+        }
+
+        // Standardize time formatting
+        $checkIn = $request->check_in_time ? (strlen($request->check_in_time) === 5 ? $request->check_in_time . ':00' : $request->check_in_time) : '07:00:00';
+        $checkOut = $request->check_out_time ? (strlen($request->check_out_time) === 5 ? $request->check_out_time . ':00' : $request->check_out_time) : null;
+
+        $noteText = "[Klaim Lupa Absen]: " . trim($request->note);
+
+        $attendance = EmployeeAttendance::updateOrCreate(
+            [
+                'user_id' => Auth::id(),
+                'date' => $claimDate->toDateString(),
+            ],
+            [
+                'status' => $request->type,
+                'check_in_time' => $checkIn,
+                'check_out_time' => $checkOut,
+                'approval_status' => 'pending',
+                'permit_file' => $permitPath ?? ($existing?->permit_file),
+                'note' => $noteText,
+            ]
+        );
+
+        // Notify Super Admin Yayasan
+        try {
+            $teacherName = Auth::user()->name;
+            $dateFormatted = $claimDate->translatedFormat('d F Y');
+            NotificationDispatcher::sendToRoles(
+                ['super_admin_yayasan'],
+                null,
+                '⚠️ Pengajuan Klaim Lupa Absen Baru',
+                "Guru {$teacherName} mengajukan klaim presensi susulan untuk tanggal {$dateFormatted}. Alasan: {$request->note}",
+                'employee',
+                ['attendance_id' => $attendance->id, 'type' => 'claim_missing']
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed sending claim missing notification: ' . $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', 'Pengajuan klaim lupa absen berhasil dikirim. Menunggu verifikasi Super Admin Yayasan.');
+    }
 }

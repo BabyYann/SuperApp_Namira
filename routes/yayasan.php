@@ -108,6 +108,7 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::get('attendance-data/export-pdf', [\App\Modules\Yayasan\Controllers\AttendanceDataController::class, 'exportPdf'])->name('attendance-data.export-pdf');
     Route::get('attendance-data/{user}/history', [\App\Modules\Yayasan\Controllers\AttendanceDataController::class, 'employeeHistory'])->name('attendance-data.employee-history');
     Route::get('attendance-data/{user}/export-individual-pdf', [\App\Modules\Yayasan\Controllers\AttendanceDataController::class, 'exportIndividualPdf'])->name('attendance-data.export-individual-pdf');
+    Route::post('attendance-data/manual-entry', [\App\Modules\Yayasan\Controllers\AttendanceDataController::class, 'storeManualAttendance'])->name('attendance-data.manual-entry');
 
     // Giat Tugas Feed (Executive & Monitoring)
     Route::get('activity-logs/feed', [\App\Modules\Employee\Controllers\EmployeeActivityLogController::class, 'feed'])->name('activity-logs.feed');

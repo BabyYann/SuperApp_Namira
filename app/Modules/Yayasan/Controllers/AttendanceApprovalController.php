@@ -92,6 +92,11 @@ class AttendanceApprovalController extends Controller
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk memproses persetujuan absensi.');
         }
 
+        $isMissingClaim = str_contains($attendance->note ?? '', '[Klaim Lupa Absen]');
+        if ($isMissingClaim && !auth()->user()->hasRole('super_admin_yayasan')) {
+            abort(403, 'Akses Ditolak: Tiket Klaim Lupa Absen hanya boleh diverifikasi dan disetujui oleh Super Admin Yayasan.');
+        }
+
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
             $employeeUnitId = \DB::table('model_has_roles')
                 ->where('model_id', $attendance->user_id)
@@ -133,6 +138,13 @@ class AttendanceApprovalController extends Controller
 
         $query = EmployeeAttendance::with('user')->whereIn('id', $request->ids);
 
+        // If user is not super_admin_yayasan, exclude [Klaim Lupa Absen] from bulk actions
+        if (!auth()->user()->hasRole('super_admin_yayasan')) {
+            $query->where(function($q) {
+                $q->whereNull('note')->orWhere('note', 'not like', '%[Klaim Lupa Absen]%');
+            });
+        }
+
         // Enforce unit restriction for unit admins
         if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
             $activeUnitId = session('active_unit_id');
@@ -172,17 +184,24 @@ class AttendanceApprovalController extends Controller
         }
 
         $dateFormatted = Carbon::parse($attendance->date)->translatedFormat('d F Y');
+        $isMissingClaim = str_contains($attendance->note ?? '', '[Klaim Lupa Absen]');
+
         $statusLabel = [
             'business_trip' => 'Dinas Luar',
             'sick'          => 'Sakit',
             'permit'        => 'Izin',
+            'cuti'          => 'Cuti',
+            'present'       => 'Hadir WFO',
+            'late'          => 'Hadir (Terlambat)',
         ][$attendance->status] ?? $attendance->status;
+
+        $subjectType = $isMissingClaim ? "Klaim Lupa Absen ({$statusLabel})" : "Pengajuan absensi {$statusLabel}";
 
         if ($status === 'approved') {
             NotificationDispatcher::sendToUser(
                 $attendance->user,
                 '✅ Pengajuan Absensi Disetujui',
-                "Pengajuan absensi {$statusLabel} Anda pada tanggal {$dateFormatted} telah disetujui.",
+                "{$subjectType} Anda pada tanggal {$dateFormatted} telah disetujui oleh Super Admin Yayasan.",
                 'employee',
                 ['attendance_id' => $attendance->id]
             );
@@ -191,7 +210,7 @@ class AttendanceApprovalController extends Controller
             NotificationDispatcher::sendToUser(
                 $attendance->user,
                 '❌ Pengajuan Absensi Ditolak',
-                "Pengajuan absensi {$statusLabel} Anda pada tanggal {$dateFormatted} tidak disetujui.{$reasonText}",
+                "{$subjectType} Anda pada tanggal {$dateFormatted} tidak disetujui.{$reasonText}",
                 'employee',
                 ['attendance_id' => $attendance->id]
             );

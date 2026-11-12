@@ -6,6 +6,7 @@ Route::prefix('employee')->name('employee.')->middleware(['role:teacher|guru|sta
     Route::get('/attendance', [\App\Modules\Employee\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
     Route::post('/attendance/check-in', [\App\Modules\Employee\Controllers\AttendanceController::class, 'store'])->name('attendance.check-in');
     Route::put('/attendance/check-out/{attendance}', [\App\Modules\Employee\Controllers\AttendanceController::class, 'update'])->name('attendance.check-out');
+    Route::post('/attendance/claim-missing', [\App\Modules\Employee\Controllers\AttendanceController::class, 'claimMissingAttendance'])->name('attendance.claim-missing');
 
     // Giat Tugas Logbook
     Route::get('/activity-logs', [\App\Modules\Employee\Controllers\EmployeeActivityLogController::class, 'index'])->name('activity-logs.index');
