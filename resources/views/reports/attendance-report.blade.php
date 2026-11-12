@@ -135,10 +135,9 @@
         .stat-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 8px;
+            border-radius: 6px;
+            padding: 5px 3px;
             text-align: center;
-            width: 12.5%;
         }
         
         .stat-card.active-present {
@@ -328,7 +327,7 @@
     <!-- Summary Stats -->
     <table class="stats-table">
         <tr>
-            <td class="stat-card" style="padding-left: 0;">
+            <td class="stat-card">
                 <div class="stat-number">{{ $stats['total_employees'] ?? count($recapData) }}</div>
                 <div class="stat-label">Total Pegawai</div>
             </td>
@@ -338,11 +337,15 @@
             </td>
             <td class="stat-card active-present">
                 <div class="stat-number">{{ $totals['hadir'] }}</div>
-                <div class="stat-label">Total Hadir</div>
+                <div class="stat-label">Hadir WFO</div>
+            </td>
+            <td class="stat-card" style="background: #eef2ff; border-color: #c7d2fe;">
+                <div class="stat-number" style="color: #4338ca;">{{ $totals['dinas_luar'] ?? 0 }}</div>
+                <div class="stat-label">Dinas Luar</div>
             </td>
             <td class="stat-card active-late">
                 <div class="stat-number">{{ $totals['telat'] }}</div>
-                <div class="stat-label">Terlambat</div>
+                <div class="stat-label">Telat ({{ $totals['late_minutes'] ?? 0 }}m)</div>
             </td>
             <td class="stat-card active-permit">
                 <div class="stat-number">{{ $totals['izin'] }}</div>
@@ -352,11 +355,19 @@
                 <div class="stat-number" style="color: #1d4ed8;">{{ $totals['sakit'] }}</div>
                 <div class="stat-label">Sakit</div>
             </td>
+            <td class="stat-card" style="background: #f5f3ff; border-color: #ddd6fe;">
+                <div class="stat-number" style="color: #6d28d9;">{{ $totals['cuti'] }}</div>
+                <div class="stat-label">Cuti</div>
+            </td>
+            <td class="stat-card" style="background: #fffbeb; border-color: #fde68a;">
+                <div class="stat-number" style="color: #b45309;">{{ $totals['pending'] ?? 0 }}</div>
+                <div class="stat-label">Pending</div>
+            </td>
             <td class="stat-card" style="background: #fef2f2; border-color: #fca5a5;">
                 <div class="stat-number" style="color: #b91c1c;">{{ $totals['alpha'] }}</div>
                 <div class="stat-label">Alpha</div>
             </td>
-            <td class="stat-card" style="background: #f0fdfa; border-color: #99f6e4; padding-right: 0;">
+            <td class="stat-card" style="background: #f0fdfa; border-color: #99f6e4;">
                 <div class="stat-number" style="color: #0d9488;">{{ $avgAttendance }}%</div>
                 <div class="stat-label">Avg Hadir</div>
             </td>
@@ -368,18 +379,20 @@
         <thead>
             <tr>
                 <th style="width: 3%;">No</th>
-                <th style="width: 10%;">NIP / NUPTK</th>
-                <th class="left-align" style="width: 20%;">Nama Karyawan / Guru</th>
-                <th class="left-align" style="width: 12%;">Jabatan</th>
-                <th class="left-align" style="width: 18%;">Mata Pelajaran</th>
-                <th class="left-align" style="width: 12%;">Unit Kerja</th>
-                <th style="width: 4%;">Hadir</th>
-                <th style="width: 4%;">Telat</th>
-                <th style="width: 4%;">Izin</th>
-                <th style="width: 4%;">Sakit</th>
-                <th style="width: 4%;">Cuti</th>
+                <th style="width: 9%;">NIP / NUPTK</th>
+                <th class="left-align" style="width: 17%;">Nama Karyawan / Guru</th>
+                <th class="left-align" style="width: 11%;">Jabatan</th>
+                <th class="left-align" style="width: 15%;">Mata Pelajaran</th>
+                <th class="left-align" style="width: 11%;">Unit Kerja</th>
+                <th style="width: 4%;">WFO</th>
+                <th style="width: 4%;">DL</th>
+                <th style="width: 5%;">Telat</th>
+                <th style="width: 3.5%;">Izin</th>
+                <th style="width: 3.5%;">Sakit</th>
+                <th style="width: 3.5%;">Cuti</th>
+                <th style="width: 4.5%;">Pending</th>
                 <th style="width: 4%;">Alpha</th>
-                <th style="width: 6%;">% Hadir</th>
+                <th style="width: 5.5%;">% Hadir</th>
             </tr>
         </thead>
         <tbody>
@@ -392,11 +405,18 @@
                 <td class="left-align">{{ $row['subjects'] }}</td>
                 <td class="left-align">{{ $row['unit_name'] }}</td>
                 <td>{{ $row['hadir'] }}</td>
-                <td>{{ $row['terlambat'] }}</td>
+                <td>{{ $row['dinas_luar'] ?? 0 }}</td>
+                <td>
+                    {{ $row['terlambat'] }}
+                    @if(($row['late_minutes'] ?? 0) > 0)
+                        <span style="font-size: 6.5px; color: #be123c; display: block;">{{ $row['late_minutes'] }}m</span>
+                    @endif
+                </td>
                 <td>{{ $row['izin'] }}</td>
                 <td>{{ $row['sakit'] }}</td>
                 <td>{{ $row['cuti'] }}</td>
-                <td>{{ $row['alpha'] }}</td>
+                <td style="{{ ($row['pending'] ?? 0) > 0 ? 'color: #b45309; font-weight: bold;' : '' }}">{{ $row['pending'] ?? 0 }}</td>
+                <td style="{{ $row['alpha'] > 0 ? 'color: #b91c1c; font-weight: bold;' : '' }}">{{ $row['alpha'] }}</td>
                 <td class="{{ $row['percentage'] >= 90 ? 'pct-high' : ($row['percentage'] >= 75 ? 'pct-med' : 'pct-low') }}">
                     {{ $row['percentage'] }}%
                 </td>
@@ -410,10 +430,12 @@
                 <td></td>
                 <td></td>
                 <td>{{ $totals['hadir'] }}</td>
-                <td>{{ $totals['telat'] }}</td>
+                <td>{{ $totals['dinas_luar'] ?? 0 }}</td>
+                <td>{{ $totals['telat'] }} ({{ $totals['late_minutes'] ?? 0 }}m)</td>
                 <td>{{ $totals['izin'] }}</td>
                 <td>{{ $totals['sakit'] }}</td>
                 <td>{{ $totals['cuti'] }}</td>
+                <td>{{ $totals['pending'] ?? 0 }}</td>
                 <td>{{ $totals['alpha'] }}</td>
                 <td class="{{ $avgAttendance >= 90 ? 'pct-high' : ($avgAttendance >= 75 ? 'pct-med' : 'pct-low') }}">
                     {{ $avgAttendance }}%

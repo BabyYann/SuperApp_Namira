@@ -301,29 +301,41 @@
 
     <!-- Summary Stats Box -->
     <div class="stats-row">
-        <div class="stat-box hadir" style="width: 16%;">
+        <div class="stat-box hadir">
             <div class="stat-number">{{ $stats['present'] }}</div>
-            <div class="stat-label">Hadir</div>
+            <div class="stat-label">Hadir WFO</div>
         </div>
-        <div class="stat-box telat" style="width: 16%;">
+        <div class="stat-box dinas">
+            <div class="stat-number">{{ $stats['business_trip'] }}</div>
+            <div class="stat-label">Dinas Luar</div>
+        </div>
+        <div class="stat-box telat">
             <div class="stat-number">{{ $stats['late'] }}</div>
             <div class="stat-label">Telat</div>
         </div>
-        <div class="stat-box izin" style="width: 16%;">
+        <div class="stat-box izin">
             <div class="stat-number">{{ $stats['permit'] }}</div>
             <div class="stat-label">Izin</div>
         </div>
-        <div class="stat-box sakit" style="width: 16%;">
+        <div class="stat-box sakit">
             <div class="stat-number">{{ $stats['sick'] }}</div>
             <div class="stat-label">Sakit</div>
         </div>
-        <div class="stat-box dinas" style="width: 16%;">
-            <div class="stat-number">{{ $stats['business_trip'] }}</div>
-            <div class="stat-label">Dinas</div>
+        <div class="stat-box" style="background: #f5f3ff; border-color: #ddd6fe;">
+            <div class="stat-number" style="color: #6d28d9;">{{ $stats['cuti'] ?? 0 }}</div>
+            <div class="stat-label">Cuti</div>
         </div>
-        <div class="stat-box pct" style="width: 20%;">
+        <div class="stat-box" style="background: #fffbeb; border-color: #fde68a;">
+            <div class="stat-number" style="color: #b45309;">{{ $stats['pending'] ?? 0 }}</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-box" style="background: #fef2f2; border-color: #fca5a5;">
+            <div class="stat-number" style="color: #b91c1c;">{{ $stats['alpha'] ?? 0 }}</div>
+            <div class="stat-label">Alpha</div>
+        </div>
+        <div class="stat-box pct">
             <div class="stat-number">{{ $stats['attendance_percentage'] }}%</div>
-            <div class="stat-label">Disiplin</div>
+            <div class="stat-label">% Hadir</div>
         </div>
     </div>
 
@@ -358,8 +370,13 @@
                     </td>
                     <td>
                         <span class="badge {{ $att->status }}">
-                            {{ $att->status === 'present' ? 'Hadir' : ($att->status === 'late' ? 'Telat' : ($att->status === 'sick' ? 'Sakit' : ($att->status === 'permit' ? 'Izin' : ($att->status === 'business_trip' ? 'Dinas' : 'Belum Absen')))) }}
+                            {{ $att->status === 'present' ? 'Hadir WFO' : ($att->status === 'late' ? 'Telat' : ($att->status === 'sick' ? 'Sakit' : ($att->status === 'permit' ? 'Izin' : ($att->status === 'cuti' ? 'Cuti' : ($att->status === 'business_trip' ? 'Dinas Luar' : 'Belum Absen'))))) }}
                         </span>
+                        @if($att->approval_status === 'pending')
+                            <div style="font-size: 7px; color: #b45309; font-weight: bold; margin-top: 2px;">(Menunggu)</div>
+                        @elseif($att->approval_status === 'rejected')
+                            <div style="font-size: 7px; color: #b91c1c; font-weight: bold; margin-top: 2px;">(Ditolak)</div>
+                        @endif
                     </td>
                     <td style="font-style: italic; font-size: 8px;">{{ $att->note ?? '-' }}</td>
                 </tr>

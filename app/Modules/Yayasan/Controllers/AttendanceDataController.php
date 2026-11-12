@@ -5,6 +5,7 @@ namespace App\Modules\Yayasan\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeAttendance;
 use App\Models\User;
+use App\Modules\Yayasan\Models\Holiday;
 use App\Modules\Yayasan\Models\Unit;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -53,13 +54,33 @@ class AttendanceDataController extends Controller
 
         $effectiveEnd = $isCurrentMonth ? $today : ($isFutureMonth ? $start->copy()->subDay() : $end);
 
-        // Calculate elapsed work days so far (excluding weekends)
+        // Fetch official holidays for this month and unit
+        $holidays = Holiday::where(function($q) {
+                $q->where('event_type', 'libur')->orWhereNull('event_type');
+            })
+            ->where(function($q) use ($unitId) {
+                $q->whereNull('unit_id');
+                if ($unitId) {
+                    $q->orWhere('unit_id', $unitId);
+                }
+            })
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('date')
+            ->map(fn($d) => Carbon::parse($d)->toDateString())
+            ->toArray();
+
+        // Calculate elapsed work days so far:
+        // Namira operates 6 days a week (Senin - Sabtu). Only Sunday (Ahad) is routine day off.
+        // Official holidays from Holiday model reduce expected work days.
         $workDays = 0;
+        $workDates = [];
         if ($effectiveEnd >= $start) {
             $currentDate = $start->copy();
             while ($currentDate <= $effectiveEnd) {
-                if (!$currentDate->isWeekend()) {
+                $dateStr = $currentDate->toDateString();
+                if (!$currentDate->isSunday() && !in_array($dateStr, $holidays)) {
                     $workDays++;
+                    $workDates[] = $dateStr;
                 }
                 $currentDate->addDay();
             }
@@ -122,21 +143,77 @@ class AttendanceDataController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $recapData = $employees->map(function($user) use ($attendances, $workDays) {
+        $recapData = $employees->map(function($user) use ($attendances, $workDays, $workDates) {
             $userAtt = $attendances->get($user->id) ?? collect();
             
-            $hadir = $userAtt->where('status', 'present')->count();
-            $terlambat = $userAtt->where('status', 'late')->count();
-            $izin = $userAtt->where('status', 'permit')->count();
-            $sakit = $userAtt->where('status', 'sick')->count();
-            $cuti = $userAtt->where('status', 'cuti')->count();
-            $dinasLuar = $userAtt->where('status', 'business_trip')->count();
-            
-            $totalRecorded = $hadir + $terlambat + $izin + $sakit + $cuti + $dinasLuar;
-            $alpha = max(0, $workDays - $totalRecorded);
-            
-            $presentDays = $hadir + $terlambat + $dinasLuar;
-            $percentage = $workDays > 0 ? round(($presentDays / $workDays) * 100, 1) : 0;
+            // 1. Hadir WFO: status 'present', approval_status != 'rejected'
+            $hadirWfo = $userAtt->where('status', 'present')
+                ->where('approval_status', '!=', 'rejected')
+                ->count();
+
+            // 2. Dinas Luar: status 'business_trip', approval_status == 'approved'
+            $dinasLuar = $userAtt->where('status', 'business_trip')
+                ->where('approval_status', 'approved')
+                ->count();
+
+            // 3. Terlambat: status 'late', approval_status != 'rejected'
+            $terlambat = $userAtt->where('status', 'late')
+                ->where('approval_status', '!=', 'rejected')
+                ->count();
+
+            // Akumulasi menit keterlambatan
+            $lateMinutes = (int) $userAtt->where('status', 'late')
+                ->where('approval_status', '!=', 'rejected')
+                ->sum('late_minutes');
+
+            // 4. Izin: status 'permit', approval_status == 'approved'
+            $izin = $userAtt->where('status', 'permit')
+                ->where('approval_status', 'approved')
+                ->count();
+
+            // 5. Sakit: status 'sick', approval_status == 'approved'
+            $sakit = $userAtt->where('status', 'sick')
+                ->where('approval_status', 'approved')
+                ->count();
+
+            // 6. Cuti: status 'cuti', approval_status == 'approved'
+            $cuti = $userAtt->where('status', 'cuti')
+                ->where('approval_status', 'approved')
+                ->count();
+
+            // 7. Menunggu Verifikasi (Pending): any submission still pending
+            $pending = $userAtt->where('approval_status', 'pending')->count();
+
+            // 8. Alpha calculation on effective work dates:
+            // A work day is Alpha if there is no record, or the record was rejected.
+            // Pending records do NOT count as Alpha.
+            $userAttGrouped = $userAtt->groupBy(fn($att) => substr((string)$att->date, 0, 10));
+            $alpha = 0;
+            if ($workDays > 0) {
+                foreach ($workDates as $wDate) {
+                    $dayRecords = $userAttGrouped->get($wDate);
+                    if (!$dayRecords || $dayRecords->isEmpty()) {
+                        $alpha++;
+                    } else {
+                        $hasNonRejected = $dayRecords->contains(fn($r) => $r->approval_status !== 'rejected');
+                        if (!$hasNonRejected) {
+                            $alpha++;
+                        }
+                    }
+                }
+            }
+
+            // 9. Fair Attendance Percentage:
+            // Target Hari Wajib = max(1, Hari Kerja - (Cuti Sah + Sakit Sah))
+            // Total Masuk = Hadir WFO + Dinas Luar + Terlambat (termasuk tugas weekend/libur)
+            // Persentase = min(100.0, round((Total Masuk / Target Hari Wajib) * 100, 1))
+            if ($workDays > 0) {
+                $targetDays = max(1, $workDays - ($cuti + $sakit));
+                $totalMasuk = $hadirWfo + $dinasLuar + $terlambat;
+                $percentage = min(100.0, round(($totalMasuk / $targetDays) * 100, 1));
+            } else {
+                $percentage = 0.0;
+            }
 
             // NIP/NUPTK
             $nip = $user->teacher_profile?->nip ?? $user->staff?->nip ?? '-';
@@ -169,11 +246,15 @@ class AttendanceDataController extends Controller
                 'role' => $roleName,
                 'subjects' => $subjectsList,
                 'unit_name' => $unitName,
-                'hadir' => $hadir + $dinasLuar,
+                'hadir' => $hadirWfo,
+                'dinas_luar' => $dinasLuar,
+                'hadir_total' => $hadirWfo + $dinasLuar,
                 'terlambat' => $terlambat,
+                'late_minutes' => $lateMinutes,
                 'izin' => $izin,
                 'sakit' => $sakit,
                 'cuti' => $cuti,
+                'pending' => $pending,
                 'alpha' => $alpha,
                 'percentage' => $percentage,
             ];
@@ -224,20 +305,26 @@ class AttendanceDataController extends Controller
         // Calculate summary cards stats
         $totalEmployees = $recapData->count();
         $totalHadir = $recapData->sum('hadir');
+        $totalDinasLuar = $recapData->sum('dinas_luar');
         $totalTerlambat = $recapData->sum('terlambat');
+        $totalLateMinutes = $recapData->sum('late_minutes');
         $totalIzin = $recapData->sum('izin');
         $totalSakit = $recapData->sum('sakit');
         $totalCuti = $recapData->sum('cuti');
+        $totalPending = $recapData->sum('pending');
         $totalAlpha = $recapData->sum('alpha');
         $avgAttendance = $totalEmployees > 0 ? round($recapData->avg('percentage'), 1) : 0;
 
         $stats = [
             'total_employees' => $totalEmployees,
             'hadir' => $totalHadir,
+            'dinas_luar' => $totalDinasLuar,
             'terlambat' => $totalTerlambat,
+            'late_minutes' => $totalLateMinutes,
             'izin' => $totalIzin,
             'sakit' => $totalSakit,
             'cuti' => $totalCuti,
+            'pending' => $totalPending,
             'alpha' => $totalAlpha,
             'avg_attendance' => $avgAttendance,
         ];
@@ -278,14 +365,17 @@ class AttendanceDataController extends Controller
         // Summary Calculations
         $totalEmployees = $recapData->count();
         $totalHadir = $recapData->sum('hadir');
+        $totalDinasLuar = $recapData->sum('dinas_luar');
         $totalTerlambat = $recapData->sum('terlambat');
+        $totalLateMinutes = $recapData->sum('late_minutes');
         $totalIzin = $recapData->sum('izin');
         $totalSakit = $recapData->sum('sakit');
         $totalCuti = $recapData->sum('cuti');
+        $totalPending = $recapData->sum('pending');
         $totalAlpha = $recapData->sum('alpha');
         $avgAttendance = $totalEmployees > 0 ? round($recapData->avg('percentage'), 1) : 0;
 
-        $response = new StreamedResponse(function () use ($recapData, $workDays, $unitName, $monthName, $totalEmployees, $totalHadir, $totalTerlambat, $totalIzin, $totalSakit, $totalCuti, $totalAlpha, $avgAttendance) {
+        $response = new StreamedResponse(function () use ($recapData, $workDays, $unitName, $monthName, $totalEmployees, $totalHadir, $totalDinasLuar, $totalTerlambat, $totalLateMinutes, $totalIzin, $totalSakit, $totalCuti, $totalPending, $totalAlpha, $avgAttendance) {
             $handle = fopen('php://output', 'w');
             
             // Add BOM for Excel UTF-8 compatibility
@@ -303,11 +393,13 @@ class AttendanceDataController extends Controller
             fputcsv($handle, ['RINGKASAN STATISTIK']);
             fputcsv($handle, ['Total Karyawan/Guru', $totalEmployees . ' Orang']);
             fputcsv($handle, ['Rata-rata Kehadiran', $avgAttendance . '%']);
-            fputcsv($handle, ['Total Hadir', $totalHadir]);
-            fputcsv($handle, ['Total Terlambat', $totalTerlambat]);
+            fputcsv($handle, ['Total Hadir WFO', $totalHadir]);
+            fputcsv($handle, ['Total Dinas Luar', $totalDinasLuar]);
+            fputcsv($handle, ['Total Terlambat', $totalTerlambat . ' kali (' . $totalLateMinutes . ' menit)']);
             fputcsv($handle, ['Total Izin', $totalIzin]);
             fputcsv($handle, ['Total Sakit', $totalSakit]);
             fputcsv($handle, ['Total Cuti', $totalCuti]);
+            fputcsv($handle, ['Total Menunggu Verifikasi', $totalPending]);
             fputcsv($handle, ['Total Alpha', $totalAlpha]);
             fputcsv($handle, []);
 
@@ -320,11 +412,14 @@ class AttendanceDataController extends Controller
                 'Mata Pelajaran Diajar', 
                 'Unit Kerja', 
                 'Total Hari Kerja', 
-                'Hadir', 
-                'Terlambat', 
+                'Hadir WFO', 
+                'Dinas Luar', 
+                'Terlambat (Kali)', 
+                'Akumulasi Telat (Menit)', 
                 'Izin', 
                 'Sakit', 
                 'Cuti', 
+                'Pending Verifikasi', 
                 'Alpha', 
                 'Persentase Kehadiran'
             ]);
@@ -340,10 +435,13 @@ class AttendanceDataController extends Controller
                     $row['unit_name'],
                     $workDays,
                     $row['hadir'],
+                    $row['dinas_luar'],
                     $row['terlambat'],
+                    $row['late_minutes'] . 'm',
                     $row['izin'],
                     $row['sakit'],
                     $row['cuti'],
+                    $row['pending'],
                     $row['alpha'],
                     $row['percentage'] . '%'
                 ]);
@@ -360,10 +458,13 @@ class AttendanceDataController extends Controller
                 '',
                 '',
                 $totalHadir,
+                $totalDinasLuar,
                 $totalTerlambat,
+                $totalLateMinutes . 'm',
                 $totalIzin,
                 $totalSakit,
                 $totalCuti,
+                $totalPending,
                 $totalAlpha,
                 $avgAttendance . '%'
             ]);
@@ -395,19 +496,25 @@ class AttendanceDataController extends Controller
         
         $totalEmployees = $recapData->count();
         $totalHadir = $recapData->sum('hadir');
+        $totalDinasLuar = $recapData->sum('dinas_luar');
         $totalTerlambat = $recapData->sum('terlambat');
+        $totalLateMinutes = $recapData->sum('late_minutes');
         $totalIzin = $recapData->sum('izin');
         $totalSakit = $recapData->sum('sakit');
         $totalCuti = $recapData->sum('cuti');
+        $totalPending = $recapData->sum('pending');
         $totalAlpha = $recapData->sum('alpha');
         $avgAttendance = $totalEmployees > 0 ? round($recapData->avg('percentage'), 1) : 0;
 
         $totals = [
             'hadir' => $totalHadir,
+            'dinas_luar' => $totalDinasLuar,
             'telat' => $totalTerlambat,
+            'late_minutes' => $totalLateMinutes,
             'izin' => $totalIzin,
             'sakit' => $totalSakit,
             'cuti' => $totalCuti,
+            'pending' => $totalPending,
             'alpha' => $totalAlpha,
         ];
 
@@ -477,17 +584,79 @@ class AttendanceDataController extends Controller
             ->orderBy('date', 'asc')
             ->get();
 
+        // Resolve unit ID for holidays
+        $unitId = $user->teacher_profile?->unit_id 
+            ?? $user->staff?->unit_id 
+            ?? $user->units->first()?->id 
+            ?? null;
+
+        $holidays = Holiday::where(function($q) {
+                $q->where('event_type', 'libur')->orWhereNull('event_type');
+            })
+            ->where(function($q) use ($unitId) {
+                $q->whereNull('unit_id');
+                if ($unitId) {
+                    $q->orWhere('unit_id', $unitId);
+                }
+            })
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('date')
+            ->map(fn($d) => Carbon::parse($d)->toDateString())
+            ->toArray();
+
+        $today = Carbon::today();
+        $isCurrentMonth = ($month == $today->month && $year == $today->year);
+        $isFutureMonth = $start->isFuture();
+        $effectiveEnd = $isCurrentMonth ? $today : ($isFutureMonth ? $start->copy()->subDay() : $end);
+
+        $workDays = 0;
+        $workDates = [];
+        if ($effectiveEnd >= $start) {
+            $currentDate = $start->copy();
+            while ($currentDate <= $effectiveEnd) {
+                $dateStr = $currentDate->toDateString();
+                if (!$currentDate->isSunday() && !in_array($dateStr, $holidays)) {
+                    $workDays++;
+                    $workDates[] = $dateStr;
+                }
+                $currentDate->addDay();
+            }
+        }
+
         // Calculate stats
         $total = $attendances->count();
-        $present = $attendances->where('status', 'present')->count();
-        $late = $attendances->where('status', 'late')->count();
-        $sick = $attendances->where('status', 'sick')->count();
-        $permit = $attendances->where('status', 'permit')->count();
-        $businessTrip = $attendances->where('status', 'business_trip')->count();
-        $totalLateMinutes = $attendances->sum('late_minutes');
+        $present = $attendances->where('status', 'present')->where('approval_status', '!=', 'rejected')->count();
+        $late = $attendances->where('status', 'late')->where('approval_status', '!=', 'rejected')->count();
+        $sick = $attendances->where('status', 'sick')->where('approval_status', 'approved')->count();
+        $permit = $attendances->where('status', 'permit')->where('approval_status', 'approved')->count();
+        $cuti = $attendances->where('status', 'cuti')->where('approval_status', 'approved')->count();
+        $businessTrip = $attendances->where('status', 'business_trip')->where('approval_status', 'approved')->count();
+        $pending = $attendances->where('approval_status', 'pending')->count();
+        $totalLateMinutes = (int) $attendances->where('status', 'late')->where('approval_status', '!=', 'rejected')->sum('late_minutes');
 
-        $activeDays = $present + $late + $sick + $permit + $businessTrip;
-        $attendancePercentage = $activeDays > 0 ? round((($present + $late) / $activeDays) * 100) : 100;
+        $userAttGrouped = $attendances->groupBy(fn($att) => substr((string)$att->date, 0, 10));
+        $alpha = 0;
+        if ($workDays > 0) {
+            foreach ($workDates as $wDate) {
+                $dayRecords = $userAttGrouped->get($wDate);
+                if (!$dayRecords || $dayRecords->isEmpty()) {
+                    $alpha++;
+                } else {
+                    $hasNonRejected = $dayRecords->contains(fn($r) => $r->approval_status !== 'rejected');
+                    if (!$hasNonRejected) {
+                        $alpha++;
+                    }
+                }
+            }
+        }
+
+        if ($workDays > 0) {
+            $targetDays = max(1, $workDays - ($cuti + $sick));
+            $totalMasuk = $present + $late + $businessTrip;
+            $attendancePercentage = min(100.0, round(($totalMasuk / $targetDays) * 100, 1));
+        } else {
+            $attendancePercentage = 0.0;
+        }
 
         // Activity logs / Giat Tugas count & details
         $activityLogs = \App\Modules\Employee\Models\EmployeeActivityLog::where('user_id', $user->id)
@@ -497,11 +666,15 @@ class AttendanceDataController extends Controller
 
         $stats = [
             'total' => $total,
+            'work_days' => $workDays,
             'present' => $present,
             'late' => $late,
             'sick' => $sick,
             'permit' => $permit,
+            'cuti' => $cuti,
             'business_trip' => $businessTrip,
+            'pending' => $pending,
+            'alpha' => $alpha,
             'total_late_minutes' => $totalLateMinutes,
             'attendance_percentage' => $attendancePercentage,
             'total_activity_logs' => $activityLogs->count(),
@@ -545,25 +718,91 @@ class AttendanceDataController extends Controller
             ->orderBy('date', 'asc')
             ->get();
 
+        // Resolve unit ID for holidays
+        $unitId = $unit?->id 
+            ?? $user->teacher_profile?->unit_id 
+            ?? $user->staff?->unit_id 
+            ?? null;
+
+        $holidays = Holiday::where(function($q) {
+                $q->where('event_type', 'libur')->orWhereNull('event_type');
+            })
+            ->where(function($q) use ($unitId) {
+                $q->whereNull('unit_id');
+                if ($unitId) {
+                    $q->orWhere('unit_id', $unitId);
+                }
+            })
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('date')
+            ->map(fn($d) => Carbon::parse($d)->toDateString())
+            ->toArray();
+
+        $today = Carbon::today();
+        $isCurrentMonth = ($month == $today->month && $year == $today->year);
+        $isFutureMonth = $start->isFuture();
+        $effectiveEnd = $isCurrentMonth ? $today : ($isFutureMonth ? $start->copy()->subDay() : $end);
+
+        $workDays = 0;
+        $workDates = [];
+        if ($effectiveEnd >= $start) {
+            $currentDate = $start->copy();
+            while ($currentDate <= $effectiveEnd) {
+                $dateStr = $currentDate->toDateString();
+                if (!$currentDate->isSunday() && !in_array($dateStr, $holidays)) {
+                    $workDays++;
+                    $workDates[] = $dateStr;
+                }
+                $currentDate->addDay();
+            }
+        }
+
         // Stats
         $total = $attendances->count();
-        $present = $attendances->where('status', 'present')->count();
-        $late = $attendances->where('status', 'late')->count();
-        $sick = $attendances->where('status', 'sick')->count();
-        $permit = $attendances->where('status', 'permit')->count();
-        $businessTrip = $attendances->where('status', 'business_trip')->count();
-        $totalLateMinutes = $attendances->sum('late_minutes');
+        $present = $attendances->where('status', 'present')->where('approval_status', '!=', 'rejected')->count();
+        $late = $attendances->where('status', 'late')->where('approval_status', '!=', 'rejected')->count();
+        $sick = $attendances->where('status', 'sick')->where('approval_status', 'approved')->count();
+        $permit = $attendances->where('status', 'permit')->where('approval_status', 'approved')->count();
+        $cuti = $attendances->where('status', 'cuti')->where('approval_status', 'approved')->count();
+        $businessTrip = $attendances->where('status', 'business_trip')->where('approval_status', 'approved')->count();
+        $pending = $attendances->where('approval_status', 'pending')->count();
+        $totalLateMinutes = (int) $attendances->where('status', 'late')->where('approval_status', '!=', 'rejected')->sum('late_minutes');
 
-        $activeDays = $present + $late + $sick + $permit + $businessTrip;
-        $attendancePercentage = $activeDays > 0 ? round((($present + $late) / $activeDays) * 100) : 100;
+        $userAttGrouped = $attendances->groupBy(fn($att) => substr((string)$att->date, 0, 10));
+        $alpha = 0;
+        if ($workDays > 0) {
+            foreach ($workDates as $wDate) {
+                $dayRecords = $userAttGrouped->get($wDate);
+                if (!$dayRecords || $dayRecords->isEmpty()) {
+                    $alpha++;
+                } else {
+                    $hasNonRejected = $dayRecords->contains(fn($r) => $r->approval_status !== 'rejected');
+                    if (!$hasNonRejected) {
+                        $alpha++;
+                    }
+                }
+            }
+        }
+
+        if ($workDays > 0) {
+            $targetDays = max(1, $workDays - ($cuti + $sick));
+            $totalMasuk = $present + $late + $businessTrip;
+            $attendancePercentage = min(100.0, round(($totalMasuk / $targetDays) * 100, 1));
+        } else {
+            $attendancePercentage = 0.0;
+        }
 
         $stats = [
             'total' => $total,
+            'work_days' => $workDays,
             'present' => $present,
             'late' => $late,
             'sick' => $sick,
             'permit' => $permit,
+            'cuti' => $cuti,
             'business_trip' => $businessTrip,
+            'pending' => $pending,
+            'alpha' => $alpha,
             'total_late_minutes' => $totalLateMinutes,
             'attendance_percentage' => $attendancePercentage,
         ];

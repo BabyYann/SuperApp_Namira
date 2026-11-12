@@ -236,78 +236,111 @@ const getPercentageClass = (pct) => {
                 </p>
             </div>
 
-            <!-- Summary Cards (Lucide & Heroicons, No Emojis, clean border style) -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+            <!-- Summary Cards (Clean border style, responsive 11-column layout) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-3">
                 <!-- Total Pegawai -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between h-24">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between min-h-[96px]">
                     <div class="flex items-center justify-between text-gray-400">
-                        <span class="text-[10px] font-bold uppercase tracking-wider">Total Karyawan</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider">Total Karyawan</span>
                         <UsersIcon class="w-4 h-4" />
                     </div>
-                    <div class="text-2xl font-black text-gray-900 mt-2">{{ stats.total_employees }}</div>
+                    <div class="text-2xl font-black text-gray-900 mt-1">{{ stats.total_employees }}</div>
                 </div>
 
                 <!-- Hari Kerja -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between h-24">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between min-h-[96px]">
                     <div class="flex items-center justify-between text-gray-400">
-                        <span class="text-[10px] font-bold uppercase tracking-wider">Hari Kerja</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider">Hari Kerja</span>
                         <CalendarIcon class="w-4 h-4" />
                     </div>
-                    <div class="text-2xl font-black text-gray-900 mt-2">{{ workDays }} <span class="text-xs font-semibold text-gray-400">Hari</span></div>
+                    <div class="text-2xl font-black text-gray-900 mt-1">{{ workDays }} <span class="text-xs font-semibold text-gray-400">Hari</span></div>
                 </div>
 
-                <!-- Hadir -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between h-24">
+                <!-- Hadir WFO -->
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between min-h-[96px]">
                     <div class="flex items-center justify-between text-emerald-600">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Hadir</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">Hadir WFO</span>
                         <CheckCircleIcon class="w-4 h-4" />
                     </div>
-                    <div class="text-2xl font-black text-emerald-600 mt-2">{{ stats.hadir }}</div>
+                    <div class="text-2xl font-black text-emerald-600 mt-1">{{ stats.hadir }}</div>
+                </div>
+
+                <!-- Dinas Luar -->
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between min-h-[96px]">
+                    <div class="flex items-center justify-between text-indigo-600">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">Dinas Luar</span>
+                        <BriefcaseIcon class="w-4 h-4" />
+                    </div>
+                    <div class="text-2xl font-black text-indigo-600 mt-1">{{ stats.dinas_luar || 0 }}</div>
                 </div>
 
                 <!-- Terlambat -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between h-24">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between min-h-[96px]">
                     <div class="flex items-center justify-between text-rose-600">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Terlambat</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">Terlambat</span>
                         <ClockIcon class="w-4 h-4" />
                     </div>
-                    <div class="text-2xl font-black text-rose-600 mt-2">{{ stats.terlambat }}</div>
+                    <div>
+                        <div class="text-2xl font-black text-rose-600">{{ stats.terlambat }}</div>
+                        <div class="text-[10px] font-bold text-rose-400">{{ stats.late_minutes || 0 }}m akumulasi</div>
+                    </div>
                 </div>
 
                 <!-- Izin -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between h-24">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between min-h-[96px]">
                     <div class="flex items-center justify-between text-amber-600">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Izin</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">Izin</span>
                         <CalendarDaysIcon class="w-4 h-4" />
                     </div>
-                    <div class="text-2xl font-black text-amber-600 mt-2">{{ stats.izin }}</div>
+                    <div class="text-2xl font-black text-amber-600 mt-1">{{ stats.izin }}</div>
                 </div>
 
                 <!-- Sakit -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between h-24">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between min-h-[96px]">
                     <div class="flex items-center justify-between text-blue-600">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Sakit</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">Sakit</span>
                         <PlusCircleIcon class="w-4 h-4" />
                     </div>
-                    <div class="text-2xl font-black text-blue-600 mt-2">{{ stats.sakit }}</div>
+                    <div class="text-2xl font-black text-blue-600 mt-1">{{ stats.sakit }}</div>
                 </div>
 
                 <!-- Cuti -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between h-24">
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-150 flex flex-col justify-between min-h-[96px]">
                     <div class="flex items-center justify-between text-violet-600">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Cuti</span>
-                        <BriefcaseIcon class="w-4 h-4" />
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">Cuti</span>
+                        <AcademicCapIcon class="w-4 h-4" />
                     </div>
-                    <div class="text-2xl font-black text-violet-600 mt-2">{{ stats.cuti }}</div>
+                    <div class="text-2xl font-black text-violet-600 mt-1">{{ stats.cuti }}</div>
+                </div>
+
+                <!-- Pending -->
+                <div class="bg-amber-50/50 border border-amber-200 p-3.5 rounded-2xl shadow-sm flex flex-col justify-between min-h-[96px]">
+                    <div class="flex items-center justify-between text-amber-700">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-amber-700">Pending</span>
+                        <ExclamationTriangleIcon class="w-4 h-4" />
+                    </div>
+                    <div>
+                        <div class="text-2xl font-black text-amber-800">{{ stats.pending || 0 }}</div>
+                        <div class="text-[9px] font-semibold text-amber-600 leading-tight">Menunggu verifikasi</div>
+                    </div>
+                </div>
+
+                <!-- Alpha -->
+                <div class="bg-red-50/40 border border-red-150 p-3.5 rounded-2xl shadow-sm flex flex-col justify-between min-h-[96px]">
+                    <div class="flex items-center justify-between text-red-600">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-red-700">Alpha</span>
+                        <XMarkIcon class="w-4 h-4" />
+                    </div>
+                    <div class="text-2xl font-black text-red-600 mt-1">{{ stats.alpha || 0 }}</div>
                 </div>
 
                 <!-- Avg Attendance -->
-                <div class="bg-teal-50 border border-teal-150 p-4 rounded-2xl shadow-sm flex flex-col justify-between h-24">
+                <div class="bg-teal-50 border border-teal-150 p-3.5 rounded-2xl shadow-sm flex flex-col justify-between min-h-[96px]">
                     <div class="flex items-center justify-between text-teal-600">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-teal-700">Rata-rata Hadir</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-teal-700">Rata-rata</span>
                         <ChartBarIcon class="w-4 h-4" />
                     </div>
-                    <div class="text-2xl font-black text-teal-700 mt-2">{{ stats.avg_attendance }}%</div>
+                    <div class="text-2xl font-black text-teal-700 mt-1">{{ stats.avg_attendance }}%</div>
                 </div>
             </div>
 
@@ -442,28 +475,30 @@ const getPercentageClass = (pct) => {
                     <table class="min-w-full divide-y divide-gray-100 text-sm text-left">
                         <thead class="bg-slate-50 text-gray-700 uppercase text-xs font-bold border-b border-gray-150">
                             <tr>
-                                <th class="px-5 py-4 text-center">No</th>
-                                <th class="px-5 py-4">Karyawan / Guru</th>
-                                <th class="px-5 py-4">NIP/NUPTK</th>
-                                <th class="px-5 py-4">Jabatan</th>
-                                <th class="px-5 py-4">Mata Pelajaran</th>
-                                <th class="px-5 py-4">Unit Sekolah</th>
-                                <th class="px-4 py-4 text-center">Hadir</th>
-                                <th class="px-4 py-4 text-center">Telat</th>
-                                <th class="px-4 py-4 text-center">Izin</th>
-                                <th class="px-4 py-4 text-center">Sakit</th>
-                                <th class="px-4 py-4 text-center">Cuti</th>
-                                <th class="px-4 py-4 text-center">Alpha</th>
-                                <th class="px-5 py-4 text-center">% Hadir</th>
-                                <th class="px-5 py-4 text-center">Aksi</th>
+                                <th class="px-4 py-4 text-center">No</th>
+                                <th class="px-4 py-4">Karyawan / Guru</th>
+                                <th class="px-4 py-4">NIP/NUPTK</th>
+                                <th class="px-4 py-4">Jabatan</th>
+                                <th class="px-4 py-4">Mata Pelajaran</th>
+                                <th class="px-4 py-4">Unit Sekolah</th>
+                                <th class="px-3 py-4 text-center">WFO</th>
+                                <th class="px-3 py-4 text-center">Dinas</th>
+                                <th class="px-3 py-4 text-center">Telat</th>
+                                <th class="px-3 py-4 text-center">Izin</th>
+                                <th class="px-3 py-4 text-center">Sakit</th>
+                                <th class="px-3 py-4 text-center">Cuti</th>
+                                <th class="px-3 py-4 text-center">Pending</th>
+                                <th class="px-3 py-4 text-center">Alpha</th>
+                                <th class="px-4 py-4 text-center">% Hadir</th>
+                                <th class="px-4 py-4 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
                             <tr v-for="(row, idx) in paginatedRecapData" :key="row.id" class="hover:bg-slate-50/50 transition-colors">
-                                <td class="px-5 py-3.5 text-center text-gray-400 font-semibold">{{ (currentPage - 1) * perPage + idx + 1 }}</td>
+                                <td class="px-4 py-3.5 text-center text-gray-400 font-semibold">{{ (currentPage - 1) * perPage + idx + 1 }}</td>
                                 
                                 <!-- Photo & Name -->
-                                <td class="px-5 py-3.5">
+                                <td class="px-4 py-3.5">
                                     <div class="flex items-center gap-3">
                                         <img v-if="row.photo" :src="row.photo" class="w-9 h-9 rounded-full object-cover border border-gray-100 shadow-sm" alt="Profile" />
                                         <div v-else class="w-9 h-9 rounded-full bg-slate-100 text-gray-400 flex items-center justify-center font-bold text-xs">
@@ -474,34 +509,49 @@ const getPercentageClass = (pct) => {
                                 </td>
                                 
                                 <!-- NIP -->
-                                <td class="px-5 py-3.5 font-mono text-xs text-gray-600">{{ row.nip }}</td>
+                                <td class="px-4 py-3.5 font-mono text-xs text-gray-600">{{ row.nip }}</td>
                                 
                                 <!-- Jabatan -->
-                                <td class="px-5 py-3.5 font-semibold text-gray-700">{{ row.jabatan }}</td>
+                                <td class="px-4 py-3.5 font-semibold text-gray-700">{{ row.jabatan }}</td>
                                 
                                 <!-- Subjects -->
-                                <td class="px-5 py-3.5 text-gray-500 text-xs truncate max-w-[150px]" :title="row.subjects">{{ row.subjects }}</td>
+                                <td class="px-4 py-3.5 text-gray-500 text-xs truncate max-w-[150px]" :title="row.subjects">{{ row.subjects }}</td>
                                 
                                 <!-- Unit -->
-                                <td class="px-5 py-3.5 text-gray-500 text-xs font-semibold">{{ row.unit_name }}</td>
+                                <td class="px-4 py-3.5 text-gray-500 text-xs font-semibold">{{ row.unit_name }}</td>
                                 
                                 <!-- Present Counts -->
-                                <td class="px-4 py-3.5 text-center font-bold text-emerald-600">{{ row.hadir }}</td>
-                                <td class="px-4 py-3.5 text-center font-bold text-rose-600">{{ row.terlambat }}</td>
-                                <td class="px-4 py-3.5 text-center font-semibold text-amber-600">{{ row.izin }}</td>
-                                <td class="px-4 py-3.5 text-center font-semibold text-blue-600">{{ row.sakit }}</td>
-                                <td class="px-4 py-3.5 text-center font-semibold text-violet-600">{{ row.cuti }}</td>
-                                <td class="px-4 py-3.5 text-center font-bold text-red-600">{{ row.alpha }}</td>
+                                <td class="px-3 py-3.5 text-center font-bold text-emerald-600">{{ row.hadir }}</td>
+                                <td class="px-3 py-3.5 text-center font-bold text-indigo-600">{{ row.dinas_luar || 0 }}</td>
+                                <td class="px-3 py-3.5 text-center">
+                                    <div class="font-bold text-rose-600 leading-tight">{{ row.terlambat }}</div>
+                                    <div v-if="row.late_minutes > 0" class="text-[10px] text-rose-400 font-semibold mt-0.5">{{ row.late_minutes }}m</div>
+                                </td>
+                                <td class="px-3 py-3.5 text-center font-semibold text-amber-600">{{ row.izin }}</td>
+                                <td class="px-3 py-3.5 text-center font-semibold text-blue-600">{{ row.sakit }}</td>
+                                <td class="px-3 py-3.5 text-center font-semibold text-violet-600">{{ row.cuti }}</td>
+                                <td class="px-3 py-3.5 text-center">
+                                    <span v-if="(row.pending || 0) > 0" class="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold inline-block">
+                                        {{ row.pending }}
+                                    </span>
+                                    <span v-else class="text-gray-300">-</span>
+                                </td>
+                                <td class="px-3 py-3.5 text-center font-bold">
+                                    <span v-if="row.alpha > 0" class="px-2 py-0.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-xs font-bold inline-block">
+                                        {{ row.alpha }}
+                                    </span>
+                                    <span v-else class="text-gray-300">0</span>
+                                </td>
                                 
                                 <!-- Percentage -->
-                                <td class="px-5 py-3.5 text-center">
+                                <td class="px-4 py-3.5 text-center">
                                     <span :class="['px-2.5 py-1 rounded-full text-xs font-black inline-block', getPercentageClass(row.percentage)]">
                                         {{ row.percentage }}%
                                     </span>
                                 </td>
 
                                 <!-- Actions -->
-                                <td class="px-5 py-3.5 text-center">
+                                <td class="px-4 py-3.5 text-center">
                                     <button 
                                         @click="openEmployeeDetail(row)"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-namira-teal/10 hover:bg-namira-teal/20 text-namira-teal rounded-xl transition-all font-bold text-xs cursor-pointer shadow-sm"
@@ -541,14 +591,19 @@ const getPercentageClass = (pct) => {
                         </div>
 
                         <!-- Stats Grid inside Mobile Card -->
-                        <div class="grid grid-cols-6 gap-1 bg-slate-50 p-2.5 rounded-2xl border border-gray-150 text-center text-[11px]">
+                        <div class="grid grid-cols-4 sm:grid-cols-8 gap-1.5 bg-slate-50 p-2.5 rounded-2xl border border-gray-150 text-center text-[11px]">
                             <div>
-                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Hadir</span>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">WFO</span>
                                 <span class="font-extrabold text-emerald-600 text-xs">{{ row.hadir }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Dinas</span>
+                                <span class="font-extrabold text-indigo-600 text-xs">{{ row.dinas_luar || 0 }}</span>
                             </div>
                             <div>
                                 <span class="text-[9px] font-bold text-gray-400 block uppercase">Telat</span>
                                 <span class="font-extrabold text-rose-600 text-xs">{{ row.terlambat }}</span>
+                                <span v-if="row.late_minutes > 0" class="text-[9px] text-rose-400 font-semibold block">({{ row.late_minutes }}m)</span>
                             </div>
                             <div>
                                 <span class="text-[9px] font-bold text-gray-400 block uppercase">Izin</span>
@@ -561,6 +616,10 @@ const getPercentageClass = (pct) => {
                             <div>
                                 <span class="text-[9px] font-bold text-gray-400 block uppercase">Cuti</span>
                                 <span class="font-semibold text-violet-600 text-xs">{{ row.cuti }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-400 block uppercase">Pending</span>
+                                <span class="font-bold text-amber-700 text-xs">{{ row.pending || 0 }}</span>
                             </div>
                             <div>
                                 <span class="text-[9px] font-bold text-gray-400 block uppercase">Alpha</span>
@@ -699,31 +758,54 @@ const getPercentageClass = (pct) => {
                                 </div>
 
                                 <div v-else class="space-y-6">
-                                    <div v-if="employeeStats" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                        <div class="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 text-center">
-                                            <div class="text-2xl font-black text-emerald-600">{{ employeeStats.present }}</div>
-                                            <div class="text-[10px] font-bold text-emerald-500 uppercase mt-0.5">Hadir</div>
+                                    <div v-if="employeeStats" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                        <div class="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 text-center">
+                                            <div class="text-xl font-black text-emerald-600">{{ employeeStats.present }}</div>
+                                            <div class="text-[10px] font-bold text-emerald-500 uppercase mt-0.5">Hadir WFO</div>
                                         </div>
-                                        <div class="bg-rose-50/50 border border-rose-100 rounded-2xl p-4 text-center">
-                                            <div class="text-2xl font-black text-rose-600">{{ employeeStats.late }}</div>
+                                        <div class="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-3 text-center">
+                                            <div class="text-xl font-black text-indigo-600">{{ employeeStats.business_trip || 0 }}</div>
+                                            <div class="text-[10px] font-bold text-indigo-500 uppercase mt-0.5">Dinas Luar</div>
+                                        </div>
+                                        <div class="bg-rose-50/50 border border-rose-100 rounded-2xl p-3 text-center">
+                                            <div class="text-xl font-black text-rose-600">{{ employeeStats.late }}</div>
                                             <div class="text-[10px] font-bold text-rose-500 uppercase mt-0.5">Terlambat</div>
                                         </div>
-                                        <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 text-center">
-                                            <div class="text-2xl font-black text-blue-600">
-                                                {{ employeeStats.sick + employeeStats.permit + employeeStats.business_trip }}
-                                            </div>
-                                            <div class="text-[10px] font-bold text-blue-500 uppercase mt-0.5">Izin/Sakit/Dinas</div>
+                                        <div class="bg-amber-50/50 border border-amber-100 rounded-2xl p-3 text-center">
+                                            <div class="text-xl font-black text-amber-600">{{ employeeStats.permit }}</div>
+                                            <div class="text-[10px] font-bold text-amber-500 uppercase mt-0.5">Izin</div>
                                         </div>
-                                        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center col-span-2 sm:col-span-3">
+                                        <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-3 text-center">
+                                            <div class="text-xl font-black text-blue-600">{{ employeeStats.sick }}</div>
+                                            <div class="text-[10px] font-bold text-blue-500 uppercase mt-0.5">Sakit</div>
+                                        </div>
+                                        <div class="bg-violet-50/50 border border-violet-100 rounded-2xl p-3 text-center">
+                                            <div class="text-xl font-black text-violet-600">{{ employeeStats.cuti || 0 }}</div>
+                                            <div class="text-[10px] font-bold text-violet-500 uppercase mt-0.5">Cuti</div>
+                                        </div>
+                                        <div class="bg-amber-50/50 border border-amber-200 rounded-2xl p-3 text-center">
+                                            <div class="text-xl font-black text-amber-700">{{ employeeStats.pending || 0 }}</div>
+                                            <div class="text-[10px] font-bold text-amber-600 uppercase mt-0.5">Pending</div>
+                                        </div>
+                                        <div class="bg-red-50/50 border border-red-150 rounded-2xl p-3 text-center">
+                                            <div class="text-xl font-black text-red-600">{{ employeeStats.alpha || 0 }}</div>
+                                            <div class="text-[10px] font-bold text-red-500 uppercase mt-0.5">Alpha</div>
+                                        </div>
+                                        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 text-center col-span-2 sm:col-span-4">
                                             <div class="flex items-center justify-around">
                                                 <div>
-                                                    <div class="text-2xl font-black text-slate-700">{{ employeeStats.total_late_minutes }}m</div>
-                                                    <div class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Total Telat</div>
+                                                    <div class="text-xl font-black text-slate-700">{{ employeeStats.work_days || 0 }} Hari</div>
+                                                    <div class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Hari Kerja Efektif</div>
                                                 </div>
                                                 <div class="h-8 w-px bg-slate-200"></div>
                                                 <div>
-                                                    <div class="text-2xl font-black text-namira-teal">{{ employeeStats.attendance_percentage }}%</div>
-                                                    <div class="text-[10px] font-bold text-namira-teal/70 uppercase mt-0.5">Tingkat Disiplin</div>
+                                                    <div class="text-xl font-black text-rose-600">{{ employeeStats.total_late_minutes || 0 }}m</div>
+                                                    <div class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Akumulasi Telat</div>
+                                                </div>
+                                                <div class="h-8 w-px bg-slate-200"></div>
+                                                <div>
+                                                    <div class="text-xl font-black text-namira-teal">{{ employeeStats.attendance_percentage }}%</div>
+                                                    <div class="text-[10px] font-bold text-namira-teal/70 uppercase mt-0.5">Persentase Hadir</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -760,9 +842,17 @@ const getPercentageClass = (pct) => {
                                                             <span v-else class="text-gray-400">-</span>
                                                         </td>
                                                         <td class="px-4 py-3">
-                                                            <span :class="['px-2 py-0.5 rounded text-[10px] font-bold inline-block', getStatusClass(att.status)]">
-                                                                {{ getStatusLabel(att.status) }}
-                                                            </span>
+                                                            <div class="flex flex-col gap-1 items-start">
+                                                                <span :class="['px-2 py-0.5 rounded text-[10px] font-bold inline-block', getStatusClass(att.status)]">
+                                                                    {{ getStatusLabel(att.status) }}
+                                                                </span>
+                                                                <span v-if="att.approval_status === 'pending'" class="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                                                    Menunggu Verifikasi
+                                                                </span>
+                                                                <span v-else-if="att.approval_status === 'rejected'" class="text-[9px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                                                    Ditolak
+                                                                </span>
+                                                            </div>
                                                         </td>
                                                         <td class="px-4 py-3 text-center">
                                                             <button 
