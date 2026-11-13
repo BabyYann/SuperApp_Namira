@@ -629,5 +629,119 @@ it('allows panitia/admin to edit applicant biodata, reset parent password, and e
         ->and($csvContent)->toContain('Nilai Tes Akademik');
 });
 
+it('falls back from Kantor Yayasan active_unit_id to an SPMB school unit and preserves unit_id on delete redirect', function () {
+    $yayasanUnit = Unit::firstOrCreate(
+        ['code' => 'YAYASAN'],
+        ['name' => 'Kantor Yayasan', 'level' => 'Yayasan', 'category' => 'pusat']
+    );
+
+    $superAdmin = createUserWithRole('super_admin_yayasan');
+
+    // Accessing SPMB index with active_unit_id = Kantor Yayasan and no unit_id param should NOT show Kantor Yayasan
+    $indexRes = $this->actingAs($superAdmin)
+        ->withSession(['active_unit_id' => $yayasanUnit->id])
+        ->get(route('spmb.admin.index'));
+
+    $indexRes->assertOk();
+    $indexRes->assertInertia(fn (Assert $page) => $page
+        ->component('SPMB/Admin/Index')
+        ->where('unit.id', $this->sdUnit->id)
+    );
+
+    // Explicitly passing unit_id = SMP works even with Kantor Yayasan in session
+    $smpIndexRes = $this->actingAs($superAdmin)
+        ->withSession(['active_unit_id' => $yayasanUnit->id])
+        ->get(route('spmb.admin.index', ['unit_id' => $this->smpUnit->id]));
+
+    $smpIndexRes->assertOk();
+    $smpIndexRes->assertInertia(fn (Assert $page) => $page
+        ->component('SPMB/Admin/Index')
+        ->where('unit.id', $this->smpUnit->id)
+        ->has('setting')
+    );
+
+    // Deleting an SMP applicant redirects back to SMP list (?unit_id=...)
+    $smpApplicant = SpmbApplicant::create([
+        'unit_id' => $this->smpUnit->id,
+        'registration_number' => 'IND-SMPN-26999',
+        'full_name' => 'Siswa Hapus Test',
+        'gender' => 'L',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-05-05',
+        'parent_phone' => '081234999888',
+        'address' => 'Jl. Test',
+        'status' => 'submitted',
+    ]);
+
+    $deleteRes = $this->actingAs($superAdmin)
+        ->withSession(['active_unit_id' => $yayasanUnit->id])
+        ->delete(route('spmb.admin.destroy', $smpApplicant->id));
+
+    $deleteRes->assertRedirect(route('spmb.admin.index', ['unit_id' => $this->smpUnit->id]));
+});
+
+it('handles direct 100 percent payment mode when unit min_down_payment_percentage is 100', function () {
+    $this->smpSetting->update(['min_down_payment_percentage' => 100]);
+
+    $superAdmin = createUserWithRole('super_admin_yayasan');
+    $parent = User::factory()->create(['phone' => '081277770001']);
+    $parent->assignRole('orang_tua');
+
+    $applicant = SpmbApplicant::create([
+        'unit_id' => $this->smpUnit->id,
+        'user_id' => $parent->id,
+        'registration_number' => 'IND-SMPN-26500',
+        'full_name' => 'Calon Siswa Lunas 100',
+        'gender' => 'P',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-06-06',
+        'parent_phone' => '081277770001',
+        'address' => 'Jl. Melati No. 5',
+        'status' => 'verified',
+        'is_inden' => true,
+    ]);
+
+    // 1. Evaluation acceptance computes 100% min_down_payment == total_admission_fee
+    $evalRes = $this->actingAs($superAdmin)->post(route('spmb.admin.save-evaluation', $applicant->id), [
+        'evaluation_result' => 'accepted',
+        'academic_score' => 90,
+        'evaluation_notes' => 'Lulus langsung 100%',
+    ]);
+    $evalRes->assertSessionHasNoErrors();
+
+    $applicant->refresh();
+    expect($applicant->status)->toBe('accepted')
+        ->and((float) $applicant->total_admission_fee)->toEqual(9000000.0)
+        ->and((float) $applicant->min_down_payment)->toEqual(9000000.0);
+
+    // 2. Setting VA forces min_down_payment == total_admission_fee and clears down_payment_deadline
+    $vaRes = $this->actingAs($superAdmin)->post(route('spmb.admin.set-va', $applicant->id), [
+        'virtual_account_number' => '9881029100881234',
+        'total_admission_fee' => 9500000,
+        'min_down_payment' => 5700000, // Even if a client sends 60%, backend enforces 100%
+        'down_payment_deadline' => '2027-01-15',
+        'full_payment_deadline' => '2027-02-28',
+    ]);
+    $vaRes->assertSessionHasNoErrors();
+
+    $applicant->refresh();
+    expect((float) $applicant->min_down_payment)->toEqual(9500000.0)
+        ->and($applicant->down_payment_deadline)->toBeNull();
+
+    // 3. Parent uploads payment proof -> directly stored as settlement_payment_proof with 100% label
+    $proofFile = UploadedFile::fake()->image('bukti_lunas_100.jpg');
+    $uploadRes = $this->actingAs($parent)->post(route('spmb.applicant.upload-proof', $applicant->id), [
+        'payment_proof' => $proofFile,
+        'payment_type' => 'pelunasan',
+    ]);
+    $uploadRes->assertSessionHasNoErrors();
+
+    $applicant->refresh();
+    expect($applicant->settlement_payment_proof)->not->toBeNull()
+        ->and($applicant->re_registration_payment_proof)->toBeNull()
+        ->and($applicant->payment_history[0]['title'] ?? null)->toBe('Pembayaran Daftar Ulang (Lunas 100%)');
+});
+
+
 
 

@@ -32,6 +32,10 @@ const props = defineProps({
     stats: Object,
     filters: Object,
     unit: Object,
+    setting: {
+        type: Object,
+        default: null,
+    },
     availableUnits: {
         type: Array,
         default: () => [],
@@ -123,6 +127,9 @@ const quickVerifyQris = (app) => {
     }
 };
 
+const dpPercentage = computed(() => Number(props.setting?.min_down_payment_percentage ?? 60));
+const isFullPaymentOnly = computed(() => dpPercentage.value >= 100);
+
 // Quick Admission Payment Modal
 const showQuickPaymentModal = ref(false);
 const quickPaymentApp = ref(null);
@@ -133,22 +140,22 @@ const quickPaymentForm = useForm({
 
 const openQuickPaymentModal = (app, preferredStatus = null) => {
     quickPaymentApp.value = app;
-    const isPaid = preferredStatus === 'paid' || app.status === 'partial_paid';
+    const isPaid = isFullPaymentOnly.value || preferredStatus === 'paid' || app.status === 'partial_paid';
     quickPaymentForm.admission_payment_status = isPaid ? 'paid' : 'partial';
     quickPaymentForm.paid_admission_amount = isPaid 
-        ? (app.total_admission_fee || 8500000)
-        : (app.min_down_payment || ((app.total_admission_fee || 8500000) * 0.6));
+        ? (app.total_admission_fee || props.setting?.admission_fee_total || 8500000)
+        : (app.min_down_payment || ((app.total_admission_fee || props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100)));
     showQuickPaymentModal.value = true;
 };
 
 const setPresetQuickAmount = (type) => {
     if (!quickPaymentApp.value) return;
-    if (type === 'partial') {
+    if (type === 'partial' && !isFullPaymentOnly.value) {
         quickPaymentForm.admission_payment_status = 'partial';
-        quickPaymentForm.paid_admission_amount = quickPaymentApp.value.min_down_payment || ((quickPaymentApp.value.total_admission_fee || 8500000) * 0.6);
+        quickPaymentForm.paid_admission_amount = quickPaymentApp.value.min_down_payment || ((quickPaymentApp.value.total_admission_fee || props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100));
     } else {
         quickPaymentForm.admission_payment_status = 'paid';
-        quickPaymentForm.paid_admission_amount = quickPaymentApp.value.total_admission_fee || 8500000;
+        quickPaymentForm.paid_admission_amount = quickPaymentApp.value.total_admission_fee || props.setting?.admission_fee_total || 8500000;
     }
 };
 
@@ -626,7 +633,7 @@ const getStatusBadgeClass = (s) => {
                         <option value="accepted">Diterima (Lulus)</option>
                         <option value="reserve">Cadangan</option>
                         <option value="rejected">Belum Diterima</option>
-                        <option value="partial_paid">Termin 60%</option>
+                        <option v-if="!isFullPaymentOnly" value="partial_paid">Termin {{ dpPercentage }}%</option>
                         <option value="fully_paid">Lunas 100%</option>
                         <option value="enrolled">Resmi Siswa</option>
                     </select>
@@ -1030,55 +1037,91 @@ const getStatusBadgeClass = (s) => {
                             </div>
                         </div>
 
-                        <!-- 2. Bukti Daftar Ulang Termin 1 -->
-                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                        <!-- Mode 100% Langsung -->
+                        <div v-if="isFullPaymentOnly" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                             <div class="flex items-center justify-between mb-1">
-                                <strong class="text-slate-800 dark:text-slate-200">2. Bukti Daftar Ulang: Termin 1 (DP 60%)</strong>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="activeProofApplicant.admission_payment_verified_at ? 'bg-emerald-100 text-emerald-800' : (activeProofApplicant.re_registration_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600')">
-                                    {{ activeProofApplicant.admission_payment_verified_at ? 'Terverifikasi' : (activeProofApplicant.re_registration_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
+                                <strong class="text-slate-800 dark:text-slate-200">2. Bukti Daftar Ulang (Lunas 100%)</strong>
+                                <span
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="activeProofApplicant.settlement_payment_verified_at || activeProofApplicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(activeProofApplicant.status) ? 'bg-emerald-100 text-emerald-800' : ((activeProofApplicant.settlement_payment_proof_url || activeProofApplicant.re_registration_payment_proof_url) ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600')"
+                                >
+                                    {{ activeProofApplicant.settlement_payment_verified_at || activeProofApplicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(activeProofApplicant.status) ? 'Lunas 100%' : ((activeProofApplicant.settlement_payment_proof_url || activeProofApplicant.re_registration_payment_proof_url) ? 'Menunggu Cek' : 'Belum Ada') }}
                                 </span>
                             </div>
                             <div class="flex items-center justify-between pt-2">
-                                <a v-if="activeProofApplicant.re_registration_payment_proof_url" :href="activeProofApplicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-teal-700 dark:text-teal-400 hover:underline">
-                                    Lihat File Termin 1 &rarr;
+                                <a
+                                    v-if="activeProofApplicant.settlement_payment_proof_url || activeProofApplicant.re_registration_payment_proof_url"
+                                    :href="activeProofApplicant.settlement_payment_proof_url || activeProofApplicant.re_registration_payment_proof_url"
+                                    target="_blank"
+                                    class="font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+                                >
+                                    Lihat Bukti Daftar Ulang (100%) &rarr;
                                 </a>
                                 <span v-else class="text-slate-400 italic">Belum diunggah ortu</span>
 
                                 <button 
-                                    v-if="activeProofApplicant.re_registration_payment_proof_url && !activeProofApplicant.admission_payment_verified_at"
-                                    type="button"
-                                    @click="openQuickPaymentModal(activeProofApplicant, 'partial')"
-                                    class="px-3 py-1 rounded-lg bg-teal-700 hover:bg-teal-600 text-white text-[11px] font-bold shadow-xs"
-                                >
-                                    Verifikasi VA
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- 3. Bukti Daftar Ulang Termin 2 Pelunasan -->
-                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                            <div class="flex items-center justify-between mb-1">
-                                <strong class="text-slate-800 dark:text-slate-200">3. Bukti Daftar Ulang: Termin 2 (Pelunasan 100%)</strong>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="activeProofApplicant.settlement_payment_verified_at || activeProofApplicant.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-800' : (activeProofApplicant.settlement_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600')">
-                                    {{ activeProofApplicant.settlement_payment_verified_at || activeProofApplicant.status === 'fully_paid' ? 'Lunas 100%' : (activeProofApplicant.settlement_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between pt-2">
-                                <a v-if="activeProofApplicant.settlement_payment_proof_url" :href="activeProofApplicant.settlement_payment_proof_url" target="_blank" class="font-bold text-indigo-700 dark:text-indigo-400 hover:underline">
-                                    Lihat File Pelunasan &rarr;
-                                </a>
-                                <span v-else class="text-slate-400 italic">{{ activeProofApplicant.status === 'partial_paid' ? 'Menunggu ortu transfer sisa' : 'Belum tahap pelunasan' }}</span>
-
-                                <button 
-                                    v-if="activeProofApplicant.settlement_payment_proof_url && activeProofApplicant.status !== 'fully_paid'"
+                                    v-if="(activeProofApplicant.settlement_payment_proof_url || activeProofApplicant.re_registration_payment_proof_url) && !['fully_paid', 'enrolled'].includes(activeProofApplicant.status)"
                                     type="button"
                                     @click="openQuickPaymentModal(activeProofApplicant, 'paid')"
-                                    class="px-3 py-1 rounded-lg bg-indigo-700 hover:bg-indigo-600 text-white text-[11px] font-bold shadow-xs"
+                                    class="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-[11px] font-bold shadow-xs"
                                 >
-                                    Verifikasi Pelunasan
+                                    Verifikasi Lunas 100%
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Mode Termin (< 100%) -->
+                        <template v-else>
+                            <!-- 2. Bukti Daftar Ulang Termin 1 -->
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                <div class="flex items-center justify-between mb-1">
+                                    <strong class="text-slate-800 dark:text-slate-200">2. Bukti Daftar Ulang: Termin 1 (DP {{ dpPercentage }}%)</strong>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="activeProofApplicant.admission_payment_verified_at ? 'bg-emerald-100 text-emerald-800' : (activeProofApplicant.re_registration_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600')">
+                                        {{ activeProofApplicant.admission_payment_verified_at ? 'Terverifikasi' : (activeProofApplicant.re_registration_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between pt-2">
+                                    <a v-if="activeProofApplicant.re_registration_payment_proof_url" :href="activeProofApplicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-teal-700 dark:text-teal-400 hover:underline">
+                                        Lihat File Termin 1 &rarr;
+                                    </a>
+                                    <span v-else class="text-slate-400 italic">Belum diunggah ortu</span>
+
+                                    <button 
+                                        v-if="activeProofApplicant.re_registration_payment_proof_url && !activeProofApplicant.admission_payment_verified_at"
+                                        type="button"
+                                        @click="openQuickPaymentModal(activeProofApplicant, 'partial')"
+                                        class="px-3 py-1 rounded-lg bg-teal-700 hover:bg-teal-600 text-white text-[11px] font-bold shadow-xs"
+                                    >
+                                        Verifikasi VA
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 3. Bukti Daftar Ulang Termin 2 Pelunasan -->
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                <div class="flex items-center justify-between mb-1">
+                                    <strong class="text-slate-800 dark:text-slate-200">3. Bukti Daftar Ulang: Termin 2 (Pelunasan 100%)</strong>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="activeProofApplicant.settlement_payment_verified_at || activeProofApplicant.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-800' : (activeProofApplicant.settlement_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600')">
+                                        {{ activeProofApplicant.settlement_payment_verified_at || activeProofApplicant.status === 'fully_paid' ? 'Lunas 100%' : (activeProofApplicant.settlement_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between pt-2">
+                                    <a v-if="activeProofApplicant.settlement_payment_proof_url" :href="activeProofApplicant.settlement_payment_proof_url" target="_blank" class="font-bold text-indigo-700 dark:text-indigo-400 hover:underline">
+                                        Lihat File Pelunasan &rarr;
+                                    </a>
+                                    <span v-else class="text-slate-400 italic">{{ activeProofApplicant.status === 'partial_paid' ? 'Menunggu ortu transfer sisa' : 'Belum tahap pelunasan' }}</span>
+
+                                    <button 
+                                        v-if="activeProofApplicant.settlement_payment_proof_url && activeProofApplicant.status !== 'fully_paid'"
+                                        type="button"
+                                        @click="openQuickPaymentModal(activeProofApplicant, 'paid')"
+                                        class="px-3 py-1 rounded-lg bg-indigo-700 hover:bg-indigo-600 text-white text-[11px] font-bold shadow-xs"
+                                    >
+                                        Verifikasi Pelunasan
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
 
                         <!-- 4. Resmikan Jadi Siswa jika Lunas 100% -->
                         <div v-if="activeProofApplicant.status === 'fully_paid'" class="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
@@ -1115,7 +1158,7 @@ const getStatusBadgeClass = (s) => {
                         <div>
                             <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Pembayaran</label>
                             <select v-model="quickPaymentForm.admission_payment_status" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
-                                <option value="partial">Pembayaran Termin 1 (Minimal 60%)</option>
+                                <option v-if="!isFullPaymentOnly" value="partial">Pembayaran Termin 1 (Minimal {{ dpPercentage }}%)</option>
                                 <option value="paid">Lunas 100% (Tuntas)</option>
                             </select>
                         </div>
@@ -1124,8 +1167,10 @@ const getStatusBadgeClass = (s) => {
                             <div class="flex items-center justify-between mb-1">
                                 <label class="font-medium text-slate-700 dark:text-slate-300">Nominal Masuk (Rp)</label>
                                 <div class="flex items-center gap-1.5 text-[10px]">
-                                    <button type="button" @click="setPresetQuickAmount('partial')" class="text-teal-700 dark:text-teal-400 font-bold hover:underline">Preset DP 60%</button>
-                                    <span class="text-slate-300">|</span>
+                                    <template v-if="!isFullPaymentOnly">
+                                        <button type="button" @click="setPresetQuickAmount('partial')" class="text-teal-700 dark:text-teal-400 font-bold hover:underline">Preset DP {{ dpPercentage }}%</button>
+                                        <span class="text-slate-300">|</span>
+                                    </template>
                                     <button type="button" @click="setPresetQuickAmount('paid')" class="text-emerald-700 dark:text-emerald-400 font-bold hover:underline">Preset Lunas 100%</button>
                                 </div>
                             </div>

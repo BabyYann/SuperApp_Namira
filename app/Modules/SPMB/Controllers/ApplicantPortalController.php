@@ -192,9 +192,13 @@ class ApplicantPortalController extends Controller
         ]);
 
         $unitSlug = $spmbService->resolveUnitSlug($applicant->unit);
+        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+        $dpPercentage = (int) ($setting?->min_down_payment_percentage ?? 60);
+        $isDirectFullPayment = $dpPercentage >= 100;
 
-        // Deteksi apakah ini pembayaran Termin 1 atau Pelunasan (Termin 2)
-        $isSettlement = ($request->payment_type === 'termin_2' || $request->payment_type === 'pelunasan')
+        // Deteksi apakah ini pembayaran Termin 1 atau Pelunasan (Termin 2 / Lunas 100%)
+        $isSettlement = $isDirectFullPayment
+            || ($request->payment_type === 'termin_2' || $request->payment_type === 'pelunasan')
             || ($applicant->status === 'partial_paid' || $applicant->admission_payment_status === 'partial')
             || (!empty($applicant->re_registration_payment_proof) && empty($applicant->settlement_payment_proof));
 
@@ -214,17 +218,19 @@ class ApplicantPortalController extends Controller
             $updateData['settlement_payment_proof'] = $proofPath;
             $history[] = [
                 'type' => 'termin_2',
-                'title' => 'Pembayaran Pelunasan (Termin 2 - 100%)',
+                'title' => $isDirectFullPayment ? 'Pembayaran Daftar Ulang (Lunas 100%)' : 'Pembayaran Pelunasan (Termin 2 - 100%)',
                 'proof_path' => $proofPath,
                 'uploaded_at' => now()->toIso8601String(),
                 'status' => 'pending',
             ];
-            $msg = 'Bukti pembayaran pelunasan daftar ulang berhasil diunggah dan sedang diproses oleh Panitia Keuangan.';
+            $msg = $isDirectFullPayment
+                ? 'Bukti pembayaran daftar ulang (100%) berhasil diunggah dan sedang diproses oleh Panitia Keuangan.'
+                : 'Bukti pembayaran pelunasan daftar ulang berhasil diunggah dan sedang diproses oleh Panitia Keuangan.';
         } else {
             $updateData['re_registration_payment_proof'] = $proofPath;
             $history[] = [
                 'type' => 'termin_1',
-                'title' => 'Pembayaran Daftar Ulang (Termin 1 / DP 60%)',
+                'title' => "Pembayaran Daftar Ulang (Termin 1 / DP {$dpPercentage}%)",
                 'proof_path' => $proofPath,
                 'uploaded_at' => now()->toIso8601String(),
                 'status' => 'pending',

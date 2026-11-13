@@ -205,6 +205,11 @@
 
     <p>Kepada Orang Tua / Wali murid diharapkan untuk segera menyelesaikan proses <strong>Daftar Ulang</strong> dengan ketentuan sebagai berikut:</p>
 
+    @php
+        $dpPercentage = (int) ($setting?->min_down_payment_percentage ?? 60);
+        $isFullPaymentOnly = $dpPercentage >= 100;
+    @endphp
+
     <div class="payment-info">
         <table>
             @if($applicant->virtual_account_number)
@@ -216,19 +221,19 @@
             @endif
             @if($applicant->total_admission_fee)
             <tr>
-                <td>Total Biaya Masuk / Uang Pangkal</td>
+                <td>{{ $isFullPaymentOnly ? 'Biaya Daftar Ulang (Lunas 100%)' : 'Total Biaya Masuk / Uang Pangkal' }}</td>
                 <td>:</td>
                 <td style="font-weight: bold;">Rp {{ number_format($applicant->total_admission_fee, 0, ',', '.') }}</td>
             </tr>
             @endif
-            @if($applicant->min_down_payment)
+            @if(!$isFullPaymentOnly && $applicant->min_down_payment)
             <tr>
-                <td>Pembayaran Termin 1 (Min 60%)</td>
+                <td>Pembayaran Termin 1 (Min {{ $dpPercentage }}%)</td>
                 <td>:</td>
                 <td style="font-weight: bold; color: #b45309;">Rp {{ number_format($applicant->min_down_payment, 0, ',', '.') }}</td>
             </tr>
             @endif
-            @if($applicant->down_payment_deadline)
+            @if(!$isFullPaymentOnly && $applicant->down_payment_deadline)
             <tr>
                 <td>Batas Waktu Termin 1</td>
                 <td>:</td>
@@ -237,7 +242,7 @@
             @endif
             @if($applicant->full_payment_deadline)
             <tr>
-                <td>Batas Pelunasan 100%</td>
+                <td>{{ $isFullPaymentOnly ? 'Batas Pembayaran Daftar Ulang' : 'Batas Pelunasan 100%' }}</td>
                 <td>:</td>
                 <td>{{ $applicant->full_payment_deadline->translatedFormat('d F Y') }}</td>
             </tr>

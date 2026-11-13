@@ -686,7 +686,7 @@ class PublicSpmbController extends Controller
                 'bank_account_number' => '0291008899',
                 'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
                 'admission_fee_total' => 8500000,
-                'min_down_payment_percentage' => 60,
+                'min_down_payment_percentage' => 100,
                 'is_active' => true,
                 'contact_whatsapp' => '082332922521',
             ]
@@ -727,7 +727,7 @@ class PublicSpmbController extends Controller
                 'bank_account_number' => '0291008899',
                 'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
                 'admission_fee_total' => 8500000,
-                'min_down_payment_percentage' => 60,
+                'min_down_payment_percentage' => 100,
                 'is_active' => true,
                 'contact_whatsapp' => '082332922521',
             ]

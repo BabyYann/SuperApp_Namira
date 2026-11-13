@@ -207,26 +207,37 @@ const submitEvaluation = () => {
     });
 };
 
+const dpPercentage = computed(() => Number(props.setting?.min_down_payment_percentage ?? 60));
+const isFullPaymentOnly = computed(() => dpPercentage.value >= 100);
+
 // Form: Virtual Account Bank Jatim
 const vaForm = useForm({
     virtual_account_number: props.applicant.virtual_account_number || '',
     total_admission_fee: props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000),
-    min_down_payment: props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * 0.6),
-    down_payment_deadline: toDateInputValue(props.applicant.down_payment_deadline),
+    min_down_payment: isFullPaymentOnly.value
+        ? (props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000))
+        : (props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100))),
+    down_payment_deadline: isFullPaymentOnly.value ? '' : toDateInputValue(props.applicant.down_payment_deadline),
     full_payment_deadline: toDateInputValue(props.applicant.full_payment_deadline),
 });
 
 const openVaModal = () => {
     vaForm.virtual_account_number = props.applicant.virtual_account_number || '';
     vaForm.total_admission_fee = props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000);
-    vaForm.min_down_payment = props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * 0.6);
-    vaForm.down_payment_deadline = toDateInputValue(props.applicant.down_payment_deadline);
+    vaForm.min_down_payment = isFullPaymentOnly.value
+        ? vaForm.total_admission_fee
+        : (props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100)));
+    vaForm.down_payment_deadline = isFullPaymentOnly.value ? '' : toDateInputValue(props.applicant.down_payment_deadline);
     vaForm.full_payment_deadline = toDateInputValue(props.applicant.full_payment_deadline);
     vaForm.clearErrors();
     showVaModal.value = true;
 };
 
 const submitVa = () => {
+    if (isFullPaymentOnly.value) {
+        vaForm.min_down_payment = vaForm.total_admission_fee;
+        vaForm.down_payment_deadline = '';
+    }
     vaForm.post(route('spmb.admin.set-va', props.applicant.id), {
         preserveScroll: true,
         onSuccess: () => showVaModal.value = false,
@@ -235,23 +246,25 @@ const submitVa = () => {
 
 // Form: Verifikasi Bayar Daftar Ulang
 const paymentForm = useForm({
-    paid_admission_amount: props.applicant.paid_admission_amount || (props.applicant.min_down_payment || 0),
-    admission_payment_status: props.applicant.status === 'partial_paid' ? 'paid' : 'partial', // partial or paid
+    paid_admission_amount: isFullPaymentOnly.value
+        ? (props.applicant.paid_admission_amount || (props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000)))
+        : (props.applicant.paid_admission_amount || (props.applicant.min_down_payment || 0)),
+    admission_payment_status: (isFullPaymentOnly.value || props.applicant.status === 'partial_paid') ? 'paid' : 'partial', // partial or paid
 });
 
 const openPaymentModal = (preferredStatus = null) => {
-    const isPaid = preferredStatus === 'paid' || props.applicant.status === 'partial_paid';
+    const isPaid = isFullPaymentOnly.value || preferredStatus === 'paid' || props.applicant.status === 'partial_paid';
     paymentForm.admission_payment_status = isPaid ? 'paid' : 'partial';
     paymentForm.paid_admission_amount = isPaid 
         ? (props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000))
-        : (props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * 0.6));
+        : (props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100)));
     showPaymentModal.value = true;
 };
 
 const setPresetAmount = (type) => {
-    if (type === 'partial') {
+    if (type === 'partial' && !isFullPaymentOnly.value) {
         paymentForm.admission_payment_status = 'partial';
-        paymentForm.paid_admission_amount = props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * 0.6);
+        paymentForm.paid_admission_amount = props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100));
     } else {
         paymentForm.admission_payment_status = 'paid';
         paymentForm.paid_admission_amount = props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000);
@@ -315,7 +328,7 @@ const formatRupiah = (amount) => {
             <!-- Breadcrumbs & Back -->
             <div class="flex items-center justify-between">
                 <Link 
-                    :href="route('spmb.admin.index')"
+                    :href="route('spmb.admin.index', { unit_id: applicant?.unit_id })"
                     class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-emerald-600 transition"
                 >
                     <ArrowLeftIcon class="w-4 h-4" />
@@ -682,41 +695,72 @@ const formatRupiah = (amount) => {
                             <span v-else class="text-slate-400 italic block mt-1">Belum ada berkas</span>
                         </div>
 
-                        <!-- 6. Bukti Bayar Daftar Ulang: Termin 1 (DP Minimal 60%) -->
-                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
+                        <!-- Mode 100% Langsung: 1 Kotak Bukti Daftar Ulang (Lunas 100%) -->
+                        <div v-if="isFullPaymentOnly" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
                             <div class="flex items-center justify-between mb-1.5">
-                                <span class="font-bold text-slate-700 dark:text-slate-300">6. Bukti Daftar Ulang: Termin 1 (DP 60%)</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300">6. Bukti Daftar Ulang (Lunas 100%)</span>
                                 <span 
                                     class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                                    :class="applicant.admission_payment_verified_at ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : (applicant.re_registration_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300')"
+                                    :class="applicant.settlement_payment_verified_at || applicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(applicant.status)
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                        : ((applicant.settlement_payment_proof_url || applicant.re_registration_payment_proof_url) ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300')"
                                 >
-                                    {{ applicant.admission_payment_verified_at ? 'Terverifikasi' : (applicant.re_registration_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
+                                    {{ applicant.settlement_payment_verified_at || applicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(applicant.status)
+                                        ? 'Lunas 100%'
+                                        : ((applicant.settlement_payment_proof_url || applicant.re_registration_payment_proof_url) ? 'Menunggu Cek' : 'Belum Ada') }}
                                 </span>
                             </div>
-                            <a v-if="applicant.re_registration_payment_proof_url" :href="applicant.re_registration_payment_proof_url" target="_blank" class="text-teal-700 dark:text-teal-400 font-bold hover:underline block text-center py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mt-2">
-                                Periksa Bukti Termin 1 &rarr;
-                            </a>
-                            <span v-else class="text-slate-400 italic block mt-1">{{ ['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Menunggu upload dari orang tua' : 'Belum tahap daftar ulang' }}</span>
-                        </div>
-
-                        <!-- 7. Bukti Bayar Daftar Ulang: Termin 2 (Pelunasan 100%) -->
-                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="font-bold text-slate-700 dark:text-slate-300">7. Bukti Pelunasan: Termin 2 (100%)</span>
-                                <span 
-                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                                    :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : (applicant.settlement_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300')"
-                                >
-                                    {{ applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'Lunas 100%' : (applicant.settlement_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
-                                </span>
-                            </div>
-                            <a v-if="applicant.settlement_payment_proof_url" :href="applicant.settlement_payment_proof_url" target="_blank" class="text-indigo-700 dark:text-indigo-400 font-bold hover:underline block text-center py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mt-2">
-                                Periksa Bukti Pelunasan &rarr;
+                            <a
+                                v-if="applicant.settlement_payment_proof_url || applicant.re_registration_payment_proof_url"
+                                :href="applicant.settlement_payment_proof_url || applicant.re_registration_payment_proof_url"
+                                target="_blank"
+                                class="text-emerald-700 dark:text-emerald-400 font-bold hover:underline block text-center py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mt-2"
+                            >
+                                Periksa Bukti Transfer (100%) &rarr;
                             </a>
                             <span v-else class="text-slate-400 italic block mt-1">
-                                {{ applicant.status === 'partial_paid' ? 'Menunggu pelunasan dari orang tua' : (applicant.status === 'fully_paid' ? 'Lunas sekaligus pada pembayaran awal' : 'Belum tahap pelunasan') }}
+                                {{ ['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Menunggu upload dari orang tua' : 'Belum tahap daftar ulang' }}
                             </span>
                         </div>
+
+                        <!-- Mode Termin (< 100%): 2 Kotak (Termin 1 + Termin 2 Pelunasan) -->
+                        <template v-else>
+                            <!-- 6. Bukti Bayar Daftar Ulang: Termin 1 -->
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="font-bold text-slate-700 dark:text-slate-300">6. Bukti Daftar Ulang: Termin 1 (DP {{ dpPercentage }}%)</span>
+                                    <span 
+                                        class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                        :class="applicant.admission_payment_verified_at ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : (applicant.re_registration_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300')"
+                                    >
+                                        {{ applicant.admission_payment_verified_at ? 'Terverifikasi' : (applicant.re_registration_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
+                                    </span>
+                                </div>
+                                <a v-if="applicant.re_registration_payment_proof_url" :href="applicant.re_registration_payment_proof_url" target="_blank" class="text-teal-700 dark:text-teal-400 font-bold hover:underline block text-center py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mt-2">
+                                    Periksa Bukti Termin 1 &rarr;
+                                </a>
+                                <span v-else class="text-slate-400 italic block mt-1">{{ ['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Menunggu upload dari orang tua' : 'Belum tahap daftar ulang' }}</span>
+                            </div>
+
+                            <!-- 7. Bukti Bayar Daftar Ulang: Termin 2 (Pelunasan 100%) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="font-bold text-slate-700 dark:text-slate-300">7. Bukti Pelunasan: Termin 2 (100%)</span>
+                                    <span 
+                                        class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                        :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : (applicant.settlement_payment_proof_url ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300')"
+                                    >
+                                        {{ applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'Lunas 100%' : (applicant.settlement_payment_proof_url ? 'Menunggu Cek' : 'Belum Ada') }}
+                                    </span>
+                                </div>
+                                <a v-if="applicant.settlement_payment_proof_url" :href="applicant.settlement_payment_proof_url" target="_blank" class="text-indigo-700 dark:text-indigo-400 font-bold hover:underline block text-center py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 mt-2">
+                                    Periksa Bukti Pelunasan &rarr;
+                                </a>
+                                <span v-else class="text-slate-400 italic block mt-1">
+                                    {{ applicant.status === 'partial_paid' ? 'Menunggu pelunasan dari orang tua' : (applicant.status === 'fully_paid' ? 'Lunas sekaligus pada pembayaran awal' : 'Belum tahap pelunasan') }}
+                                </span>
+                            </div>
+                        </template>
 
                         <!-- Riwayat Histori Transaksi Pembayaran -->
                         <div v-if="applicant.payment_history && applicant.payment_history.length > 0" class="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs space-y-2">
@@ -845,24 +889,24 @@ const formatRupiah = (amount) => {
                             <input v-model="vaForm.virtual_account_number" type="text" placeholder="Contoh: 9881029100889901" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid gap-3" :class="isFullPaymentOnly ? 'grid-cols-1' : 'grid-cols-2'">
                             <div>
                                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Total Biaya Masuk (Rp)</label>
                                 <input v-model="vaForm.total_admission_fee" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
                             </div>
-                            <div>
-                                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Termin 1 - Min 60% (Rp)</label>
+                            <div v-if="!isFullPaymentOnly">
+                                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Termin 1 - Min {{ dpPercentage }}% (Rp)</label>
                                 <input v-model="vaForm.min_down_payment" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
+                        <div class="grid gap-3" :class="isFullPaymentOnly ? 'grid-cols-1' : 'grid-cols-2'">
+                            <div v-if="!isFullPaymentOnly">
                                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Batas Bayar Termin 1</label>
                                 <input v-model="vaForm.down_payment_deadline" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
                             </div>
                             <div>
-                                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Batas Pelunasan 100%</label>
+                                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">{{ isFullPaymentOnly ? 'Batas Pembayaran Daftar Ulang (100%)' : 'Batas Pelunasan 100%' }}</label>
                                 <input v-model="vaForm.full_payment_deadline" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
                             </div>
                         </div>
@@ -888,20 +932,29 @@ const formatRupiah = (amount) => {
                     <div class="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
                         <span class="font-bold text-slate-700 dark:text-slate-300 block">Bukti Transfer yang Tersedia:</span>
                         <div class="flex flex-col gap-1.5 text-[11px]">
-                            <div class="flex items-center justify-between">
-                                <span>1. Termin 1 (DP 60%):</span>
-                                <a v-if="applicant.re_registration_payment_proof_url" :href="applicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-teal-600 hover:underline">
+                            <div v-if="isFullPaymentOnly" class="flex items-center justify-between">
+                                <span>Pembayaran Daftar Ulang (100%):</span>
+                                <a v-if="applicant.settlement_payment_proof_url || applicant.re_registration_payment_proof_url" :href="applicant.settlement_payment_proof_url || applicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-emerald-600 hover:underline">
                                     Buka File &rarr;
                                 </a>
                                 <span v-else class="text-slate-400 italic">Belum ada</span>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span>2. Termin 2 (Pelunasan):</span>
-                                <a v-if="applicant.settlement_payment_proof_url" :href="applicant.settlement_payment_proof_url" target="_blank" class="font-bold text-indigo-600 hover:underline">
-                                    Buka File &rarr;
-                                </a>
-                                <span v-else class="text-slate-400 italic">Belum ada</span>
-                            </div>
+                            <template v-else>
+                                <div class="flex items-center justify-between">
+                                    <span>1. Termin 1 (DP {{ dpPercentage }}%):</span>
+                                    <a v-if="applicant.re_registration_payment_proof_url" :href="applicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-teal-600 hover:underline">
+                                        Buka File &rarr;
+                                    </a>
+                                    <span v-else class="text-slate-400 italic">Belum ada</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>2. Termin 2 (Pelunasan):</span>
+                                    <a v-if="applicant.settlement_payment_proof_url" :href="applicant.settlement_payment_proof_url" target="_blank" class="font-bold text-indigo-600 hover:underline">
+                                        Buka File &rarr;
+                                    </a>
+                                    <span v-else class="text-slate-400 italic">Belum ada</span>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -909,7 +962,7 @@ const formatRupiah = (amount) => {
                         <div>
                             <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Status Pembayaran</label>
                             <select v-model="paymentForm.admission_payment_status" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
-                                <option value="partial">Pembayaran Termin 1 (Minimal 60%)</option>
+                                <option v-if="!isFullPaymentOnly" value="partial">Pembayaran Termin 1 (Minimal {{ dpPercentage }}%)</option>
                                 <option value="paid">Lunas 100% (Tuntas)</option>
                             </select>
                         </div>
@@ -918,8 +971,10 @@ const formatRupiah = (amount) => {
                             <div class="flex items-center justify-between mb-1">
                                 <label class="font-medium text-slate-700 dark:text-slate-300">Nominal Masuk (Rp)</label>
                                 <div class="flex items-center gap-1.5 text-[10px]">
-                                    <button type="button" @click="setPresetAmount('partial')" class="text-teal-700 dark:text-teal-400 font-bold hover:underline">Preset DP 60%</button>
-                                    <span class="text-slate-300">|</span>
+                                    <template v-if="!isFullPaymentOnly">
+                                        <button type="button" @click="setPresetAmount('partial')" class="text-teal-700 dark:text-teal-400 font-bold hover:underline">Preset DP {{ dpPercentage }}%</button>
+                                        <span class="text-slate-300">|</span>
+                                    </template>
                                     <button type="button" @click="setPresetAmount('paid')" class="text-emerald-700 dark:text-emerald-400 font-bold hover:underline">Preset Lunas 100%</button>
                                 </div>
                             </div>

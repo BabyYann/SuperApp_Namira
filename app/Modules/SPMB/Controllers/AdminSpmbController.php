@@ -43,6 +43,47 @@ class AdminSpmbController extends Controller
     }
 
     /**
+     * Check if a Unit is a valid SPMB school unit (SD, SD-02, SMP).
+     */
+    protected function isSpmbUnit(?Unit $unit): bool
+    {
+        if (!$unit) {
+            return false;
+        }
+
+        $code = strtoupper($unit->code ?? '');
+        $name = strtolower($unit->name ?? '');
+
+        return in_array($code, ['SD', 'SD-02', 'SMP'])
+            || str_contains($name, 'sd')
+            || str_contains($name, 'smp');
+    }
+
+    /**
+     * Resolve target SPMB unit from request, active unit session (only if valid SPMB unit), or fallback to SD/SMP.
+     */
+    protected function resolveSpmbUnit(Request $request): Unit
+    {
+        if ($request->filled('unit_id')) {
+            $requested = Unit::find($request->unit_id);
+            if ($requested) {
+                return $requested;
+            }
+        }
+
+        if (session()->has('active_unit_id')) {
+            $activeUnit = Unit::find(session('active_unit_id'));
+            if ($this->isSpmbUnit($activeUnit)) {
+                return $activeUnit;
+            }
+        }
+
+        return Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first()
+            ?? Unit::where('code', 'SMP')->orWhere('name', 'like', '%SMP%')->first()
+            ?? Unit::firstOrFail();
+    }
+
+    /**
      * Display list of applicants with search, filters, and statistics.
      */
     public function index(Request $request, SpmbService $spmbService)
@@ -50,23 +91,7 @@ class AdminSpmbController extends Controller
         $user = Auth::user();
         $this->authorizeSpmb();
 
-        // Determine target unit
-        $targetUnit = null;
-        if ($request->filled('unit_id')) {
-            $targetUnit = Unit::find($request->unit_id);
-        }
-
-        if (!$targetUnit && session()->has('active_unit_id')) {
-            $targetUnit = Unit::find(session('active_unit_id'));
-        }
-
-        if (!$targetUnit) {
-            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
-        }
-
-        if (!$targetUnit) {
-            $targetUnit = Unit::firstOrFail();
-        }
+        $targetUnit = $this->resolveSpmbUnit($request);
 
         // Enforce unit scope if user is not yayasan admin
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
@@ -225,6 +250,7 @@ class AdminSpmbController extends Controller
             'stats' => $stats,
             'filters' => $request->only(['search', 'category', 'status', 'unit_id']),
             'unit' => $targetUnit,
+            'setting' => SpmbSetting::where('unit_id', $targetUnit->id)->first(),
             'availableUnits' => $availableUnits,
             'indenMasterList' => $indenMasterList,
             'indenMasterStats' => $indenMasterStats,
@@ -395,16 +421,24 @@ class AdminSpmbController extends Controller
         $request->validate([
             'virtual_account_number' => 'required|string|max:50',
             'total_admission_fee' => 'required|numeric|min:0',
-            'min_down_payment' => 'required|numeric|min:0',
+            'min_down_payment' => 'nullable|numeric|min:0',
             'down_payment_deadline' => 'nullable|date',
             'full_payment_deadline' => 'nullable|date',
         ]);
 
+        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+        $dpPercentage = (int) ($setting?->min_down_payment_percentage ?? 60);
+        $isFullPaymentOnly = $dpPercentage >= 100;
+
+        $minDownPayment = $isFullPaymentOnly
+            ? (float) $request->total_admission_fee
+            : (float) ($request->min_down_payment ?? ($request->total_admission_fee * ($dpPercentage / 100)));
+
         $applicant->update([
             'virtual_account_number' => $request->virtual_account_number,
             'total_admission_fee' => $request->total_admission_fee,
-            'min_down_payment' => $request->min_down_payment,
-            'down_payment_deadline' => $request->down_payment_deadline,
+            'min_down_payment' => $minDownPayment,
+            'down_payment_deadline' => $isFullPaymentOnly ? null : $request->down_payment_deadline,
             'full_payment_deadline' => $request->full_payment_deadline,
         ]);
 
@@ -460,7 +494,11 @@ class AdminSpmbController extends Controller
 
         $applicant->update($updateData);
 
-        $msg = $request->admission_payment_status === 'paid' ? 'Pelunasan 100% Berhasil' : 'Pembayaran Termin 1 (60%) Berhasil';
+        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+        $dpPercent = (int) ($setting?->min_down_payment_percentage ?? 60);
+        $msg = $request->admission_payment_status === 'paid'
+            ? 'Pelunasan 100% Berhasil'
+            : "Pembayaran Termin 1 ({$dpPercent}%) Berhasil";
 
         return back()->with('success', "Status daftar ulang {$applicant->full_name} berhasil diperbarui: {$msg}.");
     }
@@ -491,23 +529,14 @@ class AdminSpmbController extends Controller
         $user = Auth::user();
         $this->authorizeSpmb();
 
-        $targetUnit = null;
-        if ($request->filled('unit_id')) {
-            $targetUnit = Unit::find($request->unit_id);
-        }
-        if (!$targetUnit && session()->has('active_unit_id')) {
-            $targetUnit = Unit::find(session('active_unit_id'));
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::firstOrFail();
-        }
+        $targetUnit = $this->resolveSpmbUnit($request);
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
             $this->authorizeSpmb($targetUnit->id);
         }
+
+        $isSmpUnit = strtoupper($targetUnit->code ?? '') === 'SMP'
+            || str_contains(strtolower($targetUnit->name ?? ''), 'smp');
 
         $setting = SpmbSetting::firstOrCreate(
             ['unit_id' => $targetUnit->id],
@@ -520,7 +549,7 @@ class AdminSpmbController extends Controller
                 'bank_account_number' => null,
                 'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
                 'admission_fee_total' => 8500000,
-                'min_down_payment_percentage' => 60,
+                'min_down_payment_percentage' => $isSmpUnit ? 100 : 60,
                 'is_active' => true,
                 'contact_whatsapp' => '082332922521',
             ]
@@ -595,19 +624,7 @@ class AdminSpmbController extends Controller
         $user = Auth::user();
         $this->authorizeSpmb();
 
-        $targetUnit = null;
-        if ($request->filled('unit_id')) {
-            $targetUnit = Unit::find($request->unit_id);
-        }
-        if (!$targetUnit && session()->has('active_unit_id')) {
-            $targetUnit = Unit::find(session('active_unit_id'));
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::firstOrFail();
-        }
+        $targetUnit = $this->resolveSpmbUnit($request);
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
             $this->authorizeSpmb($targetUnit->id);
@@ -672,19 +689,7 @@ class AdminSpmbController extends Controller
             'unit_id' => 'nullable|exists:units,id',
         ]);
 
-        $targetUnit = null;
-        if ($request->filled('unit_id')) {
-            $targetUnit = Unit::find($request->unit_id);
-        }
-        if (!$targetUnit && session()->has('active_unit_id')) {
-            $targetUnit = Unit::find(session('active_unit_id'));
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::firstOrFail();
-        }
+        $targetUnit = $this->resolveSpmbUnit($request);
 
         $targetUser = User::findOrFail($request->user_id);
 
@@ -707,16 +712,7 @@ class AdminSpmbController extends Controller
         $authUser = Auth::user();
         $this->authorizeSpmb();
 
-        $targetUnit = null;
-        if ($request->filled('unit_id')) {
-            $targetUnit = Unit::find($request->unit_id);
-        }
-        if (!$targetUnit && session()->has('active_unit_id')) {
-            $targetUnit = Unit::find(session('active_unit_id'));
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
-        }
+        $targetUnit = $this->resolveSpmbUnit($request);
         if ($targetUnit) {
             setPermissionsTeamId($targetUnit->id);
         }
@@ -740,6 +736,7 @@ class AdminSpmbController extends Controller
             abort(403, 'Akses Ditolak: Hanya Administrator yang berwenang menghapus data calon siswa.');
         }
 
+        $unitId = $applicant->unit_id;
         $fullName = $applicant->full_name;
         $regNumber = $applicant->registration_number;
         $unitSlug = app(SpmbService::class)->resolveUnitSlug($applicant->unit);
@@ -780,7 +777,7 @@ class AdminSpmbController extends Controller
             }
         }
 
-        return redirect()->route('spmb.admin.index')->with('success', "Data calon siswa {$fullName} ({$regNumber}) berhasil dihapus permanen.");
+        return redirect()->route('spmb.admin.index', ['unit_id' => $unitId])->with('success', "Data calon siswa {$fullName} ({$regNumber}) berhasil dihapus permanen.");
     }
 
     /**
@@ -969,19 +966,7 @@ class AdminSpmbController extends Controller
         $user = Auth::user();
         $this->authorizeSpmb();
 
-        $targetUnit = null;
-        if ($request->filled('unit_id')) {
-            $targetUnit = Unit::find($request->unit_id);
-        }
-        if (!$targetUnit && session()->has('active_unit_id')) {
-            $targetUnit = Unit::find(session('active_unit_id'));
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first();
-        }
-        if (!$targetUnit) {
-            $targetUnit = Unit::firstOrFail();
-        }
+        $targetUnit = $this->resolveSpmbUnit($request);
 
         if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
             $this->authorizeSpmb($targetUnit->id);

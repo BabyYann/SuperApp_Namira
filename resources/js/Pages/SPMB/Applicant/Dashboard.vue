@@ -61,6 +61,9 @@ const isSmp = computed(() => {
     return unitCode === 'SMP' || unitName.includes('smp');
 });
 
+const dpPercentage = computed(() => Number(props.setting?.min_down_payment_percentage ?? 60));
+const isFullPaymentOnly = computed(() => dpPercentage.value >= 100);
+
 const unitDisplayName = computed(() => {
     const code = (props.applicant?.unit?.code || '').toUpperCase();
     if (code === 'SD') {
@@ -103,7 +106,11 @@ const handleUploadProof = async (e, type = 'termin_1') => {
     uploadForm.post(route('spmb.applicant.upload-proof', props.applicant.id), {
         preserveScroll: true,
         onSuccess: () => {
-            alert(type === 'termin_2' ? 'Bukti transfer pelunasan berhasil diunggah.' : 'Bukti transfer daftar ulang Termin 1 berhasil diunggah.');
+            if (isFullPaymentOnly.value) {
+                alert('Bukti transfer pembayaran daftar ulang (100%) berhasil diunggah.');
+            } else {
+                alert(type === 'termin_2' ? 'Bukti transfer pelunasan berhasil diunggah.' : 'Bukti transfer daftar ulang Termin 1 berhasil diunggah.');
+            }
         }
     });
 };
@@ -687,7 +694,7 @@ const supportingDocsCompletedCount = computed(() => {
                     <span>Perjalanan Pendaftaran Peserta Didik Baru</span>
                 </h3>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 text-center">
+                <div class="grid grid-cols-2 gap-2.5 text-center" :class="isFullPaymentOnly ? 'sm:grid-cols-3 lg:grid-cols-6' : 'sm:grid-cols-4 lg:grid-cols-7'">
                     
                     <!-- 1. Form & Berkas -->
                     <div class="p-3 rounded-xl border bg-emerald-50 border-emerald-300 text-emerald-900 text-xs">
@@ -751,21 +758,22 @@ const supportingDocsCompletedCount = computed(() => {
                         </span>
                     </div>
 
-                    <!-- 5. Termin 60% -->
+                    <!-- 5. Termin DP (Hanya jika unit menggunakan pembayaran bertahap < 100%) -->
                     <div 
+                        v-if="!isFullPaymentOnly"
                         class="p-3 rounded-xl border text-xs transition"
                         :class="['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
                             : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
                         <CreditCardIcon class="w-5 h-5 mx-auto mb-1" :class="['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-700' : 'text-slate-400'" />
-                        <strong class="block text-[11px]">5. Termin 60%</strong>
+                        <strong class="block text-[11px]">5. Termin {{ dpPercentage }}%</strong>
                         <span class="text-[10px] font-semibold block mt-0.5">
-                            {{ ['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? 'Lunas 60%' : 'Menunggu' }}
+                            {{ ['partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) ? `Lunas ${dpPercentage}%` : 'Menunggu' }}
                         </span>
                     </div>
 
-                    <!-- 6. Lunas 100% -->
+                    <!-- 5 / 6. Daftar Ulang Lunas 100% -->
                     <div 
                         class="p-3 rounded-xl border text-xs transition"
                         :class="['fully_paid', 'enrolled'].includes(applicant.status)
@@ -773,21 +781,24 @@ const supportingDocsCompletedCount = computed(() => {
                             : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
                         <CheckCircleIcon class="w-5 h-5 mx-auto mb-1" :class="['fully_paid', 'enrolled'].includes(applicant.status) ? 'text-emerald-700' : 'text-slate-400'" />
-                        <strong class="block text-[11px]">6. Lunas 100%</strong>
+                        <strong class="block text-[11px]">{{ isFullPaymentOnly ? '5. Daftar Ulang 100%' : '6. Lunas 100%' }}</strong>
                         <span class="text-[10px] font-semibold block mt-0.5">
                             {{ ['fully_paid', 'enrolled'].includes(applicant.status) ? 'Lunas Tuntas' : 'Menunggu' }}
                         </span>
                     </div>
 
-                    <!-- 7. Siswa Aktif -->
+                    <!-- 6 / 7. Siswa Aktif -->
                     <div 
-                        class="p-3 rounded-xl border text-xs transition col-span-2 sm:col-span-1"
-                        :class="applicant.status === 'enrolled'
-                            ? 'bg-emerald-100 border-emerald-400 text-emerald-900 font-bold' 
-                            : 'bg-slate-50 border-slate-200 text-slate-500'"
+                        class="p-3 rounded-xl border text-xs transition"
+                        :class="[
+                            applicant.status === 'enrolled'
+                                ? 'bg-emerald-100 border-emerald-400 text-emerald-900 font-bold' 
+                                : 'bg-slate-50 border-slate-200 text-slate-500',
+                            !isFullPaymentOnly ? 'col-span-2 sm:col-span-1' : ''
+                        ]"
                     >
                         <AcademicCapIcon class="w-5 h-5 mx-auto mb-1" :class="applicant.status === 'enrolled' ? 'text-emerald-800' : 'text-slate-400'" />
-                        <strong class="block text-[11px]">7. Siswa Aktif</strong>
+                        <strong class="block text-[11px]">{{ isFullPaymentOnly ? '6. Siswa Aktif' : '7. Siswa Aktif' }}</strong>
                         <span class="text-[10px] font-semibold block mt-0.5">
                             {{ applicant.status === 'enrolled' ? 'Resmi Siswa' : (applicant.status === 'fully_paid' ? 'Menunggu Penetapan' : 'Tahap Akhir') }}
                         </span>
@@ -948,20 +959,24 @@ const supportingDocsCompletedCount = computed(() => {
 
                         <div class="space-y-1.5 pt-3 border-t border-slate-200 text-xs text-slate-600">
                             <div class="flex justify-between">
-                                <span>Total Biaya Masuk:</span>
+                                <span>{{ isFullPaymentOnly ? 'Biaya Daftar Ulang (100%):' : 'Total Biaya Masuk:' }}</span>
                                 <strong class="text-slate-900">{{ formatRupiah(applicant.total_admission_fee) }}</strong>
                             </div>
-                            <div class="flex justify-between">
-                                <span>Termin 1 (Minimal 60%):</span>
+                            <div v-if="!isFullPaymentOnly" class="flex justify-between">
+                                <span>Termin 1 (Minimal {{ dpPercentage }}%):</span>
                                 <strong class="text-amber-700">{{ formatRupiah(applicant.min_down_payment) }}</strong>
                             </div>
                             <div class="flex justify-between">
                                 <span>Total Sudah Masuk:</span>
                                 <strong class="text-emerald-700">{{ formatRupiah(applicant.paid_admission_amount) }}</strong>
                             </div>
-                            <div v-if="applicant.down_payment_deadline" class="flex justify-between text-rose-600">
+                            <div v-if="!isFullPaymentOnly && applicant.down_payment_deadline" class="flex justify-between text-rose-600">
                                 <span>Batas Bayar Termin 1:</span>
                                 <strong>{{ formatIndonesianDate(applicant.down_payment_deadline) || applicant.down_payment_deadline }}</strong>
+                            </div>
+                            <div v-if="applicant.full_payment_deadline" class="flex justify-between text-rose-600">
+                                <span>{{ isFullPaymentOnly ? 'Batas Pembayaran (100%):' : 'Batas Pelunasan 100%:' }}</span>
+                                <strong>{{ formatIndonesianDate(applicant.full_payment_deadline) || applicant.full_payment_deadline }}</strong>
                             </div>
                         </div>
                     </div>
@@ -971,56 +986,100 @@ const supportingDocsCompletedCount = computed(() => {
                         <div>
                             <span class="text-xs font-bold text-slate-800 block">Konfirmasi Bukti Transfer VA</span>
                             <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                Setelah transfer ke nomor Virtual Account di samping, silakan unggah bukti transfer per termin agar panitia memvalidasi pendaftaran Ananda.
+                                {{ isFullPaymentOnly
+                                    ? 'Setelah transfer pelunasan 100% ke nomor Virtual Account di samping, silakan unggah bukti transfer agar panitia memvalidasi daftar ulang Ananda.'
+                                    : 'Setelah transfer ke nomor Virtual Account di samping, silakan unggah bukti transfer per termin agar panitia memvalidasi pendaftaran Ananda.' }}
                             </p>
                         </div>
 
                         <div class="mt-4 space-y-3">
-                            <!-- Box Termin 1: DP Minimal 60% -->
-                            <div class="p-3.5 rounded-xl border" :class="applicant.admission_payment_verified_at ? 'bg-emerald-50 border-emerald-200' : (applicant.re_registration_payment_proof ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200')">
+                            <!-- Mode Langsung 100% -->
+                            <div
+                                v-if="isFullPaymentOnly"
+                                class="p-3.5 rounded-xl border"
+                                :class="(applicant.settlement_payment_verified_at || applicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(applicant.status))
+                                    ? 'bg-emerald-50 border-emerald-200'
+                                    : ((applicant.settlement_payment_proof || applicant.re_registration_payment_proof) ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200')"
+                            >
                                 <div class="flex items-center justify-between mb-1">
-                                    <strong class="text-xs font-bold" :class="applicant.admission_payment_verified_at ? 'text-emerald-900' : 'text-slate-800'">
-                                        1. Bukti Pembayaran Termin 1 (DP 60%)
+                                    <strong
+                                        class="text-xs font-bold"
+                                        :class="(applicant.settlement_payment_verified_at || applicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(applicant.status)) ? 'text-emerald-900' : 'text-slate-800'"
+                                    >
+                                        Pembayaran Daftar Ulang (Lunas 100%)
                                     </strong>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="applicant.admission_payment_verified_at ? 'bg-emerald-100 text-emerald-800' : (applicant.re_registration_payment_proof ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500')">
-                                        {{ applicant.admission_payment_verified_at ? 'Terverifikasi' : (applicant.re_registration_payment_proof ? 'Menunggu Cek' : 'Belum Ada') }}
+                                    <span
+                                        class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                        :class="(applicant.settlement_payment_verified_at || applicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(applicant.status))
+                                            ? 'bg-emerald-100 text-emerald-800'
+                                            : ((applicant.settlement_payment_proof || applicant.re_registration_payment_proof) ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500')"
+                                    >
+                                        {{ (applicant.settlement_payment_verified_at || applicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(applicant.status))
+                                            ? 'Lunas 100%'
+                                            : ((applicant.settlement_payment_proof || applicant.re_registration_payment_proof) ? 'Menunggu Cek' : 'Belum Ada') }}
                                     </span>
                                 </div>
-                                <div v-if="applicant.re_registration_payment_proof_url" class="flex items-center justify-between text-[11px] pt-1 mb-2">
+                                <div v-if="applicant.settlement_payment_proof_url || applicant.re_registration_payment_proof_url" class="flex items-center justify-between text-[11px] pt-1 mb-2">
                                     <span class="text-slate-500">Berkas terunggah:</span>
-                                    <a :href="applicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-teal-700 hover:underline">
-                                        Lihat Bukti Termin 1 &rarr;
+                                    <a :href="applicant.settlement_payment_proof_url || applicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-emerald-700 hover:underline">
+                                        Lihat Bukti Transfer &rarr;
                                     </a>
                                 </div>
-                                <label v-if="!applicant.admission_payment_verified_at" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#064e3b] hover:bg-emerald-800 text-white text-[11px] font-bold transition">
+                                <label v-if="!['fully_paid', 'enrolled'].includes(applicant.status) && !applicant.settlement_payment_verified_at" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#064e3b] hover:bg-emerald-800 text-white text-[11px] font-bold transition">
                                     <DocumentTextIcon class="w-3.5 h-3.5 text-amber-300" />
-                                    <span>{{ applicant.re_registration_payment_proof ? 'Ganti Bukti Termin 1' : 'Unggah Bukti Termin 1' }}</span>
-                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="(e) => handleUploadProof(e, 'termin_1')">
+                                    <span>{{ (applicant.settlement_payment_proof || applicant.re_registration_payment_proof) ? 'Ganti Bukti Pembayaran (100%)' : 'Unggah Bukti Pembayaran (100%)' }}</span>
+                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="(e) => handleUploadProof(e, 'pelunasan')">
                                 </label>
                             </div>
 
-                            <!-- Box Termin 2: Pelunasan 100% -->
-                            <div v-if="applicant.status === 'partial_paid' || applicant.settlement_payment_proof" class="p-3.5 rounded-xl border" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-50 border-emerald-200' : (applicant.settlement_payment_proof ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200')">
-                                <div class="flex items-center justify-between mb-1">
-                                    <strong class="text-xs font-bold" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'text-emerald-900' : 'text-slate-800'">
-                                        2. Bukti Pelunasan (Termin 2 - 100%)
-                                    </strong>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-800' : (applicant.settlement_payment_proof ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800')">
-                                        {{ applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'Lunas 100%' : (applicant.settlement_payment_proof ? 'Menunggu Cek' : 'Siap Diunggah') }}
-                                    </span>
+                            <!-- Mode Termin (< 100%) -->
+                            <template v-else>
+                                <!-- Box Termin 1 -->
+                                <div class="p-3.5 rounded-xl border" :class="applicant.admission_payment_verified_at ? 'bg-emerald-50 border-emerald-200' : (applicant.re_registration_payment_proof ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200')">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <strong class="text-xs font-bold" :class="applicant.admission_payment_verified_at ? 'text-emerald-900' : 'text-slate-800'">
+                                            1. Bukti Pembayaran Termin 1 (DP {{ dpPercentage }}%)
+                                        </strong>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="applicant.admission_payment_verified_at ? 'bg-emerald-100 text-emerald-800' : (applicant.re_registration_payment_proof ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500')">
+                                            {{ applicant.admission_payment_verified_at ? 'Terverifikasi' : (applicant.re_registration_payment_proof ? 'Menunggu Cek' : 'Belum Ada') }}
+                                        </span>
+                                    </div>
+                                    <div v-if="applicant.re_registration_payment_proof_url" class="flex items-center justify-between text-[11px] pt-1 mb-2">
+                                        <span class="text-slate-500">Berkas terunggah:</span>
+                                        <a :href="applicant.re_registration_payment_proof_url" target="_blank" class="font-bold text-teal-700 hover:underline">
+                                            Lihat Bukti Termin 1 &rarr;
+                                        </a>
+                                    </div>
+                                    <label v-if="!applicant.admission_payment_verified_at" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#064e3b] hover:bg-emerald-800 text-white text-[11px] font-bold transition">
+                                        <DocumentTextIcon class="w-3.5 h-3.5 text-amber-300" />
+                                        <span>{{ applicant.re_registration_payment_proof ? 'Ganti Bukti Termin 1' : 'Unggah Bukti Termin 1' }}</span>
+                                        <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="(e) => handleUploadProof(e, 'termin_1')">
+                                    </label>
                                 </div>
-                                <div v-if="applicant.settlement_payment_proof_url" class="flex items-center justify-between text-[11px] pt-1 mb-2">
-                                    <span class="text-slate-500">Berkas pelunasan:</span>
-                                    <a :href="applicant.settlement_payment_proof_url" target="_blank" class="font-bold text-indigo-700 hover:underline">
-                                        Lihat Bukti Pelunasan &rarr;
-                                    </a>
+
+                                <!-- Box Termin 2: Pelunasan 100% -->
+                                <div v-if="applicant.status === 'partial_paid' || applicant.settlement_payment_proof" class="p-3.5 rounded-xl border" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-50 border-emerald-200' : (applicant.settlement_payment_proof ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200')">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <strong class="text-xs font-bold" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'text-emerald-900' : 'text-slate-800'">
+                                            2. Bukti Pelunasan (Termin 2 - 100%)
+                                        </strong>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'bg-emerald-100 text-emerald-800' : (applicant.settlement_payment_proof ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800')">
+                                            {{ applicant.settlement_payment_verified_at || applicant.status === 'fully_paid' ? 'Lunas 100%' : (applicant.settlement_payment_proof ? 'Menunggu Cek' : 'Siap Diunggah') }}
+                                        </span>
+                                    </div>
+                                    <div v-if="applicant.settlement_payment_proof_url" class="flex items-center justify-between text-[11px] pt-1 mb-2">
+                                        <span class="text-slate-500">Berkas pelunasan:</span>
+                                        <a :href="applicant.settlement_payment_proof_url" target="_blank" class="font-bold text-indigo-700 hover:underline">
+                                            Lihat Bukti Pelunasan &rarr;
+                                        </a>
+                                    </div>
+                                    <label v-if="applicant.status === 'partial_paid' || !applicant.settlement_payment_verified_at" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white text-[11px] font-bold transition">
+                                        <DocumentTextIcon class="w-3.5 h-3.5 text-amber-300" />
+                                        <span>{{ applicant.settlement_payment_proof ? 'Ganti Bukti Pelunasan' : 'Unggah Bukti Pelunasan (Termin 2)' }}</span>
+                                        <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="(e) => handleUploadProof(e, 'termin_2')">
+                                    </label>
                                 </div>
-                                <label v-if="applicant.status === 'partial_paid' || !applicant.settlement_payment_verified_at" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white text-[11px] font-bold transition">
-                                    <DocumentTextIcon class="w-3.5 h-3.5 text-amber-300" />
-                                    <span>{{ applicant.settlement_payment_proof ? 'Ganti Bukti Pelunasan' : 'Unggah Bukti Pelunasan (Termin 2)' }}</span>
-                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" @change="(e) => handleUploadProof(e, 'termin_2')">
-                                </label>
-                            </div>
+                            </template>
                         </div>
                     </div>
 

@@ -137,7 +137,7 @@ const removePanitia = (panitia) => {
             <!-- Breadcrumbs -->
             <div>
                 <Link 
-                    :href="route('spmb.admin.index')"
+                    :href="route('spmb.admin.index', { unit_id: unit?.id })"
                     class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-emerald-600 transition"
                 >
                     <ArrowLeftIcon class="w-4 h-4" />
