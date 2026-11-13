@@ -639,9 +639,11 @@ class AdminSpmbController extends Controller
             'name', 'academic_year', 'quota', 'registration_fee',
             'admission_fee_total', 'min_down_payment_percentage',
             'bank_name', 'bank_account_number', 'bank_account_holder',
-            'contact_whatsapp', 'notes', 'is_active',
-            'selection_date', 'announcement_date', 'announcement_released'
+            'contact_whatsapp', 'notes',
+            'selection_date', 'announcement_date'
         ]);
+        $data['is_active'] = $request->boolean('is_active');
+        $data['announcement_released'] = $request->boolean('announcement_released');
 
         if (Schema::hasColumn('spmb_settings', 'whatsapp_group_link')) {
             $data['whatsapp_group_link'] = $request->input('whatsapp_group_link');

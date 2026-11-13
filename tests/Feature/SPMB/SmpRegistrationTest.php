@@ -279,6 +279,58 @@ it('gates announcement results and letter before official release date', functio
     $sklResponseAfterRelease->assertOk();
 });
 
+it('keeps announcement results and letter gated when announcement_date is null and announcement_released is false', function () {
+    $parent = User::factory()->create(['phone' => '081234567891']);
+
+    $applicant = SpmbApplicant::create([
+        'user_id' => $parent->id,
+        'unit_id' => $this->smpUnit->id,
+        'registration_number' => 'IND-SMPN-26099',
+        'full_name' => 'Zaki Pratama Putra',
+        'gender' => 'L',
+        'birth_place' => 'Probolinggo',
+        'birth_date' => '2014-06-15',
+        'father_name' => 'Hadi Pratama',
+        'mother_name' => 'Rina Susanti',
+        'parent_phone' => '081234567891',
+        'address' => 'Jl. Soekarno Hatta No. 10',
+        'status' => 'accepted',
+        'evaluation_result' => 'accepted',
+        'evaluation_document_path' => 'spmb/smp-namira/IND-SMPN-26099/HASIL_EVALUASI.pdf',
+        'is_inden' => true,
+    ]);
+
+    // announcement_date is null AND announcement_released is false
+    $this->smpSetting->update([
+        'announcement_date' => null,
+        'announcement_released' => false,
+    ]);
+
+    // 1. Dashboard: must stay gated and hide evaluation result & document URL
+    $response = $this->actingAs($parent)->get(route('spmb.applicant.dashboard'));
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('SPMB/Applicant/Dashboard')
+        ->where('isAnnouncementReleased', false)
+        ->missing('applicant.evaluation_result')
+        ->missing('applicant.evaluation_document_url')
+    );
+
+    // 2. SKL download: must return 403 Forbidden
+    $this->actingAs($parent)->get(route('spmb.applicant.print-skl', $applicant->id))->assertForbidden();
+
+    // 3. When admin checks announcement_released = true, portal and SKL unlock immediately
+    $this->smpSetting->update(['announcement_released' => true]);
+
+    $this->actingAs($parent)->get(route('spmb.applicant.dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('isAnnouncementReleased', true)
+            ->where('applicant.evaluation_result', 'accepted')
+        );
+
+    $this->actingAs($parent)->get(route('spmb.applicant.print-skl', $applicant->id))->assertOk();
+});
+
 it('enforces unit scoping so SD panitia cannot evaluate SMP applicant', function () {
     $sdPanitia = createUserWithRole('panitia_spmb', $this->sdUnit->id);
 

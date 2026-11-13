@@ -295,11 +295,16 @@ const removePanitia = (panitia) => {
                             </div>
 
                             <!-- Rilis Pengumuman Resmi -->
-                            <div class="flex items-center gap-3 pt-1">
-                                <input type="checkbox" id="announcementReleased" v-model="settingForm.announcement_released" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                <label for="announcementReleased" class="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                    Rilis Resmi Pengumuman Kelulusan (Buka Akses Keputusan & SKL di Portal Orang Tua)
-                                </label>
+                            <div class="pt-1 space-y-1">
+                                <div class="flex items-center gap-3">
+                                    <input type="checkbox" id="announcementReleased" v-model="settingForm.announcement_released" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                    <label for="announcementReleased" class="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                        Rilis Resmi Pengumuman Kelulusan (Buka Akses Keputusan & SKL di Portal Orang Tua)
+                                    </label>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 pl-6">
+                                    Jika tidak dicentang dan tanggal pengumuman belum tiba (atau kosong), keputusan kelulusan, dokumen hasil evaluasi, dan SKL tetap terkunci di portal orang tua.
+                                </p>
                             </div>
 
                             <div class="pt-4 border-t border-slate-100 dark:border-slate-800">

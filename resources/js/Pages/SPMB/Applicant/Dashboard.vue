@@ -369,7 +369,7 @@ const supportingDocsCompletedCount = computed(() => {
                     <h3 class="text-xs sm:text-sm font-bold text-blue-950">Tahap Seleksi & Observasi Sedang Berlangsung</h3>
                     <p class="text-[11px] sm:text-xs text-blue-800/80 mt-1 leading-relaxed">
                         Pengumuman hasil seleksi dan observasi penerimaan dijadwalkan pada 
-                        <strong class="font-bold text-blue-950">{{ setting?.announcement_date ? formatDate(setting.announcement_date) : (isSmp ? 'Jumat, 13 November 2026' : 'Sesuai Jadwal Panitia') }}</strong>. 
+                        <strong class="font-bold text-blue-950">{{ setting?.announcement_date ? formatDate(setting.announcement_date) : 'Sesuai Jadwal Panitia' }}</strong>. 
                         Silakan unduh Kartu Peserta di bawah dan hadir tepat waktu mengikuti kegiatan tatap muka di sekolah.
                     </p>
                 </div>
@@ -716,32 +716,38 @@ const supportingDocsCompletedCount = computed(() => {
                         class="p-3 rounded-xl border text-xs transition"
                         :class="applicant.observation_date 
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
-                            : 'bg-slate-50 border-slate-200 text-slate-500'"
+                            : (setting?.selection_date ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-500')"
                     >
                         <CheckCircleIcon v-if="applicant.observation_date" class="w-5 h-5 text-emerald-700 mx-auto mb-1" />
-                        <CalendarDaysIcon v-else class="w-5 h-5 text-slate-400 mx-auto mb-1" />
+                        <CalendarDaysIcon v-else class="w-5 h-5 mx-auto mb-1" :class="setting?.selection_date ? 'text-blue-600' : 'text-slate-400'" />
                         <strong class="block text-[11px]">{{ isSmp ? '3. Seleksi & Tes' : '3. Jadwal Tes' }}</strong>
-                        <span class="text-[10px] font-semibold block mt-0.5" :class="applicant.observation_date ? 'text-emerald-700' : 'text-slate-400'">
-                            {{ applicant.observation_date ? 'Diterbitkan' : (isSmp ? '07 Nov 2026' : 'Belum') }}
+                        <span class="text-[10px] font-semibold block mt-0.5" :class="applicant.observation_date ? 'text-emerald-700' : (setting?.selection_date ? 'text-blue-700' : 'text-slate-400')">
+                            {{ applicant.observation_date ? 'Diterbitkan' : (setting?.selection_date ? formatDate(setting.selection_date) : 'Belum') }}
                         </span>
                     </div>
 
                     <!-- 4. Pengumuman / Keputusan -->
                     <div 
                         class="p-3 rounded-xl border text-xs transition"
-                        :class="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || (isAnnouncementReleased && applicant.evaluation_result)
-                            ? (applicant.evaluation_result === 'rejected' ? 'bg-rose-50 border-rose-300 text-rose-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900') 
+                        :class="isAnnouncementReleased && (['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || applicant.evaluation_result)
+                            ? ((applicant.evaluation_result === 'rejected' || applicant.status === 'rejected')
+                                ? 'bg-rose-50 border-rose-300 text-rose-900'
+                                : ((applicant.evaluation_result === 'reserve' || applicant.status === 'reserve')
+                                    ? 'bg-amber-50 border-amber-300 text-amber-900'
+                                    : 'bg-emerald-50 border-emerald-300 text-emerald-900')) 
                             : 'bg-slate-50 border-slate-200 text-slate-500'"
                     >
-                        <CheckBadgeIcon v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || (isAnnouncementReleased && applicant.evaluation_result === 'accepted')" class="w-5 h-5 mx-auto mb-1 text-emerald-700" />
+                        <CheckBadgeIcon v-if="isAnnouncementReleased && (['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || applicant.evaluation_result === 'accepted')" class="w-5 h-5 mx-auto mb-1 text-emerald-700" />
                         <ClockIcon v-else class="w-5 h-5 mx-auto mb-1 text-amber-600" />
                         <strong class="block text-[11px]">4. Keputusan</strong>
                         <span class="text-[10px] font-semibold block mt-0.5">
-                            {{ ['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || (isAnnouncementReleased && applicant.evaluation_result === 'accepted') 
-                                ? 'Diterima' 
-                                : (isAnnouncementReleased && applicant.evaluation_result === 'reserve' 
-                                    ? 'Cadangan' 
-                                    : (isAnnouncementReleased && applicant.evaluation_result === 'rejected' ? 'Belum' : 'Menunggu')) }}
+                            {{ !isAnnouncementReleased
+                                ? 'Menunggu'
+                                : ((['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status) || applicant.evaluation_result === 'accepted')
+                                    ? 'Diterima' 
+                                    : ((applicant.evaluation_result === 'reserve' || applicant.status === 'reserve')
+                                        ? 'Cadangan' 
+                                        : ((applicant.evaluation_result === 'rejected' || applicant.status === 'rejected') ? 'Belum' : 'Menunggu'))) }}
                         </span>
                     </div>
 
@@ -894,7 +900,7 @@ const supportingDocsCompletedCount = computed(() => {
                             <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Offline</span>
                         </div>
                         <div class="space-y-1 text-slate-600 pt-1">
-                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.observation_date ? formatDate(applicant.observation_date) : (isSmp ? 'Sabtu, 07 November 2026' : 'Menunggu Penetapan') }}</strong></div>
+                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.observation_date ? formatDate(applicant.observation_date) : (setting?.selection_date ? formatDate(setting.selection_date) : 'Menunggu Penetapan Panitia') }}</strong></div>
                             <div>Waktu: <strong class="text-slate-900">{{ applicant.observation_time || (isSmp ? '08:00 - 10:00 WIB' : 'Akan diinfokan via WA') }}</strong></div>
                             <div>Lokasi: <strong class="text-slate-900">{{ applicant.observation_location || `Gedung ${unitDisplayName}` }}</strong></div>
                         </div>
@@ -907,7 +913,7 @@ const supportingDocsCompletedCount = computed(() => {
                             <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">Offline</span>
                         </div>
                         <div class="space-y-1 text-slate-600 pt-1">
-                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.psychotest_date ? formatDate(applicant.psychotest_date) : (applicant.observation_date ? formatDate(applicant.observation_date) : (isSmp ? 'Sabtu, 07 November 2026' : 'Menunggu Penetapan')) }}</strong></div>
+                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.psychotest_date ? formatDate(applicant.psychotest_date) : (applicant.observation_date ? formatDate(applicant.observation_date) : (setting?.selection_date ? formatDate(setting.selection_date) : 'Menunggu Penetapan Panitia')) }}</strong></div>
                             <div>Waktu: <strong class="text-slate-900">{{ applicant.psychotest_time || (isSmp ? '10:00 - 12:00 WIB' : 'Akan diinfokan via WA') }}</strong></div>
                             <div>Lokasi: <strong class="text-slate-900">{{ applicant.psychotest_location || `Gedung ${unitDisplayName}` }}</strong></div>
                         </div>

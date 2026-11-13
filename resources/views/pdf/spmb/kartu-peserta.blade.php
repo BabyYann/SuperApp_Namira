@@ -204,6 +204,13 @@
 
     $logoFile = $isSmp ? public_path('images/landing/logo-smp.png') : public_path('images/landing/logo-sd.png');
     $logoBase64 = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
+
+    $agenda1DateDisplay = $applicant->observation_date
+        ? $applicant->observation_date->translatedFormat('l, d F Y')
+        : ($setting?->selection_date ? $setting->selection_date->translatedFormat('l, d F Y') : 'Menunggu Penetapan Panitia');
+    $agenda2DateDisplay = $applicant->psychotest_date
+        ? $applicant->psychotest_date->translatedFormat('l, d F Y')
+        : $agenda1DateDisplay;
 @endphp
 <div class="card-container" style="border-color: {{ $primaryColor }};">
     <!-- Header with Official School Logo -->
@@ -299,7 +306,7 @@
                     <td style="width: 25%; font-weight: 500;">Hari / Tanggal</td>
                     <td style="width: 3%;">:</td>
                     <td style="width: 72%; font-weight: bold;">
-                        {{ $applicant->observation_date ? $applicant->observation_date->translatedFormat('l, d F Y') : ($isSmp ? 'Sabtu, 07 November 2026' : 'Menunggu Penetapan Panitia') }}
+                        {{ $agenda1DateDisplay }}
                     </td>
                 </tr>
                 <tr>
@@ -323,7 +330,7 @@
                     <td style="width: 25%; font-weight: 500;">Hari / Tanggal</td>
                     <td style="width: 3%;">:</td>
                     <td style="width: 72%; font-weight: bold;">
-                        {{ $applicant->psychotest_date ? $applicant->psychotest_date->translatedFormat('l, d F Y') : ($applicant->observation_date ? $applicant->observation_date->translatedFormat('l, d F Y') : ($isSmp ? 'Sabtu, 07 November 2026' : 'Menunggu Penetapan Panitia')) }}
+                        {{ $agenda2DateDisplay }}
                     </td>
                 </tr>
                 <tr>

@@ -17,6 +17,22 @@ use Inertia\Inertia;
 class ApplicantPortalController extends Controller
 {
     /**
+     * Determine whether official announcement / evaluation results are released to the parent portal.
+     */
+    protected function isAnnouncementReleasedForApplicant(SpmbApplicant $applicant, ?SpmbSetting $setting): bool
+    {
+        if ($setting && $setting->announcement_released) {
+            return true;
+        }
+
+        if ($setting && $setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date)) {
+            return true;
+        }
+
+        return in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'], true);
+    }
+
+    /**
      * Check whether the authenticated user owns this applicant record (by user_id or normalized parent_phone),
      * or optionally holds a staff/panitia role.
      */
@@ -61,35 +77,44 @@ class ApplicantPortalController extends Controller
             ? ($allApplicants->firstWhere('id', $requestedId) ?? $allApplicants->first())
             : $allApplicants->first();
 
-        $siblings = $allApplicants->map(fn (SpmbApplicant $item) => [
-            'id' => $item->id,
-            'registration_number' => $item->registration_number,
-            'full_name' => $item->full_name,
-            'unit_name' => $item->unit?->code === 'SD' ? 'SD Namira Kraksaan' : ($item->unit?->name ?? 'Namira'),
-            'status_label' => $item->status_label,
-        ])->values();
+        $settingsByUnit = SpmbSetting::whereIn('unit_id', $allApplicants->pluck('unit_id')->unique())
+            ->get()
+            ->keyBy('unit_id');
 
-        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+        $siblings = $allApplicants->map(function (SpmbApplicant $item) use ($settingsByUnit) {
+            $itemSetting = $settingsByUnit->get($item->unit_id);
+            $itemReleased = $this->isAnnouncementReleasedForApplicant($item, $itemSetting);
+            $maskedLabel = (!$itemReleased && in_array($item->status, ['accepted', 'reserve', 'rejected'], true))
+                ? 'Menunggu Pengumuman'
+                : $item->status_label;
 
-        // Gating Pengumuman Resmi:
-        // 1. Jika rilis manual diaktifkan di setting: rilis untuk semua
-        // 2. Jika tanggal jadwal pengumuman sudah tiba/lewat: rilis untuk semua
-        // 3. Jika siswa sudah tahap daftar ulang/resmi (partial_paid, fully_paid, enrolled): otomatis terbuka penuh
-        // 4. Jika tanggal pengumuman belum diset (null) dan siswa sudah diberi keputusan: otomatis terbuka
-        // 5. Jika tanggal pengumuman di masa depan dan rilis manual belum aktif: tahan hingga jadwalnya tiba
-        $isAnnouncementReleased = false;
-        if ($setting && $setting->announcement_released) {
-            $isAnnouncementReleased = true;
-        } elseif ($setting && $setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date)) {
-            $isAnnouncementReleased = true;
-        } elseif (in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'])) {
-            $isAnnouncementReleased = true;
-        } elseif ((!$setting || !$setting->announcement_date) && in_array($applicant->status, ['accepted', 'reserve', 'rejected'])) {
-            $isAnnouncementReleased = true;
-        }
+            return [
+                'id' => $item->id,
+                'registration_number' => $item->registration_number,
+                'full_name' => $item->full_name,
+                'unit_name' => $item->unit?->code === 'SD' ? 'SD Namira Kraksaan' : ($item->unit?->name ?? 'Namira'),
+                'status_label' => $maskedLabel,
+            ];
+        })->values();
+
+        $setting = $settingsByUnit->get($applicant->unit_id);
+
+        // Gating Pengumuman Resmi: terbuka hanya jika ceklis rilis aktif, tanggal pengumuman sudah tiba, atau tahap daftar ulang.
+        $isAnnouncementReleased = $this->isAnnouncementReleasedForApplicant($applicant, $setting);
 
         // Amankan nilai dan catatan evaluasi internal agar tidak bocor ke browser orang tua
-        $applicant->makeHidden(['academic_score_details', 'evaluation_notes']);
+        $hiddenFields = ['academic_score_details', 'evaluation_notes'];
+        if (!$isAnnouncementReleased) {
+            $hiddenFields = array_merge($hiddenFields, [
+                'evaluation_result',
+                'evaluation_document_path',
+                'evaluation_document_url',
+                'virtual_account_number',
+                'total_admission_fee',
+                'min_down_payment',
+            ]);
+        }
+        $applicant->makeHidden($hiddenFields);
 
         return Inertia::render('SPMB/Applicant/Dashboard', [
             'applicant' => $applicant,
@@ -131,14 +156,7 @@ class ApplicantPortalController extends Controller
         $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
 
         // Gating akses surat kelulusan sebelum rilis resmi
-        $isAnnouncementReleased = false;
-        if ($setting && ($setting->announcement_released || ($setting->announcement_date && now()->startOfDay()->gte($setting->announcement_date)))) {
-            $isAnnouncementReleased = true;
-        } elseif (in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'])) {
-            $isAnnouncementReleased = true;
-        } elseif ((!$setting || !$setting->announcement_date) && in_array($applicant->status, ['accepted', 'partial_paid', 'fully_paid', 'enrolled'])) {
-            $isAnnouncementReleased = true;
-        }
+        $isAnnouncementReleased = $this->isAnnouncementReleasedForApplicant($applicant, $setting);
 
         if (!$isAnnouncementReleased && !$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb'])) {
             abort(403, 'Akses ditolak: Surat Keterangan Penerimaan belum dapat diunduh sebelum pengumuman resmi dirilis.');
