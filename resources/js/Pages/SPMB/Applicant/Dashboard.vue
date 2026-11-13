@@ -943,7 +943,7 @@ const supportingDocsCompletedCount = computed(() => {
                         <CreditCardIcon class="w-6 h-6" />
                     </div>
                     <div>
-                        <h3 class="text-base font-extrabold text-slate-900">Ketentuan Daftar Ulang (Virtual Account Bank Jatim)</h3>
+                        <h3 class="text-base font-extrabold text-slate-900">{{ isSmp ? 'Ketentuan Daftar Ulang (Virtual Account / VA)' : 'Ketentuan Daftar Ulang (Virtual Account Bank Jatim)' }}</h3>
                         <p class="text-xs text-slate-500">Selamat! Ananda dinyatakan diterima. Silakan selesaikan pembayaran daftar ulang.</p>
                     </div>
                 </div>
@@ -952,7 +952,7 @@ const supportingDocsCompletedCount = computed(() => {
                     
                     <!-- Banking Receipt Card -->
                     <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                        <span class="text-[11px] font-bold text-slate-500 block uppercase">Nomor Virtual Account (VA) Bank Jatim:</span>
+                        <span class="text-[11px] font-bold text-slate-500 block uppercase">{{ isSmp ? 'Nomor Virtual Account (VA):' : 'Nomor Virtual Account (VA) Bank Jatim:' }}</span>
                         <div class="text-xl sm:text-2xl font-black text-emerald-800 font-mono tracking-wider">
                             {{ applicant.virtual_account_number || 'Sedang Diterbitkan oleh Keuangan' }}
                         </div>

@@ -422,7 +422,7 @@ const formatRupiah = (amount) => {
                         class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold shadow-xs transition"
                     >
                         <CreditCardIcon class="w-4 h-4" />
-                        <span>Nomor VA Bank Jatim</span>
+                        <span>{{ isSmp ? 'Nomor VA' : 'Nomor VA Bank Jatim' }}</span>
                     </button>
 
                     <!-- 5. Tombol Verifikasi Bayar Daftar Ulang -->
@@ -881,11 +881,11 @@ const formatRupiah = (amount) => {
             <!-- ================= MODAL 3: VIRTUAL ACCOUNT ================= -->
             <div v-if="showVaModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
                 <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                    <h3 class="text-base font-bold text-slate-900 dark:text-white">Nomor Virtual Account Bank Jatim & Ketentuan</h3>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ isSmp ? 'Nomor Virtual Account (VA) & Ketentuan' : 'Nomor Virtual Account Bank Jatim & Ketentuan' }}</h3>
 
                     <div class="space-y-3 text-xs">
                         <div>
-                            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Nomor Virtual Account (VA) Bank Jatim</label>
+                            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">{{ isSmp ? 'Nomor Virtual Account (VA)' : 'Nomor Virtual Account (VA) Bank Jatim' }}</label>
                             <input v-model="vaForm.virtual_account_number" type="text" placeholder="Contoh: 9881029100889901" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
                         </div>
 

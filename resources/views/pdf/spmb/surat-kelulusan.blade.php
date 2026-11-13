@@ -216,7 +216,7 @@
             <tr>
                 <td style="width: 35%;">Nomor Virtual Account (VA)</td>
                 <td style="width: 3%;">:</td>
-                <td style="font-weight: bold; font-size: 11pt; color: #064e3b;">{{ $applicant->virtual_account_number }} (Bank Jatim)</td>
+                <td style="font-weight: bold; font-size: 11pt; color: #064e3b;">{{ $applicant->virtual_account_number }}{{ $isSmp ? '' : ' (Bank Jatim)' }}</td>
             </tr>
             @endif
             @if($applicant->total_admission_fee)

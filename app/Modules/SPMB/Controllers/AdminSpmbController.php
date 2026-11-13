@@ -442,7 +442,11 @@ class AdminSpmbController extends Controller
             'full_payment_deadline' => $request->full_payment_deadline,
         ]);
 
-        return back()->with('success', "Nomor Virtual Account Bank Jatim untuk {$applicant->full_name} berhasil disimpan.");
+        $isSmp = strtoupper($applicant->unit?->code ?? '') === 'SMP'
+            || str_contains(strtolower($applicant->unit?->name ?? ''), 'smp');
+        $vaLabel = $isSmp ? 'Nomor Virtual Account (VA)' : 'Nomor Virtual Account Bank Jatim';
+
+        return back()->with('success', "{$vaLabel} untuk {$applicant->full_name} berhasil disimpan.");
     }
 
     /**
