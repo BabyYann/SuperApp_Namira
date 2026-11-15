@@ -85,8 +85,25 @@ const aboutNavItems = [
     { name: 'Testimoni', href: '#testimonials', hash: '#testimonials', desc: 'Kesan orang tua & alumni' },
 ];
 
+const handleDropdownFocusOut = (event, setter) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+        setter(false);
+    }
+};
+
+const activeCampusIndex = ref(null);
+const toggleCampusCard = (index) => {
+    activeCampusIndex.value = activeCampusIndex.value === index ? null : index;
+};
+
 const handleScroll = () => {
     isScrolled.value = window.scrollY > 50;
+
+    const docEl = document.documentElement;
+    if (window.innerHeight + window.scrollY >= docEl.scrollHeight - 80) {
+        activeHash.value = '#footer';
+        return;
+    }
 
     const sections = ['home', 'campuses', 'destinations', 'testimonials', 'news', 'events', 'partners', 'footer'];
     for (const section of sections) {
@@ -101,33 +118,6 @@ const handleScroll = () => {
     }
 };
 
-onMounted(() => {
-    window.addEventListener('scroll', handleScroll);
-    
-    // Initialize AOS
-    AOS.init({
-        duration: 1000,
-        once: true, // whether animation should happen only once - while scrolling down
-        offset: 100, // offset (in px) from the original trigger point
-    });
-
-    // Observer for Stats Counting Animation
-    const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-            startCounting();
-            observer.disconnect();
-        }
-    }, { threshold: 0.3 });
-    
-    if (statsSection.value) {
-        observer.observe(statsSection.value);
-    }
-});
-
-onUnmounted(() => {
-    window.removeEventListener('scroll', handleScroll);
-});
-
 // Banner Slider
 const bannersCollection = computed(() => {
     if (props.bannersList && props.bannersList.length > 0) {
@@ -141,14 +131,21 @@ const bannersCollection = computed(() => {
     ];
 });
 const currentBanner = ref(0);
+const bannerProgress = ref(0);
 let bannerInterval = null;
+let bannerRafId = null;
 
 const startBannerInterval = () => {
     clearInterval(bannerInterval);
+    if (bannerRafId) {
+        cancelAnimationFrame(bannerRafId);
+        bannerRafId = null;
+    }
     bannerProgress.value = 0;
     bannerInterval = setInterval(() => {
         nextBanner();
         bannerProgress.value = 0;
+        start = Date.now();
     }, 6000);
 
     // Animate progress bar
@@ -157,9 +154,11 @@ const startBannerInterval = () => {
     const tick = () => {
         if (!bannerInterval) return;
         bannerProgress.value = Math.min(((Date.now() - start) / DURATION) * 100, 100);
-        if (bannerProgress.value < 100) requestAnimationFrame(tick);
+        if (bannerProgress.value < 100) {
+            bannerRafId = requestAnimationFrame(tick);
+        }
     };
-    requestAnimationFrame(tick);
+    bannerRafId = requestAnimationFrame(tick);
 };
 
 const nextBanner = () => {
@@ -185,38 +184,42 @@ const goToBanner = (index) => {
     startBannerInterval();
 };
 
-// Banner progress
-const bannerProgress = ref(0);
+let statsObserver = null;
+let mapInitTimer = null;
 
 onMounted(() => {
     window.addEventListener('scroll', handleScroll);
     startBannerInterval();
-    
+
     // Initialize AOS
     AOS.init({
         duration: 1000,
-        once: true,
-        offset: 100,
+        once: true, // whether animation should happen only once - while scrolling down
+        offset: 100, // offset (in px) from the original trigger point
     });
 
     // Observer for Stats Counting Animation
-    const observer = new IntersectionObserver((entries) => {
+    statsObserver = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting) {
             startCounting();
-            observer.disconnect();
+            statsObserver?.disconnect();
         }
     }, { threshold: 0.3 });
-    
+
     if (statsSection.value) {
-        observer.observe(statsSection.value);
+        statsObserver.observe(statsSection.value);
     }
 
     // Init Leaflet Map after DOM ready
-    setTimeout(() => { initMap(); }, 300);
+    mapInitTimer = setTimeout(() => { initMap(); }, 300);
 });
 
 onUnmounted(() => {
     clearInterval(bannerInterval);
+    bannerInterval = null;
+    if (bannerRafId) cancelAnimationFrame(bannerRafId);
+    if (statsObserver) statsObserver.disconnect();
+    if (mapInitTimer) clearTimeout(mapInitTimer);
     window.removeEventListener('scroll', handleScroll);
     if (leafletMap) { leafletMap.remove(); leafletMap = null; }
 });
@@ -226,12 +229,13 @@ const campuses = [
     { name: 'Daycare Namira', logo: '/images/landing/logo-daycare.webp', photo: '/images/landing/banner-1.webp', address: 'Area Daycare Namira' },
     { name: 'Pavlov Center', logo: '/images/landing/logo-pavlov.webp', photo: '/images/landing/banner-2.webp', address: 'Gedung Pavlov Center' },
     { name: 'TK - KB Namira', logo: '/images/landing/logo-tk.webp', logo2: '/images/landing/logo-kb.webp', photo: '/images/landing/banner-3.webp', address: 'Area TK & PAUD' },
-    { name: 'SD Namira', logo: '/images/landing/logo-sd.webp', photo: '/images/landing/banner-1.webp', address: 'Gedung SD Namira' },
+    { name: 'SD Namira', logo: '/images/landing/logo-sd.webp', photo: '/images/landing/banner-1.webp', address: 'Gedung SD Namira', spmbUrl: route('spmb.register.sd') },
     {
         name: 'SMP Namira',
         logo: '/images/landing/logo-smp.webp',
         photo: '/images/landing/photo-smp.webp',
         address: 'Jl. KH. Ahmad Dahlan, Probolinggo',
+        spmbUrl: route('spmb.register.smp'),
         website: 'https://www.smpnamiraprob.sch.id/',
         wa: 'https://wa.me/6285336778880',
         email: 'mailto:namirasmp@gmail.com',
@@ -239,7 +243,7 @@ const campuses = [
         instagram: 'https://www.instagram.com/namirajuniorhighschool',
         youtube: 'https://www.youtube.com/@smpnamiraprobolinggo9462',
     },
-    { name: 'Rumah Tahfitz', logo: '/images/landing/logo-tahfidz.webp', photo: '/images/landing/banner-3.webp', address: 'Asrama Tahfitz Quran' },
+    { name: 'Rumah Tahfidz', logo: '/images/landing/logo-tahfidz.webp', photo: '/images/landing/banner-3.webp', address: 'Asrama Tahfidz Quran' },
 ];
 
 // Stats Data
@@ -405,7 +409,7 @@ const testimonialsList = computed(() => {
         return props.testimonials.map(t => ({
             name: t.name,
             quote: t.quote,
-            photo: t.photo_path ? '/' + t.photo_path : '/images/landing/banner-1.jpg',
+            photo: t.photo_path ? '/' + t.photo_path : '/images/landing/banner-1.webp',
             role: t.role_or_title || '',
             unit: t.unit?.name || '',
         }));
@@ -436,19 +440,19 @@ const prevTesti = () => {
     
     <div class="min-h-screen bg-[#f8f9fa] font-sans text-gray-900 selection:bg-[#fbbf24] selection:text-[#064e3b]">
         <!-- Header & Navigation -->
-        <header :class="['fixed top-0 w-full z-50 transition-all duration-500', isScrolled ? 'bg-white shadow-lg py-3 border-b border-slate-100' : 'bg-transparent py-6']">
+        <header :class="['fixed top-0 w-full z-50 transition-all duration-500', isScrolled ? 'bg-white shadow-lg py-3 border-b border-slate-100' : 'bg-gradient-to-b from-[#082a3a]/85 via-[#082a3a]/45 to-transparent py-6']">
             <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center">
                     <!-- Logo Section -->
-                    <div class="flex items-center gap-3">
-                        <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 md:w-12 md:h-12 aspect-square overflow-hidden">
+                    <a href="#home" @click="activeHash = '#home'" class="flex items-center gap-3 group">
+                        <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 md:w-12 md:h-12 aspect-square overflow-hidden transition-transform duration-300 group-hover:scale-105">
                             <img :src="appLogo" alt="Logo" class="w-full h-full object-contain" />
                         </div>
                         <div class="flex items-baseline gap-1.5 md:gap-2 select-none whitespace-nowrap">
                             <span class="font-namira text-2xl md:text-3xl text-[#1a4373] tracking-tight lowercase text-stroke-white drop-shadow-sm leading-none">namira</span>
-                            <span class="font-school text-base md:text-xl text-slate-500 tracking-wider uppercase text-stroke-white-sm font-extrabold leading-none">SCHOOL</span>
+                            <span class="font-school text-base md:text-xl tracking-wider uppercase text-stroke-white-sm font-extrabold leading-none" :class="isScrolled ? 'text-slate-600' : 'text-slate-200'">SCHOOL</span>
                         </div>
-                    </div>
+                    </a>
 
                     <!-- Desktop Navigation Links -->
                     <nav aria-label="Navigasi Utama" class="hidden lg:flex items-center gap-4 xl:gap-7 ml-auto">
@@ -456,23 +460,23 @@ const prevTesti = () => {
                         <a href="#home" 
                            @click="activeHash = '#home'" 
                            class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
-                           :class="[activeHash === '#home' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                           :class="[activeHash === '#home' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
                             Home
                             <span v-if="activeHash !== '#home'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
                         
-                        <!-- 2. Units (Dropdown: PAUD, TK, SD, SMP) -->
+                        <!-- 2. Units (Dropdown) -->
                         <div class="relative group" 
                              @mouseenter="showUnitsDropdown = true" 
                              @mouseleave="showUnitsDropdown = false"
                              @focusin="showUnitsDropdown = true"
-                             @focusout="showUnitsDropdown = false">
+                             @focusout="handleDropdownFocusOut($event, (v) => showUnitsDropdown = v)">
                             <a href="#campuses" 
                                @click="activeHash = '#campuses'" 
                                aria-haspopup="true"
                                :aria-expanded="showUnitsDropdown"
                                class="relative py-4 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group/nav" 
-                               :class="[isUnitsActive ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                               :class="[isUnitsActive ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
                                 Units
                                 <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-300" :class="{'rotate-180': showUnitsDropdown}" />
                                 <span v-if="!isUnitsActive" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
@@ -488,7 +492,7 @@ const prevTesti = () => {
                                         <a v-for="(unit, i) in campuses" 
                                            :key="i" 
                                            :href="'#campus-' + i" 
-                                           @click="showUnitsDropdown = false; activeHash = '#campuses'" 
+                                           @click="showUnitsDropdown = false; activeHash = '#campuses'; activeCampusIndex = i" 
                                            class="flex items-center gap-3 px-4 py-3 hover:bg-[#f8f9fa] transition-colors group/item">
                                             <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center p-1 group-hover/item:bg-[#fbbf24]/10 transition-colors">
                                                 <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" />
@@ -500,18 +504,18 @@ const prevTesti = () => {
                             </transition>
                         </div>
 
-                        <!-- 3. Our Schools (Smooth scroll to locations/map section) -->
+                        <!-- 3. Outing Class (Smooth scroll to locations/map section) -->
                         <a href="#destinations" 
                            @click="activeHash = '#destinations'" 
                            class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
-                           :class="[activeHash === '#destinations' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
-                            Our Schools
+                           :class="[activeHash === '#destinations' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
+                            Outing Class
                             <span v-if="activeHash !== '#destinations'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
 
-                        <!-- 4. SMPB Online -->
-                        <Link href="/ppdb" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-medium" :class="isScrolled ? 'text-slate-800 hover:text-[#fbbf24]' : 'text-white/90 hover:text-white'">
-                            SMPB Online
+                        <!-- 4. SPMB Online -->
+                        <Link :href="route('spmb.index')" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-medium" :class="isScrolled ? 'text-slate-800 hover:text-[#fbbf24]' : 'text-white hover:text-[#fbbf24] drop-shadow-sm'">
+                            SPMB Online
                             <span class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </Link>
 
@@ -519,7 +523,7 @@ const prevTesti = () => {
                         <a href="#footer" 
                            @click="activeHash = '#footer'" 
                            class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
-                           :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                           :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
                             Contact
                             <span v-if="activeHash !== '#footer'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
                         </a>
@@ -529,12 +533,12 @@ const prevTesti = () => {
                              @mouseenter="showAboutDropdown = true" 
                              @mouseleave="showAboutDropdown = false"
                              @focusin="showAboutDropdown = true"
-                             @focusout="showAboutDropdown = false">
+                             @focusout="handleDropdownFocusOut($event, (v) => showAboutDropdown = v)">
                             <button type="button" 
                                     aria-haspopup="true"
                                     :aria-expanded="showAboutDropdown"
                                     class="relative py-4 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group/nav cursor-pointer" 
-                                    :class="[isAboutActive ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white/90 hover:text-white font-medium')]">
+                                    :class="[isAboutActive ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
                                 About
                                 <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-300" :class="{'rotate-180': showAboutDropdown}" />
                                 <span v-if="!isAboutActive" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
@@ -561,14 +565,14 @@ const prevTesti = () => {
                             </transition>
                         </div>
                         
-                        <!-- 7. Primary CTA Button: Login -->
+                        <!-- 7. Primary CTA Button: Dashboard (if logged in) / Login (if guest) -->
                         <div class="flex items-center gap-4 ml-4 xl:ml-6">
                             <template v-if="canLogin">
-                                <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="activeHash = '#dashboard'" :class="isScrolled ? 'bg-[#00A99D]/10 border border-[#00A99D]/30 hover:bg-[#00A99D] hover:border-[#00A99D] text-[#00A99D] hover:text-white font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24]/10 border border-[#fbbf24]/30 hover:bg-[#fbbf24] hover:border-[#fbbf24] text-[#fbbf24] hover:text-[#082a3a] font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 active:scale-95 text-center'">
-                                    Login
+                                <Link v-if="$page.props.auth.user" :href="route('dashboard')" :class="isScrolled ? 'bg-[#064e3b] hover:bg-[#00A99D] text-white font-bold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-bold text-[11px] xl:text-xs tracking-widest uppercase px-6 xl:px-7 py-2.5 rounded-full transition-all duration-300 shadow-lg shadow-black/20 active:scale-95 text-center'">
+                                    Dashboard
                                 </Link>
                                 <template v-else>
-                                    <Link :href="route('login')" :class="isScrolled ? 'bg-[#082a3a] hover:bg-[#00A99D] text-white font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-400 text-[#082a3a] font-semibold text-[11px] xl:text-xs tracking-widest uppercase px-6 xl:px-8 py-2.5 xl:py-3 rounded-full transition-all duration-300 shadow-lg shadow-yellow-500/10 hover:shadow-yellow-500/20 active:scale-95 text-center'">
+                                    <Link :href="route('login')" :class="isScrolled ? 'bg-[#082a3a] hover:bg-[#00A99D] text-white font-bold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-bold text-[11px] xl:text-xs tracking-widest uppercase px-6 xl:px-8 py-2.5 xl:py-3 rounded-full transition-all duration-300 shadow-lg shadow-black/20 active:scale-95 text-center'">
                                         Login
                                     </Link>
                                 </template>
@@ -620,7 +624,7 @@ const prevTesti = () => {
                             <a v-for="(unit, i) in campuses" 
                                :key="i" 
                                :href="'#campus-' + i" 
-                               @click="isMobileMenuOpen = false; activeHash = '#campuses'" 
+                               @click="isMobileMenuOpen = false; activeHash = '#campuses'; activeCampusIndex = i" 
                                class="text-sm font-semibold text-white/80 hover:text-[#fbbf24] transition-colors flex items-center gap-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
                                 {{ unit.name }}
@@ -628,8 +632,8 @@ const prevTesti = () => {
                         </div>
                     </div>
 
-                    <!-- Our Schools -->
-                    <a href="#destinations" @click="isMobileMenuOpen = false; activeHash = '#destinations'" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors py-1">Our Schools</a>
+                    <!-- Outing Class -->
+                    <a href="#destinations" @click="isMobileMenuOpen = false; activeHash = '#destinations'" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors py-1">Outing Class</a>
 
                     <!-- About Accordion -->
                     <div class="flex flex-col">
@@ -640,20 +644,21 @@ const prevTesti = () => {
                             <ChevronDownIcon class="w-5 h-5 transition-transform duration-300" :class="{'rotate-180': showMobileAboutAccordion}" />
                         </button>
                         <div v-show="showMobileAboutAccordion" class="flex flex-col pl-4 mt-2 gap-2.5 border-l-2 border-[#fbbf24]/30">
-                            <a v-for="(item, idx) in aboutNavItems" 
+                            <component v-for="(item, idx) in aboutNavItems" 
                                :key="idx" 
+                               :is="item.isRoute ? Link : 'a'"
                                :href="item.href" 
                                @click="isMobileMenuOpen = false; activeHash = item.hash" 
                                class="text-sm font-semibold text-white/80 hover:text-[#fbbf24] transition-colors flex items-center gap-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
                                 {{ item.name }}
-                            </a>
+                            </component>
                         </div>
                     </div>
 
-                    <!-- SMPB Online -->
-                    <Link href="/ppdb" @click="isMobileMenuOpen = false" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors flex items-center justify-between pr-2 py-1">
-                        <span>SMPB Online</span>
+                    <!-- SPMB Online -->
+                    <Link :href="route('spmb.index')" @click="isMobileMenuOpen = false" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors flex items-center justify-between pr-2 py-1">
+                        <span>SPMB Online</span>
                         <span class="text-[10px] font-extrabold px-2.5 py-0.5 bg-[#fbbf24]/20 border border-[#fbbf24]/50 text-[#fbbf24] rounded-full">BUKA</span>
                     </Link>
 
@@ -664,8 +669,8 @@ const prevTesti = () => {
                 <!-- Footer/CTA in Drawer -->
                 <div class="border-t border-white/10 pt-6">
                     <template v-if="canLogin">
-                        <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#00A99D] hover:bg-teal-700 text-white font-extrabold text-xs tracking-widest uppercase rounded-full transition-all">
-                            Login
+                        <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#00A99D] hover:bg-teal-700 text-white font-extrabold text-xs tracking-widest uppercase rounded-full transition-all shadow-lg">
+                            Dashboard
                         </Link>
                         <Link v-else :href="route('login')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-extrabold text-xs tracking-widest uppercase rounded-full transition-all shadow-lg">
                             Login
@@ -715,13 +720,14 @@ const prevTesti = () => {
                         <!-- CTA Buttons -->
                         <div class="flex flex-wrap items-center gap-5 animate-fade-in-up" style="animation-delay:0.40s;">
                             <a href="#campuses"
+                               @click="activeHash = '#campuses'"
                                class="inline-flex items-center px-8 py-[14px] bg-[#fbbf24] hover:bg-yellow-400 text-[#082a3a] font-bold text-[10px] tracking-[0.2em] uppercase rounded-full transition-all duration-300 active:scale-95 shadow-md shadow-yellow-500/10 hover:shadow-yellow-500/20">
                                 Jelajahi Namira
                             </a>
-                            <a href="#footer"
-                               class="inline-flex items-center px-8 py-[14px] bg-transparent border border-white/25 hover:border-white/55 hover:bg-white/6 text-white font-bold text-[10px] tracking-[0.2em] uppercase rounded-full transition-all duration-300 active:scale-95">
-                                Pendaftaran
-                            </a>
+                            <Link :href="route('spmb.index')"
+                               class="inline-flex items-center px-8 py-[14px] bg-transparent border border-white/40 hover:border-white hover:bg-white/10 text-white font-bold text-[10px] tracking-[0.2em] uppercase rounded-full transition-all duration-300 active:scale-95">
+                                Pendaftaran SPMB
+                            </Link>
                         </div>
 
                     </div>
@@ -753,11 +759,18 @@ const prevTesti = () => {
         <!-- Our Campuses / Unit Sekolah -->
         <section id="campuses" class="w-full bg-white">
             <div class="w-full flex flex-col md:flex-row items-stretch justify-center m-0 p-0">
-                <!-- Default State & Hover State Integration -->
-                <div v-for="(unit, index) in campuses" :key="index" :id="'campus-' + index" class="group relative flex-1 h-72 md:h-[350px] bg-gray-100 cursor-pointer overflow-hidden border-r border-white/50 transition-all duration-500" data-aos="fade-up" :data-aos-delay="index * 100">
+                <!-- Default State & Hover/Tap State Integration -->
+                <div v-for="(unit, index) in campuses"
+                     :key="index"
+                     :id="'campus-' + index"
+                     @click="toggleCampusCard(index)"
+                     class="group relative flex-1 h-72 md:h-[350px] bg-gray-100 cursor-pointer overflow-hidden border-r border-white/50 transition-all duration-500"
+                     data-aos="fade-up"
+                     :data-aos-delay="index * 100">
                     
                     <!-- Default View (Logo & Text) -->
-                    <div class="absolute inset-0 flex flex-col items-center justify-center p-4 lg:p-6 bg-[#f0f2f5] transition-opacity duration-300 group-hover:opacity-0 z-10">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center p-4 lg:p-6 bg-[#f0f2f5] transition-opacity duration-300 group-hover:opacity-0 z-10"
+                         :class="activeCampusIndex === index ? 'opacity-0' : 'opacity-100'">
                         <!-- Single Logo -->
                         <img v-if="!unit.logo2" :src="unit.logo" :alt="unit.name" class="h-16 lg:h-20 w-auto object-contain mb-4 drop-shadow" loading="lazy" />
                         <!-- Dual Logo side by side -->
@@ -770,42 +783,54 @@ const prevTesti = () => {
                         <div class="w-6 h-[2px] bg-[#fbbf24] mt-3"></div>
                     </div>
 
-                    <!-- Hover View (Photo Overlay & Socials) -->
-                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                    <!-- Hover / Active Tap View (Photo Overlay, CTA SPMB & Socials) -->
+                    <div class="absolute inset-0 transition-all duration-500 z-20"
+                         :class="activeCampusIndex === index ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
                         <img :src="unit.photo" :alt="unit.name" class="w-full h-full object-cover transform scale-105 group-hover:scale-100 transition-transform duration-700" loading="lazy" />
                         <!-- Dark Gradient Overlay -->
                         <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-[#064e3b]/70 to-[#064e3b]/30 mix-blend-multiply"></div>
                         
                         <!-- Content Structure -->
-                        <div class="absolute inset-0 flex flex-col justify-end p-5 pb-6 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <div class="absolute inset-0 flex flex-col justify-end p-5 pb-6 transform transition-transform duration-500"
+                             :class="activeCampusIndex === index ? 'translate-y-0' : 'translate-y-4 group-hover:translate-y-0'">
                             <h3 class="text-sm lg:text-base font-bold text-white tracking-widest uppercase mb-1">{{ unit.name }}</h3>
                             <div class="w-full h-[1px] bg-[#fbbf24] mb-2 opacity-70"></div>
                             <p class="text-gray-300 text-[9px] lg:text-[10px] leading-tight mb-3">{{ unit.address }}</p>
+
+                            <!-- Quick CTA SPMB khusus unit SD & SMP -->
+                            <div v-if="unit.spmbUrl" class="mb-3">
+                                <Link :href="unit.spmbUrl"
+                                      @click.stop
+                                      class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#fbbf24] hover:bg-yellow-300 text-[#064e3b] font-bold text-[10px] uppercase tracking-wider shadow transition">
+                                    <span>Daftar SPMB</span>
+                                    <ArrowRightIcon class="w-3 h-3" />
+                                </Link>
+                            </div>
                             
                             <!-- Social/Contact Icons: data-driven, clickable -->
                             <div class="flex flex-wrap gap-1.5">
                                 <!-- Facebook -->
-                                <a v-if="unit.facebook" :href="unit.facebook" target="_blank" rel="noopener" title="Facebook" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
+                                <a v-if="unit.facebook" :href="unit.facebook" target="_blank" rel="noopener" @click.stop title="Facebook" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
                                 </a>
                                 <!-- Instagram -->
-                                <a v-if="unit.instagram" :href="unit.instagram" target="_blank" rel="noopener" title="Instagram" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
+                                <a v-if="unit.instagram" :href="unit.instagram" target="_blank" rel="noopener" @click.stop title="Instagram" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                                 </a>
                                 <!-- WhatsApp -->
-                                <a v-if="unit.wa" :href="unit.wa" target="_blank" rel="noopener" title="WhatsApp" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
+                                <a v-if="unit.wa" :href="unit.wa" target="_blank" rel="noopener" @click.stop title="WhatsApp" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
                                 </a>
                                 <!-- YouTube -->
-                                <a v-if="unit.youtube" :href="unit.youtube" target="_blank" rel="noopener" title="YouTube" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
+                                <a v-if="unit.youtube" :href="unit.youtube" target="_blank" rel="noopener" @click.stop title="YouTube" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
                                 </a>
                                 <!-- Email -->
-                                <a v-if="unit.email" :href="unit.email" title="Email" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
+                                <a v-if="unit.email" :href="unit.email" @click.stop title="Email" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
                                 </a>
                                 <!-- Website -->
-                                <a v-if="unit.website" :href="unit.website" target="_blank" rel="noopener" title="Website" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
+                                <a v-if="unit.website" :href="unit.website" target="_blank" rel="noopener" @click.stop title="Website" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
                                     <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
                                 </a>
                             </div>
@@ -909,10 +934,15 @@ const prevTesti = () => {
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <article v-for="(news, index) in latestNews" :key="news.id" class="bg-[#064e3b] rounded-[1.5rem] overflow-hidden shadow-2xl group cursor-pointer flex flex-col h-full transition-all duration-300 hover:-translate-y-2" data-aos="fade-up" :data-aos-delay="index * 100">
+                    <Link v-for="(news, index) in latestNews"
+                          :key="news.id"
+                          :href="news.slug ? route('news.show', news.slug) : route('news.index')"
+                          class="bg-[#064e3b] rounded-[1.5rem] overflow-hidden shadow-2xl group cursor-pointer flex flex-col h-full transition-all duration-300 hover:-translate-y-2"
+                          data-aos="fade-up"
+                          :data-aos-delay="index * 100">
                         <!-- Image Container -->
                         <div class="relative h-44 overflow-hidden shrink-0">
-                            <img :src="news.image_path ? '/' + news.image_path : '/images/landing/banner-1.jpg'" :alt="news.title" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" loading="lazy" />
+                            <img :src="news.image_path ? '/' + news.image_path : '/images/landing/banner-1.webp'" :alt="news.title" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" loading="lazy" />
                         </div>
                         
                         <!-- Content -->
@@ -932,12 +962,12 @@ const prevTesti = () => {
                                 {{ news.excerpt || news.content?.replace(/<[^>]*>/g, '').substring(0, 90) + '...' }}
                             </p>
                             
-                            <!-- Link -->
-                            <Link :href="news.slug ? route('news.show', news.slug) : '#'" class="text-[#fbbf24] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center mt-auto hover:brightness-125 transition-all">
-                                READ MORE >
-                            </Link>
+                            <!-- Link label -->
+                            <span class="text-[#fbbf24] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center mt-auto group-hover:brightness-125 transition-all">
+                                READ MORE &gt;
+                            </span>
                         </div>
-                    </article>
+                    </Link>
                 </div>
                 
                 <div class="text-center mt-10" data-aos="fade-up">
@@ -1012,7 +1042,7 @@ const prevTesti = () => {
 
                 <!-- Events Grid -->
                 <div v-if="upcomingEvents.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <Link v-for="(event, index) in upcomingEvents" :key="event.id" :href="event.slug ? route('events.show', event.slug) : '#'" class="bg-transparent group cursor-pointer relative mt-8 flex flex-col h-full transition-all duration-300 hover:-translate-y-2" data-aos="fade-up" :data-aos-delay="index * 100">
+                    <Link v-for="(event, index) in upcomingEvents" :key="event.id" :href="event.slug ? route('events.show', event.slug) : route('events.index')" class="bg-transparent group cursor-pointer relative mt-8 flex flex-col h-full transition-all duration-300 hover:-translate-y-2" data-aos="fade-up" :data-aos-delay="index * 100">
                         
                         <!-- Circular Date Badge (Overlapping) -->
                         <div class="absolute -top-6 left-6 w-16 h-16 bg-white rounded-full flex flex-col items-center justify-center shadow-lg border-2 border-[#064e3b] z-20">
@@ -1021,7 +1051,7 @@ const prevTesti = () => {
                         </div>
 
                         <div class="h-44 overflow-hidden rounded-t-lg z-10 shadow-sm relative">
-                            <img :src="event.image_path ? '/' + event.image_path : '/images/landing/banner-2.jpg'" :alt="event.title" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" loading="lazy" />
+                            <img :src="event.image_path ? '/' + event.image_path : '/images/landing/banner-2.webp'" :alt="event.title" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" loading="lazy" />
                         </div>
                         
                         <!-- Footer Card Green -->
@@ -1127,8 +1157,8 @@ const prevTesti = () => {
                     Fostering and Empowering Society in Building and Serving the Nation
                 </h2>
                 <div class="mt-10">
-                    <Link href="/ppdb" class="inline-block bg-[#fbbf24] text-[#064e3b] font-bold text-sm tracking-widest uppercase px-10 py-4 rounded-full transition shadow-lg hover:bg-yellow-300 active:scale-95">
-                        Join Us Now (PPDB)
+                    <Link :href="route('spmb.index')" class="inline-block bg-[#fbbf24] text-[#064e3b] font-bold text-sm tracking-widest uppercase px-10 py-4 rounded-full transition shadow-lg hover:bg-yellow-300 active:scale-95">
+                        Join Us Now (SPMB)
                     </Link>
                 </div>
             </div>
@@ -1146,8 +1176,14 @@ const prevTesti = () => {
                             <span class="text-[#fbbf24] text-xs uppercase tracking-widest">Education Group</span>
                         </div>
                         <ul class="space-y-3 text-[12px] text-gray-400">
-                            <li><span class="text-gray-200">Telp/WA:</span> +62 823-3292-2521</li>
-                            <li><span class="text-gray-200">Email:</span> info@foundationnamira.com</li>
+                            <li>
+                                <span class="text-gray-200">Telp/WA:</span>
+                                <a href="https://wa.me/6282332922521" target="_blank" rel="noopener" class="hover:text-[#fbbf24] transition ml-1">+62 823-3292-2521</a>
+                            </li>
+                            <li>
+                                <span class="text-gray-200">Email:</span>
+                                <a href="mailto:info@foundationnamira.com" class="hover:text-[#fbbf24] transition ml-1">info@foundationnamira.com</a>
+                            </li>
                             <li class="mt-4">Jl. Pelita No. 8, Mayangan, Kota Probolinggo, Jawa Timur</li>
                         </ul>
                     </div>
@@ -1155,14 +1191,14 @@ const prevTesti = () => {
                     <div class="md:col-span-1">
                         <h4 class="text-white font-bold mb-6 tracking-widest uppercase text-xs">Quick Links</h4>
                         <ul class="space-y-2 text-[12px]">
-                            <li><a href="#home" class="hover:text-[#fbbf24] transition">Home</a></li>
-                            <li><a href="/ppdb" class="text-[#fbbf24] font-semibold hover:underline transition">PPDB Online (SPMB)</a></li>
+                            <li><a href="#home" @click="activeHash = '#home'" class="hover:text-[#fbbf24] transition">Home</a></li>
+                            <li><Link :href="route('spmb.index')" class="text-[#fbbf24] font-semibold hover:underline transition">SPMB Online</Link></li>
                             <li><Link :href="route('careers.index')" class="text-[#00A99D] font-bold hover:underline transition">Portal Karir & Rekrutmen</Link></li>
-                            <li><a href="#campuses" class="hover:text-[#fbbf24] transition">Campuses</a></li>
-                            <li><a href="#destinations" class="hover:text-[#fbbf24] transition">Destinations</a></li>
-                            <li><a href="#testimonials" class="hover:text-[#fbbf24] transition">Testimonials</a></li>
-                            <li><a href="#news" class="hover:text-[#fbbf24] transition">News</a></li>
-                            <li><a href="#events" class="hover:text-[#fbbf24] transition">Events</a></li>
+                            <li><a href="#campuses" @click="activeHash = '#campuses'" class="hover:text-[#fbbf24] transition">Units Sekolah</a></li>
+                            <li><a href="#destinations" @click="activeHash = '#destinations'" class="hover:text-[#fbbf24] transition">Outing Class</a></li>
+                            <li><a href="#testimonials" @click="activeHash = '#testimonials'" class="hover:text-[#fbbf24] transition">Testimonials</a></li>
+                            <li><a href="#news" @click="activeHash = '#news'" class="hover:text-[#fbbf24] transition">News</a></li>
+                            <li><a href="#events" @click="activeHash = '#events'" class="hover:text-[#fbbf24] transition">Events</a></li>
                         </ul>
                     </div>
                     
