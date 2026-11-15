@@ -8,6 +8,7 @@ use App\Modules\Academic\Models\Teacher;
 use App\Modules\SPMB\Models\SpmbApplicant;
 use App\Modules\SPMB\Models\SpmbSetting;
 use App\Modules\SPMB\Services\SpmbService;
+use App\Modules\SPMB\Services\SpmbVaImportService;
 use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use InvalidArgumentException;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Permission\Models\Role;
 
 class AdminSpmbController extends Controller
@@ -81,6 +84,60 @@ class AdminSpmbController extends Controller
         return Unit::where('code', 'SD')->orWhere('name', 'like', '%SD%')->first()
             ?? Unit::where('code', 'SMP')->orWhere('name', 'like', '%SMP%')->first()
             ?? Unit::firstOrFail();
+    }
+
+    /**
+     * Authorize current user and resolve scoped SPMB target unit.
+     */
+    protected function resolveAuthorizedSpmbUnit(Request $request): Unit
+    {
+        $user = Auth::user();
+        $this->authorizeSpmb();
+
+        $targetUnit = $this->resolveSpmbUnit($request);
+        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+            $this->authorizeSpmb($targetUnit->id);
+        }
+
+        return $targetUnit;
+    }
+
+    /**
+     * Apply shared search, category, and status filters to an applicant query.
+     */
+    protected function applyApplicantFilters($query, Request $request): void
+    {
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('parent_phone', 'like', "%{$search}%")
+                    ->orWhere('father_name', 'like', "%{$search}%")
+                    ->orWhere('mother_name', 'like', "%{$search}%")
+                    ->orWhere('previous_school', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category') && $request->category !== 'all') {
+            if ($request->category === 'inden') {
+                $query->where('is_inden', true);
+            } elseif ($request->category === 'umum_reguler') {
+                $query->where(function ($q) {
+                    $q->where('is_inden', false)->orWhereNull('is_inden');
+                });
+            } elseif (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
+                $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd']);
+            } elseif (in_array($request->category, ['eksternal_umum', 'external_umum', 'external'])) {
+                $query->whereIn('category', ['eksternal_umum', 'external_umum', 'external']);
+            } else {
+                $query->where('category', $request->category);
+            }
+        }
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
     }
 
     /**
@@ -182,40 +239,7 @@ class AdminSpmbController extends Controller
         $query = SpmbApplicant::with(['unit', 'user'])
             ->where('unit_id', $targetUnit->id);
 
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('full_name', 'like', "%{$search}%")
-                    ->orWhere('registration_number', 'like', "%{$search}%")
-                    ->orWhere('parent_phone', 'like', "%{$search}%")
-                    ->orWhere('father_name', 'like', "%{$search}%")
-                    ->orWhere('mother_name', 'like', "%{$search}%")
-                    ->orWhere('previous_school', 'like', "%{$search}%");
-            });
-        }
-
-        // Category Filter
-        if ($request->filled('category') && $request->category !== 'all') {
-            if ($request->category === 'inden') {
-                $query->where('is_inden', true);
-            } elseif ($request->category === 'umum_reguler') {
-                $query->where(function ($q) {
-                    $q->where('is_inden', false)->orWhereNull('is_inden');
-                });
-            } elseif (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
-                $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd']);
-            } elseif (in_array($request->category, ['eksternal_umum', 'external_umum', 'external'])) {
-                $query->whereIn('category', ['eksternal_umum', 'external_umum', 'external']);
-            } else {
-                $query->where('category', $request->category);
-            }
-        }
-
-        // Status Filter
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
+        $this->applyApplicantFilters($query, $request);
 
         // Statistics
         $stats = [
@@ -967,41 +991,12 @@ class AdminSpmbController extends Controller
      */
     public function export(Request $request)
     {
-        $user = Auth::user();
-        $this->authorizeSpmb();
-
-        $targetUnit = $this->resolveSpmbUnit($request);
-
-        if (!$user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            $this->authorizeSpmb($targetUnit->id);
-        }
+        $targetUnit = $this->resolveAuthorizedSpmbUnit($request);
 
         $query = SpmbApplicant::with(['unit'])
             ->where('unit_id', $targetUnit->id);
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('full_name', 'like', "%{$search}%")
-                    ->orWhere('registration_number', 'like', "%{$search}%")
-                    ->orWhere('parent_phone', 'like', "%{$search}%")
-                    ->orWhere('father_name', 'like', "%{$search}%")
-                    ->orWhere('mother_name', 'like', "%{$search}%")
-                    ->orWhere('previous_school', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('category') && $request->category !== 'all') {
-            if (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
-                $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd']);
-            } else {
-                $query->where('category', $request->category);
-            }
-        }
-
-        if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
-        }
+        $this->applyApplicantFilters($query, $request);
 
         $applicants = $query->orderBy('id', 'asc')->get();
         $unitCode = strtoupper($targetUnit->code ?: 'UNIT');
@@ -1088,6 +1083,126 @@ class AdminSpmbController extends Controller
             fclose($handle);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * Download pre-filled Excel (.xlsx) template for bulk Virtual Account import.
+     */
+    public function downloadVaTemplate(Request $request, SpmbVaImportService $vaImportService)
+    {
+        $targetUnit = $this->resolveAuthorizedSpmbUnit($request);
+        $setting = SpmbSetting::where('unit_id', $targetUnit->id)->first();
+
+        $query = SpmbApplicant::where('unit_id', $targetUnit->id);
+
+        if ($request->boolean('only_accepted', true)) {
+            $query->whereIn('status', ['accepted', 'partial_paid', 'fully_paid', 'enrolled']);
+            if ($request->filled('search') || ($request->filled('category') && $request->category !== 'all')) {
+                $this->applyApplicantFilters($query, $request);
+            }
+        } else {
+            $this->applyApplicantFilters($query, $request);
+        }
+
+        if (!$request->boolean('include_existing', false)) {
+            $query->where(function ($q) {
+                $q->whereNull('virtual_account_number')
+                    ->orWhere('virtual_account_number', '');
+            });
+        }
+
+        $applicants = $query->orderBy('id', 'asc')->get();
+        $spreadsheet = $vaImportService->buildTemplateSpreadsheet($targetUnit, $setting, $applicants);
+
+        $unitCode = strtoupper($targetUnit->code ?: 'UNIT');
+        $filename = "Template_VA_SPMB_{$unitCode}_" . date('Y-m-d') . '.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * Parse and validate uploaded VA spreadsheet, returning preview data before commit.
+     */
+    public function previewVaImport(Request $request, SpmbVaImportService $vaImportService)
+    {
+        $targetUnit = $this->resolveAuthorizedSpmbUnit($request);
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv,txt|max:5120',
+            'global_dp_deadline' => 'nullable|date',
+            'global_full_deadline' => 'nullable|date',
+        ]);
+
+        $setting = SpmbSetting::where('unit_id', $targetUnit->id)->first();
+
+        try {
+            $preview = $vaImportService->parseAndValidateFile(
+                $request->file('file'),
+                $targetUnit,
+                $setting,
+                $request->input('global_dp_deadline') ?: null,
+                $request->input('global_full_deadline') ?: null
+            );
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
+        return response()->json(array_merge([
+            'ok' => true,
+            'unit' => [
+                'id' => $targetUnit->id,
+                'name' => $targetUnit->name,
+                'code' => $targetUnit->code,
+            ],
+        ], $preview));
+    }
+
+    /**
+     * Persist validated bulk Virtual Account import rows for the active unit.
+     */
+    public function commitVaImport(Request $request, SpmbVaImportService $vaImportService)
+    {
+        $targetUnit = $this->resolveAuthorizedSpmbUnit($request);
+
+        $validated = $request->validate([
+            'skip_existing' => 'sometimes|boolean',
+            'rows' => 'required|array|min:1',
+            'rows.*.registration_number' => 'required|string|max:50',
+            'rows.*.new_va' => 'required|string|max:50',
+            'rows.*.total_admission_fee' => 'required|numeric|min:0',
+            'rows.*.down_payment_deadline' => 'nullable|date',
+            'rows.*.full_payment_deadline' => 'nullable|date',
+        ]);
+
+        $setting = SpmbSetting::where('unit_id', $targetUnit->id)->first();
+        $skipExisting = (bool) ($validated['skip_existing'] ?? false);
+
+        $result = $vaImportService->commitRows(
+            $validated['rows'],
+            $targetUnit,
+            $setting,
+            $skipExisting
+        );
+
+        $message = "Import VA selesai: {$result['total_updated']} siswa berhasil disimpan"
+            . " ({$result['updated_new']} baru, {$result['updated_overwrite']} diperbarui"
+            . ($result['skipped'] > 0 ? ", {$result['skipped']} dilewati" : '')
+            . ').';
+
+        session()->flash('success', $message);
+
+        return response()->json([
+            'ok' => true,
+            'message' => $message,
+            'result' => $result,
         ]);
     }
 }

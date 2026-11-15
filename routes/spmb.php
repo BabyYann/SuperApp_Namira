@@ -41,6 +41,9 @@ Route::middleware(['auth'])->prefix('spmb/portal')->name('spmb.applicant.')->gro
 Route::middleware(['auth'])->prefix('yayasan/spmb')->name('spmb.admin.')->group(function () {
     Route::get('/', [AdminSpmbController::class, 'index'])->name('index');
     Route::get('/export', [AdminSpmbController::class, 'export'])->name('export');
+    Route::get('/va-template', [AdminSpmbController::class, 'downloadVaTemplate'])->name('va-template');
+    Route::post('/va-import/preview', [AdminSpmbController::class, 'previewVaImport'])->name('va-import.preview');
+    Route::post('/va-import/commit', [AdminSpmbController::class, 'commitVaImport'])->name('va-import.commit');
     Route::get('/pendaftar/{applicant}', [AdminSpmbController::class, 'show'])->name('show');
     Route::post('/pendaftar/{applicant}/update-biodata', [AdminSpmbController::class, 'updateApplicant'])->name('update-biodata');
     Route::post('/pendaftar/{applicant}/reset-password', [AdminSpmbController::class, 'resetParentPassword'])->name('reset-password');

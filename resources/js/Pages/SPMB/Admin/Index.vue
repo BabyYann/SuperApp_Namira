@@ -13,6 +13,8 @@ import {
     CalendarDaysIcon,
     EyeIcon,
     ArrowDownTrayIcon,
+    ArrowUpTrayIcon,
+    ExclamationTriangleIcon,
     UserGroupIcon,
     ChatBubbleLeftRightIcon,
     DocumentCheckIcon,
@@ -177,6 +179,121 @@ const quickEnroll = (app) => {
         router.post(route('spmb.admin.enroll-student', app.id), {}, {
             preserveScroll: true,
         });
+    }
+};
+
+// Bulk Virtual Account (VA) Import Modal
+const showVaImportModal = ref(false);
+const vaImportStep = ref('upload'); // 'upload' | 'preview'
+const vaTemplateOnlyAccepted = ref(true);
+const vaTemplateIncludeExisting = ref(false);
+const vaImportFile = ref(null);
+const vaGlobalDpDeadline = ref('');
+const vaGlobalFullDeadline = ref('');
+const vaPreviewData = ref(null);
+const vaSkipExisting = ref(false);
+const vaPreviewLoading = ref(false);
+const vaCommitLoading = ref(false);
+const vaImportError = ref('');
+
+const vaTemplateDownloadUrl = computed(() => {
+    return route('spmb.admin.va-template', {
+        unit_id: props.unit?.id,
+        only_accepted: vaTemplateOnlyAccepted.value ? 1 : 0,
+        include_existing: vaTemplateIncludeExisting.value ? 1 : 0,
+        search: search.value || undefined,
+        category: category.value !== 'all' ? category.value : undefined,
+        status: !vaTemplateOnlyAccepted.value && status.value !== 'all' ? status.value : undefined,
+    });
+});
+
+const openVaImportModal = () => {
+    vaImportStep.value = 'upload';
+    vaImportFile.value = null;
+    vaGlobalDpDeadline.value = '';
+    vaGlobalFullDeadline.value = '';
+    vaPreviewData.value = null;
+    vaSkipExisting.value = false;
+    vaImportError.value = '';
+    showVaImportModal.value = true;
+};
+
+const handleVaFileChange = (event) => {
+    const file = event?.target?.files?.[0] || null;
+    vaImportFile.value = file;
+    vaImportError.value = '';
+};
+
+const submitVaPreview = async () => {
+    if (!vaImportFile.value) {
+        vaImportError.value = 'Silakan pilih file Excel (.xlsx / .xls) atau CSV terlebih dahulu.';
+        return;
+    }
+
+    vaPreviewLoading.value = true;
+    vaImportError.value = '';
+
+    try {
+        const formData = new FormData();
+        formData.append('unit_id', props.unit?.id || '');
+        formData.append('file', vaImportFile.value);
+        if (!isFullPaymentOnly.value && vaGlobalDpDeadline.value) {
+            formData.append('global_dp_deadline', vaGlobalDpDeadline.value);
+        }
+        if (vaGlobalFullDeadline.value) {
+            formData.append('global_full_deadline', vaGlobalFullDeadline.value);
+        }
+
+        const { data } = await window.axios.post(route('spmb.admin.va-import.preview'), formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        vaPreviewData.value = data;
+        vaImportStep.value = 'preview';
+    } catch (err) {
+        vaImportError.value = err?.response?.data?.message || 'Gagal membaca file template VA. Pastikan format file valid.';
+    } finally {
+        vaPreviewLoading.value = false;
+    }
+};
+
+const vaRowsToCommit = computed(() => {
+    const rows = vaPreviewData.value?.rows || [];
+    return rows.filter((row) => {
+        if (row.action === 'new') return true;
+        if (row.action === 'overwrite') return !vaSkipExisting.value;
+        return false;
+    });
+});
+
+const submitVaCommit = async () => {
+    if (vaRowsToCommit.value.length === 0) {
+        vaImportError.value = 'Tidak ada baris valid yang siap disimpan.';
+        return;
+    }
+
+    vaCommitLoading.value = true;
+    vaImportError.value = '';
+
+    try {
+        await window.axios.post(route('spmb.admin.va-import.commit'), {
+            unit_id: props.unit?.id,
+            skip_existing: vaSkipExisting.value,
+            rows: vaRowsToCommit.value.map((row) => ({
+                registration_number: row.registration_number,
+                new_va: row.new_va,
+                total_admission_fee: row.total_admission_fee ?? 0,
+                down_payment_deadline: row.down_payment_deadline || null,
+                full_payment_deadline: row.full_payment_deadline || null,
+            })),
+        });
+
+        showVaImportModal.value = false;
+        router.reload({ preserveScroll: true });
+    } catch (err) {
+        vaImportError.value = err?.response?.data?.message || 'Terjadi kesalahan saat menyimpan data VA.';
+    } finally {
+        vaCommitLoading.value = false;
     }
 };
 
@@ -353,6 +470,15 @@ const getStatusBadgeClass = (s) => {
                 </div>
 
                 <div class="flex items-center gap-1.5 shrink-0">
+                    <button
+                        type="button"
+                        @click="openVaImportModal"
+                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-extrabold transition shadow-2xs"
+                    >
+                        <ArrowUpTrayIcon class="w-3.5 h-3.5 text-white" />
+                        <span>Import VA</span>
+                    </button>
+
                     <a 
                         :href="route('spmb.admin.export', {
                             unit_id: unit?.id,
@@ -389,6 +515,15 @@ const getStatusBadgeClass = (s) => {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2.5">
+                    <button
+                        type="button"
+                        @click="openVaImportModal"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-xs"
+                    >
+                        <ArrowUpTrayIcon class="w-4 h-4 text-white" />
+                        <span>Import VA Massal</span>
+                    </button>
+
                     <a 
                         :href="route('spmb.admin.export', {
                             unit_id: unit?.id,
@@ -1420,6 +1555,239 @@ const getStatusBadgeClass = (s) => {
                         <button type="button" @click="showIndenModal = false" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">
                             Tutup
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk VA Import Modal (2-Step: Template/Upload -> Preview/Commit) -->
+            <div v-if="showVaImportModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-4xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                <CreditCardIcon class="w-5 h-5 text-indigo-600" />
+                                <span>Import Massal Nomor Virtual Account ({{ unit?.name || 'SPMB' }})</span>
+                            </h3>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                Skema aktif unit:
+                                <strong class="text-slate-700 dark:text-slate-200">
+                                    {{ isFullPaymentOnly ? 'Langsung Lunas 100%' : `DP ${dpPercentage}% & Pelunasan 100%` }}
+                                </strong>
+                            </p>
+                        </div>
+                        <button type="button" @click="showVaImportModal = false" class="text-slate-400 hover:text-slate-600">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- Error Banner -->
+                    <div v-if="vaImportError" class="rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-3.5 py-2.5 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2">
+                        <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>{{ vaImportError }}</span>
+                    </div>
+
+                    <!-- STEP 1: Download Template & Upload -->
+                    <div v-if="vaImportStep === 'upload'" class="space-y-4 overflow-y-auto pr-1">
+                        <!-- Template Download Box -->
+                        <div class="rounded-xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/60 p-4 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <h4 class="text-xs font-black text-emerald-900 dark:text-emerald-200 uppercase tracking-wider">
+                                        1. Download Template Excel (.xlsx)
+                                    </h4>
+                                    <p class="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 mt-0.5">
+                                        File otomatis terisi No. Registrasi, Nama Siswa, & Total Biaya default unit. Kolom No. VA sudah dikunci format Text agar 16 digit tidak rusak menjadi E+.
+                                    </p>
+                                </div>
+                                <a
+                                    :href="vaTemplateDownloadUrl"
+                                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-xs shrink-0"
+                                >
+                                    <ArrowDownTrayIcon class="w-4 h-4" />
+                                    <span>Download Template VA</span>
+                                </a>
+                            </div>
+
+                            <div class="flex flex-wrap gap-4 pt-1 border-t border-emerald-200/70 dark:border-emerald-800/40 text-xs">
+                                <label class="inline-flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
+                                    <input v-model="vaTemplateOnlyAccepted" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                    <span>Hanya siswa sudah Lulus Seleksi (Accepted)</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
+                                    <input v-model="vaTemplateIncludeExisting" type="checkbox" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                                    <span>Sertakan yang sudah memiliki No. VA</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Optional Global Deadlines -->
+                        <div class="rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-4 space-y-3">
+                            <div>
+                                <h4 class="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                    2. Samakan Batas Bayar Global (Opsional)
+                                </h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Isi di sini jika tanggal batas bayar semua siswa sama, supaya tidak perlu copy-paste berulang di Excel. Jika di Excel ada tanggal per anak, tanggal Excel tetap diprioritaskan.
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div v-if="!isFullPaymentOnly">
+                                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                                        Batas Bayar DP {{ dpPercentage }}% (Global)
+                                    </label>
+                                    <input v-model="vaGlobalDpDeadline" type="date" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-white" />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                                        Batas Bayar Lunas 100% (Global)
+                                    </label>
+                                    <input v-model="vaGlobalFullDeadline" type="date" class="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-white" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Upload Zone -->
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                3. Upload File Template yang Sudah Diisi (.xlsx / .xls / .csv)
+                            </label>
+                            <label class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-700 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-50/80 dark:hover:bg-indigo-950/35 p-5 cursor-pointer transition text-center">
+                                <ArrowUpTrayIcon class="w-7 h-7 text-indigo-600 mb-1.5" />
+                                <span v-if="vaImportFile" class="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                                    {{ vaImportFile.name }}
+                                </span>
+                                <span v-else class="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    Klik untuk memilih file Excel (.xlsx / .xls / .csv)
+                                </span>
+                                <span class="text-[11px] text-slate-400 mt-0.5">Maksimal 5 MB</span>
+                                <input type="file" accept=".xlsx,.xls,.csv,.txt" class="hidden" @change="handleVaFileChange" />
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button type="button" @click="showVaImportModal = false" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                :disabled="!vaImportFile || vaPreviewLoading"
+                                @click="submitVaPreview"
+                                class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-xs"
+                            >
+                                <span>{{ vaPreviewLoading ? 'Memeriksa File...' : 'Cek & Preview Data' }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: Preview & Confirm Commit -->
+                    <div v-else-if="vaPreviewData" class="flex flex-col gap-3 min-h-0 flex-1">
+                        <!-- Summary Metrics -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                            <div class="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-2.5">
+                                <div class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">VA Baru</div>
+                                <div class="text-lg font-black text-emerald-800 dark:text-emerald-300">{{ vaPreviewData.summary?.new_count || 0 }}</div>
+                            </div>
+                            <div class="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-2.5">
+                                <div class="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">Timpa VA Lama</div>
+                                <div class="text-lg font-black text-amber-800 dark:text-amber-300">{{ vaPreviewData.summary?.overwrite_count || 0 }}</div>
+                            </div>
+                            <div class="rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5">
+                                <div class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">Dilewati (Kosong)</div>
+                                <div class="text-lg font-black text-slate-700 dark:text-slate-200">
+                                    {{ (vaPreviewData.summary?.skipped_count || 0) + (vaPreviewData.summary?.unchanged_count || 0) }}
+                                </div>
+                            </div>
+                            <div class="rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 p-2.5">
+                                <div class="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase">Baris Error</div>
+                                <div class="text-lg font-black text-rose-800 dark:text-rose-300">{{ vaPreviewData.summary?.error_count || 0 }}</div>
+                            </div>
+                        </div>
+
+                        <div v-if="(vaPreviewData.summary?.overwrite_count || 0) > 0" class="flex items-center justify-between rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-3.5 py-2 text-xs">
+                            <label class="inline-flex items-center gap-2 cursor-pointer text-amber-900 dark:text-amber-200 font-semibold">
+                                <input v-model="vaSkipExisting" type="checkbox" class="rounded border-amber-400 text-amber-600 focus:ring-amber-500" />
+                                <span>Lewati siswa yang sudah punya No. VA (jangan timpa VA lama)</span>
+                            </label>
+                        </div>
+
+                        <!-- Scrollable Preview Table -->
+                        <div class="overflow-auto flex-1 border border-slate-200 dark:border-slate-800 rounded-xl">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/80 sticky top-0 text-[10px] uppercase font-bold text-slate-500">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left">Baris</th>
+                                        <th class="px-3 py-2 text-left">No. Reg & Nama</th>
+                                        <th class="px-3 py-2 text-left">No. Virtual Account</th>
+                                        <th class="px-3 py-2 text-right">Total Biaya</th>
+                                        <th class="px-3 py-2 text-left">Batas Bayar</th>
+                                        <th class="px-3 py-2 text-left">Status Cek</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <tr v-for="row in vaPreviewData.rows" :key="`va-row-${row.row_number}-${row.registration_number}`" class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                                        <td class="px-3 py-2 font-mono text-slate-500">{{ row.row_number }}</td>
+                                        <td class="px-3 py-2">
+                                            <div class="font-bold text-slate-900 dark:text-white">{{ row.full_name }}</div>
+                                            <div class="font-mono text-[10px] text-slate-500">{{ row.registration_number }}</div>
+                                        </td>
+                                        <td class="px-3 py-2 font-mono">
+                                            <div v-if="row.existing_va && row.new_va && row.existing_va !== row.new_va" class="text-[10px] text-slate-400 line-through">
+                                                {{ row.existing_va }}
+                                            </div>
+                                            <div class="font-bold text-slate-900 dark:text-slate-100">{{ row.new_va || '-' }}</div>
+                                        </td>
+                                        <td class="px-3 py-2 text-right font-semibold text-slate-700 dark:text-slate-300">
+                                            {{ row.total_admission_fee !== null ? formatRupiah(row.total_admission_fee) : '-' }}
+                                        </td>
+                                        <td class="px-3 py-2 text-[11px] text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                            <div v-if="!vaPreviewData.is_full_payment_only && row.down_payment_deadline">
+                                                DP: {{ row.down_payment_deadline }}
+                                            </div>
+                                            <div v-if="row.full_payment_deadline">
+                                                Lunas: {{ row.full_payment_deadline }}
+                                            </div>
+                                            <span v-if="(!row.down_payment_deadline || vaPreviewData.is_full_payment_only) && !row.full_payment_deadline" class="text-slate-400">-</span>
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <span
+                                                class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                :class="{
+                                                    'bg-emerald-100 text-emerald-800': row.action === 'new',
+                                                    'bg-amber-100 text-amber-800': row.action === 'overwrite' && !vaSkipExisting,
+                                                    'bg-slate-200 text-slate-600': row.action === 'skip' || row.action === 'unchanged' || (row.action === 'overwrite' && vaSkipExisting),
+                                                    'bg-rose-100 text-rose-800': row.action === 'error',
+                                                }"
+                                            >
+                                                {{ row.action === 'overwrite' && vaSkipExisting ? 'Dilewati (Sudah punya VA)' : row.message }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                                type="button"
+                                @click="vaImportStep = 'upload'; vaImportError = '';"
+                                class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold"
+                            >
+                                &larr; Upload Ulang File
+                            </button>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="showVaImportModal = false" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">
+                                    Batal
+                                </button>
+                                <button
+                                    type="button"
+                                    :disabled="vaRowsToCommit.length === 0 || vaCommitLoading"
+                                    @click="submitVaCommit"
+                                    class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-xs"
+                                >
+                                    <span>{{ vaCommitLoading ? 'Menyimpan...' : `Terapkan Simpan (${vaRowsToCommit.length} Siswa)` }}</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
