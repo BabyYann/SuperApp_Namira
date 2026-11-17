@@ -1281,7 +1281,18 @@ const getStatusBadgeClass = (s) => {
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <a
+                            v-if="['partial_paid', 'fully_paid', 'enrolled'].includes(activeProofApplicant.status) || activeProofApplicant.admission_payment_verified_at || activeProofApplicant.settlement_payment_verified_at"
+                            :href="route('spmb.applicant.print-receipt', activeProofApplicant.id)"
+                            target="_blank"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold transition shadow-xs"
+                        >
+                            <ArrowDownTrayIcon class="w-3.5 h-3.5 text-amber-300" />
+                            <span>Cetak Kwitansi (PDF)</span>
+                        </a>
+                        <span v-else></span>
+
                         <button type="button" @click="showProofModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800">
                             Tutup
                         </button>

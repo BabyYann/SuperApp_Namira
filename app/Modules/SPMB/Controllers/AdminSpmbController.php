@@ -578,6 +578,7 @@ class AdminSpmbController extends Controller
                     $item['status'] = 'verified';
                     $item['verified_at'] = now()->toIso8601String();
                     $item['verifier_name'] = Auth::user()->name;
+                    $item['verified_amount'] = (float) $request->paid_admission_amount;
                 }
             }
             $updateData['payment_history'] = $history;

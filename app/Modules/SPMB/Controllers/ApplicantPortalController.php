@@ -175,6 +175,106 @@ class ApplicantPortalController extends Controller
     }
 
     /**
+     * Download / Print Official Re-Registration Payment Receipt (Kwitansi Daftar Ulang PDF).
+     */
+    public function printReceipt(SpmbApplicant $applicant)
+    {
+        $user = Auth::user();
+        $isStaff = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb']);
+        if (!$this->isApplicantOwner($applicant, $user) && !$isStaff) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+        $isAnnouncementReleased = $this->isAnnouncementReleasedForApplicant($applicant, $setting);
+
+        if (!$isAnnouncementReleased && !$isStaff) {
+            abort(403, 'Akses ditolak: Kwitansi belum tersedia sebelum pengumuman resmi dirilis.');
+        }
+
+        $hasVerifiedPayment = in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'], true)
+            || $applicant->admission_payment_verified_at !== null
+            || $applicant->settlement_payment_verified_at !== null;
+
+        if (!$hasVerifiedPayment) {
+            abort(403, 'Kwitansi resmi hanya dapat diterbitkan setelah pembayaran daftar ulang diverifikasi oleh Panitia Keuangan.');
+        }
+
+        $applicant->load(['unit', 'admissionPaymentVerifier', 'settlementPaymentVerifier']);
+
+        $paidAmount = (float) ($applicant->paid_admission_amount ?? 0);
+        $paidTerbilang = $paidAmount <= 0
+            ? 'Nol Rupiah (Tanggungan Full / Bebas Biaya)'
+            : trim($this->formatTerbilang((int) round($paidAmount))) . ' Rupiah';
+
+        $unitCode = strtoupper($applicant->unit?->code ?? 'UNIT');
+        $year = ($applicant->settlement_payment_verified_at ?? $applicant->admission_payment_verified_at ?? now())->format('Y');
+        $receiptNumber = sprintf('KW/SPMB-%s/%s/%s', $unitCode, $year, $applicant->registration_number);
+
+        $pdf = Pdf::loadView('pdf.spmb.kwitansi-daftar-ulang', compact(
+            'applicant',
+            'setting',
+            'receiptNumber',
+            'paidTerbilang'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->download("Kwitansi_Daftar_Ulang_SPMB_{$applicant->registration_number}.pdf");
+    }
+
+    /**
+     * Convert non-negative integer into Indonesian currency words.
+     */
+    protected function formatTerbilang(int $number): string
+    {
+        if ($number < 0) {
+            return 'Minus ' . $this->formatTerbilang(abs($number));
+        }
+
+        $words = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+
+        if ($number < 12) {
+            return $words[$number];
+        }
+        if ($number < 20) {
+            return $this->formatTerbilang($number - 10) . ' Belas';
+        }
+        if ($number < 100) {
+            $rest = $number % 10;
+
+            return $this->formatTerbilang((int) floor($number / 10)) . ' Puluh' . ($rest > 0 ? ' ' . $this->formatTerbilang($rest) : '');
+        }
+        if ($number < 200) {
+            $rest = $number - 100;
+
+            return 'Seratus' . ($rest > 0 ? ' ' . $this->formatTerbilang($rest) : '');
+        }
+        if ($number < 1000) {
+            $rest = $number % 100;
+
+            return $this->formatTerbilang((int) floor($number / 100)) . ' Ratus' . ($rest > 0 ? ' ' . $this->formatTerbilang($rest) : '');
+        }
+        if ($number < 2000) {
+            $rest = $number - 1000;
+
+            return 'Seribu' . ($rest > 0 ? ' ' . $this->formatTerbilang($rest) : '');
+        }
+        if ($number < 1000000) {
+            $rest = $number % 1000;
+
+            return $this->formatTerbilang((int) floor($number / 1000)) . ' Ribu' . ($rest > 0 ? ' ' . $this->formatTerbilang($rest) : '');
+        }
+        if ($number < 1000000000) {
+            $rest = $number % 1000000;
+
+            return $this->formatTerbilang((int) floor($number / 1000000)) . ' Juta' . ($rest > 0 ? ' ' . $this->formatTerbilang($rest) : '');
+        }
+
+        $rest = $number % 1000000000;
+
+        return $this->formatTerbilang((int) floor($number / 1000000000)) . ' Miliar' . ($rest > 0 ? ' ' . $this->formatTerbilang($rest) : '');
+    }
+
+    /**
      * Upload proof of payment for re-registration (Daftar Ulang Termin 1 / 2 Pelunasan).
      */
     public function uploadReRegistrationProof(Request $request, SpmbApplicant $applicant, SpmbService $spmbService)

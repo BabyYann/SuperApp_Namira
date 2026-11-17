@@ -31,6 +31,7 @@ Route::middleware(['auth'])->prefix('spmb/portal')->name('spmb.applicant.')->gro
     Route::get('/dashboard', [ApplicantPortalController::class, 'dashboard'])->name('dashboard');
     Route::get('/kartu-peserta/{applicant}', [ApplicantPortalController::class, 'printCard'])->name('print-card');
     Route::get('/surat-penerimaan/{applicant}', [ApplicantPortalController::class, 'printAcceptedLetter'])->name('print-skl');
+    Route::get('/kwitansi/{applicant}', [ApplicantPortalController::class, 'printReceipt'])->name('print-receipt');
     Route::post('/daftar-ulang/{applicant}/upload-bukti', [ApplicantPortalController::class, 'uploadReRegistrationProof'])->name('upload-proof');
     Route::post('/profil/{applicant}/update', [ApplicantPortalController::class, 'updateProfile'])->name('update-profile');
     Route::post('/pendaftaran/{applicant}/upload-bukti-awal', [ApplicantPortalController::class, 'updateRegistrationProof'])->name('upload-registration-proof');

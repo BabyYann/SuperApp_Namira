@@ -67,6 +67,19 @@ const isFreeAdmission = computed(() => {
     const fee = props.applicant?.total_admission_fee;
     return fee !== null && fee !== undefined && fee !== '' && Number(fee) <= 0;
 });
+const isReceiptAvailable = computed(() => (
+    props.isAnnouncementReleased
+    && (
+        ['partial_paid', 'fully_paid', 'enrolled'].includes(props.applicant?.status)
+        || !!props.applicant?.admission_payment_verified_at
+        || !!props.applicant?.settlement_payment_verified_at
+    )
+));
+const hasPendingProofUpload = computed(() => (
+    !isReceiptAvailable.value
+    && !isFreeAdmission.value
+    && !!(props.applicant?.re_registration_payment_proof || props.applicant?.settlement_payment_proof)
+));
 
 const unitDisplayName = computed(() => {
     const code = (props.applicant?.unit?.code || '').toUpperCase();
@@ -812,7 +825,7 @@ const supportingDocsCompletedCount = computed(() => {
             </div>
 
             <!-- Documents Download Center -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 
                 <!-- 1. Kartu Peserta -->
                 <div class="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between shadow-xs">
@@ -895,6 +908,38 @@ const supportingDocsCompletedCount = computed(() => {
                         <div v-else class="text-center py-1 text-xs text-slate-400 italic">
                             {{ !isAnnouncementReleased ? 'Hasil resmi belum dirilis' : (applicant.evaluation_notes ? applicant.evaluation_notes : 'Dokumen belum diunggah') }}
                         </div>
+                    </div>
+                </div>
+
+                <!-- 4. Kwitansi Resmi Daftar Ulang -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+                    <div>
+                        <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold mb-3">
+                            <CreditCardIcon class="w-5 h-5" />
+                        </div>
+                        <h4 class="font-extrabold text-sm text-slate-900">Kwitansi Daftar Ulang</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                            Bukti pembayaran resmi terverifikasi untuk daftar ulang atau tanggungan full.
+                        </p>
+                    </div>
+
+                    <div class="mt-5 pt-3 border-t border-slate-100">
+                        <a
+                            v-if="isReceiptAvailable"
+                            :href="route('spmb.applicant.print-receipt', applicant.id)"
+                            target="_blank"
+                            class="w-full inline-flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-800 text-white font-bold py-2 px-3 rounded-xl text-xs transition"
+                        >
+                            <ArrowDownTrayIcon class="w-3.5 h-3.5 text-amber-300" />
+                            <span>Unduh Kwitansi (PDF)</span>
+                        </a>
+                        <button
+                            v-else
+                            disabled
+                            class="w-full inline-flex items-center justify-center gap-1 bg-slate-100 text-slate-400 font-bold py-2 px-3 rounded-xl text-xs cursor-not-allowed"
+                        >
+                            <span>{{ hasPendingProofUpload ? 'Menunggu Verifikasi Keuangan' : 'Tersedia Setelah Verifikasi' }}</span>
+                        </button>
                     </div>
                 </div>
 
@@ -1096,6 +1141,32 @@ const supportingDocsCompletedCount = computed(() => {
                                     </label>
                                 </div>
                             </template>
+
+                            <!-- Status Menunggu Verifikasi / Tombol Cetak Kwitansi Resmi -->
+                            <div
+                                v-if="hasPendingProofUpload"
+                                class="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-[11px] text-amber-900 leading-relaxed"
+                            >
+                                <strong>Bukti transfer telah diunggah.</strong> Kwitansi Resmi (PDF) akan otomatis aktif di sini setelah Panitia Keuangan memverifikasi pembayaran Ananda.
+                            </div>
+
+                            <div
+                                v-if="isReceiptAvailable"
+                                class="p-3 rounded-xl bg-teal-50/80 border border-teal-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                            >
+                                <div>
+                                    <strong class="text-xs font-extrabold text-teal-950 block">Kwitansi Resmi Tersedia</strong>
+                                    <span class="text-[11px] text-teal-800">Unduh bukti sah pembayaran daftar ulang (PDF).</span>
+                                </div>
+                                <a
+                                    :href="route('spmb.applicant.print-receipt', applicant.id)"
+                                    target="_blank"
+                                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition shadow-2xs shrink-0"
+                                >
+                                    <ArrowDownTrayIcon class="w-3.5 h-3.5 text-amber-300" />
+                                    <span>Cetak Kwitansi (PDF)</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
 

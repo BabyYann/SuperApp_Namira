@@ -216,6 +216,11 @@ const isApplicantFreeAdmission = computed(() => {
     const fee = props.applicant?.total_admission_fee;
     return fee !== null && fee !== undefined && fee !== '' && Number(fee) <= 0;
 });
+const isReceiptAvailable = computed(() => (
+    ['partial_paid', 'fully_paid', 'enrolled'].includes(props.applicant?.status)
+    || !!props.applicant?.admission_payment_verified_at
+    || !!props.applicant?.settlement_payment_verified_at
+));
 
 // Form: Virtual Account Bank Jatim
 const vaForm = useForm({
@@ -375,6 +380,16 @@ const formatRupiah = (amount) => {
                     >
                         <ChatBubbleLeftRightIcon class="w-4 h-4" />
                         <span>Chat WhatsApp Ortu</span>
+                    </a>
+
+                    <a
+                        v-if="isReceiptAvailable"
+                        :href="route('spmb.applicant.print-receipt', applicant.id)"
+                        target="_blank"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold transition shadow"
+                    >
+                        <ArrowDownTrayIcon class="w-3.5 h-3.5 text-amber-300" />
+                        <span>Kwitansi (PDF)</span>
                     </a>
 
                     <a 
@@ -669,18 +684,29 @@ const formatRupiah = (amount) => {
                         v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)"
                         class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4"
                     >
-                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                             <h3 class="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider">
                                 D. Ketentuan Daftar Ulang &amp; Nomor VA
                             </h3>
-                            <button
-                                type="button"
-                                @click="openVaModal"
-                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-[11px] font-bold transition"
-                            >
-                                <PencilSquareIcon class="w-3.5 h-3.5" />
-                                <span>Ubah Tagihan / VA</span>
-                            </button>
+                            <div class="flex items-center gap-1.5">
+                                <a
+                                    v-if="isReceiptAvailable"
+                                    :href="route('spmb.applicant.print-receipt', applicant.id)"
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition shadow-2xs"
+                                >
+                                    <ArrowDownTrayIcon class="w-3.5 h-3.5 text-amber-300" />
+                                    <span>Cetak Kwitansi (PDF)</span>
+                                </a>
+                                <button
+                                    type="button"
+                                    @click="openVaModal"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-[11px] font-bold transition"
+                                >
+                                    <PencilSquareIcon class="w-3.5 h-3.5" />
+                                    <span>Ubah Tagihan / VA</span>
+                                </button>
+                            </div>
                         </div>
 
                         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
