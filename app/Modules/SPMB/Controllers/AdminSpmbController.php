@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use InvalidArgumentException;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -384,12 +385,15 @@ class AdminSpmbController extends Controller
             'mengaji_notes' => 'nullable|string|max:500',
         ]);
 
+        $preservedPaidStatus = $request->evaluation_result === 'accepted'
+            && in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'], true);
+
         $data = [
             'evaluation_result' => $request->evaluation_result,
             'evaluation_notes' => $request->evaluation_notes,
             'evaluated_at' => now(),
             'evaluated_by' => Auth::id(),
-            'status' => $request->evaluation_result,
+            'status' => $preservedPaidStatus ? $applicant->status : $request->evaluation_result,
         ];
 
         if ($request->hasAny(['academic_score', 'bahasa_indonesia_score', 'matematika_score', 'wawancara_notes', 'mengaji_notes'])) {
@@ -414,10 +418,10 @@ class AdminSpmbController extends Controller
             $data['evaluation_document_path'] = $docPath;
         }
 
-        // If accepted, set default admission fee from setting if not already set
-        if ($request->evaluation_result === 'accepted' && !$applicant->total_admission_fee) {
+        // If accepted, set default admission fee from setting only when fee has never been set
+        if ($request->evaluation_result === 'accepted' && $applicant->total_admission_fee === null) {
             $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
-            if ($setting && $setting->admission_fee_total) {
+            if ($setting && $setting->admission_fee_total !== null) {
                 $data['total_admission_fee'] = $setting->admission_fee_total;
                 $data['min_down_payment'] = $setting->admission_fee_total * ($setting->min_down_payment_percentage / 100);
             }
@@ -443,28 +447,87 @@ class AdminSpmbController extends Controller
         $this->authorizeSpmb($applicant->unit_id);
 
         $request->validate([
-            'virtual_account_number' => 'required|string|max:50',
+            'virtual_account_number' => [
+                Rule::requiredIf(fn () => (float) $request->input('total_admission_fee', 0) > 0),
+                'nullable',
+                'string',
+                'max:50',
+            ],
             'total_admission_fee' => 'required|numeric|min:0',
             'min_down_payment' => 'nullable|numeric|min:0',
             'down_payment_deadline' => 'nullable|date',
             'full_payment_deadline' => 'nullable|date',
+        ], [
+            'virtual_account_number.required' => 'Nomor Virtual Account (VA) wajib diisi jika Total Biaya Masuk lebih dari Rp 0.',
+            'total_admission_fee.required' => 'Total Biaya Masuk wajib diisi (isi 0 untuk tanggungan full / bebas biaya).',
+            'total_admission_fee.min' => 'Total Biaya Masuk tidak boleh kurang dari 0.',
         ]);
 
         $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
         $dpPercentage = (int) ($setting?->min_down_payment_percentage ?? 60);
         $isFullPaymentOnly = $dpPercentage >= 100;
 
-        $minDownPayment = $isFullPaymentOnly
-            ? (float) $request->total_admission_fee
-            : (float) ($request->min_down_payment ?? ($request->total_admission_fee * ($dpPercentage / 100)));
+        $totalFee = (float) $request->total_admission_fee;
+        $isFreeAdmission = $totalFee <= 0;
+        $vaNumber = trim((string) ($request->virtual_account_number ?? '')) ?: null;
 
-        $applicant->update([
-            'virtual_account_number' => $request->virtual_account_number,
-            'total_admission_fee' => $request->total_admission_fee,
+        if ($isFreeAdmission) {
+            $updateData = [
+                'virtual_account_number' => $vaNumber,
+                'total_admission_fee' => 0,
+                'min_down_payment' => 0,
+                'down_payment_deadline' => null,
+                'full_payment_deadline' => $request->full_payment_deadline ?: null,
+                'paid_admission_amount' => 0,
+                'admission_payment_status' => 'paid',
+                'status' => $applicant->status === 'enrolled' ? 'enrolled' : 'fully_paid',
+                'admission_payment_verified_at' => $applicant->admission_payment_verified_at ?? now(),
+                'admission_payment_verified_by' => $applicant->admission_payment_verified_by ?? Auth::id(),
+            ];
+
+            if (Schema::hasColumn('spmb_applicants', 'settlement_payment_verified_at')) {
+                $updateData['settlement_payment_verified_at'] = $applicant->settlement_payment_verified_at ?? now();
+                $updateData['settlement_payment_verified_by'] = $applicant->settlement_payment_verified_by ?? Auth::id();
+            }
+
+            $applicant->update($updateData);
+
+            return back()->with('success', "Tagihan {$applicant->full_name} berhasil diset Rp 0 (Bebas Biaya / Tanggungan Full) dan otomatis ditandai Lunas.");
+        }
+
+        $minDownPayment = $isFullPaymentOnly
+            ? $totalFee
+            : ($request->filled('min_down_payment')
+                ? (float) $request->min_down_payment
+                : ($totalFee * ($dpPercentage / 100)));
+
+        $updateData = [
+            'virtual_account_number' => $vaNumber,
+            'total_admission_fee' => $totalFee,
             'min_down_payment' => $minDownPayment,
-            'down_payment_deadline' => $isFullPaymentOnly ? null : $request->down_payment_deadline,
-            'full_payment_deadline' => $request->full_payment_deadline,
-        ]);
+            'down_payment_deadline' => $isFullPaymentOnly ? null : ($request->down_payment_deadline ?: null),
+            'full_payment_deadline' => $request->full_payment_deadline ?: null,
+        ];
+
+        // If previously auto-marked fully_paid/paid due to Rp 0 free tuition without any payment/proof, revert back to accepted/unpaid
+        if (
+            ($applicant->status === 'fully_paid' || $applicant->admission_payment_status === 'paid')
+            && $applicant->status !== 'enrolled'
+            && (float) ($applicant->paid_admission_amount ?? 0) <= 0
+            && empty($applicant->re_registration_payment_proof)
+            && empty($applicant->settlement_payment_proof)
+        ) {
+            $updateData['status'] = 'accepted';
+            $updateData['admission_payment_status'] = 'unpaid';
+            $updateData['admission_payment_verified_at'] = null;
+            $updateData['admission_payment_verified_by'] = null;
+            if (Schema::hasColumn('spmb_applicants', 'settlement_payment_verified_at')) {
+                $updateData['settlement_payment_verified_at'] = null;
+                $updateData['settlement_payment_verified_by'] = null;
+            }
+        }
+
+        $applicant->update($updateData);
 
         $isSmp = strtoupper($applicant->unit?->code ?? '') === 'SMP'
             || str_contains(strtolower($applicant->unit?->name ?? ''), 'smp');

@@ -210,34 +210,64 @@ const submitEvaluation = () => {
 const dpPercentage = computed(() => Number(props.setting?.min_down_payment_percentage ?? 60));
 const isFullPaymentOnly = computed(() => dpPercentage.value >= 100);
 
+const resolveFee = (val, fallback) => (val !== null && val !== undefined && val !== '' ? Number(val) : fallback);
+const defaultUnitFee = computed(() => resolveFee(props.setting?.admission_fee_total, 8500000));
+const isApplicantFreeAdmission = computed(() => {
+    const fee = props.applicant?.total_admission_fee;
+    return fee !== null && fee !== undefined && fee !== '' && Number(fee) <= 0;
+});
+
 // Form: Virtual Account Bank Jatim
 const vaForm = useForm({
     virtual_account_number: props.applicant.virtual_account_number || '',
-    total_admission_fee: props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000),
+    total_admission_fee: resolveFee(props.applicant.total_admission_fee, defaultUnitFee.value),
     min_down_payment: isFullPaymentOnly.value
-        ? (props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000))
-        : (props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100))),
+        ? resolveFee(props.applicant.total_admission_fee, defaultUnitFee.value)
+        : resolveFee(props.applicant.min_down_payment, defaultUnitFee.value * (dpPercentage.value / 100)),
     down_payment_deadline: isFullPaymentOnly.value ? '' : toDateInputValue(props.applicant.down_payment_deadline),
     full_payment_deadline: toDateInputValue(props.applicant.full_payment_deadline),
 });
 
+const isFreeFeeModal = computed(() => (
+    vaForm.total_admission_fee !== ''
+    && vaForm.total_admission_fee !== null
+    && vaForm.total_admission_fee !== undefined
+    && Number(vaForm.total_admission_fee) <= 0
+));
+
+const setFreeAdmissionPreset = () => {
+    vaForm.total_admission_fee = 0;
+    vaForm.min_down_payment = 0;
+    vaForm.down_payment_deadline = '';
+};
+
 const openVaModal = () => {
+    const resolvedTotal = resolveFee(props.applicant.total_admission_fee, defaultUnitFee.value);
     vaForm.virtual_account_number = props.applicant.virtual_account_number || '';
-    vaForm.total_admission_fee = props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000);
-    vaForm.min_down_payment = isFullPaymentOnly.value
-        ? vaForm.total_admission_fee
-        : (props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100)));
-    vaForm.down_payment_deadline = isFullPaymentOnly.value ? '' : toDateInputValue(props.applicant.down_payment_deadline);
+    vaForm.total_admission_fee = resolvedTotal;
+    vaForm.min_down_payment = (isFullPaymentOnly.value || resolvedTotal <= 0)
+        ? resolvedTotal
+        : resolveFee(props.applicant.min_down_payment, resolvedTotal * (dpPercentage.value / 100));
+    vaForm.down_payment_deadline = (isFullPaymentOnly.value || resolvedTotal <= 0) ? '' : toDateInputValue(props.applicant.down_payment_deadline);
     vaForm.full_payment_deadline = toDateInputValue(props.applicant.full_payment_deadline);
     vaForm.clearErrors();
     showVaModal.value = true;
 };
 
 const submitVa = () => {
-    if (isFullPaymentOnly.value) {
-        vaForm.min_down_payment = vaForm.total_admission_fee;
+    const feeVal = vaForm.total_admission_fee === '' || vaForm.total_admission_fee === null
+        ? ''
+        : Number(vaForm.total_admission_fee);
+
+    if (feeVal !== '' && feeVal <= 0) {
+        vaForm.total_admission_fee = 0;
+        vaForm.min_down_payment = 0;
+        vaForm.down_payment_deadline = '';
+    } else if (isFullPaymentOnly.value && feeVal !== '') {
+        vaForm.min_down_payment = feeVal;
         vaForm.down_payment_deadline = '';
     }
+
     vaForm.post(route('spmb.admin.set-va', props.applicant.id), {
         preserveScroll: true,
         onSuccess: () => showVaModal.value = false,
@@ -247,27 +277,29 @@ const submitVa = () => {
 // Form: Verifikasi Bayar Daftar Ulang
 const paymentForm = useForm({
     paid_admission_amount: isFullPaymentOnly.value
-        ? (props.applicant.paid_admission_amount || (props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000)))
-        : (props.applicant.paid_admission_amount || (props.applicant.min_down_payment || 0)),
+        ? resolveFee(props.applicant.paid_admission_amount, resolveFee(props.applicant.total_admission_fee, defaultUnitFee.value))
+        : resolveFee(props.applicant.paid_admission_amount, resolveFee(props.applicant.min_down_payment, 0)),
     admission_payment_status: (isFullPaymentOnly.value || props.applicant.status === 'partial_paid') ? 'paid' : 'partial', // partial or paid
 });
 
 const openPaymentModal = (preferredStatus = null) => {
+    const resolvedTotal = resolveFee(props.applicant.total_admission_fee, defaultUnitFee.value);
     const isPaid = isFullPaymentOnly.value || preferredStatus === 'paid' || props.applicant.status === 'partial_paid';
     paymentForm.admission_payment_status = isPaid ? 'paid' : 'partial';
-    paymentForm.paid_admission_amount = isPaid 
-        ? (props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000))
-        : (props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100)));
+    paymentForm.paid_admission_amount = isPaid
+        ? resolvedTotal
+        : resolveFee(props.applicant.min_down_payment, resolvedTotal * (dpPercentage.value / 100));
     showPaymentModal.value = true;
 };
 
 const setPresetAmount = (type) => {
+    const resolvedTotal = resolveFee(props.applicant.total_admission_fee, defaultUnitFee.value);
     if (type === 'partial' && !isFullPaymentOnly.value) {
         paymentForm.admission_payment_status = 'partial';
-        paymentForm.paid_admission_amount = props.applicant.min_down_payment || ((props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100));
+        paymentForm.paid_admission_amount = resolveFee(props.applicant.min_down_payment, resolvedTotal * (dpPercentage.value / 100));
     } else {
         paymentForm.admission_payment_status = 'paid';
-        paymentForm.paid_admission_amount = props.applicant.total_admission_fee || (props.setting?.admission_fee_total || 8500000);
+        paymentForm.paid_admission_amount = resolvedTotal;
     }
 };
 
@@ -314,8 +346,8 @@ const deleteApplicant = () => {
 };
 
 const formatRupiah = (amount) => {
-    if (!amount) return 'Rp 0';
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+    if (amount === null || amount === undefined || amount === '') return 'Rp 0';
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(amount));
 };
 </script>
 
@@ -632,6 +664,57 @@ const formatRupiah = (amount) => {
                         </div>
                     </div>
 
+                    <!-- Tagihan & Virtual Account Card -->
+                    <div
+                        v-if="['accepted', 'partial_paid', 'fully_paid', 'enrolled'].includes(applicant.status)"
+                        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4"
+                    >
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <h3 class="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider">
+                                D. Ketentuan Daftar Ulang &amp; Nomor VA
+                            </h3>
+                            <button
+                                type="button"
+                                @click="openVaModal"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-[11px] font-bold transition"
+                            >
+                                <PencilSquareIcon class="w-3.5 h-3.5" />
+                                <span>Ubah Tagihan / VA</span>
+                            </button>
+                        </div>
+
+                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <dt class="text-slate-400">Nomor Virtual Account (VA)</dt>
+                                <dd class="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                                    {{ applicant.virtual_account_number || (isApplicantFreeAdmission ? 'Tidak diperlukan (Bebas Biaya)' : 'Belum diisi') }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-slate-400">Total Biaya Masuk (Rp)</dt>
+                                <dd class="font-bold text-slate-900 dark:text-white mt-0.5 flex flex-wrap items-center gap-2">
+                                    <span>{{ formatRupiah(applicant.total_admission_fee) }}</span>
+                                    <span
+                                        v-if="isApplicantFreeAdmission"
+                                        class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                    >
+                                        Tanggungan Full / Bebas Biaya
+                                    </span>
+                                </dd>
+                            </div>
+                            <div v-if="!isFullPaymentOnly && !isApplicantFreeAdmission">
+                                <dt class="text-slate-400">Termin 1 (Min {{ dpPercentage }}%)</dt>
+                                <dd class="font-bold text-amber-700 dark:text-amber-400 mt-0.5">{{ formatRupiah(applicant.min_down_payment) }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-slate-400">Total Sudah Dibayar</dt>
+                                <dd class="font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                                    {{ isApplicantFreeAdmission ? 'Lunas (Rp 0 — Bebas Biaya)' : formatRupiah(applicant.paid_admission_amount) }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+
                 </div>
 
                 <!-- Kolom Kanan: Berkas Dokumen Upload (1 col) -->
@@ -881,33 +964,66 @@ const formatRupiah = (amount) => {
             <!-- ================= MODAL 3: VIRTUAL ACCOUNT ================= -->
             <div v-if="showVaModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
                 <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                    <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ isSmp ? 'Nomor Virtual Account (VA) & Ketentuan' : 'Nomor Virtual Account Bank Jatim & Ketentuan' }}</h3>
+                    <div class="flex items-start justify-between gap-2">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ isSmp ? 'Nomor Virtual Account (VA) & Ketentuan' : 'Nomor Virtual Account Bank Jatim & Ketentuan' }}</h3>
+                        <button type="button" @click="showVaModal = false" class="text-slate-400 hover:text-slate-600">
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div v-if="Object.keys(vaForm.errors).length > 0" class="rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 px-3 py-2 text-xs text-rose-700 dark:text-rose-300 space-y-0.5">
+                        <p v-for="(msg, field) in vaForm.errors" :key="field">{{ msg }}</p>
+                    </div>
 
                     <div class="space-y-3 text-xs">
                         <div>
-                            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">{{ isSmp ? 'Nomor Virtual Account (VA)' : 'Nomor Virtual Account (VA) Bank Jatim' }}</label>
-                            <input v-model="vaForm.virtual_account_number" type="text" placeholder="Contoh: 9881029100889901" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                {{ isSmp ? 'Nomor Virtual Account (VA)' : 'Nomor Virtual Account (VA) Bank Jatim' }}
+                                <span class="text-[11px] font-normal" :class="isFreeFeeModal ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
+                                    {{ isFreeFeeModal ? '(Opsional untuk tagihan Rp 0)' : '(Wajib jika biaya > Rp 0)' }}
+                                </span>
+                            </label>
+                            <input v-model="vaForm.virtual_account_number" type="text" placeholder="Contoh: 9881029100889901 (boleh kosong jika Rp 0)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                            <p v-if="vaForm.errors.virtual_account_number" class="text-rose-600 text-[11px] mt-1">{{ vaForm.errors.virtual_account_number }}</p>
                         </div>
 
-                        <div class="grid gap-3" :class="isFullPaymentOnly ? 'grid-cols-1' : 'grid-cols-2'">
+                        <div class="grid gap-3" :class="(isFullPaymentOnly || isFreeFeeModal) ? 'grid-cols-1' : 'grid-cols-2'">
                             <div>
-                                <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Total Biaya Masuk (Rp)</label>
-                                <input v-model="vaForm.total_admission_fee" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <label class="font-medium text-slate-700 dark:text-slate-300">Total Biaya Masuk (Rp)</label>
+                                    <button
+                                        type="button"
+                                        @click="setFreeAdmissionPreset"
+                                        class="px-2 py-0.5 rounded-md text-[10px] font-bold transition"
+                                        :class="isFreeFeeModal
+                                            ? 'bg-emerald-600 text-white'
+                                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'"
+                                    >
+                                        Bebas Biaya / Rp 0
+                                    </button>
+                                </div>
+                                <input v-model.number="vaForm.total_admission_fee" type="number" min="0" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <p v-if="vaForm.errors.total_admission_fee" class="text-rose-600 text-[11px] mt-1">{{ vaForm.errors.total_admission_fee }}</p>
                             </div>
-                            <div v-if="!isFullPaymentOnly">
+                            <div v-if="!isFullPaymentOnly && !isFreeFeeModal">
                                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Termin 1 - Min {{ dpPercentage }}% (Rp)</label>
-                                <input v-model="vaForm.min_down_payment" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
+                                <input v-model.number="vaForm.min_down_payment" type="number" min="0" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <p v-if="vaForm.errors.min_down_payment" class="text-rose-600 text-[11px] mt-1">{{ vaForm.errors.min_down_payment }}</p>
                             </div>
                         </div>
 
-                        <div class="grid gap-3" :class="isFullPaymentOnly ? 'grid-cols-1' : 'grid-cols-2'">
+                        <div v-if="isFreeFeeModal" class="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-3 text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">
+                            <strong>Mode Tanggungan Full (Rp 0):</strong> Nomor VA bersifat opsional, dan status calon siswa otomatis menjadi <strong>Lunas 100% (Bebas Biaya)</strong> sehingga orang tua tidak diminta mengunggah bukti transfer.
+                        </div>
+
+                        <div v-if="!isFreeFeeModal" class="grid gap-3" :class="isFullPaymentOnly ? 'grid-cols-1' : 'grid-cols-2'">
                             <div v-if="!isFullPaymentOnly">
                                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Batas Bayar Termin 1</label>
-                                <input v-model="vaForm.down_payment_deadline" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
+                                <input v-model="vaForm.down_payment_deadline" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                             </div>
                             <div>
                                 <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">{{ isFullPaymentOnly ? 'Batas Pembayaran Daftar Ulang (100%)' : 'Batas Pelunasan 100%' }}</label>
-                                <input v-model="vaForm.full_payment_deadline" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
+                                <input v-model="vaForm.full_payment_deadline" type="date" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                             </div>
                         </div>
                     </div>
@@ -916,8 +1032,8 @@ const formatRupiah = (amount) => {
                         <button type="button" @click="showVaModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700">
                             Batal
                         </button>
-                        <button type="button" @click="submitVa" class="px-5 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-500 shadow">
-                            Simpan Data VA
+                        <button type="button" :disabled="vaForm.processing" @click="submitVa" class="px-5 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-500 disabled:opacity-50 shadow">
+                            {{ vaForm.processing ? 'Menyimpan...' : 'Simpan Data VA' }}
                         </button>
                     </div>
                 </div>

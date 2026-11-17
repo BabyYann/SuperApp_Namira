@@ -140,24 +140,30 @@ const quickPaymentForm = useForm({
     admission_payment_status: 'partial',
 });
 
+const resolveFee = (val, fallback) => (val !== null && val !== undefined && val !== '' ? Number(val) : fallback);
+
 const openQuickPaymentModal = (app, preferredStatus = null) => {
     quickPaymentApp.value = app;
     const isPaid = isFullPaymentOnly.value || preferredStatus === 'paid' || app.status === 'partial_paid';
+    const defaultFee = resolveFee(props.setting?.admission_fee_total, 8500000);
+    const resolvedTotal = resolveFee(app.total_admission_fee, defaultFee);
     quickPaymentForm.admission_payment_status = isPaid ? 'paid' : 'partial';
-    quickPaymentForm.paid_admission_amount = isPaid 
-        ? (app.total_admission_fee || props.setting?.admission_fee_total || 8500000)
-        : (app.min_down_payment || ((app.total_admission_fee || props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100)));
+    quickPaymentForm.paid_admission_amount = isPaid
+        ? resolvedTotal
+        : resolveFee(app.min_down_payment, resolvedTotal * (dpPercentage.value / 100));
     showQuickPaymentModal.value = true;
 };
 
 const setPresetQuickAmount = (type) => {
     if (!quickPaymentApp.value) return;
+    const defaultFee = resolveFee(props.setting?.admission_fee_total, 8500000);
+    const resolvedTotal = resolveFee(quickPaymentApp.value.total_admission_fee, defaultFee);
     if (type === 'partial' && !isFullPaymentOnly.value) {
         quickPaymentForm.admission_payment_status = 'partial';
-        quickPaymentForm.paid_admission_amount = quickPaymentApp.value.min_down_payment || ((quickPaymentApp.value.total_admission_fee || props.setting?.admission_fee_total || 8500000) * (dpPercentage.value / 100));
+        quickPaymentForm.paid_admission_amount = resolveFee(quickPaymentApp.value.min_down_payment, resolvedTotal * (dpPercentage.value / 100));
     } else {
         quickPaymentForm.admission_payment_status = 'paid';
-        quickPaymentForm.paid_admission_amount = quickPaymentApp.value.total_admission_fee || props.setting?.admission_fee_total || 8500000;
+        quickPaymentForm.paid_admission_amount = resolvedTotal;
     }
 };
 

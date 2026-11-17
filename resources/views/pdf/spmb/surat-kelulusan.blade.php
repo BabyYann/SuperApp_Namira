@@ -208,39 +208,45 @@
     @php
         $dpPercentage = (int) ($setting?->min_down_payment_percentage ?? 60);
         $isFullPaymentOnly = $dpPercentage >= 100;
+        $isFreeAdmission = !is_null($applicant->total_admission_fee) && (float) $applicant->total_admission_fee <= 0;
     @endphp
 
     <div class="payment-info">
         <table>
-            @if($applicant->virtual_account_number)
+            @if($applicant->virtual_account_number && !$isFreeAdmission)
             <tr>
                 <td style="width: 35%;">Nomor Virtual Account (VA)</td>
                 <td style="width: 3%;">:</td>
                 <td style="font-weight: bold; font-size: 11pt; color: #064e3b;">{{ $applicant->virtual_account_number }}{{ $isSmp ? '' : ' (Bank Jatim)' }}</td>
             </tr>
             @endif
-            @if($applicant->total_admission_fee)
+            @if(!is_null($applicant->total_admission_fee))
             <tr>
-                <td>{{ $isFullPaymentOnly ? 'Biaya Daftar Ulang (Lunas 100%)' : 'Total Biaya Masuk / Uang Pangkal' }}</td>
-                <td>:</td>
-                <td style="font-weight: bold;">Rp {{ number_format($applicant->total_admission_fee, 0, ',', '.') }}</td>
+                <td style="width: 35%;">{{ $isFullPaymentOnly ? 'Biaya Daftar Ulang (Lunas 100%)' : 'Total Biaya Masuk / Uang Pangkal' }}</td>
+                <td style="width: 3%;">:</td>
+                <td style="font-weight: bold;">
+                    Rp {{ number_format($applicant->total_admission_fee, 0, ',', '.') }}
+                    @if($isFreeAdmission)
+                        <span style="color: #064e3b;">(Bebas Biaya / Tanggungan Full — Lunas)</span>
+                    @endif
+                </td>
             </tr>
             @endif
-            @if(!$isFullPaymentOnly && $applicant->min_down_payment)
+            @if(!$isFreeAdmission && !$isFullPaymentOnly && $applicant->min_down_payment)
             <tr>
                 <td>Pembayaran Termin 1 (Min {{ $dpPercentage }}%)</td>
                 <td>:</td>
                 <td style="font-weight: bold; color: #b45309;">Rp {{ number_format($applicant->min_down_payment, 0, ',', '.') }}</td>
             </tr>
             @endif
-            @if(!$isFullPaymentOnly && $applicant->down_payment_deadline)
+            @if(!$isFreeAdmission && !$isFullPaymentOnly && $applicant->down_payment_deadline)
             <tr>
                 <td>Batas Waktu Termin 1</td>
                 <td>:</td>
                 <td>{{ $applicant->down_payment_deadline->translatedFormat('d F Y') }}</td>
             </tr>
             @endif
-            @if($applicant->full_payment_deadline)
+            @if(!$isFreeAdmission && $applicant->full_payment_deadline)
             <tr>
                 <td>{{ $isFullPaymentOnly ? 'Batas Pembayaran Daftar Ulang' : 'Batas Pelunasan 100%' }}</td>
                 <td>:</td>

@@ -100,7 +100,7 @@ class SpmbVaImportService
 
         $rowNum = 2;
         foreach ($applicants as $app) {
-            $fee = ((float) ($app->total_admission_fee ?? 0) > 0)
+            $fee = ($app->total_admission_fee !== null)
                 ? (float) $app->total_admission_fee
                 : $defaultFee;
 
@@ -321,7 +321,7 @@ class SpmbVaImportService
                     'full_name' => $applicant->full_name,
                     'existing_va' => $applicant->virtual_account_number,
                     'new_va' => '',
-                    'total_admission_fee' => (float) ($applicant->total_admission_fee > 0 ? $applicant->total_admission_fee : $defaultFee),
+                    'total_admission_fee' => (float) ($applicant->total_admission_fee !== null ? $applicant->total_admission_fee : $defaultFee),
                     'down_payment_deadline' => $isFullPaymentOnly ? null : $applicant->down_payment_deadline?->format('Y-m-d'),
                     'full_payment_deadline' => $applicant->full_payment_deadline?->format('Y-m-d'),
                     'action' => 'skip',
@@ -352,7 +352,7 @@ class SpmbVaImportService
 
             // Resolve final fee & deadlines (Excel cell > global modal deadline > existing applicant value > setting default)
             $finalFee = $item['fee_parsed']['value']
-                ?? (((float) ($applicant->total_admission_fee ?? 0) > 0) ? (float) $applicant->total_admission_fee : $defaultFee);
+                ?? ($applicant->total_admission_fee !== null ? (float) $applicant->total_admission_fee : $defaultFee);
 
             $finalDpDeadline = $isFullPaymentOnly
                 ? null

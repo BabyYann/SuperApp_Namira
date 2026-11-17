@@ -63,6 +63,10 @@ const isSmp = computed(() => {
 
 const dpPercentage = computed(() => Number(props.setting?.min_down_payment_percentage ?? 60));
 const isFullPaymentOnly = computed(() => dpPercentage.value >= 100);
+const isFreeAdmission = computed(() => {
+    const fee = props.applicant?.total_admission_fee;
+    return fee !== null && fee !== undefined && fee !== '' && Number(fee) <= 0;
+});
 
 const unitDisplayName = computed(() => {
     const code = (props.applicant?.unit?.code || '').toUpperCase();
@@ -954,27 +958,30 @@ const supportingDocsCompletedCount = computed(() => {
                     <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                         <span class="text-[11px] font-bold text-slate-500 block uppercase">{{ isSmp ? 'Nomor Virtual Account (VA):' : 'Nomor Virtual Account (VA) Bank Jatim:' }}</span>
                         <div class="text-xl sm:text-2xl font-black text-emerald-800 font-mono tracking-wider">
-                            {{ applicant.virtual_account_number || 'Sedang Diterbitkan oleh Keuangan' }}
+                            {{ applicant.virtual_account_number || (isFreeAdmission ? 'Bebas Biaya (Tanggungan Full)' : 'Sedang Diterbitkan oleh Keuangan') }}
                         </div>
 
                         <div class="space-y-1.5 pt-3 border-t border-slate-200 text-xs text-slate-600">
                             <div class="flex justify-between">
                                 <span>{{ isFullPaymentOnly ? 'Biaya Daftar Ulang (100%):' : 'Total Biaya Masuk:' }}</span>
-                                <strong class="text-slate-900">{{ formatRupiah(applicant.total_admission_fee) }}</strong>
+                                <strong class="text-slate-900">
+                                    {{ formatRupiah(applicant.total_admission_fee) }}
+                                    <span v-if="isFreeAdmission" class="text-emerald-700 font-bold">(Tanggungan Full)</span>
+                                </strong>
                             </div>
-                            <div v-if="!isFullPaymentOnly" class="flex justify-between">
+                            <div v-if="!isFullPaymentOnly && !isFreeAdmission" class="flex justify-between">
                                 <span>Termin 1 (Minimal {{ dpPercentage }}%):</span>
                                 <strong class="text-amber-700">{{ formatRupiah(applicant.min_down_payment) }}</strong>
                             </div>
                             <div class="flex justify-between">
                                 <span>Total Sudah Masuk:</span>
-                                <strong class="text-emerald-700">{{ formatRupiah(applicant.paid_admission_amount) }}</strong>
+                                <strong class="text-emerald-700">{{ isFreeAdmission ? 'Lunas (Rp 0 — Bebas Biaya)' : formatRupiah(applicant.paid_admission_amount) }}</strong>
                             </div>
-                            <div v-if="!isFullPaymentOnly && applicant.down_payment_deadline" class="flex justify-between text-rose-600">
+                            <div v-if="!isFullPaymentOnly && !isFreeAdmission && applicant.down_payment_deadline" class="flex justify-between text-rose-600">
                                 <span>Batas Bayar Termin 1:</span>
                                 <strong>{{ formatIndonesianDate(applicant.down_payment_deadline) || applicant.down_payment_deadline }}</strong>
                             </div>
-                            <div v-if="applicant.full_payment_deadline" class="flex justify-between text-rose-600">
+                            <div v-if="!isFreeAdmission && applicant.full_payment_deadline" class="flex justify-between text-rose-600">
                                 <span>{{ isFullPaymentOnly ? 'Batas Pembayaran (100%):' : 'Batas Pelunasan 100%:' }}</span>
                                 <strong>{{ formatIndonesianDate(applicant.full_payment_deadline) || applicant.full_payment_deadline }}</strong>
                             </div>
@@ -984,18 +991,27 @@ const supportingDocsCompletedCount = computed(() => {
                     <!-- Upload Proof Box -->
                     <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
                         <div>
-                            <span class="text-xs font-bold text-slate-800 block">Konfirmasi Bukti Transfer VA</span>
+                            <span class="text-xs font-bold text-slate-800 block">
+                                {{ isFreeAdmission ? 'Status Daftar Ulang Bebas Biaya' : 'Konfirmasi Bukti Transfer VA' }}
+                            </span>
                             <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                {{ isFullPaymentOnly
-                                    ? 'Setelah transfer pelunasan 100% ke nomor Virtual Account di samping, silakan unggah bukti transfer agar panitia memvalidasi daftar ulang Ananda.'
-                                    : 'Setelah transfer ke nomor Virtual Account di samping, silakan unggah bukti transfer per termin agar panitia memvalidasi pendaftaran Ananda.' }}
+                                {{ isFreeAdmission
+                                    ? 'Selamat! Biaya daftar ulang Ananda ditanggung penuh (Rp 0) dan sudah tercatat Lunas. Orang tua tidak perlu melakukan transfer atau mengunggah bukti pembayaran.'
+                                    : (isFullPaymentOnly
+                                        ? 'Setelah transfer pelunasan 100% ke nomor Virtual Account di samping, silakan unggah bukti transfer agar panitia memvalidasi daftar ulang Ananda.'
+                                        : 'Setelah transfer ke nomor Virtual Account di samping, silakan unggah bukti transfer per termin agar panitia memvalidasi pendaftaran Ananda.') }}
                             </p>
                         </div>
 
                         <div class="mt-4 space-y-3">
+                            <div v-if="isFreeAdmission" class="p-3.5 rounded-xl border bg-emerald-50 border-emerald-200 flex items-center justify-between">
+                                <strong class="text-xs font-bold text-emerald-900">Bebas Biaya / Tanggungan Full</strong>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Lunas 100%</span>
+                            </div>
+
                             <!-- Mode Langsung 100% -->
                             <div
-                                v-if="isFullPaymentOnly"
+                                v-else-if="isFullPaymentOnly"
                                 class="p-3.5 rounded-xl border"
                                 :class="(applicant.settlement_payment_verified_at || applicant.admission_payment_verified_at || ['fully_paid', 'enrolled'].includes(applicant.status))
                                     ? 'bg-emerald-50 border-emerald-200'
