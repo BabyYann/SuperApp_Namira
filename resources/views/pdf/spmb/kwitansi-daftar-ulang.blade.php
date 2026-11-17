@@ -483,7 +483,7 @@
                 <td style="width: 58%;">
                     <div class="stamp-box" style="border-color: {{ $primaryColor }};">
                         <div class="stamp-title" style="color: {{ $primaryColor }};">
-                            &#10003; Terverifikasi &mdash; {{ $statusBadgeText }}
+                            Terverifikasi Sah &mdash; {{ $statusBadgeText }}
                         </div>
                         <div class="stamp-meta">
                             Diverifikasi oleh: <strong>{{ $verifierName }}</strong><br>
