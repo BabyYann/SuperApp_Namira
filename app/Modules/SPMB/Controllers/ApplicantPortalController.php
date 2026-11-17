@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Modules\SPMB\Models\SpmbApplicant;
 use App\Modules\SPMB\Models\SpmbSetting;
 use App\Modules\SPMB\Services\SpmbService;
+use App\Modules\SPMB\Services\SpmbSmpFeeService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -177,7 +178,7 @@ class ApplicantPortalController extends Controller
     /**
      * Download / Print Official Re-Registration Payment Receipt (Kwitansi Daftar Ulang PDF).
      */
-    public function printReceipt(SpmbApplicant $applicant)
+    public function printReceipt(SpmbApplicant $applicant, SpmbSmpFeeService $smpFeeService)
     {
         $user = Auth::user();
         $isStaff = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb']);
@@ -208,8 +209,28 @@ class ApplicantPortalController extends Controller
             : trim($this->formatTerbilang((int) round($paidAmount))) . ' Rupiah';
 
         $unitCode = strtoupper($applicant->unit?->code ?? 'UNIT');
-        $year = ($applicant->settlement_payment_verified_at ?? $applicant->admission_payment_verified_at ?? now())->format('Y');
+        $verifiedAt = $applicant->settlement_payment_verified_at ?? $applicant->admission_payment_verified_at ?? now();
+        $year = $verifiedAt->format('Y');
         $receiptNumber = sprintf('KW/SPMB-%s/%s/%s', $unitCode, $year, $applicant->registration_number);
+
+        if ($smpFeeService->isSmpApplicant($applicant)) {
+            $receiptItems = $smpFeeService->resolveReceiptItems($applicant, $setting);
+            $shortAcademicYear = $smpFeeService->shortAcademicYear($setting);
+            $treasurerName = $applicant->fee_breakdown['treasurer_name'] ?? 'Nadia Pramadianti, S.M.';
+
+            $pdf = Pdf::loadView('pdf.spmb.kwitansi-daftar-ulang-smp', compact(
+                'applicant',
+                'setting',
+                'receiptNumber',
+                'paidTerbilang',
+                'receiptItems',
+                'shortAcademicYear',
+                'treasurerName',
+                'verifiedAt'
+            ))->setPaper('a4', 'portrait');
+
+            return $pdf->download("Kwitansi_Daftar_Ulang_SPMB_{$applicant->registration_number}.pdf");
+        }
 
         $pdf = Pdf::loadView('pdf.spmb.kwitansi-daftar-ulang', compact(
             'applicant',

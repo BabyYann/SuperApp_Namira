@@ -4,6 +4,8 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { toDateInputValue, formatIndonesianDate } from '@/Utils/dateHelper';
+import { resolveInitialSmpBreakdownState } from '@/Utils/spmbSmpBreakdown';
+import SmpBreakdownEditor from '@/Components/SPMB/SmpBreakdownEditor.vue';
 import { 
     MagnifyingGlassIcon, 
     FunnelIcon, 
@@ -135,9 +137,11 @@ const isFullPaymentOnly = computed(() => dpPercentage.value >= 100);
 // Quick Admission Payment Modal
 const showQuickPaymentModal = ref(false);
 const quickPaymentApp = ref(null);
+const quickSmpBreakdownState = ref(null);
 const quickPaymentForm = useForm({
     paid_admission_amount: 0,
     admission_payment_status: 'partial',
+    fee_breakdown: null,
 });
 
 const resolveFee = (val, fallback) => (val !== null && val !== undefined && val !== '' ? Number(val) : fallback);
@@ -151,7 +155,18 @@ const openQuickPaymentModal = (app, preferredStatus = null) => {
     quickPaymentForm.paid_admission_amount = isPaid
         ? resolvedTotal
         : resolveFee(app.min_down_payment, resolvedTotal * (dpPercentage.value / 100));
+
+    if (isSmp.value) {
+        quickSmpBreakdownState.value = resolveInitialSmpBreakdownState(app, props.setting);
+    } else {
+        quickSmpBreakdownState.value = null;
+    }
+
     showQuickPaymentModal.value = true;
+};
+
+const handleQuickSmpBreakdownTotal = (total) => {
+    quickPaymentForm.paid_admission_amount = total;
 };
 
 const setPresetQuickAmount = (type) => {
@@ -169,6 +184,16 @@ const setPresetQuickAmount = (type) => {
 
 const submitQuickPayment = () => {
     if (!quickPaymentApp.value) return;
+    quickPaymentForm.fee_breakdown = isSmp.value && quickSmpBreakdownState.value
+        ? {
+            with_alumni_discount: quickSmpBreakdownState.value.withAlumniDiscount,
+            with_sibling_discount: quickSmpBreakdownState.value.withSiblingDiscount,
+            with_mahad: quickSmpBreakdownState.value.withMahad,
+            treasurer_name: quickSmpBreakdownState.value.treasurerName,
+            items: quickSmpBreakdownState.value.items,
+        }
+        : null;
+
     quickPaymentForm.post(route('spmb.admin.verify-admission-payment', quickPaymentApp.value.id), {
         preserveScroll: true,
         onSuccess: () => {
@@ -1301,8 +1326,8 @@ const getStatusBadgeClass = (s) => {
             </div>
 
             <!-- ================= MODAL QUICK: VERIFIKASI VA ================= -->
-            <div v-if="showQuickPaymentModal && quickPaymentApp" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-                <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div v-if="showQuickPaymentModal && quickPaymentApp" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 my-6" :class="isSmp ? 'max-w-xl' : 'max-w-md'">
                     <h3 class="text-base font-bold text-slate-900 dark:text-white">Verifikasi Cepat Daftar Ulang VA</h3>
                     <p class="text-xs text-slate-500">Calon Siswa: <strong class="text-slate-800 dark:text-slate-200">{{ quickPaymentApp.full_name }}</strong> ({{ quickPaymentApp.registration_number }})</p>
 
@@ -1328,6 +1353,14 @@ const getStatusBadgeClass = (s) => {
                             </div>
                             <input v-model="quickPaymentForm.paid_admission_amount" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-600">
                         </div>
+
+                        <SmpBreakdownEditor
+                            v-if="isSmp && quickSmpBreakdownState"
+                            v-model="quickSmpBreakdownState"
+                            :applicant="quickPaymentApp"
+                            :setting="setting"
+                            @update:total="handleQuickSmpBreakdownTotal"
+                        />
                     </div>
 
                     <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">

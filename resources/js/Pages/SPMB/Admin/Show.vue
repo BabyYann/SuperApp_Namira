@@ -3,6 +3,8 @@ import { ref, computed } from 'vue';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { toDateInputValue, formatIndonesianDate } from '@/Utils/dateHelper';
+import { resolveInitialSmpBreakdownState } from '@/Utils/spmbSmpBreakdown';
+import SmpBreakdownEditor from '@/Components/SPMB/SmpBreakdownEditor.vue';
 import { 
     ArrowLeftIcon,
     CheckCircleIcon,
@@ -280,11 +282,14 @@ const submitVa = () => {
 };
 
 // Form: Verifikasi Bayar Daftar Ulang
+const smpBreakdownState = ref(resolveInitialSmpBreakdownState(props.applicant, props.setting));
+
 const paymentForm = useForm({
     paid_admission_amount: isFullPaymentOnly.value
         ? resolveFee(props.applicant.paid_admission_amount, resolveFee(props.applicant.total_admission_fee, defaultUnitFee.value))
         : resolveFee(props.applicant.paid_admission_amount, resolveFee(props.applicant.min_down_payment, 0)),
     admission_payment_status: (isFullPaymentOnly.value || props.applicant.status === 'partial_paid') ? 'paid' : 'partial', // partial or paid
+    fee_breakdown: null,
 });
 
 const openPaymentModal = (preferredStatus = null) => {
@@ -294,7 +299,16 @@ const openPaymentModal = (preferredStatus = null) => {
     paymentForm.paid_admission_amount = isPaid
         ? resolvedTotal
         : resolveFee(props.applicant.min_down_payment, resolvedTotal * (dpPercentage.value / 100));
+
+    if (isSmp.value) {
+        smpBreakdownState.value = resolveInitialSmpBreakdownState(props.applicant, props.setting);
+    }
+
     showPaymentModal.value = true;
+};
+
+const handleSmpBreakdownTotal = (total) => {
+    paymentForm.paid_admission_amount = total;
 };
 
 const setPresetAmount = (type) => {
@@ -309,6 +323,16 @@ const setPresetAmount = (type) => {
 };
 
 const submitPayment = () => {
+    paymentForm.fee_breakdown = isSmp.value
+        ? {
+            with_alumni_discount: smpBreakdownState.value.withAlumniDiscount,
+            with_sibling_discount: smpBreakdownState.value.withSiblingDiscount,
+            with_mahad: smpBreakdownState.value.withMahad,
+            treasurer_name: smpBreakdownState.value.treasurerName,
+            items: smpBreakdownState.value.items,
+        }
+        : null;
+
     paymentForm.post(route('spmb.admin.verify-admission-payment', props.applicant.id), {
         preserveScroll: true,
         onSuccess: () => showPaymentModal.value = false,
@@ -1066,8 +1090,8 @@ const formatRupiah = (amount) => {
             </div>
 
             <!-- ================= MODAL 4: VERIFIKASI DAFTAR ULANG ================= -->
-            <div v-if="showPaymentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-                <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div v-if="showPaymentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 my-6" :class="isSmp ? 'max-w-xl' : 'max-w-md'">
                     <h3 class="text-base font-bold text-slate-900 dark:text-white">Verifikasi Pembayaran Daftar Ulang</h3>
 
                     <!-- Tautan Cek Bukti yang Terunggah -->
@@ -1122,6 +1146,14 @@ const formatRupiah = (amount) => {
                             </div>
                             <input v-model="paymentForm.paid_admission_amount" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-600">
                         </div>
+
+                        <SmpBreakdownEditor
+                            v-if="isSmp"
+                            v-model="smpBreakdownState"
+                            :applicant="applicant"
+                            :setting="setting"
+                            @update:total="handleSmpBreakdownTotal"
+                        />
                     </div>
 
                     <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">

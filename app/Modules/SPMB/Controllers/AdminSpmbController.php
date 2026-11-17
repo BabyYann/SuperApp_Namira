@@ -8,6 +8,7 @@ use App\Modules\Academic\Models\Teacher;
 use App\Modules\SPMB\Models\SpmbApplicant;
 use App\Modules\SPMB\Models\SpmbSetting;
 use App\Modules\SPMB\Services\SpmbService;
+use App\Modules\SPMB\Services\SpmbSmpFeeService;
 use App\Modules\SPMB\Services\SpmbVaImportService;
 use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Http\Request;
@@ -490,6 +491,10 @@ class AdminSpmbController extends Controller
                 $updateData['settlement_payment_verified_by'] = $applicant->settlement_payment_verified_by ?? Auth::id();
             }
 
+            if (Schema::hasColumn('spmb_applicants', 'fee_breakdown')) {
+                $updateData['fee_breakdown'] = null;
+            }
+
             $applicant->update($updateData);
 
             return back()->with('success', "Tagihan {$applicant->full_name} berhasil diset Rp 0 (Bebas Biaya / Tanggungan Full) dan otomatis ditandai Lunas.");
@@ -539,13 +544,18 @@ class AdminSpmbController extends Controller
     /**
      * Verify re-registration payment (Termin 60% or 100%).
      */
-    public function verifyAdmissionPayment(Request $request, SpmbApplicant $applicant)
+    public function verifyAdmissionPayment(Request $request, SpmbApplicant $applicant, SpmbSmpFeeService $smpFeeService)
     {
         $this->authorizeSpmb($applicant->unit_id);
 
         $request->validate([
             'paid_admission_amount' => 'required|numeric|min:0',
             'admission_payment_status' => 'required|in:partial,paid',
+            'fee_breakdown' => 'nullable|array',
+            'fee_breakdown.items' => 'nullable|array',
+            'fee_breakdown.items.*.label' => 'nullable|string|max:100',
+            'fee_breakdown.items.*.sublabel' => 'nullable|string|max:120',
+            'fee_breakdown.items.*.amount' => 'nullable|numeric|min:0',
         ]);
 
         $status = $request->admission_payment_status === 'paid' ? 'fully_paid' : 'partial_paid';
@@ -555,6 +565,13 @@ class AdminSpmbController extends Controller
             'admission_payment_status' => $request->admission_payment_status,
             'status' => $status,
         ];
+
+        if ($request->filled('fee_breakdown') && Schema::hasColumn('spmb_applicants', 'fee_breakdown')) {
+            $sanitizedBreakdown = $smpFeeService->sanitizeSubmittedBreakdown($request->input('fee_breakdown'));
+            if ($sanitizedBreakdown !== null) {
+                $updateData['fee_breakdown'] = $sanitizedBreakdown;
+            }
+        }
 
         if ($request->admission_payment_status === 'paid') {
             if (Schema::hasColumn('spmb_applicants', 'settlement_payment_verified_at')) {
