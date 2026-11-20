@@ -53,7 +53,7 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 const activeUnit = computed(() => page.props.session.active_unit_name || 'Yayasan Namira');
 const userRoles = computed(() => user.value?.roles || []);
-const isTeacher = computed(() => user.value?.is_teacher || userRoles.value.includes('teacher'));
+const isTeacher = computed(() => userRoles.value.includes('teacher') || userRoles.value.includes('guru') || (user.value?.is_teacher && !userRoles.value.includes('guru_alquran') && !userRoles.value.includes('koordinator_alquran')));
 const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
 const isGlobalAdmin = computed(() => userRoles.value.some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'].includes(r)));
 
@@ -360,6 +360,20 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Absensi</span>
                 </Link>
 
+                <!-- Guru Al-Qur'an / Koordinator Al-Qur'an: Input Nilai Ummi -->
+                <Link 
+                    v-else-if="!isDaycare && page.props.session?.features?.quran !== false && hasRole(['guru_alquran', 'koordinator_alquran'])"
+                    :href="safeRoute('quran.assessments.index')"
+                    class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
+                    :class="isRouteActive('quran.*') ? 'text-emerald-700' : 'text-slate-400 hover:text-slate-600'"
+                >
+                    <component 
+                        :is="isRouteActive('quran.*') ? BookOpenIconSolid : BookOpenIcon" 
+                        class="w-6 h-6 transition-transform" 
+                    />
+                    <span class="text-[10px] font-bold tracking-tight">Al-Qur'an</span>
+                </Link>
+
                 <!-- Humas: Kampus -->
                 <Link 
                     v-else-if="hasRole('humas_unit')"
@@ -632,6 +646,85 @@ const isRouteActive = (pattern) => {
                                         <CalendarDaysIcon class="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600 stroke-[2.3]" />
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-cyan-600 transition-colors">Thn Akademik</span>
+                                </Link>
+                            </div>
+                        </div>
+
+                        <!-- 2A. PROGRAM AL-QUR'AN (METODE UMMI) -->
+                        <div v-if="!isDaycare && page.props.session?.features?.quran !== false && (isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran', 'guru_alquran']))" class="space-y-3 bg-emerald-50/50 rounded-3xl p-3.5 sm:p-4 border border-emerald-200/60">
+                            <div class="flex items-center gap-2 px-1">
+                                <div class="w-2 h-2 rounded-full bg-emerald-600"></div>
+                                <p class="text-[11px] font-black uppercase text-emerald-900 tracking-wider">
+                                    Program Al-Qur'an (Ummi)
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
+                                <Link 
+                                    :href="safeRoute('quran.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-emerald-50/70 border border-white ring-1 ring-emerald-400/25 shadow-[0_8px_18px_-3px_rgba(16,185,129,0.25)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-700 transition-colors">Kelompok</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('quran.students.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/70 border border-white ring-1 ring-teal-400/25 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.25)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <AcademicCapIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Naik Jilid</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('quran.assessments.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-amber-50/70 border border-white ring-1 ring-amber-400/25 shadow-[0_8px_18px_-3px_rgba(245,158,11,0.25)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <PencilSquareIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-700 transition-colors">Input Nilai</span>
+                                </Link>
+
+                                <Link 
+                                    :href="safeRoute('quran.reports.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/70 border border-white ring-1 ring-blue-400/25 shadow-[0_8px_18px_-3px_rgba(59,130,246,0.25)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BookOpenIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-700 transition-colors">Rapor Ummi</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran'])"
+                                    :href="safeRoute('quran.rubrics.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-purple-50/70 border border-white ring-1 ring-purple-400/25 shadow-[0_8px_18px_-3px_rgba(168,85,247,0.25)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <ClipboardDocumentListIcon class="w-6 h-6 sm:w-7 sm:h-7 text-purple-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-700 transition-colors">Rubrik</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran'])"
+                                    :href="safeRoute('quran.settings.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-slate-100/70 border border-white ring-1 ring-slate-400/25 shadow-[0_8px_18px_-3px_rgba(100,116,139,0.25)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <Cog6ToothIcon class="w-6 h-6 sm:w-7 sm:h-7 text-slate-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-slate-700 transition-colors">Pengaturan</span>
                                 </Link>
                             </div>
                         </div>

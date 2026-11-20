@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|admin_unit|staff_yayasan|staff_unit|teacher|guru|kepala_sekolah|wali_kelas|koordinator_kurikulum|koordinator_kesiswaan|koordinator_sarpar|bk|counseling|finance|staff_admin_keuangan|humas_yayasan|humas_unit|panitia_spmb|satpam'])->group(function () {
+Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|admin_unit|staff_yayasan|staff_unit|teacher|guru|guru_alquran|koordinator_alquran|kepala_sekolah|wali_kelas|koordinator_kurikulum|koordinator_kesiswaan|koordinator_sarpar|bk|counseling|finance|staff_admin_keuangan|humas_yayasan|humas_unit|panitia_spmb|satpam'])->group(function () {
     // Master Data
     Route::get('/dashboard', [\App\Modules\Yayasan\Controllers\UnitController::class, 'dashboard'])->name('dashboard');
     Route::get('/pembina/dashboard', [\App\Modules\Yayasan\Controllers\PembinaDashboardController::class, 'index'])->name('pembina.dashboard');

@@ -28,8 +28,9 @@ const props = defineProps({
 });
 
 const searchQuery = ref(props.filters?.search || '');
-const showFilter = ref(!!props.filters?.gender);
+const showFilter = ref(!!(props.filters?.gender || props.filters?.teacher_type));
 const genderFilter = ref(props.filters?.gender || null);
+const teacherTypeFilter = ref(props.filters?.teacher_type || '');
 const showModal = ref(false);
 const isEditing = ref(false);
 const showDeleteConfirm = ref(false);
@@ -47,6 +48,9 @@ const form = useForm({
     gender: 'L',
     phone: '',
     photo: null,
+    is_regular_teacher: true,
+    is_quran_teacher: false,
+    is_quran_coordinator: false,
 });
 
 const onSelectUser = () => {
@@ -71,10 +75,10 @@ const debounce = (func, wait) => {
 };
 
 // Debounced Search Action
-const performSearch = debounce((query, gender) => {
+const performSearch = debounce((query, gender, teacherType) => {
     isLoading.value = true;
     router.get(route('yayasan.teachers.index'), 
-        { search: query, gender: gender }, 
+        { search: query, gender: gender, teacher_type: teacherType || undefined }, 
         { 
             preserveState: true, 
             replace: true, 
@@ -84,7 +88,7 @@ const performSearch = debounce((query, gender) => {
 }, 300);
 
 watch(searchQuery, (value) => {
-    performSearch(value, genderFilter.value);
+    performSearch(value, genderFilter.value, teacherTypeFilter.value);
 });
 
 const toggleFilter = () => {
@@ -95,7 +99,7 @@ const setFilter = (gender) => {
     genderFilter.value = gender;
     isLoading.value = true;
     router.get(route('yayasan.teachers.index'), 
-        { search: searchQuery.value, gender: gender }, 
+        { search: searchQuery.value, gender: gender, teacher_type: teacherTypeFilter.value || undefined }, 
         { 
             preserveState: true, 
             replace: true, 
@@ -104,10 +108,26 @@ const setFilter = (gender) => {
     );
 };
 
+const setTeacherTypeFilter = (type) => {
+    teacherTypeFilter.value = type;
+    isLoading.value = true;
+    router.get(route('yayasan.teachers.index'), 
+        { search: searchQuery.value, gender: genderFilter.value, teacher_type: type || undefined }, 
+        { 
+            preserveState: true, 
+            replace: true, 
+            onFinish: () => isLoading.value = false 
+        }
+    );
+};
+
 const openCreateModal = () => {
     isEditing.value = false;
     form.reset();
     form.gender = 'L';
+    form.is_regular_teacher = true;
+    form.is_quran_teacher = false;
+    form.is_quran_coordinator = false;
     photoPreview.value = null;
     showModal.value = true;
 };
@@ -121,6 +141,9 @@ const openEditModal = (teacher) => {
     form.gender = teacher.gender;
     form.phone = teacher.phone;
     form.photo = null;
+    form.is_regular_teacher = teacher.is_regular_teacher ?? true;
+    form.is_quran_teacher = teacher.is_quran_teacher ?? false;
+    form.is_quran_coordinator = teacher.is_quran_coordinator ?? false;
     photoPreview.value = teacher.photo ? `/storage/${teacher.photo}` : null;
     showModal.value = true;
 };
@@ -315,6 +338,17 @@ const deleteItem = () => {
                                         <EnvelopeIcon class="w-3 h-3 text-slate-400" />
                                         {{ teacher.user?.email || 'Belum ada email' }}
                                     </p>
+                                    <div class="flex flex-wrap gap-1 mt-1.5">
+                                        <span v-if="teacher.is_regular_teacher" class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                            Guru Mapel/Kelas
+                                        </span>
+                                        <span v-if="teacher.is_quran_teacher" class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            Guru Al-Qur'an
+                                        </span>
+                                        <span v-if="teacher.is_quran_coordinator" class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                                            Koordinator Al-Qur'an
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <span class="px-2 py-0.5 text-[9px] font-black uppercase rounded-full border shrink-0"
@@ -423,25 +457,44 @@ const deleteItem = () => {
                 </div>
 
                 <!-- Filter Row (Conditionally Visible) -->
-                <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex items-center gap-4 animate-fade-in-down">
-                    <span class="text-sm font-bold text-gray-600">Filter Gender:</span>
+                <div v-if="showFilter" class="mb-6 px-6 py-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm flex flex-wrap items-center gap-3 animate-fade-in-down">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-gray-500">Gender:</span>
                     <button 
                         @click="setFilter('L')"
-                        class="px-4 py-1.5 rounded-xl text-sm font-bold transition-all border"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border"
                         :class="genderFilter === 'L' ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm' : 'bg-white/50 text-gray-500 border-transparent hover:bg-white hover:shadow-sm'"
                     >
                         Laki-laki
                     </button>
                     <button 
                          @click="setFilter('P')"
-                         class="px-4 py-1.5 rounded-xl text-sm font-bold transition-all border"
+                         class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border"
                          :class="genderFilter === 'P' ? 'bg-pink-50 text-pink-600 border-pink-200 shadow-sm' : 'bg-white/50 text-gray-500 border-transparent hover:bg-white hover:shadow-sm'"
                     >
                         Perempuan
                     </button>
+
+                    <span class="h-5 w-px bg-gray-200 mx-1"></span>
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-gray-500">Label Guru:</span>
+                    <button
+                        v-for="opt in [
+                            { key: '', label: 'Semua' },
+                            { key: 'regular', label: 'Guru Mapel/Kelas' },
+                            { key: 'quran', label: 'Semua Guru Al-Qur\'an' },
+                            { key: 'quran_only', label: 'Al-Qur\'an Khusus' },
+                            { key: 'dual', label: 'Rangkap (Mapel + Al-Qur\'an)' },
+                        ]"
+                        :key="opt.key"
+                        @click="setTeacherTypeFilter(opt.key)"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border"
+                        :class="teacherTypeFilter === opt.key ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm' : 'bg-white/50 text-gray-500 border-transparent hover:bg-white hover:shadow-sm'"
+                    >
+                        {{ opt.label }}
+                    </button>
+
                     <button 
-                        v-if="genderFilter"
-                        @click="setFilter(null)"
+                        v-if="genderFilter || teacherTypeFilter"
+                        @click="() => { genderFilter = null; setTeacherTypeFilter(''); }"
                         class="text-xs font-bold text-red-500 hover:text-red-700 hover:underline ml-auto"
                     >
                         Reset Filter
@@ -492,6 +545,17 @@ const deleteItem = () => {
                                                 <div class="text-xs text-gray-500 flex items-center gap-1">
                                                     <EnvelopeIcon class="w-3 h-3 opacity-70" />
                                                     {{ teacher.user?.email || 'Belum ada email' }}
+                                                </div>
+                                                <div class="flex flex-wrap gap-1 mt-1.5">
+                                                    <span v-if="teacher.is_regular_teacher" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                                        Guru Mapel/Kelas
+                                                    </span>
+                                                    <span v-if="teacher.is_quran_teacher" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                        Guru Al-Qur'an
+                                                    </span>
+                                                    <span v-if="teacher.is_quran_coordinator" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                                                        Koordinator Al-Qur'an
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -623,6 +687,34 @@ const deleteItem = () => {
                                     <TextInput id="phone" v-model="form.phone" class="w-full h-12 pl-14 pr-4 text-base border-gray-200 focus:border-namira-teal focus:ring-namira-teal rounded-xl bg-gray-50/50" placeholder="812-3456-7890" />
                                 </div>
                                 <InputError :message="form.errors.phone" class="mt-1" />
+                            </div>
+
+                            <div class="md:col-span-2 border-t border-gray-100 pt-5">
+                                <InputLabel value="Label & Peran Pengajar *" class="text-sm font-bold text-gray-700 mb-2" />
+                                <p class="text-xs text-gray-500 mb-3">Centang satu atau lebih sesuai penugasan. Guru biasa bisa merangkap Guru Al-Qur'an, atau hanya centang Guru Al-Qur'an untuk pengajar Al-Qur'an khusus.</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    <label class="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all" :class="form.is_regular_teacher ? 'bg-amber-50/70 border-amber-300' : 'bg-gray-50/60 border-gray-200 hover:bg-gray-50'">
+                                        <input type="checkbox" v-model="form.is_regular_teacher" class="mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                                        <div>
+                                            <div class="text-xs font-extrabold text-gray-800">Guru Mapel / Kelas</div>
+                                            <div class="text-[10px] text-gray-500 leading-tight mt-0.5">Mengajar mapel akademik &amp; jadwal umum</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all" :class="form.is_quran_teacher ? 'bg-emerald-50/70 border-emerald-300' : 'bg-gray-50/60 border-gray-200 hover:bg-gray-50'">
+                                        <input type="checkbox" v-model="form.is_quran_teacher" class="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                                        <div>
+                                            <div class="text-xs font-extrabold text-emerald-900">Guru Al-Qur'an</div>
+                                            <div class="text-[10px] text-emerald-700/80 leading-tight mt-0.5">Pengampu kelompok Ummi &amp; isi nilai rapor</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all" :class="form.is_quran_coordinator ? 'bg-teal-50/70 border-teal-300' : 'bg-gray-50/60 border-gray-200 hover:bg-gray-50'">
+                                        <input type="checkbox" v-model="form.is_quran_coordinator" class="mt-0.5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                                        <div>
+                                            <div class="text-xs font-extrabold text-teal-900">Koordinator Al-Qur'an</div>
+                                            <div class="text-[10px] text-teal-700/80 leading-tight mt-0.5">Kepala TPQ, kelola sesi, rubrik &amp; cetak</div>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
 
                             <div class="md:col-span-2 border-t border-gray-100 pt-5">

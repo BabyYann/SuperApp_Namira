@@ -9,7 +9,7 @@ import {
     Cog6ToothIcon, BuildingLibraryIcon, PhoneIcon,
     MagnifyingGlassIcon, UserIcon, ShieldCheckIcon,
     BoltIcon, WrenchScrewdriverIcon, ExclamationTriangleIcon,
-    AcademicCapIcon, BanknotesIcon, UserGroupIcon,
+    AcademicCapIcon, BanknotesIcon, UserGroupIcon, BookOpenIcon,
     ChatBubbleLeftRightIcon, BuildingOffice2Icon, IdentificationIcon,
     CheckCircleIcon, SwatchIcon, AtSymbolIcon, MapPinIcon, ArrowUpTrayIcon,
     ClipboardDocumentListIcon, ClockIcon, ArrowTopRightOnSquareIcon, ArrowPathIcon
@@ -129,6 +129,7 @@ const featureToggles = ref({
     feature_sarpar: props.settings?.feature_sarpar !== '0',
     feature_counseling: props.settings?.feature_counseling !== '0',
     feature_academic: props.settings?.feature_academic !== '0',
+    feature_quran: props.settings?.feature_quran !== '0',
     feature_employee: props.settings?.feature_employee !== '0',
     feature_student_login: props.settings?.feature_student_login !== '0',
 });
@@ -469,6 +470,7 @@ watch(qStatusFilter, () => {
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div v-for="feature in [
                             { key: 'feature_academic',      label: 'Modul Akademik',         desc: 'Kelas, guru, siswa, jadwal, jurnal.',           icon: AcademicCapIcon,       color: 'text-violet-600',  bg: 'bg-violet-50',  danger: true  },
+                            { key: 'feature_quran',         label: 'Program Al-Qur\'an',     desc: 'Metode Ummi, sesi, tracking jilid & rapor.',    icon: BookOpenIcon,          color: 'text-teal-700',    bg: 'bg-teal-50',    danger: false },
                             { key: 'feature_finance',       label: 'Modul Keuangan',         desc: 'Tagihan, pembayaran, laporan tunggakan.',       icon: BanknotesIcon,         color: 'text-emerald-600', bg: 'bg-emerald-50', danger: false },
                             { key: 'feature_employee',      label: 'Modul Kepegawaian',      desc: 'Data staf, presensi, dan penggajian.',          icon: UserGroupIcon,         color: 'text-blue-600',    bg: 'bg-blue-50',    danger: false },
                             { key: 'feature_counseling',    label: 'Modul BK',               desc: 'Konseling, pelanggaran, dan prestasi.',         icon: ChatBubbleLeftRightIcon, color: 'text-amber-600', bg: 'bg-amber-50',   danger: false },

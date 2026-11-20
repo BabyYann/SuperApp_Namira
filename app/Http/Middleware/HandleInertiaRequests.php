@@ -65,6 +65,7 @@ class HandleInertiaRequests extends Middleware
                     'is_formal_school' => $isFormal,
                     'features' => $activeUnit ? [
                         'academic' => $activeUnit->hasFeature('academic'),
+                        'quran' => $activeUnit->hasFeature('quran'),
                         'daycare' => $activeUnit->hasFeature('daycare'),
                         'finance' => $activeUnit->hasFeature('finance'),
                         'sarpar' => $activeUnit->hasFeature('sarpar'),
@@ -72,6 +73,7 @@ class HandleInertiaRequests extends Middleware
                         'public_relations' => $activeUnit->hasFeature('public_relations'),
                     ] : [
                         'academic' => !$isDaycare,
+                        'quran' => !$isDaycare,
                         'daycare' => $isDaycare,
                         'finance' => true,
                         'sarpar' => true,

@@ -25,6 +25,8 @@ const expandedGroups = ref({
     'employee': true,
     'counseling': true,
     'extracurricular': true,
+    'quran': true,
+    'quran_staff': true,
     'sarpar': true,
     'sarpar_readonly': true,
     'spmb': true,
@@ -417,6 +419,83 @@ const filteredMenuGroups = computed(() => {
         ]
     };
 
+    // Program Al-Qur'an (Metode Ummi) Menu — aktif di semua unit kecuali Daycare & Pavlov
+    const isQuranUnitEnabled = !page.props.session?.is_daycare && page.props.session?.features?.quran !== false && isFeatureEnabled('feature_quran');
+
+    const quranMenu = {
+        title: 'Program Al-Qur\'an (Ummi)',
+        key: 'quran',
+        items: [
+            {
+                label: 'Kelompok & Sesi',
+                route: 'quran.index',
+                active: 'quran.index',
+                icon: UserGroupIcon
+            },
+            {
+                label: 'Tracking & Naik Jilid',
+                route: 'quran.students.index',
+                active: 'quran.students.*',
+                icon: ArrowUpCircleIcon
+            },
+            {
+                label: 'Input Nilai Ummi',
+                route: 'quran.assessments.index',
+                active: 'quran.assessments.*',
+                icon: PencilSquareIcon
+            },
+            {
+                label: 'Cetak Rapor Ummi',
+                route: 'quran.reports.index',
+                active: 'quran.reports.*',
+                icon: DocumentTextIcon
+            },
+            {
+                label: 'Rubrik Materi',
+                route: 'quran.rubrics.index',
+                active: 'quran.rubrics.*',
+                icon: BookOpenIcon
+            },
+            {
+                label: 'Pengaturan Rapor',
+                route: 'quran.settings.index',
+                active: 'quran.settings.*',
+                icon: Cog6ToothIcon
+            },
+        ]
+    };
+
+    const quranTeacherMenu = {
+        title: 'Program Al-Qur\'an (Ummi)',
+        key: 'quran_staff',
+        items: [
+            {
+                label: 'Kelompok Binaan',
+                route: 'quran.index',
+                active: 'quran.index',
+                icon: UserGroupIcon
+            },
+            {
+                label: 'Tracking & Naik Jilid',
+                route: 'quran.students.index',
+                active: 'quran.students.*',
+                icon: ArrowUpCircleIcon
+            },
+            {
+                label: 'Input Nilai Ummi',
+                route: 'quran.assessments.index',
+                active: 'quran.assessments.*',
+                icon: PencilSquareIcon
+            },
+            {
+                label: 'Cetak Rapor Ummi',
+                route: 'quran.reports.index',
+                active: 'quran.reports.*',
+                icon: DocumentTextIcon
+            },
+        ]
+    };
+
     // Sarpar Menu (for Admin & Koordinator)
     const sarparMenu = {
         title: 'Sarana Prasarana',
@@ -595,6 +674,7 @@ const filteredMenuGroups = computed(() => {
         if (isFeatureEnabled('feature_sarpar')) adminGroups.push(sarparMenu);
         if (isFeatureEnabled('feature_counseling')) adminGroups.push(counselingMenu);
         if (isFeatureEnabled('feature_extracurricular')) adminGroups.push(extracurricularMenu);
+        if (isQuranUnitEnabled) adminGroups.push(quranMenu);
         adminGroups.push(humasMenu);
 
         return adminGroups;
@@ -826,6 +906,15 @@ const filteredMenuGroups = computed(() => {
         });
     } else if ((isTeacher || hasRole('wali_kelas') || hasRole('koordinator_kesiswaan')) && isFeatureEnabled('feature_extracurricular')) {
         groups.push(extracurricularMenu);
+    }
+
+    // F2. PROGRAM AL-QUR'AN / UMMI (Koordinator Al-Qur'an / Guru Al-Qur'an / Kurikulum)
+    if (isQuranUnitEnabled) {
+        if (hasRole('koordinator_alquran') || hasRole('koordinator_kurikulum')) {
+            groups.push(quranMenu);
+        } else if (hasRole('guru_alquran')) {
+            groups.push(quranTeacherMenu);
+        }
     }
 
     // G. KOORDINATOR SARPAR

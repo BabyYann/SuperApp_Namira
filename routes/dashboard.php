@@ -40,6 +40,8 @@ Route::get('/dashboard', function () {
             'kepala_sekolah',
             'teacher',
             'guru',
+            'guru_alquran',
+            'koordinator_alquran',
             'wali_kelas',
             'koordinator_kurikulum',
             'koordinator_kesiswaan',

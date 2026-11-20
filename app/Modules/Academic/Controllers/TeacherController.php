@@ -13,11 +13,56 @@ use Inertia\Inertia;
 
 class TeacherController extends Controller
 {
+    private function syncTeacherRoles(User $user, int $unitId, array $flags): void
+    {
+        $managedRoles = [
+            'teacher' => (bool) ($flags['is_regular_teacher'] ?? false),
+            'guru_alquran' => (bool) ($flags['is_quran_teacher'] ?? false),
+            'koordinator_alquran' => (bool) ($flags['is_quran_coordinator'] ?? false),
+        ];
+
+        // Ensure at least one role is enabled if none provided
+        if (!in_array(true, $managedRoles, true)) {
+            $managedRoles['teacher'] = true;
+        }
+
+        foreach ($managedRoles as $roleName => $shouldHave) {
+            $role = \Spatie\Permission\Models\Role::firstOrCreate([
+                'name' => $roleName,
+                'guard_name' => 'web',
+            ]);
+
+            if ($shouldHave) {
+                \DB::table('model_has_roles')->updateOrInsert(
+                    [
+                        'role_id' => $role->id,
+                        'model_type' => User::class,
+                        'model_id' => $user->id,
+                        'team_id' => $unitId,
+                    ],
+                    []
+                );
+            } else {
+                \DB::table('model_has_roles')
+                    ->where('role_id', $role->id)
+                    ->where('model_type', User::class)
+                    ->where('model_id', $user->id)
+                    ->where(function ($q) use ($unitId) {
+                        $q->where('team_id', $unitId)->orWhereNull('team_id');
+                    })
+                    ->delete();
+            }
+        }
+
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+
     public function index()
     {
         // Scope by active unit
         $unitId = session('active_unit_id');
-        
+        $teacherType = request('teacher_type');
+
         $teachers = Teacher::with('user')
             ->where('unit_id', $unitId)
             ->when(request('search'), function ($query, $search) {
@@ -29,9 +74,86 @@ class TeacherController extends Controller
             ->when(request('gender'), function ($query, $gender) {
                 $query->where('gender', $gender);
             })
+            ->when($teacherType, function ($query, $type) use ($unitId) {
+                $hasRoleSql = function ($q, array $roleNames) use ($unitId) {
+                    $q->whereExists(function ($sub) use ($roleNames, $unitId) {
+                        $sub->select(\DB::raw(1))
+                            ->from('model_has_roles')
+                            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                            ->whereColumn('model_has_roles.model_id', 'teachers.user_id')
+                            ->where('model_has_roles.model_type', User::class)
+                            ->whereIn('roles.name', $roleNames)
+                            ->where(function ($t) use ($unitId) {
+                                $t->where('model_has_roles.team_id', $unitId)->orWhereNull('model_has_roles.team_id');
+                            });
+                    });
+                };
+
+                if ($type === 'quran') {
+                    $hasRoleSql($query, ['guru_alquran', 'koordinator_alquran']);
+                } elseif ($type === 'quran_only') {
+                    $hasRoleSql($query, ['guru_alquran', 'koordinator_alquran']);
+                    $query->whereNotExists(function ($sub) use ($unitId) {
+                        $sub->select(\DB::raw(1))
+                            ->from('model_has_roles')
+                            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                            ->whereColumn('model_has_roles.model_id', 'teachers.user_id')
+                            ->where('model_has_roles.model_type', User::class)
+                            ->where('roles.name', 'teacher')
+                            ->where(function ($t) use ($unitId) {
+                                $t->where('model_has_roles.team_id', $unitId)->orWhereNull('model_has_roles.team_id');
+                            });
+                    });
+                } elseif ($type === 'dual') {
+                    $hasRoleSql($query, ['teacher']);
+                    $hasRoleSql($query, ['guru_alquran', 'koordinator_alquran']);
+                } elseif ($type === 'regular') {
+                    $hasRoleSql($query, ['teacher']);
+                    $query->whereNotExists(function ($sub) use ($unitId) {
+                        $sub->select(\DB::raw(1))
+                            ->from('model_has_roles')
+                            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                            ->whereColumn('model_has_roles.model_id', 'teachers.user_id')
+                            ->where('model_has_roles.model_type', User::class)
+                            ->whereIn('roles.name', ['guru_alquran', 'koordinator_alquran'])
+                            ->where(function ($t) use ($unitId) {
+                                $t->where('model_has_roles.team_id', $unitId)->orWhereNull('model_has_roles.team_id');
+                            });
+                    });
+                }
+            })
             ->latest()
             ->paginate(request('per_page', 10))
             ->withQueryString();
+
+        // Hydrate unit role labels for each teacher
+        $pageUserIds = $teachers->getCollection()->pluck('user_id')->filter()->unique()->values();
+        $rolesByUser = [];
+        if ($pageUserIds->isNotEmpty()) {
+            $roleRows = \DB::table('model_has_roles')
+                ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                ->where('model_has_roles.model_type', User::class)
+                ->whereIn('model_has_roles.model_id', $pageUserIds)
+                ->where(function ($q) use ($unitId) {
+                    $q->where('model_has_roles.team_id', $unitId)->orWhereNull('model_has_roles.team_id');
+                })
+                ->select('model_has_roles.model_id', 'roles.name')
+                ->get();
+
+            foreach ($roleRows as $row) {
+                $rolesByUser[$row->model_id][] = $row->name;
+            }
+        }
+
+        $teachers->getCollection()->transform(function ($t) use ($rolesByUser) {
+            $roles = array_values(array_unique($rolesByUser[$t->user_id] ?? []));
+            $t->role_names = $roles;
+            $t->is_regular_teacher = in_array('teacher', $roles, true);
+            $t->is_quran_teacher = in_array('guru_alquran', $roles, true);
+            $t->is_quran_coordinator = in_array('koordinator_alquran', $roles, true);
+
+            return $t;
+        });
 
         // Fetch registered users who don't have a teacher profile in this unit yet
         $existingTeacherUserIds = Teacher::where('unit_id', $unitId)->pluck('user_id')->filter()->toArray();
@@ -51,15 +173,29 @@ class TeacherController extends Controller
         $totalTeachers = Teacher::where('unit_id', $unitId)->count();
         $countL = Teacher::where('unit_id', $unitId)->where('gender', 'L')->count();
         $countP = Teacher::where('unit_id', $unitId)->where('gender', 'P')->count();
+        $countQuran = Teacher::where('unit_id', $unitId)
+            ->whereExists(function ($sub) use ($unitId) {
+                $sub->select(\DB::raw(1))
+                    ->from('model_has_roles')
+                    ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                    ->whereColumn('model_has_roles.model_id', 'teachers.user_id')
+                    ->where('model_has_roles.model_type', User::class)
+                    ->whereIn('roles.name', ['guru_alquran', 'koordinator_alquran'])
+                    ->where(function ($t) use ($unitId) {
+                        $t->where('model_has_roles.team_id', $unitId)->orWhereNull('model_has_roles.team_id');
+                    });
+            })
+            ->count();
 
         return Inertia::render('Academic/Teachers/Index', [
             'teachers' => $teachers,
             'availableUsers' => $availableUsers,
-            'filters' => request()->only(['search', 'gender']),
+            'filters' => request()->only(['search', 'gender', 'teacher_type']),
             'stats' => [
                 'total' => $totalTeachers,
                 'male' => $countL,
                 'female' => $countP,
+                'quran' => $countQuran,
             ],
         ]);
     }
@@ -80,6 +216,9 @@ class TeacherController extends Controller
             'gender' => 'required|in:L,P',
             'phone' => 'nullable|string|max:20',
             'photo' => 'nullable|image|max:10240', // Max 10MB
+            'is_regular_teacher' => 'nullable|boolean',
+            'is_quran_teacher' => 'nullable|boolean',
+            'is_quran_coordinator' => 'nullable|boolean',
         ]);
 
         try {
@@ -101,11 +240,17 @@ class TeacherController extends Controller
                     }
                 }
                 
-                // Assign role if not exists
-                if (!$user->hasRole('teacher')) {
-                    setPermissionsTeamId($unitId);
-                    $user->assignRole('teacher');
-                }
+                // Sync teacher/quran roles
+                $hasExplicitFlags = $request->has('is_regular_teacher') || $request->has('is_quran_teacher') || $request->has('is_quran_coordinator');
+                $this->syncTeacherRoles($user, (int) $unitId, $hasExplicitFlags ? [
+                    'is_regular_teacher' => $request->boolean('is_regular_teacher'),
+                    'is_quran_teacher' => $request->boolean('is_quran_teacher'),
+                    'is_quran_coordinator' => $request->boolean('is_quran_coordinator'),
+                ] : [
+                    'is_regular_teacher' => true,
+                    'is_quran_teacher' => false,
+                    'is_quran_coordinator' => false,
+                ]);
 
                 // 2. Handle File Upload
                 $photoPath = null;
@@ -118,9 +263,9 @@ class TeacherController extends Controller
                     'user_id' => $user->id,
                     'unit_id' => $unitId,
                     'full_name' => $validated['full_name'],
-                    'nip' => $validated['nip'],
+                    'nip' => $validated['nip'] ?? null,
                     'gender' => $validated['gender'],
-                    'phone' => $validated['phone'],
+                    'phone' => $validated['phone'] ?? null,
                     'photo' => $photoPath,
                 ]);
             });
@@ -186,12 +331,15 @@ class TeacherController extends Controller
             'gender' => 'required|in:L,P',
             'phone' => 'nullable|string|max:20',
             'photo' => 'nullable|image|max:10240',
+            'is_regular_teacher' => 'nullable|boolean',
+            'is_quran_teacher' => 'nullable|boolean',
+            'is_quran_coordinator' => 'nullable|boolean',
         ]);
 
         $teacher->full_name = $validated['full_name'];
-        $teacher->nip = $validated['nip'];
+        $teacher->nip = $validated['nip'] ?? null;
         $teacher->gender = $validated['gender'];
-        $teacher->phone = $validated['phone'];
+        $teacher->phone = $validated['phone'] ?? null;
 
         // Handle File Upload
         if ($request->hasFile('photo')) {
@@ -204,9 +352,17 @@ class TeacherController extends Controller
 
         $teacher->save();
         
-        // Update User name if user exists
+        // Update User name and roles if user exists
         if ($teacher->user) {
             $teacher->user->update(['name' => $validated['full_name']]);
+
+            if ($request->has('is_regular_teacher') || $request->has('is_quran_teacher') || $request->has('is_quran_coordinator')) {
+                $this->syncTeacherRoles($teacher->user, (int) $teacher->unit_id, [
+                    'is_regular_teacher' => $request->boolean('is_regular_teacher'),
+                    'is_quran_teacher' => $request->boolean('is_quran_teacher'),
+                    'is_quran_coordinator' => $request->boolean('is_quran_coordinator'),
+                ]);
+            }
         }
 
         return redirect()->back()->with('success', 'Data guru diperbarui.');

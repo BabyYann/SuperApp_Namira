@@ -66,7 +66,7 @@ class Unit extends Model
             return in_array($feature, ['daycare', 'employee', 'finance', 'public_relations']);
         }
 
-        return in_array($feature, ['academic', 'employee', 'finance', 'sarpar', 'counseling', 'public_relations']);
+        return in_array($feature, ['academic', 'quran', 'employee', 'finance', 'sarpar', 'counseling', 'public_relations']);
     }
 
     public function news(): \Illuminate\Database\Eloquent\Relations\HasMany

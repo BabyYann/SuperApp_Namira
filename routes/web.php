@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
     require __DIR__.'/employee.php';
     require __DIR__.'/counseling.php';
     require __DIR__.'/extracurricular.php';
+    require __DIR__.'/quran.php';
     require __DIR__.'/sarpar.php';
     require __DIR__.'/student-portal.php';
     require __DIR__.'/daycare.php';
