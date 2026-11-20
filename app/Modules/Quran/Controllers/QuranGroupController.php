@@ -54,7 +54,7 @@ class QuranGroupController extends Controller
                 'assistantTeacher:id,name,email,phone',
                 'activeEnrollments' => function ($q) {
                     $q->with(['student' => function ($sq) {
-                        $sq->select('id', 'nis', 'nisn', 'full_name', 'gender', 'classroom_id', 'status')
+                        $sq->select('id', 'nis', 'nisn', 'full_name', 'gender', 'classroom_id')
                            ->with('classroom:id,name');
                     }])->orderBy('id');
                 },
@@ -150,7 +150,6 @@ class QuranGroupController extends Controller
 
         // Overall unit statistics
         $totalActiveStudents = Student::where('unit_id', $unit->id)
-            ->where('status', 'active')
             ->count();
 
         $activeEnrollments = QuranEnrollment::where('unit_id', $unit->id)
@@ -182,7 +181,6 @@ class QuranGroupController extends Controller
 
         $allUnitStudents = $canManage
             ? Student::where('unit_id', $unit->id)
-                ->where('status', 'active')
                 ->with('classroom:id,name')
                 ->orderBy('full_name')
                 ->get(['id', 'nis', 'full_name', 'gender', 'classroom_id'])

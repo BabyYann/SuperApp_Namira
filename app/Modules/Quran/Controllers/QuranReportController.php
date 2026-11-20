@@ -64,7 +64,7 @@ class QuranReportController extends Controller
         $allowedGroupIds = $groups->pluck('id')->toArray();
 
         $enrollments = QuranEnrollment::with([
-                'student' => fn ($q) => $q->select('id', 'nis', 'nisn', 'full_name', 'classroom_id', 'status')->with('classroom:id,name'),
+                'student' => fn ($q) => $q->select('id', 'nis', 'nisn', 'full_name', 'classroom_id')->with('classroom:id,name'),
                 'level:id,name,sort_order',
                 'group' => fn ($q) => $q->with(['teacher:id,name', 'session:id,name']),
             ])
@@ -82,7 +82,7 @@ class QuranReportController extends Controller
             ->keyBy('student_id');
 
         $rows = $enrollments
-            ->filter(fn ($e) => $e->student !== null && $e->student->status === 'active')
+            ->filter(fn ($e) => $e->student !== null)
             ->map(function ($e) use ($assessments) {
                 $st = $e->student;
                 $assessment = $assessments->get($st->id);

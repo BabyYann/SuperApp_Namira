@@ -72,7 +72,7 @@ class QuranModuleTest extends TestCase
         (new QuranSetupService())->ensureUnitDefaults($this->sdUnit);
     }
 
-    private function makeUserWithRoles(array $roles, int $unitId): User
+    private function makeUserWithRoles(array $roles, ?int $unitId = null): User
     {
         $user = User::factory()->create();
         setPermissionsTeamId($unitId);
@@ -442,5 +442,25 @@ class QuranModuleTest extends TestCase
 
         $this->assertContains('teacher', $ahmadRoles);
         $this->assertContains('guru_alquran', $ahmadRoles);
+    }
+
+    public function test_all_quran_pages_render_ok_for_super_admin_coordinator_and_guru(): void
+    {
+        $superAdmin = $this->makeUserWithRoles(['super_admin_yayasan'], null);
+        $guru = $this->makeUserWithRoles(['guru_alquran'], $this->sdUnit->id);
+
+        foreach (['quran.index', 'quran.students.index', 'quran.assessments.index', 'quran.reports.index', 'quran.rubrics.index', 'quran.settings.index'] as $routeName) {
+            $this->actingAs($superAdmin)
+                ->withSession(['active_unit_id' => $this->sdUnit->id])
+                ->get(route($routeName))
+                ->assertOk();
+        }
+
+        foreach (['quran.index', 'quran.students.index', 'quran.assessments.index', 'quran.reports.index'] as $routeName) {
+            $this->actingAs($guru)
+                ->withSession(['active_unit_id' => $this->sdUnit->id])
+                ->get(route($routeName))
+                ->assertOk();
+        }
     }
 }
