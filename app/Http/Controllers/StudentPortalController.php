@@ -198,6 +198,13 @@ class StudentPortalController extends Controller
             ];
         }
 
+        // 10. Last Pickup Request (cooldown reference)
+        $lastPickup = $student
+            ? StudentPickupRequest::where('student_id', $student->id)
+                ->latest('requested_at')
+                ->first()
+            : null;
+
         // 11. Extracurriculars of this student
         $myExtracurriculars = [];
         if ($student) {
@@ -233,10 +240,15 @@ class StudentPortalController extends Controller
                 });
         }
 
+        // 12. Program Al-Qur'an (Ummi) Summary for Student / Parent Portal
+        $quranProfile = app(\App\Modules\Quran\Services\QuranStudentProfileService::class)
+            ->forStudent($student, true);
+
         return Inertia::render('Student/Dashboard', [
             'student'      => $student,
             'siblings'     => $siblings,
             'extracurriculars' => $myExtracurriculars,
+            'quranProfile' => $quranProfile,
             'activeBill'   => $activeBill,
             'schedule'     => $todaysSchedule,
             'todayDate'    => Carbon::now()->locale('id')->isoFormat('dddd, D MMMM Y'),

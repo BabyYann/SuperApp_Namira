@@ -293,29 +293,220 @@ class StudentController extends Controller
             abort(403, 'Akses Ditolak: Anda tidak memiliki akses untuk data siswa di unit lain.');
         }
 
-        $student->load([
-            'user', 
-            'classroom.homeroomTeacher', 
-            'academicYear',
-            'unit',
-            'bills' => function ($q) {
-                $q->with('financeType')->whereIn('status', ['unpaid', 'partial'])->orderBy('due_date');
-            },
-            'transactions' => function ($q) {
-                $q->latest('transaction_date')->take(10);
-            }
+        // Gather all user roles (global + student's unit) reliably without Spatie team cache mismatch
+        $roleNames = $user ? \Illuminate\Support\Facades\DB::table('model_has_roles')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('model_has_roles.model_id', $user->id)
+            ->where('model_has_roles.model_type', get_class($user))
+            ->where(function ($q) use ($student) {
+                $q->whereNull('model_has_roles.team_id')
+                    ->orWhere('model_has_roles.team_id', $student->unit_id);
+            })
+            ->pluck('roles.name')
+            ->unique()
+            ->values()
+            ->all() : [];
+
+        $hasAnyRole = fn (array $allowed): bool => !empty(array_intersect($roleNames, $allowed));
+
+        $canViewFinance = $hasAnyRole([
+            'super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan',
+            'admin_unit', 'kepala_sekolah', 'finance', 'staff_admin_keuangan',
         ]);
-        
-        // Calculate Total Arrears
-        $student->total_arrears = $student->bills->sum(function($bill) {
-             return $bill->final_amount - $bill->paid_amount;
-        });
-        
-        // Calculate Total Paid (This Year / All Time)
-        $student->total_paid = $student->transactions()->sum('amount');
+
+        $student->load(['user', 'classroom.homeroomTeacher', 'academicYear', 'unit']);
+
+        $isHomeroomOfStudent = $teacherProfile && $student->classroom
+            && (int) $student->classroom->homeroom_teacher_id === (int) $teacherProfile->id;
+
+        $canViewCounselingNotes = $isHomeroomOfStudent || $hasAnyRole([
+            'super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan',
+            'admin_unit', 'kepala_sekolah', 'bk', 'counseling', 'koordinator_kesiswaan',
+        ]);
+
+        $canManageQuran = $hasAnyRole([
+            'super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan',
+            'admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran',
+        ]);
+
+        $canAccessQuran = $canManageQuran || $hasAnyRole(['guru_alquran', 'teacher', 'wali_kelas']);
+
+        // 1. Finance (strictly gated so unauthorized roles never receive financial payload)
+        $financeData = null;
+        if ($canViewFinance) {
+            $unpaidBills = $student->bills()
+                ->with('financeType')
+                ->whereIn('status', ['unpaid', 'partial'])
+                ->orderBy('due_date')
+                ->get();
+
+            $recentTransactions = $student->transactions()
+                ->latest('transaction_date')
+                ->take(10)
+                ->get();
+
+            $totalArrears = $unpaidBills->sum(fn ($bill) => max(0, $bill->final_amount - $bill->paid_amount));
+            $totalPaid = $student->transactions()->sum('amount');
+
+            $financeData = [
+                'va_number' => $student->va_number,
+                'total_arrears' => $totalArrears,
+                'total_paid' => $totalPaid,
+                'bills' => $unpaidBills,
+                'transactions' => $recentTransactions,
+            ];
+        } else {
+            // Mask VA number when user cannot view finance
+            $student->va_number = null;
+        }
+
+        // 2. Program Al-Qur'an (Ummi) 360 summary
+        $quranProfile = app(\App\Modules\Quran\Services\QuranStudentProfileService::class)->forStudent($student, false);
+        $canPrintQuranReport = (bool) (
+            ($quranProfile['enabled'] ?? false)
+            && $canAccessQuran
+            && ($canManageQuran || !($quranProfile['is_report_locked'] ?? false))
+        );
+
+        // 3. Attendance & Recent Gate Check-ins
+        $attendanceStats = \App\Models\StudentAttendance::where('student_id', $student->id)
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $attendanceSummary = [
+            'present' => (int) ($attendanceStats['H'] ?? 0),
+            'sick' => (int) ($attendanceStats['S'] ?? 0),
+            'permission' => (int) ($attendanceStats['I'] ?? 0),
+            'alpha' => (int) ($attendanceStats['A'] ?? 0),
+        ];
+
+        $recentCheckins = \App\Modules\Academic\Models\StudentCheckin::where('student_id', $student->id)
+            ->latest('checkin_date')
+            ->take(5)
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'date' => \Carbon\Carbon::parse($c->checkin_date)->format('d M Y'),
+                'time' => $c->checkin_time ? substr($c->checkin_time, 0, 5) : '-',
+                'status' => $c->status,
+            ])
+            ->values();
+
+        // 4. Class Promotion History
+        $classPromotions = \App\Modules\Academic\Models\ClassPromotion::with([
+            'fromClassroom', 'toClassroom', 'fromAcademicYear', 'toAcademicYear',
+        ])
+            ->where('student_id', $student->id)
+            ->where(function ($q) {
+                $q->whereNull('is_rolled_back')->orWhere('is_rolled_back', false);
+            })
+            ->orderByDesc('promoted_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'status' => $p->status,
+                'status_label' => $p->status_label,
+                'from_classroom' => $p->fromClassroom?->name ?? '-',
+                'to_classroom' => $p->toClassroom?->name,
+                'from_year' => $p->fromAcademicYear?->name ?? '-',
+                'to_year' => $p->toAcademicYear?->name ?? '-',
+                'promoted_at' => $p->promoted_at?->format('d M Y') ?? '-',
+                'notes' => $p->notes,
+            ])
+            ->values();
+
+        // 5. Extracurriculars
+        $extracurriculars = \App\Modules\Extracurricular\Models\ExtracurricularMember::where('student_id', $student->id)
+            ->where('status', 'active')
+            ->with(['extracurricular.room', 'extracurricular.instructors.user', 'grade'])
+            ->get()
+            ->map(fn ($m) => [
+                'id' => $m->extracurricular?->id,
+                'name' => $m->extracurricular?->name ?? '-',
+                'category' => $m->extracurricular?->category_label ?? '-',
+                'schedule' => $m->extracurricular?->formatted_schedule ?? '-',
+                'location' => $m->extracurricular?->room?->name ?: ($m->extracurricular?->location_name ?: '-'),
+                'coach' => $m->extracurricular?->instructors->pluck('user.name')->filter()->join(', ') ?: '-',
+                'grade' => $m->grade?->predicate,
+                'grade_description' => $m->grade?->description,
+            ])
+            ->values();
+
+        // 6. Counseling: Achievements, Violations & Role-Gated Private Sessions
+        $violations = \App\Modules\Counseling\Models\Violation::where('student_id', $student->id)
+            ->with('category')
+            ->latest('date')
+            ->take(10)
+            ->get()
+            ->map(fn ($v) => [
+                'id' => $v->id,
+                'date' => $v->date ? \Carbon\Carbon::parse($v->date)->format('d M Y') : '-',
+                'category' => $v->category?->name ?? 'Pelanggaran',
+                'points' => (int) $v->points,
+                'description' => $v->description,
+            ])
+            ->values();
+
+        $totalViolationPoints = (int) \App\Modules\Counseling\Models\Violation::where('student_id', $student->id)->sum('points');
+        $counselingLevel = $totalViolationPoints > 50 ? 'BAHAYA' : ($totalViolationPoints > 20 ? 'WASPADA' : 'AMAN');
+
+        $achievements = \App\Modules\Counseling\Models\Achievement::where('student_id', $student->id)
+            ->latest('date')
+            ->take(10)
+            ->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'date' => $a->date ? \Carbon\Carbon::parse($a->date)->format('d M Y') : '-',
+                'title' => $a->title,
+                'level' => $a->level,
+                'description' => $a->description,
+            ])
+            ->values();
+
+        $counselingSessions = [];
+        if ($canViewCounselingNotes) {
+            $counselingSessions = \App\Modules\Counseling\Models\CounselingSession::withoutGlobalScope('unit')
+                ->where('student_id', $student->id)
+                ->with('counselor')
+                ->latest('date')
+                ->take(10)
+                ->get()
+                ->map(fn ($cs) => [
+                    'id' => $cs->id,
+                    'date' => $cs->date?->format('d M Y') ?? '-',
+                    'method' => $cs->method,
+                    'status' => $cs->status,
+                    'counselor' => $cs->counselor?->name ?? '-',
+                    'notes' => $cs->notes,
+                    'follow_up_action' => $cs->follow_up_action,
+                ])
+                ->values();
+        }
 
         return Inertia::render('Academic/Students/Show', [
             'student' => $student,
+            'permissions' => [
+                'can_view_finance' => $canViewFinance,
+                'can_view_counseling_notes' => $canViewCounselingNotes,
+                'can_print_quran_report' => $canPrintQuranReport,
+                'is_global_admin' => $isGlobalAdmin,
+            ],
+            'quranProfile' => $quranProfile,
+            'attendanceSummary' => $attendanceSummary,
+            'recentCheckins' => $recentCheckins,
+            'classPromotions' => $classPromotions,
+            'extracurriculars' => $extracurriculars,
+            'counselingSummary' => [
+                'total_points' => $totalViolationPoints,
+                'status' => $counselingLevel,
+                'violations' => $violations,
+                'achievements' => $achievements,
+                'sessions' => $counselingSessions,
+            ],
+            'finance' => $financeData,
         ]);
     }
 

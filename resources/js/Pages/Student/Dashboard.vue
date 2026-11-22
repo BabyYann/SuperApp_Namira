@@ -23,6 +23,8 @@ import {
     ArrowPathIcon,
     UserGroupIcon,
     PhotoIcon,
+    ChevronDownIcon,
+    CheckBadgeIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -34,6 +36,10 @@ const props = defineProps({
     extracurriculars: {
         type: Array,
         default: () => []
+    },
+    quranProfile: {
+        type: Object,
+        default: null
     },
     activeBill: Object,
     schedule: Array,
@@ -99,6 +105,25 @@ const formattedCooldownTime = computed(() => {
     const seconds = cooldownSecondsRemaining.value % 60;
     return `${minutes}m ${seconds}s`;
 });
+
+const showAllQuranHistory = ref(false);
+const showQuranGrades = ref(false);
+
+const visibleQuranHistories = computed(() => {
+    const rows = props.quranProfile?.histories || [];
+    return showAllQuranHistory.value ? rows : rows.slice(0, 3);
+});
+
+const latestQuranAssessment = computed(() => {
+    return props.quranProfile?.assessments?.[0] || null;
+});
+
+const quranGradePillClass = (grade) => {
+    if (grade === 'A') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (grade === 'B') return 'bg-sky-50 text-sky-700 border-sky-200';
+    if (grade === 'C') return 'bg-amber-50 text-amber-700 border-amber-200';
+    return 'bg-rose-50 text-rose-700 border-rose-200';
+};
 
 watch(() => props.lastPickupTime, () => {
     startCooldownTimer();
@@ -387,6 +412,153 @@ onMounted(() => {
 
                 <div v-else class="py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
                     <p class="text-xs text-slate-400 font-bold">Tidak ada jadwal kegiatan belajar mengajar hari ini.</p>
+                </div>
+            </div>
+
+            <!-- 4.3. PROGRAM AL-QUR'AN (METODE UMMI) -->
+            <div v-if="quranProfile && quranProfile.enabled" class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
+                <div class="flex items-start sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="p-2 bg-teal-50 text-namira-teal rounded-xl shrink-0">
+                            <BookOpenIcon class="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-slate-800 text-base leading-tight">Program Al-Qur'an (Ummi)</h3>
+                            <p class="text-xs text-slate-400">Capaian jilid, kelompok mengaji &amp; riwayat kenaikan</p>
+                        </div>
+                    </div>
+                    <span
+                        class="px-2.5 py-1 rounded-full text-xs font-bold border shrink-0"
+                        :class="quranProfile.current ? 'bg-teal-50 text-teal-800 border-teal-200' : 'bg-slate-100 text-slate-500 border-slate-200'"
+                    >
+                        {{ quranProfile.current ? quranProfile.current.level_name : 'Belum Diplot' }}
+                    </span>
+                </div>
+
+                <!-- Status Kelompok Aktif -->
+                <div v-if="quranProfile.current" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="text-[10px] font-semibold uppercase text-slate-400">Kelompok</div>
+                        <div class="font-bold text-slate-800 mt-0.5 truncate">{{ quranProfile.current.group_name }}</div>
+                        <div v-if="quranProfile.current.room_name" class="text-[11px] text-slate-500 truncate">{{ quranProfile.current.room_name }}</div>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="text-[10px] font-semibold uppercase text-slate-400">Pengampu</div>
+                        <div class="font-bold text-slate-800 mt-0.5 truncate">{{ quranProfile.current.teacher_name }}</div>
+                        <div v-if="quranProfile.current.assistant_name" class="text-[11px] text-slate-500 truncate">Asisten: {{ quranProfile.current.assistant_name }}</div>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="text-[10px] font-semibold uppercase text-slate-400">Sesi Mengaji</div>
+                        <div class="font-bold text-slate-800 mt-0.5 truncate">{{ quranProfile.current.session_name || 'Reguler' }}</div>
+                        <div v-if="quranProfile.current.session_time" class="text-[11px] text-teal-700 font-semibold tabular-nums">{{ quranProfile.current.session_time }} WIB</div>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="text-[10px] font-semibold uppercase text-slate-400">Progres Jilid</div>
+                        <div class="font-bold text-teal-700 mt-0.5 flex items-center gap-1 tabular-nums">
+                            <CheckBadgeIcon class="w-4 h-4 shrink-0" />
+                            <span>{{ quranProfile.stats?.promotions_total || 0 }}× Naik Jilid</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500">Sejak {{ quranProfile.current.started_at || '-' }}</div>
+                    </div>
+                </div>
+                <div v-else class="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-xs text-slate-500 text-center">
+                    Ananda belum masuk kelompok halaqah Al-Qur'an untuk tahun ajaran ini.
+                </div>
+
+                <!-- Timeline Riwayat Kenaikan Jilid -->
+                <div v-if="quranProfile.histories && quranProfile.histories.length > 0" class="pt-2 border-t border-slate-100 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-700">Riwayat Perjalanan Jilid</span>
+                        <button
+                            v-if="quranProfile.histories.length > 3"
+                            type="button"
+                            @click="showAllQuranHistory = !showAllQuranHistory"
+                            class="text-[11px] font-bold text-teal-700 hover:underline"
+                        >
+                            {{ showAllQuranHistory ? 'Ringkas' : `Lihat Semua (${quranProfile.histories.length})` }}
+                        </button>
+                    </div>
+
+                    <ol class="relative border-l-2 border-teal-100 ml-2 space-y-2.5">
+                        <li v-for="h in visibleQuranHistories" :key="h.id" class="ml-4 relative">
+                            <span
+                                class="absolute -left-[22px] top-1.5 w-2.5 h-2.5 rounded-full ring-4 ring-white"
+                                :class="h.change_type === 'promoted' ? 'bg-teal-600' : (h.change_type === 'transferred' ? 'bg-amber-500' : 'bg-sky-500')"
+                            />
+                            <div class="flex flex-wrap items-center justify-between gap-1 text-xs">
+                                <div class="font-bold text-slate-800">
+                                    <template v-if="h.from_level">
+                                        <span class="text-slate-400 font-medium">{{ h.from_level }}</span>
+                                        <span class="mx-1 text-teal-600">&rarr;</span>
+                                        <span>{{ h.to_level }}</span>
+                                    </template>
+                                    <span v-else>{{ h.to_level }}</span>
+                                    <span v-if="h.exam_score" class="ml-1.5 text-[11px] font-semibold text-teal-700">(Tes: {{ h.exam_score }})</span>
+                                </div>
+                                <span class="text-[11px] text-slate-400 tabular-nums">{{ h.changed_at }}</span>
+                            </div>
+                            <div v-if="h.to_group || h.notes" class="text-[11px] text-slate-500 mt-0.5">
+                                <span v-if="h.to_group">{{ h.to_group }}<span v-if="h.to_teacher"> · {{ h.to_teacher }}</span></span>
+                                <span v-if="h.notes" class="italic"> — "{{ h.notes }}"</span>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+
+                <!-- Ringkasan Capaian / Nilai Semester Terakhir -->
+                <div v-if="latestQuranAssessment" class="pt-2 border-t border-slate-100 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="text-xs font-bold text-slate-700">
+                            Capaian {{ latestQuranAssessment.semester_label }} {{ latestQuranAssessment.academic_year }}
+                            <span class="text-slate-400 font-medium">({{ latestQuranAssessment.level_name }})</span>
+                        </div>
+                        <button
+                            v-if="!latestQuranAssessment.is_locked_for_parent && latestQuranAssessment.categories?.length"
+                            type="button"
+                            @click="showQuranGrades = !showQuranGrades"
+                            class="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700"
+                        >
+                            <span>{{ showQuranGrades ? 'Sembunyikan' : 'Detail Nilai' }}</span>
+                            <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-200" :class="showQuranGrades ? 'rotate-180' : ''" />
+                        </button>
+                    </div>
+
+                    <div v-if="latestQuranAssessment.is_locked_for_parent" class="px-3 py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/70 text-xs text-amber-800">
+                        Penilaian rapor Al-Qur'an sedang diproses oleh guru pengampu dan akan tampil setelah periode rapor dibuka.
+                    </div>
+                    <template v-else>
+                        <div v-if="latestQuranAssessment.grade_counts" class="flex flex-wrap items-center gap-1.5">
+                            <span
+                                v-for="g in ['A', 'B', 'C', 'D']"
+                                :key="g"
+                                v-show="latestQuranAssessment.grade_counts[g] > 0"
+                                class="px-2 py-0.5 rounded-lg text-[11px] font-bold border tabular-nums"
+                                :class="quranGradePillClass(g)"
+                            >
+                                Predikat {{ g }}: {{ latestQuranAssessment.grade_counts[g] }}
+                            </span>
+                        </div>
+
+                        <div v-if="latestQuranAssessment.teacher_note" class="px-3 py-2 rounded-xl bg-teal-50/60 border border-teal-100 text-xs text-slate-700">
+                            <strong class="text-teal-800">Catatan Ustadz/ah:</strong> {{ latestQuranAssessment.teacher_note }}
+                        </div>
+
+                        <div v-if="showQuranGrades && latestQuranAssessment.categories?.length" class="space-y-3 pt-1">
+                            <div v-for="cat in latestQuranAssessment.categories" :key="cat.key" class="space-y-1.5">
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ cat.label }}</div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    <div
+                                        v-for="(it, idx) in cat.items"
+                                        :key="idx"
+                                        class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-xs"
+                                    >
+                                        <span class="text-slate-700 truncate">{{ it.title }}</span>
+                                        <span class="px-1.5 py-0.5 rounded text-[11px] font-bold border shrink-0" :class="quranGradePillClass(it.grade)">{{ it.grade }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </div>
 

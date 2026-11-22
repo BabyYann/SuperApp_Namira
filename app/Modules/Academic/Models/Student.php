@@ -101,4 +101,54 @@ class Student extends Model
     {
         return $this->hasMany(\App\Modules\Daycare\Models\DaycareDevelopmentalJournal::class, 'student_id');
     }
+
+    public function quranEnrollments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Quran\Models\QuranEnrollment::class, 'student_id');
+    }
+
+    public function quranLevelHistories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Quran\Models\QuranLevelHistory::class, 'student_id');
+    }
+
+    public function quranAssessments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Quran\Models\QuranAssessment::class, 'student_id');
+    }
+
+    public function classPromotions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ClassPromotion::class, 'student_id');
+    }
+
+    public function attendances(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\StudentAttendance::class, 'student_id');
+    }
+
+    public function checkins(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StudentCheckin::class, 'student_id');
+    }
+
+    public function extracurricularMembers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Extracurricular\Models\ExtracurricularMember::class, 'student_id');
+    }
+
+    public function violations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Counseling\Models\Violation::class, 'student_id');
+    }
+
+    public function achievements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Counseling\Models\Achievement::class, 'student_id');
+    }
+
+    public function counselingSessions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Modules\Counseling\Models\CounselingSession::class, 'student_id');
+    }
 }

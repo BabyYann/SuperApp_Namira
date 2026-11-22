@@ -35,7 +35,7 @@ class QuranModuleTest extends TestCase
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        foreach (['super_admin_yayasan', 'admin_unit', 'teacher', 'guru_alquran', 'koordinator_alquran'] as $r) {
+        foreach (['super_admin_yayasan', 'admin_unit', 'teacher', 'guru_alquran', 'koordinator_alquran', 'siswa'] as $r) {
             Role::firstOrCreate(['name' => $r, 'guard_name' => 'web']);
         }
 
@@ -474,5 +474,133 @@ class QuranModuleTest extends TestCase
                 ->get(route($routeName))
                 ->assertOk();
         }
+    }
+
+    public function test_student_360_profile_and_parent_portal_show_quran_with_role_privacy(): void
+    {
+        (new QuranSetupService())->ensureUnitDefaults($this->sdUnit);
+
+        $admin = $this->makeUserWithRoles(['admin_unit'], $this->sdUnit->id);
+        $guruQuran = $this->makeUserWithRoles(['guru_alquran'], $this->sdUnit->id);
+        $studentUser = $this->makeUserWithRoles(['siswa'], $this->sdUnit->id);
+
+        $kls = Classroom::create([
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'name' => '3A',
+            'level' => '3',
+        ]);
+
+        $student = Student::create([
+            'user_id' => $studentUser->id,
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'classroom_id' => $kls->id,
+            'nis' => 'SD301',
+            'full_name' => 'Muhammad Zaid',
+            'gender' => 'L',
+            'va_number' => '880011223344',
+        ]);
+
+        $jilid3 = QuranLevel::where('unit_id', $this->sdUnit->id)->where('name', 'Jilid 3')->firstOrFail();
+        $group3 = QuranGroup::create([
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'level_id' => $jilid3->id,
+            'name' => 'Jilid 3 - Ustz. Halimah',
+            'teacher_id' => $guruQuran->id,
+        ]);
+
+        QuranEnrollment::create([
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'student_id' => $student->id,
+            'group_id' => $group3->id,
+            'level_id' => $jilid3->id,
+            'status' => 'active',
+            'started_at' => '2026-08-01',
+        ]);
+
+        QuranLevelHistory::create([
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'student_id' => $student->id,
+            'to_level_id' => $jilid3->id,
+            'to_group_id' => $group3->id,
+            'change_type' => 'promoted',
+            'changed_at' => '2026-09-15',
+            'exam_score' => 'A',
+            'notes' => 'Lancar',
+            'recorded_by' => $guruQuran->id,
+        ]);
+
+        QuranAssessment::create([
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'semester' => 'ganjil',
+            'student_id' => $student->id,
+            'group_id' => $group3->id,
+            'level_id' => $jilid3->id,
+            'scores' => [
+                '1' => ['title' => 'Mad Thobii', 'category' => 'materi', 'grade' => 'A'],
+            ],
+            'teacher_note' => 'Sangat baik.',
+            'graded_by' => $guruQuran->id,
+        ]);
+
+        // 1. Admin Unit sees full 360 profile including finance & Quran
+        $this->actingAs($admin)
+            ->withSession(['active_unit_id' => $this->sdUnit->id])
+            ->get(route('yayasan.students.show', $student->id))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Academic/Students/Show')
+                ->where('permissions.can_view_finance', true)
+                ->where('permissions.can_view_counseling_notes', true)
+                ->where('quranProfile.enabled', true)
+                ->where('quranProfile.current.level_name', 'Jilid 3')
+                ->has('quranProfile.histories', 1)
+                ->has('quranProfile.assessments', 1)
+                ->where('finance.va_number', '880011223344')
+            );
+
+        // 2. Guru Al-Qur'an sees Quran 360 data, but Finance & private BK notes are strictly hidden
+        $this->actingAs($guruQuran)
+            ->withSession(['active_unit_id' => $this->sdUnit->id])
+            ->get(route('yayasan.students.show', $student->id))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Academic/Students/Show')
+                ->where('permissions.can_view_finance', false)
+                ->where('permissions.can_view_counseling_notes', false)
+                ->where('finance', null)
+                ->where('student.va_number', null)
+                ->where('quranProfile.current.level_name', 'Jilid 3')
+            );
+
+        // 3. Student / Parent Portal sees Quran status, history & published grades (when unlocked)
+        $this->actingAs($studentUser)
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Student/Dashboard')
+                ->where('quranProfile.enabled', true)
+                ->where('quranProfile.current.level_name', 'Jilid 3')
+                ->where('quranProfile.assessments.0.is_locked_for_parent', false)
+                ->where('quranProfile.assessments.0.teacher_note', 'Sangat baik.')
+            );
+
+        // 4. When lock_cetak_rapor is enabled, Parent Portal still sees Jilid & timeline, but draft grades are hidden
+        QuranSetting::where('unit_id', $this->sdUnit->id)->update(['lock_cetak_rapor' => true]);
+
+        $this->actingAs($studentUser)
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Student/Dashboard')
+                ->where('quranProfile.current.level_name', 'Jilid 3')
+                ->where('quranProfile.assessments.0.is_locked_for_parent', true)
+                ->where('quranProfile.assessments.0.teacher_note', null)
+            );
     }
 }
