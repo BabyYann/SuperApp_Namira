@@ -83,20 +83,26 @@ class QuranModuleTest extends TestCase
         return $user;
     }
 
-    public function test_default_curriculum_seeded_with_10_ordered_levels_and_rubrics(): void
+    public function test_default_curriculum_seeded_with_11_ordered_levels_and_sd_grade_rubrics(): void
     {
         $levels = QuranLevel::where('unit_id', $this->sdUnit->id)->orderBy('sort_order')->pluck('name')->toArray();
 
         $this->assertEquals([
             'Jilid 1', 'Jilid 2', 'Jilid 3', 'Jilid 4', 'Jilid 5', 'Jilid 6',
-            'Al-Qur\'an', 'Ghorib', 'Tajwid', 'Tahfidz',
+            'Al-Qur\'an', 'Tajwid', 'Ghorib', 'Munaqosyah', 'Tahfidz',
         ], $levels);
 
         $jilid1 = QuranLevel::where('unit_id', $this->sdUnit->id)->where('name', 'Jilid 1')->firstOrFail();
-        $this->assertGreaterThan(0, QuranRubricItem::where('level_id', $jilid1->id)->where('category', 'materi')->count());
-        $this->assertGreaterThan(0, QuranRubricItem::where('level_id', $jilid1->id)->where('category', 'surah_pendek')->count());
-        $this->assertGreaterThan(0, QuranRubricItem::where('level_id', $jilid1->id)->where('category', 'doa_harian')->count());
-        $this->assertGreaterThan(0, QuranRubricItem::where('level_id', $jilid1->id)->where('category', 'hadist')->count());
+        $this->assertGreaterThan(0, QuranRubricItem::where('level_id', $jilid1->id)->where('scope', 'level')->where('category', 'materi')->count());
+        $this->assertGreaterThan(0, QuranRubricItem::where('level_id', $jilid1->id)->where('scope', 'level')->where('category', 'surah_pendek')->count());
+
+        // SD uses grade-scoped Hadist, Doa Harian (Kelas 1-3), Niat Sholat (Kelas 4-5), Bacaan Sholat (Kelas 6)
+        $this->assertEquals(6, QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '1')->where('category', 'hadist')->count());
+        $this->assertEquals(8, QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '2')->where('category', 'doa_harian')->count());
+        $this->assertTrue(QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '2')->where('title', 'Doa Masuk Kelas')->exists());
+        $this->assertEquals(9, QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '4')->where('category', 'niat_sholat')->count());
+        $this->assertEquals(6, QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '5')->where('category', 'niat_sholat')->count());
+        $this->assertEquals(9, QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '6')->where('category', 'bacaan_sholat')->count());
     }
 
     public function test_daycare_and_pavlov_units_are_blocked_from_quran_module(): void
@@ -321,10 +327,12 @@ class QuranModuleTest extends TestCase
             'started_at' => '2026-07-15',
         ]);
 
-        $materiItem = QuranRubricItem::where('level_id', $jilid4->id)->where('category', 'materi')->firstOrFail();
-        $surahItem = QuranRubricItem::where('level_id', $jilid4->id)->where('category', 'surah_pendek')->firstOrFail();
+        $materiItem = QuranRubricItem::where('level_id', $jilid4->id)->where('scope', 'level')->where('category', 'materi')->firstOrFail();
+        $surahItem = QuranRubricItem::where('level_id', $jilid4->id)->where('scope', 'level')->where('category', 'surah_pendek')->firstOrFail();
+        $hadistKls4 = QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '4')->where('category', 'hadist')->firstOrFail();
+        $niatKls4 = QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '4')->where('category', 'niat_sholat')->firstOrFail();
 
-        // Guru saves Semester Ganjil scores
+        // Guru saves Semester Ganjil scores (combining Jilid 4 + Kelas 4 rubrics)
         $this->actingAs($guru)
             ->withSession(['active_unit_id' => $this->sdUnit->id])
             ->post(route('quran.assessments.store'), [
@@ -337,6 +345,8 @@ class QuranModuleTest extends TestCase
                         'grades' => [
                             (string) $materiItem->id => 'A',
                             (string) $surahItem->id => 'B',
+                            (string) $hadistKls4->id => 'A',
+                            (string) $niatKls4->id => 'A',
                         ],
                         'teacher_note' => 'Alhamdulillah sangat semangat dan tartil.',
                     ],
@@ -346,8 +356,9 @@ class QuranModuleTest extends TestCase
         $assessment = QuranAssessment::where('student_id', $student->id)->firstOrFail();
         $this->assertEquals($jilid4->id, $assessment->level_id);
         $this->assertEquals('A', $assessment->scores[(string) $materiItem->id]['grade']);
+        $this->assertEquals('A', $assessment->scores[(string) $niatKls4->id]['grade']);
 
-        // Promote student to Jilid 5 AFTER Semester Ganjil grading — Semester Ganjil report must still display Jilid 4!
+        // Promote student to Jilid 5 AFTER Semester Ganjil grading — Semester Ganjil report must still display Jilid 4 + Kelas 4!
         $this->actingAs($coordinator)
             ->withSession(['active_unit_id' => $this->sdUnit->id])
             ->post(route('quran.students.promote', $student->id), [
@@ -356,7 +367,7 @@ class QuranModuleTest extends TestCase
                 'changed_at' => '2026-12-20',
             ])->assertRedirect();
 
-        // Print view renders Jilid 4 snapshot & teacher note
+        // Print view renders Jilid 4 snapshot, Kelas 4 Niat Sholat & teacher note
         $this->actingAs($guru)
             ->withSession(['active_unit_id' => $this->sdUnit->id])
             ->get(route('quran.reports.print', [
@@ -367,6 +378,7 @@ class QuranModuleTest extends TestCase
             ->assertOk()
             ->assertSee('Siti Aisyah')
             ->assertSee('Materi Pelajaran Jilid 4')
+            ->assertSee('Niat Sholat &amp; Bersuci (Kelas 4)', false)
             ->assertSee('Alhamdulillah sangat semangat dan tartil.');
 
         // Lock input nilai & cetak rapor -> guru gets 403, coordinator still passes

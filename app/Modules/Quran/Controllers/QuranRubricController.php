@@ -28,11 +28,35 @@ class QuranRubricController extends Controller
         $canManage = $this->access->canManage($user);
         $isGlobalAdmin = $this->access->isGlobalAdmin($user);
 
-        $levels = QuranLevel::with('rubricItems')
+        $levels = QuranLevel::with([
+                'rubricItems' => fn ($q) => $q->where('scope', QuranRubricItem::SCOPE_LEVEL)
+                    ->orderBy('sort_order')
+                    ->orderBy('id'),
+            ])
             ->where('unit_id', $unit->id)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
+
+        $gradeItems = QuranRubricItem::where('unit_id', $unit->id)
+            ->where('scope', QuranRubricItem::SCOPE_GRADE)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('grade_level');
+
+        $isSd = $this->setup->isSdUnit($unit);
+        $defaultGrades = $isSd ? ['1', '2', '3', '4', '5', '6'] : ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        $existingGrades = $gradeItems->keys()->filter()->values()->all();
+        $availableGrades = collect(array_unique(array_merge($defaultGrades, $existingGrades)))
+            ->sort(fn ($a, $b) => (int) $a <=> (int) $b)
+            ->values()
+            ->all();
+
+        $gradeRubrics = [];
+        foreach ($availableGrades as $g) {
+            $gradeRubrics[(string) $g] = ($gradeItems->get((string) $g) ?? collect())->values()->all();
+        }
 
         return Inertia::render('Quran/Rubrics', [
             'unit' => $unit->only(['id', 'name', 'code']),
@@ -40,6 +64,9 @@ class QuranRubricController extends Controller
             'canManage' => $canManage,
             'isGlobalAdmin' => $isGlobalAdmin,
             'levels' => $levels,
+            'availableGrades' => $availableGrades,
+            'gradeRubrics' => $gradeRubrics,
+            'usesGradeRubrics' => $isSd || $gradeItems->isNotEmpty(),
             'categories' => QuranRubricItem::CATEGORIES,
         ]);
     }
@@ -113,25 +140,52 @@ class QuranRubricController extends Controller
         $unit = $this->access->resolveUnit($request, $user);
 
         $validated = $request->validate([
-            'level_id' => 'required|exists:quran_levels,id',
-            'category' => 'required|in:materi,surah_pendek,doa_harian,hadist',
+            'scope' => 'nullable|in:level,grade',
+            'level_id' => 'required_unless:scope,grade|nullable|exists:quran_levels,id',
+            'grade_level' => 'required_if:scope,grade|nullable|string|max:20',
+            'category' => 'required|in:materi,surah_pendek,doa_harian,hadist,niat_sholat,bacaan_sholat',
             'title' => 'required|string|max:255',
         ]);
 
-        $level = QuranLevel::where('unit_id', $unit->id)->findOrFail($validated['level_id']);
+        $scope = $validated['scope'] ?? QuranRubricItem::SCOPE_LEVEL;
 
-        $nextOrder = (QuranRubricItem::where('level_id', $level->id)
-            ->where('category', $validated['category'])
-            ->max('sort_order') ?? 0) + 1;
+        if ($scope === QuranRubricItem::SCOPE_GRADE) {
+            $gradeLevel = trim((string) $validated['grade_level']);
+            $nextOrder = (QuranRubricItem::where('unit_id', $unit->id)
+                ->where('scope', QuranRubricItem::SCOPE_GRADE)
+                ->where('grade_level', $gradeLevel)
+                ->where('category', $validated['category'])
+                ->max('sort_order') ?? 0) + 1;
 
-        QuranRubricItem::create([
-            'unit_id' => $level->unit_id,
-            'level_id' => $level->id,
-            'category' => $validated['category'],
-            'title' => trim($validated['title']),
-            'sort_order' => $nextOrder,
-            'is_active' => true,
-        ]);
+            QuranRubricItem::create([
+                'unit_id' => $unit->id,
+                'scope' => QuranRubricItem::SCOPE_GRADE,
+                'level_id' => null,
+                'grade_level' => $gradeLevel,
+                'category' => $validated['category'],
+                'title' => trim($validated['title']),
+                'sort_order' => $nextOrder,
+                'is_active' => true,
+            ]);
+        } else {
+            $level = QuranLevel::where('unit_id', $unit->id)->findOrFail($validated['level_id']);
+
+            $nextOrder = (QuranRubricItem::where('level_id', $level->id)
+                ->where('scope', QuranRubricItem::SCOPE_LEVEL)
+                ->where('category', $validated['category'])
+                ->max('sort_order') ?? 0) + 1;
+
+            QuranRubricItem::create([
+                'unit_id' => $level->unit_id,
+                'scope' => QuranRubricItem::SCOPE_LEVEL,
+                'level_id' => $level->id,
+                'grade_level' => null,
+                'category' => $validated['category'],
+                'title' => trim($validated['title']),
+                'sort_order' => $nextOrder,
+                'is_active' => true,
+            ]);
+        }
 
         return back()->with('success', 'Item rubrik berhasil ditambahkan.');
     }

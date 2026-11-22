@@ -64,7 +64,7 @@ class QuranReportController extends Controller
         $allowedGroupIds = $groups->pluck('id')->toArray();
 
         $enrollments = QuranEnrollment::with([
-                'student' => fn ($q) => $q->select('id', 'nis', 'nisn', 'full_name', 'classroom_id')->with('classroom:id,name'),
+                'student' => fn ($q) => $q->select('id', 'nis', 'nisn', 'full_name', 'classroom_id')->with('classroom:id,name,level'),
                 'level:id,name,sort_order',
                 'group' => fn ($q) => $q->with(['teacher:id,name', 'session:id,name']),
             ])
@@ -117,7 +117,6 @@ class QuranReportController extends Controller
                 ];
             });
 
-        // Filters
         if ($request->filled('group_id') && $request->group_id !== 'all') {
             $rows = $rows->filter(fn ($r) => (string) $r['group_id'] === (string) $request->group_id);
         }
@@ -175,9 +174,6 @@ class QuranReportController extends Controller
         ]);
     }
 
-    /**
-     * Build normalized report card payloads for requested students.
-     */
     private function buildReportData(Request $request): array
     {
         $user = Auth::user();
@@ -215,7 +211,6 @@ class QuranReportController extends Controller
             abort(400, 'Pilih minimal 1 siswa untuk mencetak rapor.');
         }
 
-        // Enforce teacher scope when not manager
         if (!$canManage) {
             $myGroupIds = QuranGroup::where('unit_id', $unit->id)
                 ->where('academic_year_id', $activeYear->id)
@@ -240,7 +235,7 @@ class QuranReportController extends Controller
 
         $students = Student::where('unit_id', $unit->id)
             ->whereIn('id', $studentIds)
-            ->with('classroom:id,name')
+            ->with('classroom:id,name,level')
             ->orderBy('full_name')
             ->get();
 
@@ -272,6 +267,7 @@ class QuranReportController extends Controller
 
             $level = $assessment?->level ?? $enrollment?->level;
             $levelName = $level?->name ?? '-';
+            $gradeLevel = $this->setup->extractGradeLevel($student->classroom?->level, $student->classroom?->name);
             $teacherName = $assessment?->teacher?->name
                 ?? $assessment?->group?->teacher?->name
                 ?? $enrollment?->group?->teacher?->name
@@ -281,6 +277,8 @@ class QuranReportController extends Controller
             $surahRows = [];
             $doaRows = [];
             $hadistRows = [];
+            $niatSholatRows = [];
+            $bacaanSholatRows = [];
 
             if ($assessment && is_array($assessment->scores)) {
                 $scoreItems = collect($assessment->scores)
@@ -302,23 +300,36 @@ class QuranReportController extends Controller
                         QuranRubricItem::CATEGORY_SURAH => $surahRows[] = $row,
                         QuranRubricItem::CATEGORY_DOA => $doaRows[] = $row,
                         QuranRubricItem::CATEGORY_HADIST => $hadistRows[] = $row,
+                        QuranRubricItem::CATEGORY_NIAT_SHOLAT => $niatSholatRows[] = $row,
+                        QuranRubricItem::CATEGORY_BACAAN_SHOLAT => $bacaanSholatRows[] = $row,
                         default => $materiRows[] = $row,
                     };
                 }
             }
+
+            $hasHafalan = (
+                count($surahRows)
+                + count($doaRows)
+                + count($hadistRows)
+                + count($niatSholatRows)
+                + count($bacaanSholatRows)
+            ) > 0;
 
             $reports[] = [
                 'student_name' => $student->full_name,
                 'nis' => $student->nis ?: '-',
                 'nisn' => $student->nisn ?: '-',
                 'classroom_name' => $student->classroom?->name ?? '-',
+                'grade_level' => $gradeLevel,
                 'level_name' => $levelName,
                 'teacher_name' => $teacherName,
                 'materi_rows' => $materiRows,
                 'surah_rows' => $surahRows,
                 'doa_rows' => $doaRows,
                 'hadist_rows' => $hadistRows,
-                'has_hafalan' => count($surahRows) + count($doaRows) + count($hadistRows) > 0,
+                'niat_sholat_rows' => $niatSholatRows,
+                'bacaan_sholat_rows' => $bacaanSholatRows,
+                'has_hafalan' => $hasHafalan,
                 'teacher_note' => $assessment?->teacher_note ?? '',
             ];
         }
@@ -348,7 +359,6 @@ class QuranReportController extends Controller
         $data = $this->buildReportData($request);
         $data['isPdf'] = true;
 
-        // Convert local images to base64 data URIs for crisp DomPDF rendering
         $toBase64 = function (?string $pathOrUrl): ?string {
             if (!$pathOrUrl) {
                 return null;
@@ -383,7 +393,6 @@ class QuranReportController extends Controller
             ? 'Rapor_Ummi_' . preg_replace('/[^A-Za-z0-9_]+/', '_', $firstReport['student_name']) . '_' . preg_replace('/[^A-Za-z0-9_]+/', '_', $firstReport['level_name']) . '.pdf'
             : 'Rapor_Ummi_Massal_' . count($data['reports']) . '_Siswa.pdf';
 
-        // F4 paper: 215mm x 330mm => 609.45pt x 935.43pt
         return Pdf::loadView('quran.report_print', $data)
             ->setPaper([0, 0, 609.45, 935.43], 'portrait')
             ->stream($filename);

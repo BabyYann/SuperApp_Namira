@@ -438,22 +438,22 @@
             </table>
         </div>
 
-        {{-- TABEL HAFALAN (HANYA TAMPIL JIKA ADA YANG DINILAI) --}}
+        {{-- TABEL HAFALAN & CAPAIAN IBADAH (HANYA TAMPIL JIKA ADA YANG DINILAI) --}}
         @if($report['has_hafalan'])
         <div class="section-block">
-            <div class="section-bar">Hafalan {{ $report['level_name'] }}</div>
+            <div class="section-bar">Hafalan {{ $report['level_name'] }}@if(!empty($report['grade_level'])) &amp; Materi Kelas {{ $report['grade_level'] }}@endif</div>
             <table class="score-table">
                 <thead>
                     <tr>
                         <th style="width: 34px; text-align: center;">No</th>
-                        <th style="width: 30%;">Hafalan</th>
+                        <th style="width: 30%;">Hafalan / Materi</th>
                         <th>Keterangan</th>
                         <th style="width: 48px; text-align: center;">Nilai</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if(count($report['surah_rows']) > 0)
-                        <tr class="sub-cat-row"><td colspan="4">Surah Pendek</td></tr>
+                        <tr class="sub-cat-row"><td colspan="4">Surah Pendek ({{ $report['level_name'] }})</td></tr>
                         @foreach($report['surah_rows'] as $idx => $row)
                         <tr>
                             <td style="text-align: center;">{{ $idx + 1 }}</td>
@@ -465,7 +465,7 @@
                     @endif
 
                     @if(count($report['doa_rows']) > 0)
-                        <tr class="sub-cat-row"><td colspan="4">Doa Harian</td></tr>
+                        <tr class="sub-cat-row"><td colspan="4">Doa Harian @if(!empty($report['grade_level']))(Kelas {{ $report['grade_level'] }})@endif</td></tr>
                         @foreach($report['doa_rows'] as $idx => $row)
                         <tr>
                             <td style="text-align: center;">{{ $idx + 1 }}</td>
@@ -477,8 +477,32 @@
                     @endif
 
                     @if(count($report['hadist_rows']) > 0)
-                        <tr class="sub-cat-row"><td colspan="4">Hadits</td></tr>
+                        <tr class="sub-cat-row"><td colspan="4">Hadits @if(!empty($report['grade_level']))(Kelas {{ $report['grade_level'] }})@endif</td></tr>
                         @foreach($report['hadist_rows'] as $idx => $row)
+                        <tr>
+                            <td style="text-align: center;">{{ $idx + 1 }}</td>
+                            <td>{{ $row['title'] }}</td>
+                            <td class="narrative">{{ $row['narrative'] }}</td>
+                            <td class="grade-cell {{ $row['grade'] === 'D' ? 'grade-d' : '' }}">{{ $row['grade'] }}</td>
+                        </tr>
+                        @endforeach
+                    @endif
+
+                    @if(!empty($report['niat_sholat_rows']) && count($report['niat_sholat_rows']) > 0)
+                        <tr class="sub-cat-row"><td colspan="4">Niat Sholat &amp; Bersuci @if(!empty($report['grade_level']))(Kelas {{ $report['grade_level'] }})@endif</td></tr>
+                        @foreach($report['niat_sholat_rows'] as $idx => $row)
+                        <tr>
+                            <td style="text-align: center;">{{ $idx + 1 }}</td>
+                            <td>{{ $row['title'] }}</td>
+                            <td class="narrative">{{ $row['narrative'] }}</td>
+                            <td class="grade-cell {{ $row['grade'] === 'D' ? 'grade-d' : '' }}">{{ $row['grade'] }}</td>
+                        </tr>
+                        @endforeach
+                    @endif
+
+                    @if(!empty($report['bacaan_sholat_rows']) && count($report['bacaan_sholat_rows']) > 0)
+                        <tr class="sub-cat-row"><td colspan="4">Bacaan Sholat @if(!empty($report['grade_level']))(Kelas {{ $report['grade_level'] }})@endif</td></tr>
+                        @foreach($report['bacaan_sholat_rows'] as $idx => $row)
                         <tr>
                             <td style="text-align: center;">{{ $idx + 1 }}</td>
                             <td>{{ $row['title'] }}</td>

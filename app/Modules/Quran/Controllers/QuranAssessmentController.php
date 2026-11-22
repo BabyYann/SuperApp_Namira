@@ -42,12 +42,14 @@ class QuranAssessmentController extends Controller
         $roleFilter = $request->input('role_filter', 'all');
 
         $groupsQuery = QuranGroup::with([
-                'level' => fn ($q) => $q->with('activeRubricItems'),
+                'level' => fn ($q) => $q->with([
+                    'activeRubricItems' => fn ($rq) => $rq->where('scope', QuranRubricItem::SCOPE_LEVEL),
+                ]),
                 'session:id,name,start_time,end_time',
                 'teacher:id,name',
                 'assistantTeacher:id,name',
                 'activeEnrollments' => fn ($q) => $q->with([
-                    'student' => fn ($sq) => $sq->select('id', 'nis', 'nisn', 'full_name', 'classroom_id')->with('classroom:id,name'),
+                    'student' => fn ($sq) => $sq->select('id', 'nis', 'nisn', 'full_name', 'classroom_id')->with('classroom:id,name,level'),
                 ]),
             ])
             ->where('unit_id', $unit->id)
@@ -59,18 +61,12 @@ class QuranAssessmentController extends Controller
                 $q->where('teacher_id', $user->id)
                     ->orWhere('assistant_teacher_id', $user->id);
             });
-        } elseif ($roleFilter === 'main') {
+        }
+
+        if ($roleFilter === 'main') {
             $groupsQuery->where('teacher_id', $user->id);
         } elseif ($roleFilter === 'assistant') {
             $groupsQuery->where('assistant_teacher_id', $user->id);
-        }
-
-        if (!$canManage) {
-            if ($roleFilter === 'main') {
-                $groupsQuery->where('teacher_id', $user->id);
-            } elseif ($roleFilter === 'assistant') {
-                $groupsQuery->where('assistant_teacher_id', $user->id);
-            }
         }
 
         $groups = $groupsQuery->get()
@@ -90,7 +86,39 @@ class QuranAssessmentController extends Controller
             ->get()
             ->keyBy('student_id');
 
-        $rubrics = [
+        // Load all active grade-scoped rubrics for this unit
+        $allGradeItems = QuranRubricItem::where('unit_id', $unit->id)
+            ->where('scope', QuranRubricItem::SCOPE_GRADE)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $usesGradeRubrics = $allGradeItems->isNotEmpty();
+
+        $gradeRubricsByGrade = [];
+        foreach ($allGradeItems->groupBy('grade_level') as $gradeKey => $items) {
+            $bucket = [
+                'hadist' => [],
+                'doa_harian' => [],
+                'niat_sholat' => [],
+                'bacaan_sholat' => [],
+            ];
+            foreach ($items as $it) {
+                if (isset($bucket[$it->category])) {
+                    $bucket[$it->category][] = [
+                        'id' => $it->id,
+                        'title' => $it->title,
+                        'category' => $it->category,
+                        'scope' => 'grade',
+                        'grade_level' => (string) $gradeKey,
+                    ];
+                }
+            }
+            $gradeRubricsByGrade[(string) $gradeKey] = $bucket;
+        }
+
+        $levelRubrics = [
             'materi' => [],
             'surah_pendek' => [],
             'doa_harian' => [],
@@ -100,12 +128,19 @@ class QuranAssessmentController extends Controller
         $studentsPayload = [];
 
         if ($selectedGroup && $selectedGroup->level) {
-            foreach ($selectedGroup->level->activeRubricItems as $item) {
-                if (isset($rubrics[$item->category])) {
-                    $rubrics[$item->category][] = [
+            $activeLevelItems = $selectedGroup->level->activeRubricItems;
+
+            foreach ($activeLevelItems as $item) {
+                // If unit uses grade-scoped rubrics, ignore any leftover level doa/hadist
+                if ($usesGradeRubrics && in_array($item->category, [QuranRubricItem::CATEGORY_DOA, QuranRubricItem::CATEGORY_HADIST], true)) {
+                    continue;
+                }
+                if (isset($levelRubrics[$item->category])) {
+                    $levelRubrics[$item->category][] = [
                         'id' => $item->id,
                         'title' => $item->title,
                         'category' => $item->category,
+                        'scope' => 'level',
                     ];
                 }
             }
@@ -117,18 +152,33 @@ class QuranAssessmentController extends Controller
 
             foreach ($members as $enrollment) {
                 $st = $enrollment->student;
+                $gradeLevel = $this->setup->extractGradeLevel($st->classroom?->level, $st->classroom?->name);
                 $assessment = $assessmentsByStudent->get($st->id);
-                // Only hydrate previous scores if saved under the same level (avoid showing old jilid items after promotion!)
-                $savedScores = ($assessment && (int) $assessment->level_id === (int) $selectedGroup->level_id)
-                    ? ($assessment->scores ?? [])
-                    : [];
+                $sameLevel = $assessment !== null && (int) $assessment->level_id === (int) $selectedGroup->level_id;
+                $rawSaved = $assessment?->scores ?? [];
 
                 $gradeMap = [];
-                foreach ($selectedGroup->level->activeRubricItems as $item) {
-                    $val = $savedScores[(string) $item->id]['grade']
-                        ?? $savedScores[$item->id]['grade']
-                        ?? '-';
+
+                // 1. Hydrate level-scoped items (only if saved under same level)
+                foreach ($activeLevelItems as $item) {
+                    if ($usesGradeRubrics && in_array($item->category, [QuranRubricItem::CATEGORY_DOA, QuranRubricItem::CATEGORY_HADIST], true)) {
+                        continue;
+                    }
+                    $val = $sameLevel
+                        ? ($rawSaved[(string) $item->id]['grade'] ?? $rawSaved[$item->id]['grade'] ?? '-')
+                        : '-';
                     $gradeMap[(string) $item->id] = in_array($val, ['A', 'B', 'C', 'D', '-'], true) ? $val : '-';
+                }
+
+                // 2. Hydrate grade-scoped items (PRESERVED even if student promoted Jilid mid-semester!)
+                if ($usesGradeRubrics && $gradeLevel !== null && isset($gradeRubricsByGrade[$gradeLevel])) {
+                    foreach ($gradeRubricsByGrade[$gradeLevel] as $catItems) {
+                        foreach ($catItems as $gItem) {
+                            $idStr = (string) $gItem['id'];
+                            $val = $rawSaved[$idStr]['grade'] ?? $rawSaved[$gItem['id']]['grade'] ?? '-';
+                            $gradeMap[$idStr] = in_array($val, ['A', 'B', 'C', 'D', '-'], true) ? $val : '-';
+                        }
+                    }
                 }
 
                 $studentsPayload[] = [
@@ -136,13 +186,12 @@ class QuranAssessmentController extends Controller
                     'full_name' => $st->full_name,
                     'nis' => $st->nis,
                     'classroom_name' => $st->classroom?->name ?? '-',
+                    'grade_level' => $gradeLevel,
                     'is_main_teacher' => $selectedGroup->teacher_id === $user->id,
-                    'has_saved_assessment' => $assessment !== null && (int) $assessment->level_id === (int) $selectedGroup->level_id,
-                    'previous_level_mismatch' => $assessment !== null && (int) $assessment->level_id !== (int) $selectedGroup->level_id,
+                    'has_saved_assessment' => $sameLevel,
+                    'previous_level_mismatch' => $assessment !== null && !$sameLevel,
                     'grades' => $gradeMap,
-                    'teacher_note' => ($assessment && (int) $assessment->level_id === (int) $selectedGroup->level_id)
-                        ? ($assessment->teacher_note ?? '')
-                        : '',
+                    'teacher_note' => $sameLevel ? ($assessment->teacher_note ?? '') : '',
                 ];
             }
         }
@@ -157,6 +206,7 @@ class QuranAssessmentController extends Controller
             'isGlobalAdmin' => $isGlobalAdmin,
             'isLocked' => $isLocked,
             'roleFilter' => $roleFilter,
+            'usesGradeRubrics' => $usesGradeRubrics,
             'groups' => $groups->map(function ($g) use ($assessmentsByStudent, $user) {
                 $memberIds = $g->activeEnrollments->pluck('student_id');
                 $filled = $memberIds->filter(function ($sid) use ($assessmentsByStudent, $g) {
@@ -186,7 +236,8 @@ class QuranAssessmentController extends Controller
                 'session_name' => $selectedGroup->session?->name,
                 'teacher_name' => $selectedGroup->teacher?->name ?? '-',
             ] : null,
-            'rubrics' => $rubrics,
+            'rubrics' => $levelRubrics,
+            'gradeRubricsByGrade' => $gradeRubricsByGrade,
             'students' => $studentsPayload,
         ]);
     }
@@ -212,7 +263,10 @@ class QuranAssessmentController extends Controller
             'entries.*.teacher_note' => 'nullable|string|max:300',
         ]);
 
-        $group = QuranGroup::with('level.activeRubricItems')
+        $group = QuranGroup::with([
+                'level.activeRubricItems' => fn ($q) => $q->where('scope', QuranRubricItem::SCOPE_LEVEL),
+                'activeEnrollments.student.classroom:id,name,level',
+            ])
             ->where('unit_id', $unit->id)
             ->findOrFail($validated['group_id']);
 
@@ -220,29 +274,53 @@ class QuranAssessmentController extends Controller
             abort(403, 'Anda tidak memiliki akses mengisi nilai kelompok ini.');
         }
 
-        $rubricMap = $group->level
+        $levelRubricMap = $group->level
             ? $group->level->activeRubricItems->keyBy('id')
             : collect();
 
-        $allowedStudentIds = $group->activeEnrollments()->pluck('student_id')->flip();
+        $gradeRubricMap = QuranRubricItem::where('unit_id', $group->unit_id)
+            ->where('scope', QuranRubricItem::SCOPE_GRADE)
+            ->where('is_active', true)
+            ->get()
+            ->keyBy('id');
+
+        $enrollmentsByStudent = $group->activeEnrollments->keyBy('student_id');
         $savedCount = 0;
 
-        DB::transaction(function () use ($validated, $group, $rubricMap, $allowedStudentIds, $user, &$savedCount) {
+        DB::transaction(function () use ($validated, $group, $levelRubricMap, $gradeRubricMap, $enrollmentsByStudent, $user, &$savedCount) {
             foreach ($validated['entries'] as $entry) {
                 $studentId = (int) $entry['student_id'];
-                if (!$allowedStudentIds->has($studentId)) {
+                $enrollment = $enrollmentsByStudent->get($studentId);
+                if (!$enrollment) {
                     continue;
                 }
 
+                $studentGrade = $this->setup->extractGradeLevel(
+                    $enrollment->student?->classroom?->level,
+                    $enrollment->student?->classroom?->name
+                );
+
                 $structuredScores = [];
                 foreach (($entry['grades'] ?? []) as $rubricId => $grade) {
-                    $rubric = $rubricMap->get((int) $rubricId);
+                    $rId = (int) $rubricId;
+                    $rubric = $levelRubricMap->get($rId);
+
+                    if (!$rubric) {
+                        $candidate = $gradeRubricMap->get($rId);
+                        if ($candidate && ($studentGrade === null || (string) $candidate->grade_level === (string) $studentGrade)) {
+                            $rubric = $candidate;
+                        }
+                    }
+
                     if (!$rubric) {
                         continue;
                     }
+
                     $cleanGrade = in_array($grade, ['A', 'B', 'C', 'D', '-'], true) ? $grade : '-';
                     $structuredScores[(string) $rubric->id] = [
                         'rubric_item_id' => $rubric->id,
+                        'scope' => $rubric->scope ?? QuranRubricItem::SCOPE_LEVEL,
+                        'grade_level' => $rubric->grade_level,
                         'category' => $rubric->category,
                         'title' => $rubric->title,
                         'sort_order' => $rubric->sort_order,
