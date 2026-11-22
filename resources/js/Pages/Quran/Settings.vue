@@ -4,10 +4,9 @@ import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import QuranNav from './Components/QuranNav.vue';
 import {
-    CheckCircleIcon,
-    LockClosedIcon,
-    PhotoIcon,
+    CheckIcon,
     TrashIcon,
+    ArrowUpTrayIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -82,162 +81,229 @@ const submit = () => {
         preserveScroll: true,
     });
 };
+
+const accessToggles = [
+    {
+        field: 'lock_input_nilai',
+        title: 'Kunci Input Nilai',
+        onDesc: 'Terkunci — Guru tidak dapat mengubah nilai.',
+        offDesc: 'Terbuka — Guru dapat mengisi dan mengubah nilai.',
+        dangerOn: true,
+    },
+    {
+        field: 'lock_cetak_rapor',
+        title: 'Kunci Cetak Rapor',
+        onDesc: 'Terkunci — Hanya Koordinator & Admin yang dapat mencetak.',
+        offDesc: 'Terbuka — Guru pengampu dapat mencetak rapor siswanya.',
+        dangerOn: true,
+    },
+    {
+        field: 'allow_teacher_promote',
+        title: 'Izinkan Guru Menaikkan Jilid',
+        onDesc: 'Aktif — Guru pengampu dapat mencatat kenaikan jilid muridnya.',
+        offDesc: 'Nonaktif — Hanya Koordinator & Admin yang dapat menaikkan jilid.',
+        dangerOn: false,
+    },
+];
 </script>
 
 <template>
-    <Head title="Pengaturan Rapor Ummi - Program Al-Qur'an" />
+    <Head title="Pengaturan — Program Al-Qur'an" />
 
     <AuthenticatedLayout>
-        <div class="py-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="max-w-4xl mx-auto py-1 sm:py-2 pb-20 space-y-5">
             <QuranNav
                 active-tab="settings"
+                page-title="Pengaturan Rapor & Periode"
                 :unit="unit"
                 :eligible-units="eligibleUnits"
                 :can-manage="canManage"
                 :is-global-admin="isGlobalAdmin"
-            />
+            >
+                <template #actions>
+                    <button
+                        type="submit"
+                        form="quran-settings-form"
+                        :disabled="form.processing"
+                        class="h-8 px-3.5 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 shadow-[0_1px_2px_rgba(0,121,107,0.25)] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
+                    >
+                        <span v-if="form.processing" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <CheckIcon v-else class="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Pengaturan' }}</span>
+                    </button>
+                </template>
+            </QuranNav>
 
-            <form @submit.prevent="submit" class="space-y-6">
-                <!-- 1. Kunci Periode & Hak Akses Guru -->
-                <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
-                    <div class="flex items-center gap-2.5 pb-3 mb-4 border-b border-slate-100">
-                        <LockClosedIcon class="w-5 h-5 text-amber-600" />
-                        <div>
-                            <h2 class="text-base font-extrabold text-slate-800">Kontrol Periode &amp; Akses Guru Al-Qur'an</h2>
-                            <p class="text-xs text-slate-500">Kunci fitur untuk guru saat masa penilaian selesai (Koordinator &amp; Admin tetap bisa mengakses).</p>
-                        </div>
+            <form id="quran-settings-form" @submit.prevent="submit" class="space-y-5">
+                <!-- 1. Kontrol Periode & Hak Akses Guru (Real Toggle Switches) -->
+                <section class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-slate-100">
+                        <h2 class="text-sm font-semibold text-slate-900">Kontrol Periode &amp; Akses Guru</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Kunci fitur guru setelah masa penilaian selesai. Koordinator &amp; Admin tetap memiliki akses penuh.</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <label class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition"
-                               :class="form.lock_input_nilai ? 'bg-red-50/70 border-red-200' : 'bg-emerald-50/50 border-emerald-200'">
-                            <input type="checkbox" v-model="form.lock_input_nilai" class="mt-0.5 rounded text-red-600 focus:ring-red-500" />
-                            <div>
-                                <div class="text-xs font-extrabold text-slate-800">Kunci Input Nilai</div>
-                                <div class="text-[11px] text-slate-500 mt-0.5">
-                                    {{ form.lock_input_nilai ? 'Terkunci: Guru tidak bisa ubah nilai' : 'Terbuka: Guru dapat mengisi nilai' }}
+                    <div class="divide-y divide-slate-100">
+                        <div
+                            v-for="item in accessToggles"
+                            :key="item.field"
+                            class="px-5 py-3.5 flex items-center justify-between gap-4"
+                        >
+                            <div class="min-w-0">
+                                <div class="text-[13px] font-medium text-slate-900">{{ item.title }}</div>
+                                <div class="text-xs text-slate-500 mt-0.5">
+                                    {{ form[item.field] ? item.onDesc : item.offDesc }}
                                 </div>
                             </div>
-                        </label>
 
-                        <label class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition"
-                               :class="form.lock_cetak_rapor ? 'bg-red-50/70 border-red-200' : 'bg-emerald-50/50 border-emerald-200'">
-                            <input type="checkbox" v-model="form.lock_cetak_rapor" class="mt-0.5 rounded text-red-600 focus:ring-red-500" />
-                            <div>
-                                <div class="text-xs font-extrabold text-slate-800">Kunci Cetak Rapor</div>
-                                <div class="text-[11px] text-slate-500 mt-0.5">
-                                    {{ form.lock_cetak_rapor ? 'Terkunci: Hanya Koordinator/Admin' : 'Terbuka: Guru dapat mencetak rapor' }}
-                                </div>
-                            </div>
-                        </label>
-
-                        <label class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition"
-                               :class="form.allow_teacher_promote ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'">
-                            <input type="checkbox" v-model="form.allow_teacher_promote" class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500" />
-                            <div>
-                                <div class="text-xs font-extrabold text-slate-800">Izinkan Guru Naikkan Jilid</div>
-                                <div class="text-[11px] text-slate-500 mt-0.5">
-                                    {{ form.allow_teacher_promote ? 'Guru dapat menaikkan jilid muridnya' : 'Hanya Koordinator/Admin yang boleh' }}
-                                </div>
-                            </div>
-                        </label>
+                            <button
+                                type="button"
+                                role="switch"
+                                :aria-checked="form[item.field]"
+                                @click="form[item.field] = !form[item.field]"
+                                class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus:ring-2 focus:ring-[#00796B]/30 focus:ring-offset-1"
+                                :class="form[item.field] ? (item.dangerOn ? 'bg-rose-600' : 'bg-[#00796B]') : 'bg-slate-200'"
+                            >
+                                <span
+                                    class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-xs transform transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                    :class="form[item.field] ? 'translate-x-4' : 'translate-x-0'"
+                                />
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- 2. Identitas Kop & Pejabat Penandatangan -->
-                <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
-                    <h2 class="text-base font-extrabold text-slate-800 pb-3 mb-4 border-b border-slate-100">Kop Rapor &amp; Identitas Penandatangan</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- 2. Kop Rapor & Pejabat Penandatangan -->
+                <section class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-slate-100">
+                        <h2 class="text-sm font-semibold text-slate-900">Kop Rapor &amp; Identitas Penandatangan</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Informasi ini dicetak pada bagian header dan tanda tangan rapor F4.</p>
+                    </div>
+
+                    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Sekolah pada Kop Rapor *</label>
-                            <input v-model="form.school_name" required type="text" class="w-full rounded-xl border-slate-200 text-sm" />
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Nama Sekolah pada Kop Rapor <span class="text-rose-500">*</span></label>
+                            <input v-model="form.school_name" required type="text" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Kota Tanggal Rapor</label>
-                            <input v-model="form.city_name" type="text" placeholder="Kraksaan / Probolinggo" class="w-full rounded-xl border-slate-200 text-sm" />
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Kota Tanggal Rapor</label>
+                            <input v-model="form.city_name" type="text" placeholder="Kraksaan / Probolinggo" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Sekolah</label>
-                            <input v-model="form.school_address" type="text" class="w-full rounded-xl border-slate-200 text-sm" />
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Alamat Sekolah</label>
+                            <input v-model="form.school_address" type="text" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Jabatan Penandatangan TPQ / Ummi</label>
-                            <input v-model="form.kepala_tpq_title" type="text" placeholder="Kepala TPQ Ummi SD Namira" class="w-full rounded-xl border-slate-200 text-sm" />
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Jabatan Penandatangan TPQ / Ummi</label>
+                            <input v-model="form.kepala_tpq_title" type="text" placeholder="Kepala TPQ Ummi SD Namira" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Kepala TPQ / Koordinator Ummi</label>
-                            <input v-model="form.kepala_tpq" type="text" placeholder="Nur Halimah" class="w-full rounded-xl border-slate-200 text-sm" />
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Nama Kepala TPQ / Koordinator Ummi</label>
+                            <input v-model="form.kepala_tpq" type="text" placeholder="Nur Halimah" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Kepala Sekolah</label>
-                            <input v-model="form.kepala_sekolah" type="text" placeholder="Astutik, S.Pd.I" class="w-full rounded-xl border-slate-200 text-sm" />
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Nama Kepala Sekolah</label>
+                            <input v-model="form.kepala_sekolah" type="text" placeholder="Astutik, S.Pd.I" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Cetak Rapor (Kosongkan = Hari Ini)</label>
-                            <input v-model="form.report_date" type="date" class="w-full rounded-xl border-slate-200 text-sm" />
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Tanggal Cetak Rapor (Kosong = Hari Ini)</label>
+                            <input v-model="form.report_date" type="date" class="w-full h-9 rounded-lg border-slate-200 text-sm tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <!-- 3. Tanda Tangan Digital + Live Preview -->
-                <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
-                    <h2 class="text-base font-extrabold text-slate-800 pb-3 mb-4 border-b border-slate-100">Tanda Tangan Digital (PNG Transparan)</h2>
+                <section class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-slate-100">
+                        <h2 class="text-sm font-semibold text-slate-900">Tanda Tangan Digital</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Unggah gambar PNG transparan dan sesuaikan ukuran atau posisinya.</p>
+                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <!-- TTD Kepala TPQ -->
-                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-extrabold text-slate-800">TTD Kepala TPQ / Koordinator</span>
-                                <button v-if="tpqPreview" type="button" @click="clearTpq" class="text-xs text-red-600 hover:underline inline-flex items-center gap-1">
-                                    <TrashIcon class="w-3.5 h-3.5" /> Hapus
-                                </button>
-                            </div>
-                            <input type="file" @change="onTpqFile" accept="image/png,image/jpeg,image/webp" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-100 file:text-emerald-800 file:font-bold" />
-                            <div class="grid grid-cols-3 gap-2 text-[11px]">
-                                <div><label class="text-slate-500">Lebar ({{ form.ttd_tpq_width }}px)</label><input v-model="form.ttd_tpq_width" type="range" min="50" max="200" class="w-full" /></div>
-                                <div><label class="text-slate-500">Geser X ({{ form.ttd_tpq_offset_x }})</label><input v-model="form.ttd_tpq_offset_x" type="range" min="-50" max="50" class="w-full" /></div>
-                                <div><label class="text-slate-500">Geser Y ({{ form.ttd_tpq_offset_y }})</label><input v-model="form.ttd_tpq_offset_y" type="range" min="-40" max="40" class="w-full" /></div>
-                            </div>
-                            <div class="bg-white rounded-xl border border-slate-200 p-4 text-center text-xs relative overflow-hidden">
-                                <p class="text-slate-600">Mengetahui,</p>
-                                <p class="text-slate-700 font-semibold">{{ form.kepala_tpq_title }}</p>
-                                <div class="h-16 relative">
-                                    <img v-if="tpqPreview" :src="tpqPreview" :style="{ width: `${form.ttd_tpq_width}px`, transform: `translate(calc(-50% + ${form.ttd_tpq_offset_x}px), ${form.ttd_tpq_offset_y}px)` }" class="absolute bottom-0 left-1/2 max-h-20 object-contain pointer-events-none" />
+                        <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-semibold text-slate-800">TTD Kepala TPQ / Koordinator</span>
+                                <div class="flex items-center gap-2">
+                                    <label class="h-7 px-2.5 rounded-lg bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer inline-flex items-center gap-1 transition-colors">
+                                        <ArrowUpTrayIcon class="w-3.5 h-3.5 text-slate-400" />
+                                        <span>Unggah</span>
+                                        <input type="file" @change="onTpqFile" accept="image/png,image/jpeg,image/webp" class="sr-only" />
+                                    </label>
+                                    <button v-if="tpqPreview" type="button" @click="clearTpq" class="h-7 px-2 rounded-lg text-[11px] font-medium text-rose-600 hover:bg-rose-50 inline-flex items-center gap-1 transition-colors">
+                                        <TrashIcon class="w-3.5 h-3.5" />
+                                    </button>
                                 </div>
-                                <div class="font-bold border-t border-slate-800 pt-1 w-44 mx-auto relative z-10">{{ form.kepala_tpq || '........................' }}</div>
+                            </div>
+
+                            <div class="bg-white rounded-lg border border-slate-200/90 p-4 text-center text-xs relative overflow-hidden">
+                                <p class="text-slate-500">Mengetahui,</p>
+                                <p class="text-slate-700 font-medium">{{ form.kepala_tpq_title }}</p>
+                                <div class="h-16 relative">
+                                    <img
+                                        v-if="tpqPreview"
+                                        :src="tpqPreview"
+                                        :style="{ width: `${form.ttd_tpq_width}px`, transform: `translate(calc(-50% + ${form.ttd_tpq_offset_x}px), ${form.ttd_tpq_offset_y}px)` }"
+                                        class="absolute bottom-0 left-1/2 max-h-20 object-contain pointer-events-none"
+                                    />
+                                </div>
+                                <div class="font-semibold text-slate-900 border-t border-slate-800 pt-1 w-44 mx-auto relative z-10">{{ form.kepala_tpq || '........................' }}</div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2.5 text-[11px] text-slate-500 tabular-nums">
+                                <div><label class="block mb-1">Lebar {{ form.ttd_tpq_width }}px</label><input v-model="form.ttd_tpq_width" type="range" min="50" max="200" class="w-full accent-[#00796B]" /></div>
+                                <div><label class="block mb-1">X {{ form.ttd_tpq_offset_x }}</label><input v-model="form.ttd_tpq_offset_x" type="range" min="-50" max="50" class="w-full accent-[#00796B]" /></div>
+                                <div><label class="block mb-1">Y {{ form.ttd_tpq_offset_y }}</label><input v-model="form.ttd_tpq_offset_y" type="range" min="-40" max="40" class="w-full accent-[#00796B]" /></div>
                             </div>
                         </div>
 
                         <!-- TTD Kepala Sekolah -->
-                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-extrabold text-slate-800">TTD Kepala Sekolah</span>
-                                <button v-if="kepsekPreview" type="button" @click="clearKepsek" class="text-xs text-red-600 hover:underline inline-flex items-center gap-1">
-                                    <TrashIcon class="w-3.5 h-3.5" /> Hapus
-                                </button>
-                            </div>
-                            <input type="file" @change="onKepsekFile" accept="image/png,image/jpeg,image/webp" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-100 file:text-emerald-800 file:font-bold" />
-                            <div class="grid grid-cols-3 gap-2 text-[11px]">
-                                <div><label class="text-slate-500">Lebar ({{ form.ttd_kepsek_width }}px)</label><input v-model="form.ttd_kepsek_width" type="range" min="50" max="200" class="w-full" /></div>
-                                <div><label class="text-slate-500">Geser X ({{ form.ttd_kepsek_offset_x }})</label><input v-model="form.ttd_kepsek_offset_x" type="range" min="-50" max="50" class="w-full" /></div>
-                                <div><label class="text-slate-500">Geser Y ({{ form.ttd_kepsek_offset_y }})</label><input v-model="form.ttd_kepsek_offset_y" type="range" min="-40" max="40" class="w-full" /></div>
-                            </div>
-                            <div class="bg-white rounded-xl border border-slate-200 p-4 text-center text-xs relative overflow-hidden">
-                                <p class="text-slate-600">Mengetahui,</p>
-                                <p class="text-slate-700 font-semibold">Kepala Sekolah</p>
-                                <div class="h-16 relative">
-                                    <img v-if="kepsekPreview" :src="kepsekPreview" :style="{ width: `${form.ttd_kepsek_width}px`, transform: `translate(calc(-50% + ${form.ttd_kepsek_offset_x}px), ${form.ttd_kepsek_offset_y}px)` }" class="absolute bottom-0 left-1/2 max-h-20 object-contain pointer-events-none" />
+                        <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-semibold text-slate-800">TTD Kepala Sekolah</span>
+                                <div class="flex items-center gap-2">
+                                    <label class="h-7 px-2.5 rounded-lg bg-white border border-slate-200 text-[11px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer inline-flex items-center gap-1 transition-colors">
+                                        <ArrowUpTrayIcon class="w-3.5 h-3.5 text-slate-400" />
+                                        <span>Unggah</span>
+                                        <input type="file" @change="onKepsekFile" accept="image/png,image/jpeg,image/webp" class="sr-only" />
+                                    </label>
+                                    <button v-if="kepsekPreview" type="button" @click="clearKepsek" class="h-7 px-2 rounded-lg text-[11px] font-medium text-rose-600 hover:bg-rose-50 inline-flex items-center gap-1 transition-colors">
+                                        <TrashIcon class="w-3.5 h-3.5" />
+                                    </button>
                                 </div>
-                                <div class="font-bold border-t border-slate-800 pt-1 w-44 mx-auto relative z-10">{{ form.kepala_sekolah || '........................' }}</div>
+                            </div>
+
+                            <div class="bg-white rounded-lg border border-slate-200/90 p-4 text-center text-xs relative overflow-hidden">
+                                <p class="text-slate-500">Mengetahui,</p>
+                                <p class="text-slate-700 font-medium">Kepala Sekolah</p>
+                                <div class="h-16 relative">
+                                    <img
+                                        v-if="kepsekPreview"
+                                        :src="kepsekPreview"
+                                        :style="{ width: `${form.ttd_kepsek_width}px`, transform: `translate(calc(-50% + ${form.ttd_kepsek_offset_x}px), ${form.ttd_kepsek_offset_y}px)` }"
+                                        class="absolute bottom-0 left-1/2 max-h-20 object-contain pointer-events-none"
+                                    />
+                                </div>
+                                <div class="font-semibold text-slate-900 border-t border-slate-800 pt-1 w-44 mx-auto relative z-10">{{ form.kepala_sekolah || '........................' }}</div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2.5 text-[11px] text-slate-500 tabular-nums">
+                                <div><label class="block mb-1">Lebar {{ form.ttd_kepsek_width }}px</label><input v-model="form.ttd_kepsek_width" type="range" min="50" max="200" class="w-full accent-[#00796B]" /></div>
+                                <div><label class="block mb-1">X {{ form.ttd_kepsek_offset_x }}</label><input v-model="form.ttd_kepsek_offset_x" type="range" min="-50" max="50" class="w-full accent-[#00796B]" /></div>
+                                <div><label class="block mb-1">Y {{ form.ttd_kepsek_offset_y }}</label><input v-model="form.ttd_kepsek_offset_y" type="range" min="-40" max="40" class="w-full accent-[#00796B]" /></div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
                 <div class="flex justify-end">
-                    <button type="submit" :disabled="form.processing" class="px-6 py-3 rounded-2xl bg-[#1b4332] text-white text-sm font-bold hover:bg-[#143325] shadow-lg shadow-emerald-950/15 disabled:opacity-50 inline-flex items-center gap-2">
-                        <CheckCircleIcon class="w-5 h-5" />
-                        <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Pengaturan Rapor' }}</span>
+                    <button
+                        type="submit"
+                        :disabled="form.processing"
+                        class="h-9 px-5 rounded-lg bg-[#00796B] hover:bg-[#00695C] text-white text-xs font-medium shadow-[0_1px_2px_rgba(0,121,107,0.25)] disabled:opacity-50 transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
+                    >
+                        <span v-if="form.processing" class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <CheckIcon v-else class="w-4 h-4 stroke-[2.5]" />
+                        <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Pengaturan' }}</span>
                     </button>
                 </div>
             </form>

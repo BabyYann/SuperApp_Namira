@@ -1,23 +1,25 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { useDebounceFn } from '@vueuse/core';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import QuranNav from './Components/QuranNav.vue';
+import QuranDialog from './Components/QuranDialog.vue';
+import QuranConfirmDialog from './Components/QuranConfirmDialog.vue';
+import QuranCollapse from './Components/QuranCollapse.vue';
 import {
     PlusIcon,
     ClockIcon,
-    UserGroupIcon,
     PencilSquareIcon,
     TrashIcon,
     UserPlusIcon,
     XMarkIcon,
     MagnifyingGlassIcon,
     SparklesIcon,
-    CheckCircleIcon,
-    ArrowUpCircleIcon,
     ChevronDownIcon,
-    ChevronUpIcon,
     AcademicCapIcon,
+    MapPinIcon,
+    UserIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -38,34 +40,97 @@ const props = defineProps({
     filters: Object,
 });
 
-// Filters
+// ==================== FILTERS (DEBOUNCED REAL-TIME) ====================
 const sessionFilter = ref(props.filters?.session_id ?? 'all');
 const levelFilter = ref(props.filters?.level_id ?? 'all');
 const searchQuery = ref(props.filters?.search ?? '');
+const isFiltering = ref(false);
+
+const hasActiveFilter = computed(() => {
+    return sessionFilter.value !== 'all' || levelFilter.value !== 'all' || searchQuery.value.trim() !== '';
+});
 
 const applyFilters = () => {
+    isFiltering.value = true;
     router.get(route('quran.index'), {
         unit_id: props.isGlobalAdmin ? props.unit.id : undefined,
         academic_year_id: props.activeYear.id,
         session_id: sessionFilter.value,
         level_id: levelFilter.value,
-        search: searchQuery.value || undefined,
-    }, { preserveState: true, preserveScroll: true, replace: true });
+        search: searchQuery.value.trim() || undefined,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        onFinish: () => { isFiltering.value = false; },
+    });
 };
+
+const debouncedSearch = useDebounceFn(applyFilters, 300);
+watch(searchQuery, () => debouncedSearch());
 
 const selectLevelFilter = (id) => {
     levelFilter.value = String(levelFilter.value) === String(id) ? 'all' : id;
     applyFilters();
 };
 
-// Expand members per group card
-const expandedGroupIds = ref(new Set());
-const toggleGroupExpand = (id) => {
-    if (expandedGroupIds.value.has(id)) expandedGroupIds.value.delete(id);
-    else expandedGroupIds.value.add(id);
+const selectSessionFilter = (id) => {
+    sessionFilter.value = String(sessionFilter.value) === String(id) ? 'all' : id;
+    applyFilters();
 };
 
-// ==================== SESSION MODAL ====================
+const resetFilters = () => {
+    sessionFilter.value = 'all';
+    levelFilter.value = 'all';
+    searchQuery.value = '';
+    applyFilters();
+};
+
+// Metrics helpers
+const plottedPercent = computed(() => {
+    if (!props.stats?.total_students) return 0;
+    return Math.min(100, Math.round((props.stats.plotted_students / props.stats.total_students) * 100));
+});
+
+const assessedPercent = computed(() => {
+    if (!props.stats?.plotted_students) return 0;
+    return Math.min(100, Math.round((props.stats.assessed_students / props.stats.plotted_students) * 100));
+});
+
+// Expand members per group card (reactive Set replacement for crisp updates)
+const expandedGroupIds = ref(new Set());
+const toggleGroupExpand = (id) => {
+    const next = new Set(expandedGroupIds.value);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    expandedGroupIds.value = next;
+};
+
+// ==================== CONFIRM DIALOG ====================
+const confirmState = ref({
+    show: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Hapus',
+    processing: false,
+    onConfirm: null,
+});
+
+const openConfirm = ({ title, message, confirmLabel = 'Hapus', onConfirm }) => {
+    confirmState.value = { show: true, title, message, confirmLabel, processing: false, onConfirm };
+};
+
+const runConfirm = () => {
+    if (!confirmState.value.onConfirm) return;
+    confirmState.value.processing = true;
+    confirmState.value.onConfirm(() => {
+        confirmState.value.processing = false;
+        confirmState.value.show = false;
+    });
+};
+
+// ==================== SESSIONS DRAWER & MODAL ====================
+const showSessionsDrawer = ref(false);
 const showSessionModal = ref(false);
 const editingSession = ref(null);
 const sessionForm = useForm({
@@ -113,16 +178,28 @@ const submitSession = () => {
     }
 };
 
-const deleteSession = (sess) => {
-    if (!confirm(`Hapus sesi "${sess.name}"? Kelompok pada sesi ini tidak akan terhapus.`)) return;
-    router.delete(route('quran.sessions.destroy', sess.id), {
-        data: { unit_id: props.unit.id },
-        preserveScroll: true,
+const askDeleteSession = (sess) => {
+    openConfirm({
+        title: `Hapus "${sess.name}"?`,
+        message: 'Kelompok yang memakai sesi ini tetap aman dan tidak akan terhapus.',
+        confirmLabel: 'Hapus Sesi',
+        onConfirm: (done) => {
+            router.delete(route('quran.sessions.destroy', sess.id), {
+                data: { unit_id: props.unit.id },
+                preserveScroll: true,
+                onFinish: done,
+            });
+        },
     });
 };
 
+const seedingSessions = ref(false);
 const seedSessions = () => {
-    router.post(route('quran.sessions.seed'), { unit_id: props.unit.id }, { preserveScroll: true });
+    seedingSessions.value = true;
+    router.post(route('quran.sessions.seed'), { unit_id: props.unit.id }, {
+        preserveScroll: true,
+        onFinish: () => { seedingSessions.value = false; },
+    });
 };
 
 // ==================== GROUP MODAL ====================
@@ -191,62 +268,62 @@ const submitGroup = () => {
     }
 };
 
-const deleteGroup = (group) => {
-    if (!confirm(`Hapus kelompok "${group.name}"?`)) return;
-    router.delete(route('quran.groups.destroy', group.id), {
-        data: { unit_id: props.unit.id },
-        preserveScroll: true,
+const askDeleteGroup = (group) => {
+    openConfirm({
+        title: `Hapus "${group.name}"?`,
+        message: 'Kelompok beserta daftar plotting siswa di dalamnya akan dihapus dari tahun ajaran ini.',
+        confirmLabel: 'Hapus Kelompok',
+        onConfirm: (done) => {
+            router.delete(route('quran.groups.destroy', group.id), {
+                data: { unit_id: props.unit.id },
+                preserveScroll: true,
+                onFinish: done,
+            });
+        },
     });
 };
 
-// ==================== QUICK BULK ENROLL MODAL ====================
-const showEnrollModal = ref(false);
+// ==================== BULK ENROLLMENT DRAWER ====================
+const showEnrollDrawer = ref(false);
 const enrollTargetGroup = ref(null);
+const enrollSearch = ref('');
 const enrollClassroomFilter = ref('all');
 const enrollOnlyUnplotted = ref(true);
-const enrollSearch = ref('');
 const enrollSelectedIds = ref([]);
 
 const enrollForm = useForm({
     unit_id: props.unit.id,
     student_ids: [],
     started_at: new Date().toISOString().slice(0, 10),
-    notes: '',
 });
 
-const openEnrollModal = (group) => {
+const openEnrollDrawer = (group) => {
     enrollTargetGroup.value = group;
+    enrollSearch.value = '';
     enrollClassroomFilter.value = 'all';
     enrollOnlyUnplotted.value = true;
-    enrollSearch.value = '';
     enrollSelectedIds.value = [];
     enrollForm.started_at = new Date().toISOString().slice(0, 10);
-    enrollForm.notes = '';
-    showEnrollModal.value = true;
+    showEnrollDrawer.value = true;
 };
-
-const existingMemberIdsInTarget = computed(() => {
-    if (!enrollTargetGroup.value) return new Set();
-    return new Set((enrollTargetGroup.value.members || []).map(m => m.student_id));
-});
 
 const filteredEnrollCandidates = computed(() => {
     const q = enrollSearch.value.trim().toLowerCase();
+    const existingIds = new Set((enrollTargetGroup.value?.members || []).map(m => m.student_id));
+
     return (props.allUnitStudents || []).filter(st => {
-        if (existingMemberIdsInTarget.value.has(st.id)) return false;
+        if (existingIds.has(st.id)) return false;
         if (enrollOnlyUnplotted.value && st.is_plotted) return false;
         if (enrollClassroomFilter.value !== 'all' && String(st.classroom_id) !== String(enrollClassroomFilter.value)) return false;
-        if (q && !st.full_name.toLowerCase().includes(q) && !(st.nis || '').toLowerCase().includes(q)) return false;
+        if (q && !(st.full_name?.toLowerCase().includes(q) || st.nis?.toLowerCase().includes(q))) return false;
         return true;
     });
 });
 
 const toggleSelectAllCandidates = (e) => {
-    if (e.target.checked) {
-        enrollSelectedIds.value = filteredEnrollCandidates.value.map(s => s.id);
-    } else {
-        enrollSelectedIds.value = [];
-    }
+    enrollSelectedIds.value = e.target.checked
+        ? filteredEnrollCandidates.value.map(s => s.id)
+        : [];
 };
 
 const submitEnroll = () => {
@@ -256,544 +333,736 @@ const submitEnroll = () => {
     enrollForm.post(route('quran.groups.enroll', enrollTargetGroup.value.id), {
         preserveScroll: true,
         onSuccess: () => {
-            showEnrollModal.value = false;
+            showEnrollDrawer.value = false;
             enrollSelectedIds.value = [];
         },
     });
 };
 
-const removeMember = (member, groupName) => {
-    if (!confirm(`Keluarkan "${member.full_name}" dari kelompok ${groupName}?`)) return;
-    router.delete(route('quran.enrollments.destroy', member.enrollment_id), {
-        data: { unit_id: props.unit.id },
-        preserveScroll: true,
+const askRemoveMember = (member, groupName) => {
+    openConfirm({
+        title: `Keluarkan ${member.full_name}?`,
+        message: `Siswa akan dikeluarkan dari kelompok "${groupName}". Anda dapat memplot ulang siswa ini kapan saja.`,
+        confirmLabel: 'Keluarkan',
+        onConfirm: (done) => {
+            router.delete(route('quran.enrollments.destroy', member.enrollment_id), {
+                data: { unit_id: props.unit.id },
+                preserveScroll: true,
+                onFinish: done,
+            });
+        },
     });
 };
 </script>
 
 <template>
-    <Head title="Program Al-Qur'an (Ummi) - Kelompok & Sesi" />
+    <Head title="Kelompok & Sesi — Program Al-Qur'an" />
 
     <AuthenticatedLayout>
-        <div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="max-w-7xl mx-auto py-1 sm:py-2 space-y-4">
             <QuranNav
                 active-tab="index"
+                page-title="Kelompok & Sesi Mengaji"
                 :unit="unit"
                 :eligible-units="eligibleUnits"
                 :academic-years="academicYears"
                 :active-year="activeYear"
                 :can-manage="canManage"
                 :is-global-admin="isGlobalAdmin"
-            />
+            >
+                <template #actions>
+                    <button
+                        type="button"
+                        @click="showSessionsDrawer = true"
+                        class="h-8 px-3 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200/90 hover:bg-slate-50 hover:border-slate-300 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
+                    >
+                        <ClockIcon class="w-3.5 h-3.5 text-slate-500" />
+                        <span>Sesi</span>
+                        <span class="px-1.5 py-px rounded-md bg-slate-100 text-[11px] font-semibold text-slate-600 tabular-nums">
+                            {{ sessions.length }}
+                        </span>
+                    </button>
 
-            <!-- KPI Cards -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Siswa Terplot</div>
-                    <div class="mt-1 flex items-baseline gap-2">
-                        <span class="text-2xl font-black text-slate-800">{{ stats.plotted_students }}</span>
-                        <span class="text-xs font-semibold text-slate-400">/ {{ stats.total_students }} siswa</span>
+                    <button
+                        v-if="canManage"
+                        type="button"
+                        @click="openCreateGroup"
+                        class="h-8 px-3.5 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] shadow-[0_1px_2px_rgba(0,121,107,0.25)] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
+                    >
+                        <PlusIcon class="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Kelompok Baru</span>
+                    </button>
+                </template>
+            </QuranNav>
+
+            <!-- Compact Unified Metrics Strip (1 calm container, zero card bloat) -->
+            <div class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 divide-x divide-slate-200/70 overflow-hidden">
+                <div class="px-4 py-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-500 font-medium">Siswa Terplot</span>
+                        <span class="text-[11px] font-medium tabular-nums" :class="stats.unplotted_students > 0 ? 'text-amber-600' : 'text-[#00796B]'">
+                            {{ plottedPercent }}%
+                        </span>
                     </div>
-                    <div class="mt-1 text-[11px] font-semibold" :class="stats.unplotted_students > 0 ? 'text-amber-600' : 'text-emerald-600'">
-                        {{ stats.unplotted_students > 0 ? `${stats.unplotted_students} belum masuk kelompok` : 'Semua siswa sudah terplot' }}
+                    <div class="mt-1 flex items-baseline gap-1.5 tabular-nums">
+                        <span class="text-xl font-semibold text-slate-900 tracking-tight">{{ stats.plotted_students }}</span>
+                        <span class="text-xs text-slate-400">/ {{ stats.total_students }}</span>
+                    </div>
+                    <div class="mt-2 h-1 w-full rounded-full bg-slate-100 overflow-hidden">
+                        <div
+                            class="h-full rounded-full bg-[#00796B] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                            :style="{ width: `${plottedPercent}%` }"
+                        />
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Kelompok Aktif</div>
-                    <div class="mt-1 text-2xl font-black text-emerald-700">{{ stats.total_groups }}</div>
-                    <div class="mt-1 text-[11px] text-slate-500 font-medium">{{ sessions.length }} sesi jadwal tersedia</div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sudah Dinilai</div>
-                    <div class="mt-1 flex items-baseline gap-2">
-                        <span class="text-2xl font-black text-teal-700">{{ stats.assessed_students }}</span>
-                        <span class="text-xs text-slate-400 font-semibold">siswa</span>
+                <div class="px-4 py-3">
+                    <div class="text-xs text-slate-500 font-medium">Kelompok Aktif</div>
+                    <div class="mt-1 flex items-baseline gap-1.5 tabular-nums">
+                        <span class="text-xl font-semibold text-slate-900 tracking-tight">{{ stats.total_groups }}</span>
+                        <span class="text-xs text-slate-400">halaqah</span>
                     </div>
-                    <div class="mt-1 text-[11px] text-slate-500 font-medium">
-                        Semester {{ activeYear.semester === 'ganjil' ? 'Ganjil' : 'Genap' }} {{ activeYear.name }}
+                    <div class="mt-1.5 text-[11px] text-slate-400">
+                        {{ sessions.length }} sesi jadwal aktif
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Naik Jilid Sem. Ini</div>
-                    <div class="mt-1 text-2xl font-black text-amber-600">{{ stats.promotions_semester }}</div>
-                    <div class="mt-1 text-[11px] text-slate-500 font-medium">Tercatat di log riwayat</div>
+                <div class="px-4 py-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-500 font-medium">Sudah Dinilai</span>
+                        <span class="text-[11px] font-medium text-[#00796B] tabular-nums">{{ assessedPercent }}%</span>
+                    </div>
+                    <div class="mt-1 flex items-baseline gap-1.5 tabular-nums">
+                        <span class="text-xl font-semibold text-slate-900 tracking-tight">{{ stats.assessed_students }}</span>
+                        <span class="text-xs text-slate-400">siswa</span>
+                    </div>
+                    <div class="mt-1.5 text-[11px] text-slate-400">
+                        Sem. {{ activeYear.semester === 'ganjil' ? 'Ganjil' : 'Genap' }} {{ activeYear.name }}
+                    </div>
+                </div>
+
+                <div class="px-4 py-3">
+                    <div class="text-xs text-slate-500 font-medium">Naik Jilid</div>
+                    <div class="mt-1 flex items-baseline gap-1.5 tabular-nums">
+                        <span class="text-xl font-semibold text-slate-900 tracking-tight">{{ stats.promotions_semester }}</span>
+                        <span class="text-xs text-slate-400">kenaikan</span>
+                    </div>
+                    <div class="mt-1.5 text-[11px] text-slate-400">
+                        Tercatat semester ini
+                    </div>
                 </div>
             </div>
 
-            <!-- Distribusi Jilid Quick Filter Pills -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm mb-6">
-                <div class="flex items-center justify-between mb-2.5">
-                    <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Sebaran Siswa per Jilid (Klik untuk filter)</span>
-                    <button v-if="levelFilter !== 'all'" @click="selectLevelFilter('all')" class="text-xs font-bold text-emerald-700 hover:underline">
-                        Tampilkan Semua
-                    </button>
+            <!-- Quiet inline hint only when sessions are empty -->
+            <div
+                v-if="canManage && sessions.length === 0"
+                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2.5 rounded-xl bg-teal-50/60 border border-teal-200/70 text-xs"
+            >
+                <div class="flex items-center gap-2 text-teal-900">
+                    <SparklesIcon class="w-4 h-4 text-[#00796B] shrink-0" />
+                    <span>Belum ada sesi waktu mengaji. Anda dapat langsung mengisi 3 sesi default (Pagi, Menengah, Siang).</span>
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    :disabled="seedingSessions"
+                    @click="seedSessions"
+                    class="h-7 px-3 rounded-lg bg-white border border-teal-300/80 text-[#00796B] font-medium hover:bg-teal-50 transition-colors shrink-0 disabled:opacity-50"
+                >
+                    {{ seedingSessions ? 'Menyiapkan...' : 'Isi 3 Sesi Default' }}
+                </button>
+            </div>
+
+            <!-- Unified Filter Toolbar + Single-Line Jilid Filter Rail -->
+            <div class="space-y-2.5">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div class="relative flex-1 min-w-0">
+                        <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Cari nama kelompok, guru pengampu, atau ruangan..."
+                            class="w-full h-9 pl-9 pr-8 text-[13px] bg-white border border-slate-200/90 rounded-lg text-slate-800 placeholder:text-slate-400 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15 transition-colors"
+                        />
+                        <span
+                            v-if="isFiltering"
+                            class="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#00796B] rounded-full animate-spin absolute right-3 top-1/2 -translate-y-1/2"
+                        />
+                        <button
+                            v-else-if="searchQuery"
+                            type="button"
+                            @click="searchQuery = ''"
+                            class="p-0.5 text-slate-400 hover:text-slate-600 absolute right-2.5 top-1/2 -translate-y-1/2"
+                        >
+                            <XMarkIcon class="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0">
+                        <select
+                            v-model="sessionFilter"
+                            @change="applyFilters"
+                            class="h-9 px-3 text-xs font-medium bg-white border border-slate-200/90 rounded-lg text-slate-700 hover:border-slate-300 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15 transition-colors"
+                        >
+                            <option value="all">Semua Sesi</option>
+                            <option v-for="s in sessions" :key="s.id" :value="s.id">{{ s.name }}</option>
+                            <option value="none">Tanpa Sesi</option>
+                        </select>
+
+                        <button
+                            v-if="hasActiveFilter"
+                            type="button"
+                            @click="resetFilters"
+                            class="h-9 px-2.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Clean Horizontal Jilid Filter Rail -->
+                <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+                    <button
+                        type="button"
+                        @click="selectLevelFilter('all')"
+                        class="h-7 px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 border"
+                        :class="levelFilter === 'all'
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-white text-slate-600 border-slate-200/90 hover:border-slate-300 hover:text-slate-900'"
+                    >
+                        Semua Jilid
+                    </button>
                     <button
                         v-for="lvl in levelDistribution"
                         :key="lvl.id"
+                        type="button"
                         @click="selectLevelFilter(lvl.id)"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all"
+                        class="h-7 px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 border inline-flex items-center gap-1.5"
                         :class="String(levelFilter) === String(lvl.id)
-                            ? 'bg-[#1b4332] text-white border-[#1b4332] shadow-sm'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-200'"
+                            ? 'bg-[#00796B] text-white border-[#00796B]'
+                            : 'bg-white text-slate-600 border-slate-200/90 hover:border-slate-300 hover:text-slate-900'"
                     >
                         <span>{{ lvl.name }}</span>
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black"
-                              :class="String(levelFilter) === String(lvl.id) ? 'bg-amber-400 text-[#1b4332]' : 'bg-white text-slate-600 border border-slate-200'">
+                        <span
+                            class="text-[10px] font-semibold tabular-nums px-1 rounded"
+                            :class="String(levelFilter) === String(lvl.id) ? 'bg-white/20 text-white' : 'text-slate-400'"
+                        >
                             {{ lvl.count }}
                         </span>
                     </button>
                 </div>
             </div>
 
-            <!-- Sesi Waktu Mengaji -->
-            <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm mb-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3.5">
-                    <div class="flex items-center gap-2.5">
-                        <div class="p-2 rounded-xl bg-amber-50 text-amber-600">
-                            <ClockIcon class="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h2 class="text-sm font-extrabold text-slate-800">Sesi Waktu Mengaji</h2>
-                            <p class="text-xs text-slate-500">Atur pembagian sesi (mis. Pagi Kls 1–2, Menengah Kls 3–4, Siang Kls 5–6) agar 1 guru dapat mengampu lintas sesi.</p>
-                        </div>
-                    </div>
-                    <div v-if="canManage" class="flex flex-wrap items-center gap-2">
-                        <button
-                            v-if="sessions.length === 0"
-                            @click="seedSessions"
-                            class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition flex items-center gap-1.5"
-                        >
-                            <SparklesIcon class="w-4 h-4" />
-                            <span>Isi 3 Sesi Default</span>
-                        </button>
-                        <button
-                            @click="openCreateSession"
-                            class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-white hover:bg-slate-900 transition flex items-center gap-1.5"
-                        >
-                            <PlusIcon class="w-4 h-4" />
-                            <span>Tambah Sesi</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div v-if="sessions.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <div
-                        v-for="sess in sessions"
-                        :key="sess.id"
-                        class="p-3.5 rounded-xl border transition-all flex items-start justify-between gap-2"
-                        :class="String(sessionFilter) === String(sess.id) ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-50/70 border-slate-200/80'"
-                    >
-                        <div class="cursor-pointer flex-1" @click="() => { sessionFilter = String(sessionFilter) === String(sess.id) ? 'all' : sess.id; applyFilters(); }">
-                            <div class="font-extrabold text-sm text-slate-800">{{ sess.name }}</div>
-                            <div class="text-xs font-semibold text-emerald-700 mt-0.5">
-                                {{ sess.start_time || '--:--' }} – {{ sess.end_time || '--:--' }}
-                                <span v-if="sess.days" class="text-slate-400 font-normal"> • {{ sess.days }}</span>
-                            </div>
-                            <div v-if="sess.target_note" class="text-[11px] text-slate-500 mt-1">Target: {{ sess.target_note }}</div>
-                        </div>
-                        <div v-if="canManage" class="flex items-center gap-1 shrink-0">
-                            <button @click="openEditSession(sess)" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50" title="Edit Sesi">
-                                <PencilSquareIcon class="w-4 h-4" />
-                            </button>
-                            <button @click="deleteSession(sess)" class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50" title="Hapus Sesi">
-                                <TrashIcon class="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div v-else class="text-xs text-slate-400 italic py-2">
-                    Belum ada sesi waktu. Anda tetap bisa langsung membuat kelompok tanpa sesi atau klik "Isi 3 Sesi Default".
-                </div>
-            </div>
-
-            <!-- Toolbar Kelompok -->
-            <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-4">
-                <div class="flex flex-wrap items-center gap-2.5 flex-1">
-                    <div class="relative flex-1 min-w-[200px]">
-                        <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                        <input
-                            v-model="searchQuery"
-                            @keyup.enter="applyFilters"
-                            type="text"
-                            placeholder="Cari nama kelompok, pengampu, ruang..."
-                            class="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-emerald-500"
-                        />
-                    </div>
-                    <select v-model="sessionFilter" @change="applyFilters" class="py-2.5 px-3 text-sm bg-white border border-slate-200 rounded-xl font-medium text-slate-700">
-                        <option value="all">Semua Sesi</option>
-                        <option v-for="s in sessions" :key="s.id" :value="s.id">{{ s.name }}</option>
-                        <option value="none">Tanpa Sesi</option>
-                    </select>
-                    <select v-model="levelFilter" @change="applyFilters" class="py-2.5 px-3 text-sm bg-white border border-slate-200 rounded-xl font-medium text-slate-700">
-                        <option value="all">Semua Jilid</option>
-                        <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
-                    </select>
-                </div>
-
-                <button
-                    v-if="canManage"
-                    @click="openCreateGroup"
-                    class="px-5 py-2.5 rounded-xl bg-[#1b4332] text-white text-sm font-bold hover:bg-[#143325] shadow-md shadow-emerald-950/15 transition flex items-center justify-center gap-2 shrink-0"
-                >
-                    <PlusIcon class="w-5 h-5" />
-                    <span>Tambah Kelompok / Halaqah</span>
-                </button>
-            </div>
-
-            <!-- Daftar Kelompok / Halaqah -->
-            <div v-if="groups.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Groups Grid -->
+            <div v-if="groups.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
                 <div
                     v-for="group in groups"
                     :key="group.id"
-                    class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col"
+                    class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] hover:border-slate-300/90 transition-colors overflow-hidden flex flex-col"
                 >
-                    <div class="p-4 sm:p-5 border-b border-slate-100">
+                    <div class="p-4">
                         <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
-                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#1b4332] text-white">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70">
                                         {{ group.level?.name }}
                                     </span>
-                                    <span v-if="group.session" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                        {{ group.session.name }} ({{ group.session.start_time }}–{{ group.session.end_time }})
+                                    <span v-if="group.session" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
+                                        <ClockIcon class="w-3 h-3 text-slate-400" />
+                                        {{ group.session.name }}
+                                        <span v-if="group.session.start_time" class="text-slate-400 tabular-nums">{{ group.session.start_time }}–{{ group.session.end_time }}</span>
                                     </span>
-                                    <span v-if="group.room_name" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
+                                    <span v-if="group.room_name" class="inline-flex items-center gap-1 text-[11px] text-slate-500">
+                                        <MapPinIcon class="w-3 h-3 text-slate-400" />
                                         {{ group.room_name }}
                                     </span>
                                 </div>
-                                <h3 class="text-base font-extrabold text-slate-800">{{ group.name }}</h3>
-                                <div class="mt-1.5 text-xs text-slate-600 space-y-0.5">
-                                    <div>
-                                        <span class="text-slate-400">Pengampu Utama:</span>
-                                        <strong class="ml-1 text-slate-800">{{ group.teacher?.name || '-' }}</strong>
-                                    </div>
-                                    <div v-if="group.assistant_teacher">
-                                        <span class="text-slate-400">Asisten:</span>
-                                        <span class="ml-1 font-semibold text-slate-700">{{ group.assistant_teacher.name }}</span>
-                                    </div>
+
+                                <h3 class="text-[15px] font-semibold text-slate-900 mt-2 truncate">
+                                    {{ group.name }}
+                                </h3>
+
+                                <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                                    <span class="inline-flex items-center gap-1">
+                                        <UserIcon class="w-3.5 h-3.5 text-slate-400" />
+                                        <span class="font-medium text-slate-700">{{ group.teacher?.name || '-' }}</span>
+                                    </span>
+                                    <span v-if="group.assistant_teacher" class="text-slate-400">
+                                        Asisten: <span class="text-slate-600">{{ group.assistant_teacher.name }}</span>
+                                    </span>
                                 </div>
                             </div>
 
-                            <div class="text-right shrink-0">
-                                <div class="text-xl font-black text-emerald-700 leading-none">{{ group.members_count }}</div>
-                                <div class="text-[10px] font-bold uppercase text-slate-400 mt-0.5">Siswa</div>
-                                <div class="mt-1.5 text-[11px] font-bold" :class="group.assessed_count === group.members_count && group.members_count > 0 ? 'text-emerald-600' : 'text-amber-600'">
+                            <!-- Compact Progress Ring / Counter -->
+                            <div class="text-right shrink-0 pl-2">
+                                <div class="text-lg font-semibold text-slate-900 leading-none tabular-nums">
+                                    {{ group.members_count }}
+                                    <span class="text-[11px] font-normal text-slate-400">siswa</span>
+                                </div>
+                                <div
+                                    class="mt-1.5 text-[11px] font-medium tabular-nums"
+                                    :class="group.assessed_count === group.members_count && group.members_count > 0 ? 'text-[#00796B]' : 'text-slate-500'"
+                                >
                                     {{ group.assessed_count }}/{{ group.members_count }} dinilai
+                                </div>
+                                <div class="mt-1 w-16 h-1 rounded-full bg-slate-100 overflow-hidden ml-auto">
+                                    <div
+                                        class="h-full rounded-full transition-all duration-300"
+                                        :class="group.assessed_count === group.members_count && group.members_count > 0 ? 'bg-[#00796B]' : 'bg-amber-400'"
+                                        :style="{ width: `${group.members_count ? Math.round((group.assessed_count / group.members_count) * 100) : 0}%` }"
+                                    />
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Action Bar -->
-                        <div class="flex flex-wrap items-center justify-between gap-2 mt-4 pt-3 border-t border-slate-100">
+                        <!-- Card Action Bar -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 mt-3.5 pt-3 border-t border-slate-100">
                             <button
+                                type="button"
                                 @click="toggleGroupExpand(group.id)"
-                                class="text-xs font-bold text-slate-600 hover:text-emerald-700 flex items-center gap-1"
+                                class="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
                             >
-                                <component :is="expandedGroupIds.has(group.id) ? ChevronUpIcon : ChevronDownIcon" class="w-4 h-4" />
-                                <span>{{ expandedGroupIds.has(group.id) ? 'Sembunyikan Siswa' : `Lihat ${group.members_count} Siswa` }}</span>
+                                <ChevronDownIcon
+                                    class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                    :class="expandedGroupIds.has(group.id) ? 'rotate-180 text-[#00796B]' : ''"
+                                />
+                                <span>{{ expandedGroupIds.has(group.id) ? 'Sembunyikan' : `Anggota (${group.members_count})` }}</span>
                             </button>
 
-                            <div class="flex flex-wrap items-center gap-1.5">
+                            <div class="flex items-center gap-1.5">
                                 <button
                                     v-if="canManage"
-                                    @click="openEnrollModal(group)"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition flex items-center gap-1"
+                                    type="button"
+                                    @click="openEnrollDrawer(group)"
+                                    class="h-7 px-2.5 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors inline-flex items-center gap-1"
                                 >
-                                    <UserPlusIcon class="w-3.5 h-3.5" />
-                                    <span>Plotting Siswa</span>
+                                    <UserPlusIcon class="w-3.5 h-3.5 text-slate-500" />
+                                    <span>Plotting</span>
                                 </button>
                                 <Link
                                     :href="route('quran.assessments.index', { group_id: group.id, unit_id: isGlobalAdmin ? unit.id : undefined, academic_year_id: activeYear.id })"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition flex items-center gap-1"
+                                    class="h-7 px-2.5 rounded-lg text-xs font-medium text-[#00796B] bg-teal-50/80 border border-teal-200/70 hover:bg-teal-100/70 transition-colors inline-flex items-center gap-1"
                                 >
                                     <PencilSquareIcon class="w-3.5 h-3.5" />
                                     <span>Input Nilai</span>
                                 </Link>
-                                <button v-if="canManage" @click="openEditGroup(group)" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100" title="Edit Kelompok">
-                                    <PencilSquareIcon class="w-4 h-4" />
+                                <button
+                                    v-if="canManage"
+                                    type="button"
+                                    @click="openEditGroup(group)"
+                                    class="h-7 w-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors inline-flex items-center justify-center"
+                                    title="Edit Kelompok"
+                                >
+                                    <PencilSquareIcon class="w-3.5 h-3.5" />
                                 </button>
-                                <button v-if="canManage" @click="deleteGroup(group)" class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50" title="Hapus Kelompok">
-                                    <TrashIcon class="w-4 h-4" />
+                                <button
+                                    v-if="canManage"
+                                    type="button"
+                                    @click="askDeleteGroup(group)"
+                                    class="h-7 w-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center justify-center"
+                                    title="Hapus Kelompok"
+                                >
+                                    <TrashIcon class="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Expanded Student List -->
-                    <div v-if="expandedGroupIds.has(group.id)" class="bg-slate-50/70 p-3 sm:p-4 max-h-72 overflow-y-auto">
-                        <div v-if="group.members.length === 0" class="text-center py-4 text-xs text-slate-400 italic">
-                            Belum ada siswa di kelompok ini. Klik "Plotting Siswa" untuk memasukkan siswa.
-                        </div>
-                        <div v-else class="divide-y divide-slate-200/60">
-                            <div
-                                v-for="(m, idx) in group.members"
-                                :key="m.enrollment_id"
-                                class="py-2 flex items-center justify-between gap-2 text-xs"
-                            >
-                                <div class="flex items-center gap-2.5 min-w-0">
-                                    <span class="w-5 text-slate-400 font-bold text-right shrink-0">{{ idx + 1 }}.</span>
-                                    <div class="min-w-0">
-                                        <div class="font-bold text-slate-800 truncate">{{ m.full_name }}</div>
-                                        <div class="text-[11px] text-slate-500">
-                                            Kelas {{ m.classroom_name }}
-                                            <span v-if="m.nis"> • {{ m.nis }}</span>
+                    <!-- Smooth Animated Accordion Member List -->
+                    <QuranCollapse :open="expandedGroupIds.has(group.id)">
+                        <div class="bg-slate-50/70 border-t border-slate-100 px-4 py-2.5 max-h-64 overflow-y-auto">
+                            <div v-if="group.members.length === 0" class="py-4 text-center text-xs text-slate-400">
+                                Belum ada siswa di kelompok ini. Klik <strong class="font-medium text-slate-600">Plotting</strong> untuk menambahkan.
+                            </div>
+                            <div v-else class="divide-y divide-slate-200/60">
+                                <div
+                                    v-for="(m, idx) in group.members"
+                                    :key="m.enrollment_id"
+                                    class="py-2 flex items-center justify-between gap-2 text-xs"
+                                >
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <span class="w-5 text-[11px] text-slate-400 tabular-nums text-right shrink-0">{{ idx + 1 }}.</span>
+                                        <div class="min-w-0">
+                                            <div class="font-medium text-slate-800 truncate">{{ m.full_name }}</div>
+                                            <div class="text-[11px] text-slate-400">
+                                                Kelas {{ m.classroom_name }}
+                                                <span v-if="m.nis" class="tabular-nums"> · {{ m.nis }}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <span v-if="m.is_assessed" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Dinilai</span>
-                                    <span v-else class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-500">Belum</span>
-                                    <button
-                                        v-if="canManage"
-                                        @click="removeMember(m, group.name)"
-                                        class="p-1 text-slate-400 hover:text-red-600 rounded"
-                                        title="Keluarkan dari kelompok"
-                                    >
-                                        <XMarkIcon class="w-4 h-4" />
-                                    </button>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span
+                                            class="inline-flex items-center gap-1 text-[11px] font-medium"
+                                            :class="m.is_assessed ? 'text-[#00796B]' : 'text-slate-400'"
+                                        >
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="m.is_assessed ? 'bg-[#00796B]' : 'bg-slate-300'" />
+                                            {{ m.is_assessed ? 'Dinilai' : 'Belum' }}
+                                        </span>
+                                        <button
+                                            v-if="canManage"
+                                            type="button"
+                                            @click="askRemoveMember(m, group.name)"
+                                            class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                                            title="Keluarkan dari kelompok"
+                                        >
+                                            <XMarkIcon class="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </QuranCollapse>
                 </div>
             </div>
 
-            <!-- Empty State -->
-            <div v-else class="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-slate-200">
-                <AcademicCapIcon class="w-14 h-14 text-slate-300 mx-auto mb-3" />
-                <h3 class="text-base font-extrabold text-slate-700">Belum Ada Kelompok Mengaji</h3>
-                <p class="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                    {{ canManage ? 'Buat kelompok / halaqah berdasarkan Jilid, Sesi Waktu, dan Guru Pengampu untuk mulai plotting siswa.' : 'Anda belum ditugaskan sebagai pengampu pada kelompok Al-Qur\'an mana pun di tahun ajaran ini.' }}
+            <!-- Calm Empty State -->
+            <div v-else class="bg-white rounded-xl border border-slate-200/80 p-10 text-center">
+                <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <AcademicCapIcon class="w-5 h-5" />
+                </div>
+                <h3 class="text-sm font-semibold text-slate-800">
+                    {{ hasActiveFilter ? 'Tidak ada kelompok yang cocok' : 'Belum ada kelompok mengaji' }}
+                </h3>
+                <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1 leading-relaxed">
+                    {{ hasActiveFilter
+                        ? 'Coba ubah kata kunci atau hapus filter sesi & jilid yang sedang aktif.'
+                        : (canManage ? 'Buat kelompok halaqah berdasarkan jilid, sesi waktu, dan guru pengampu untuk mulai plotting siswa.' : 'Anda belum ditugaskan sebagai pengampu di tahun ajaran ini.') }}
                 </p>
-                <button
-                    v-if="canManage"
-                    @click="openCreateGroup"
-                    class="mt-4 px-5 py-2.5 rounded-xl bg-[#1b4332] text-white text-xs font-bold hover:bg-[#143325] inline-flex items-center gap-1.5"
-                >
-                    <PlusIcon class="w-4 h-4" />
-                    <span>Buat Kelompok Pertama</span>
-                </button>
+                <div class="mt-4 flex items-center justify-center gap-2">
+                    <button
+                        v-if="hasActiveFilter"
+                        type="button"
+                        @click="resetFilters"
+                        class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                    >
+                        Reset Filter
+                    </button>
+                    <button
+                        v-else-if="canManage"
+                        type="button"
+                        @click="openCreateGroup"
+                        class="h-8 px-3.5 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] transition-colors inline-flex items-center gap-1.5"
+                    >
+                        <PlusIcon class="w-3.5 h-3.5" />
+                        <span>Buat Kelompok Pertama</span>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Modal: Tambah / Edit Sesi -->
-        <Teleport to="body">
-            <div v-if="showSessionModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showSessionModal = false"></div>
-                <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 z-10">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                        <h3 class="text-lg font-extrabold text-slate-800">{{ editingSession ? 'Edit Sesi Waktu' : 'Tambah Sesi Waktu' }}</h3>
-                        <button @click="showSessionModal = false" class="p-1 text-slate-400 hover:text-slate-600"><XMarkIcon class="w-5 h-5" /></button>
+        <!-- ==================== DRAWER: KELOLA SESI WAKTU ==================== -->
+        <QuranDialog
+            :show="showSessionsDrawer"
+            variant="drawer"
+            max-width="md"
+            title="Sesi Waktu Mengaji"
+            subtitle="Bagi sesi agar 1 guru dapat mengampu lintas kelas/jam."
+            @close="showSessionsDrawer = false"
+        >
+            <div class="p-5 space-y-3">
+                <div v-if="sessions.length === 0" class="rounded-xl border border-dashed border-slate-200 p-6 text-center">
+                    <ClockIcon class="w-7 h-7 text-slate-300 mx-auto mb-2" />
+                    <p class="text-xs text-slate-500">Belum ada sesi waktu mengaji.</p>
+                    <button
+                        v-if="canManage"
+                        type="button"
+                        :disabled="seedingSessions"
+                        @click="seedSessions"
+                        class="mt-3 h-8 px-3 rounded-lg text-xs font-medium text-[#00796B] bg-teal-50 border border-teal-200/80 hover:bg-teal-100/70 transition-colors inline-flex items-center gap-1.5"
+                    >
+                        <SparklesIcon class="w-3.5 h-3.5" />
+                        <span>Isi 3 Sesi Default</span>
+                    </button>
+                </div>
+
+                <div
+                    v-for="sess in sessions"
+                    :key="sess.id"
+                    class="p-3.5 rounded-xl border transition-colors flex items-start justify-between gap-2.5"
+                    :class="String(sessionFilter) === String(sess.id) ? 'bg-teal-50/50 border-teal-300' : 'bg-white border-slate-200/80 hover:border-slate-300'"
+                >
+                    <button
+                        type="button"
+                        @click="() => { selectSessionFilter(sess.id); showSessionsDrawer = false; }"
+                        class="text-left flex-1 min-w-0"
+                    >
+                        <div class="text-sm font-semibold text-slate-900">{{ sess.name }}</div>
+                        <div class="text-xs text-[#00796B] font-medium mt-0.5 tabular-nums">
+                            {{ sess.start_time || '--:--' }} – {{ sess.end_time || '--:--' }}
+                            <span v-if="sess.days" class="text-slate-400 font-normal"> · {{ sess.days }}</span>
+                        </div>
+                        <div v-if="sess.target_note" class="text-[11px] text-slate-500 mt-1">
+                            Target: {{ sess.target_note }}
+                        </div>
+                    </button>
+
+                    <div v-if="canManage" class="flex items-center gap-1 shrink-0">
+                        <button
+                            type="button"
+                            @click="openEditSession(sess)"
+                            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                            title="Edit Sesi"
+                        >
+                            <PencilSquareIcon class="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            @click="askDeleteSession(sess)"
+                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Hapus Sesi"
+                        >
+                            <TrashIcon class="w-3.5 h-3.5" />
+                        </button>
                     </div>
-                    <form @submit.prevent="submitSession" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Sesi *</label>
-                            <input v-model="sessionForm.name" required type="text" placeholder="Contoh: Sesi 1 (Pagi)" class="w-full rounded-xl border-slate-200 text-sm" />
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Jam Mulai</label>
-                                <input v-model="sessionForm.start_time" type="time" class="w-full rounded-xl border-slate-200 text-sm" />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Jam Selesai</label>
-                                <input v-model="sessionForm.end_time" type="time" class="w-full rounded-xl border-slate-200 text-sm" />
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Hari Pelaksanaan</label>
-                            <input v-model="sessionForm.days" type="text" placeholder="Senin - Jumat" class="w-full rounded-xl border-slate-200 text-sm" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan Target Kelas</label>
-                            <input v-model="sessionForm.target_note" type="text" placeholder="Contoh: Kelas 1 & 2" class="w-full rounded-xl border-slate-200 text-sm" />
-                        </div>
-                        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                            <button type="button" @click="showSessionModal = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">Batal</button>
-                            <button type="submit" :disabled="sessionForm.processing" class="px-5 py-2 rounded-xl text-xs font-bold bg-[#1b4332] text-white hover:bg-[#143325] disabled:opacity-50">
-                                Simpan Sesi
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
-        </Teleport>
 
-        <!-- Modal: Tambah / Edit Kelompok -->
-        <Teleport to="body">
-            <div v-if="showGroupModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
-                <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showGroupModal = false"></div>
-                <div class="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 z-10">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                        <h3 class="text-lg font-extrabold text-slate-800">{{ editingGroup ? 'Edit Kelompok Mengaji' : 'Tambah Kelompok / Halaqah' }}</h3>
-                        <button @click="showGroupModal = false" class="p-1 text-slate-400 hover:text-slate-600"><XMarkIcon class="w-5 h-5" /></button>
-                    </div>
-                    <form @submit.prevent="submitGroup" class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Jilid / Tingkat *</label>
-                                <select v-model="groupForm.level_id" @change="autoSuggestGroupName" required class="w-full rounded-xl border-slate-200 text-sm">
-                                    <option value="">-- Pilih Jilid --</option>
-                                    <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Sesi Waktu</label>
-                                <select v-model="groupForm.session_id" class="w-full rounded-xl border-slate-200 text-sm">
-                                    <option value="">-- Tanpa Sesi Khusus --</option>
-                                    <option v-for="s in sessions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.start_time }}–{{ s.end_time }})</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Guru Al-Qur'an (Pengampu Utama) *</label>
-                            <select v-model="groupForm.teacher_id" @change="autoSuggestGroupName" required class="w-full rounded-xl border-slate-200 text-sm">
-                                <option value="">-- Pilih Guru Pengampu --</option>
-                                <option v-for="t in teachers" :key="t.id" :value="t.id">
-                                    {{ t.name }} — [{{ t.role_label }}]
-                                </option>
-                            </select>
-                            <p class="text-[11px] text-slate-400 mt-1">Guru berlabel <strong>Guru Al-Qur'an</strong> &amp; <strong>Koordinator Al-Qur'an</strong> tampil di urutan teratas.</p>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Kelompok / Halaqah *</label>
-                            <input v-model="groupForm.name" required type="text" placeholder="Contoh: Jilid 5 A - Ustz. Fatimah" class="w-full rounded-xl border-slate-200 text-sm" />
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Guru Asisten / Pendamping (Opsional)</label>
-                            <select v-model="groupForm.assistant_teacher_id" class="w-full rounded-xl border-slate-200 text-sm">
-                                <option value="">-- Tidak Ada Asisten --</option>
-                                <option v-for="t in teachers" :key="t.id" :value="t.id">
-                                    {{ t.name }} — [{{ t.role_label }}]
-                                </option>
-                            </select>
-                            <p v-if="groupForm.errors.assistant_teacher_id" class="text-xs text-red-600 mt-1">{{ groupForm.errors.assistant_teacher_id }}</p>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Ruangan / Lokasi</label>
-                                <input v-model="groupForm.room_name" type="text" placeholder="Misal: Masjid / R. 3A" class="w-full rounded-xl border-slate-200 text-sm" />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Target Kuota (Opsional)</label>
-                                <input v-model="groupForm.max_quota" type="number" min="1" max="200" class="w-full rounded-xl border-slate-200 text-sm" />
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                            <button type="button" @click="showGroupModal = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">Batal</button>
-                            <button type="submit" :disabled="groupForm.processing" class="px-5 py-2 rounded-xl text-xs font-bold bg-[#1b4332] text-white hover:bg-[#143325] disabled:opacity-50">
-                                {{ editingGroup ? 'Simpan Perubahan' : 'Buat Kelompok' }}
-                            </button>
-                        </div>
-                    </form>
+            <template v-if="canManage" #footer>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[11px] text-slate-400">Klik nama sesi untuk memfilter kelompok.</span>
+                    <button
+                        type="button"
+                        @click="openCreateSession"
+                        class="h-8 px-3.5 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] transition-colors inline-flex items-center gap-1.5"
+                    >
+                        <PlusIcon class="w-3.5 h-3.5" />
+                        <span>Tambah Sesi</span>
+                    </button>
                 </div>
-            </div>
-        </Teleport>
+            </template>
+        </QuranDialog>
 
-        <!-- Modal: Quick Bulk Plotting Siswa -->
-        <Teleport to="body">
-            <div v-if="showEnrollModal && enrollTargetGroup" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showEnrollModal = false"></div>
-                <div class="relative bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col z-10 overflow-hidden">
-                    <div class="px-6 py-4 bg-[#1b4332] text-white flex items-center justify-between">
-                        <div>
-                            <div class="text-[11px] font-bold text-amber-300 uppercase tracking-wider">Plotting Cepat Siswa</div>
-                            <h3 class="text-base font-extrabold">{{ enrollTargetGroup.name }} ({{ enrollTargetGroup.level?.name }})</h3>
-                        </div>
-                        <button @click="showEnrollModal = false" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20"><XMarkIcon class="w-5 h-5" /></button>
+        <!-- ==================== MODAL: TAMBAH / EDIT SESI ==================== -->
+        <QuranDialog
+            :show="showSessionModal"
+            variant="modal"
+            max-width="md"
+            :title="editingSession ? 'Edit Sesi Waktu' : 'Tambah Sesi Waktu'"
+            @close="showSessionModal = false"
+        >
+            <form id="quran-session-form" @submit.prevent="submitSession" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nama Sesi <span class="text-rose-500">*</span></label>
+                    <input v-model="sessionForm.name" required type="text" placeholder="Contoh: Sesi 1 (Pagi)" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Jam Mulai</label>
+                        <input v-model="sessionForm.start_time" type="time" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Jam Selesai</label>
+                        <input v-model="sessionForm.end_time" type="time" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Hari Pelaksanaan</label>
+                    <input v-model="sessionForm.days" type="text" placeholder="Senin - Jumat" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Keterangan Target Kelas</label>
+                    <input v-model="sessionForm.target_note" type="text" placeholder="Contoh: Kelas 1 & 2" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                </div>
+            </form>
 
-                    <div class="p-4 border-b border-slate-100 bg-slate-50 space-y-3">
-                        <div class="flex flex-wrap items-center gap-2.5">
+            <template #footer>
+                <button type="button" @click="showSessionModal = false" class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                    Batal
+                </button>
+                <button type="submit" form="quran-session-form" :disabled="sessionForm.processing" class="h-8 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 transition-colors">
+                    {{ sessionForm.processing ? 'Menyimpan...' : 'Simpan Sesi' }}
+                </button>
+            </template>
+        </QuranDialog>
+
+        <!-- ==================== MODAL: TAMBAH / EDIT KELOMPOK ==================== -->
+        <QuranDialog
+            :show="showGroupModal"
+            variant="modal"
+            max-width="lg"
+            :title="editingGroup ? 'Edit Kelompok Mengaji' : 'Kelompok / Halaqah Baru'"
+            subtitle="Tentukan jilid, sesi waktu, dan guru pengampu."
+            @close="showGroupModal = false"
+        >
+            <form id="quran-group-form" @submit.prevent="submitGroup" class="space-y-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Jilid / Tingkat <span class="text-rose-500">*</span></label>
+                        <select v-model="groupForm.level_id" @change="autoSuggestGroupName" required class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                            <option value="">Pilih Jilid</option>
+                            <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Sesi Waktu</label>
+                        <select v-model="groupForm.session_id" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                            <option value="">Tanpa Sesi Khusus</option>
+                            <option v-for="s in sessions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.start_time }}–{{ s.end_time }})</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Guru Pengampu Utama <span class="text-rose-500">*</span></label>
+                    <select v-model="groupForm.teacher_id" @change="autoSuggestGroupName" required class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <option value="">Pilih Guru Pengampu</option>
+                        <option v-for="t in teachers" :key="t.id" :value="t.id">
+                            {{ t.name }} — {{ t.role_label }}
+                        </option>
+                    </select>
+                    <p class="text-[11px] text-slate-400 mt-1">Guru Al-Qur'an &amp; Koordinator ditampilkan paling atas.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nama Kelompok <span class="text-rose-500">*</span></label>
+                    <input v-model="groupForm.name" required type="text" placeholder="Contoh: Jilid 5 A - Ustz. Nur Halimah" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Guru Asisten (Opsional)</label>
+                    <select v-model="groupForm.assistant_teacher_id" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <option value="">Tidak Ada Asisten</option>
+                        <option v-for="t in teachers" :key="t.id" :value="t.id">
+                            {{ t.name }} — {{ t.role_label }}
+                        </option>
+                    </select>
+                    <p v-if="groupForm.errors.assistant_teacher_id" class="text-xs text-rose-600 mt-1">{{ groupForm.errors.assistant_teacher_id }}</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Ruangan / Lokasi</label>
+                        <input v-model="groupForm.room_name" type="text" placeholder="Masjid / R. 3A" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Kuota Maks.</label>
+                        <input v-model="groupForm.max_quota" type="number" min="1" max="200" class="w-full h-9 rounded-lg border-slate-200 text-sm tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    </div>
+                </div>
+            </form>
+
+            <template #footer>
+                <button type="button" @click="showGroupModal = false" class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                    Batal
+                </button>
+                <button type="submit" form="quran-group-form" :disabled="groupForm.processing" class="h-8 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 transition-colors">
+                    {{ groupForm.processing ? 'Menyimpan...' : (editingGroup ? 'Simpan Perubahan' : 'Buat Kelompok') }}
+                </button>
+            </template>
+        </QuranDialog>
+
+        <!-- ==================== DRAWER: BULK PLOTTING SISWA ==================== -->
+        <QuranDialog
+            :show="showEnrollDrawer && !!enrollTargetGroup"
+            variant="drawer"
+            max-width="xl"
+            :title="`Plotting Siswa — ${enrollTargetGroup?.name || ''}`"
+            :subtitle="`${enrollTargetGroup?.level?.name || ''} · Pilih siswa lintas kelas formal untuk masuk ke kelompok ini.`"
+            @close="showEnrollDrawer = false"
+        >
+            <div class="flex flex-col h-full">
+                <!-- Sticky Filter Section inside Drawer -->
+                <div class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs border-b border-slate-200/80 px-5 py-3 space-y-2.5">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="relative flex-1 min-w-[160px]">
+                            <MagnifyingGlassIcon class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                                 v-model="enrollSearch"
                                 type="text"
-                                placeholder="Cari nama siswa / NIS..."
-                                class="flex-1 min-w-[180px] rounded-xl border-slate-200 text-sm py-2"
+                                placeholder="Cari nama atau NIS..."
+                                class="w-full h-8 pl-8 pr-3 text-xs bg-white border border-slate-200 rounded-lg focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
                             />
-                            <select v-model="enrollClassroomFilter" class="rounded-xl border-slate-200 text-sm py-2">
-                                <option value="all">Semua Kelas Formal</option>
-                                <option v-for="c in classrooms" :key="c.id" :value="c.id">Kelas {{ c.name }}</option>
-                            </select>
-                            <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200">
-                                <input type="checkbox" v-model="enrollOnlyUnplotted" class="rounded text-emerald-600 focus:ring-emerald-500">
-                                <span>Hanya yg belum diplot</span>
-                            </label>
                         </div>
-
-                        <div class="flex items-center justify-between text-xs">
-                            <label class="inline-flex items-center gap-2 font-bold text-slate-700 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    @change="toggleSelectAllCandidates"
-                                    :checked="filteredEnrollCandidates.length > 0 && enrollSelectedIds.length === filteredEnrollCandidates.length"
-                                    class="rounded text-emerald-600 focus:ring-emerald-500"
-                                >
-                                <span>Pilih Semua ({{ filteredEnrollCandidates.length }} siswa tampil)</span>
-                            </label>
-                            <span class="font-extrabold text-emerald-700">{{ enrollSelectedIds.length }} dipilih</span>
-                        </div>
-                    </div>
-
-                    <div class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2">
-                        <div v-if="filteredEnrollCandidates.length === 0" class="py-10 text-center text-xs text-slate-400 italic">
-                            Tidak ada kandidat siswa sesuai filter.
-                        </div>
-                        <label
-                            v-for="st in filteredEnrollCandidates"
-                            :key="st.id"
-                            class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-50/50 cursor-pointer"
-                        >
-                            <div class="flex items-center gap-3 min-w-0">
-                                <input
-                                    type="checkbox"
-                                    :value="st.id"
-                                    v-model="enrollSelectedIds"
-                                    class="rounded text-emerald-600 focus:ring-emerald-500"
-                                />
-                                <div class="min-w-0">
-                                    <div class="text-sm font-bold text-slate-800 truncate">{{ st.full_name }}</div>
-                                    <div class="text-xs text-slate-500">Kelas {{ st.classroom_name }} <span v-if="st.nis">• {{ st.nis }}</span></div>
-                                </div>
-                            </div>
-                            <span v-if="st.is_plotted" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-                                Akan dipindah
-                            </span>
-                            <span v-else class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 shrink-0">
-                                Belum diplot
-                            </span>
+                        <select v-model="enrollClassroomFilter" class="h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                            <option value="all">Semua Kelas</option>
+                            <option v-for="c in classrooms" :key="c.id" :value="c.id">Kelas {{ c.name }}</option>
+                        </select>
+                        <label class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-600 cursor-pointer select-none">
+                            <input type="checkbox" v-model="enrollOnlyUnplotted" class="rounded border-slate-300 text-[#00796B] focus:ring-[#00796B]/30" />
+                            <span>Belum diplot</span>
                         </label>
                     </div>
 
-                    <div class="p-4 border-t border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 text-xs">
-                            <label class="font-bold text-slate-600">Tgl Mulai:</label>
-                            <input v-model="enrollForm.started_at" type="date" class="rounded-lg border-slate-200 text-xs py-1.5" />
-                        </div>
-                        <div class="flex items-center justify-end gap-2">
-                            <button type="button" @click="showEnrollModal = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">Batal</button>
-                            <button
-                                type="button"
-                                @click="submitEnroll"
-                                :disabled="enrollSelectedIds.length === 0 || enrollForm.processing"
-                                class="px-5 py-2 rounded-xl text-xs font-bold bg-[#1b4332] text-white hover:bg-[#143325] disabled:opacity-50"
-                            >
-                                Masukkan {{ enrollSelectedIds.length }} Siswa
-                            </button>
-                        </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <label class="inline-flex items-center gap-2 text-slate-600 font-medium cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                @change="toggleSelectAllCandidates"
+                                :checked="filteredEnrollCandidates.length > 0 && enrollSelectedIds.length === filteredEnrollCandidates.length"
+                                class="rounded border-slate-300 text-[#00796B] focus:ring-[#00796B]/30"
+                            />
+                            <span>Pilih semua ({{ filteredEnrollCandidates.length }})</span>
+                        </label>
+                        <span class="font-semibold text-[#00796B] tabular-nums">{{ enrollSelectedIds.length }} dipilih</span>
                     </div>
                 </div>
+
+                <!-- Candidate List -->
+                <div class="divide-y divide-slate-100 px-3 py-1">
+                    <div v-if="filteredEnrollCandidates.length === 0" class="py-12 text-center text-xs text-slate-400">
+                        Tidak ada kandidat siswa sesuai filter.
+                    </div>
+                    <label
+                        v-for="st in filteredEnrollCandidates"
+                        :key="st.id"
+                        class="flex items-center justify-between gap-3 px-2.5 py-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                    >
+                        <div class="flex items-center gap-3 min-w-0">
+                            <input
+                                type="checkbox"
+                                :value="st.id"
+                                v-model="enrollSelectedIds"
+                                class="rounded border-slate-300 text-[#00796B] focus:ring-[#00796B]/30"
+                            />
+                            <div class="min-w-0">
+                                <div class="text-[13px] font-medium text-slate-800 truncate">{{ st.full_name }}</div>
+                                <div class="text-[11px] text-slate-400">
+                                    Kelas {{ st.classroom_name }}
+                                    <span v-if="st.nis" class="tabular-nums"> · {{ st.nis }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <span
+                            class="px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 border"
+                            :class="st.is_plotted ? 'bg-amber-50 text-amber-700 border-amber-200/80' : 'bg-slate-50 text-slate-500 border-slate-200/80'"
+                        >
+                            {{ st.is_plotted ? 'Akan dipindah' : 'Belum diplot' }}
+                        </span>
+                    </label>
+                </div>
             </div>
-        </Teleport>
+
+            <template #footer>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 text-xs">
+                        <label class="text-slate-500 font-medium shrink-0">Tgl Mulai:</label>
+                        <input v-model="enrollForm.started_at" type="date" class="h-8 rounded-lg border-slate-200 text-xs tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    </div>
+                    <div class="flex items-center justify-end gap-2">
+                        <button type="button" @click="showEnrollDrawer = false" class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            @click="submitEnroll"
+                            :disabled="enrollSelectedIds.length === 0 || enrollForm.processing"
+                            class="h-8 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-40 transition-colors"
+                        >
+                            {{ enrollForm.processing ? 'Memproses...' : `Masukkan ${enrollSelectedIds.length} Siswa` }}
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </QuranDialog>
+
+        <!-- ==================== IN-APP CONFIRM DIALOG ==================== -->
+        <QuranConfirmDialog
+            :show="confirmState.show"
+            :title="confirmState.title"
+            :message="confirmState.message"
+            :confirm-label="confirmState.confirmLabel"
+            :processing="confirmState.processing"
+            @close="confirmState.show = false"
+            @confirm="runConfirm"
+        />
     </AuthenticatedLayout>
 </template>
