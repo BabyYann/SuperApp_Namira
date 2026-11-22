@@ -175,8 +175,9 @@
             font-size: 8.8pt;
         }
         .sign-space {
-            height: 44px;
+            height: 56px;
             vertical-align: middle;
+            padding: 2px 0;
         }
         .note-block {
             width: 54%;
@@ -314,7 +315,7 @@
                         <tr>
                             <td class="sign-space" style="text-align: center;">
                                 @if($sigBase64)
-                                    <img src="{{ $sigBase64 }}" style="height: 40px; object-fit: contain;" alt="">
+                                    <img src="{{ $sigBase64 }}" style="height: 54px; object-fit: contain;" alt="">
                                 @endif
                             </td>
                         </tr>
