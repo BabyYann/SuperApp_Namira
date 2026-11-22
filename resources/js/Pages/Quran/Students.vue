@@ -14,6 +14,7 @@ import {
     ArrowsRightLeftIcon,
     CheckBadgeIcon,
     ArrowRightIcon,
+    AdjustmentsHorizontalIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -35,9 +36,39 @@ const levelFilter = ref(props.filters?.level_id ?? 'all');
 const groupFilter = ref(props.filters?.group_id ?? 'all');
 const searchQuery = ref(props.filters?.search ?? '');
 const isFiltering = ref(false);
+const showMobileFilterSheet = ref(false);
+
+const activeFilterCount = computed(() => {
+    let n = 0;
+    if (classroomFilter.value !== 'all') n++;
+    if (levelFilter.value !== 'all') n++;
+    if (groupFilter.value !== 'all') n++;
+    return n;
+});
 
 const hasActiveFilter = computed(() => {
-    return classroomFilter.value !== 'all' || levelFilter.value !== 'all' || groupFilter.value !== 'all' || searchQuery.value.trim() !== '';
+    return activeFilterCount.value > 0 || searchQuery.value.trim() !== '';
+});
+
+const activeFilterChips = computed(() => {
+    const chips = [];
+    if (classroomFilter.value !== 'all') {
+        const c = props.classrooms?.find(x => String(x.id) === String(classroomFilter.value));
+        if (c) chips.push({ key: 'classroom', label: `Kelas ${c.name}`, clear: () => { classroomFilter.value = 'all'; applyFilters(); } });
+    }
+    if (levelFilter.value !== 'all') {
+        if (levelFilter.value === 'unplotted') {
+            chips.push({ key: 'level', label: 'Belum Diplot', clear: () => { levelFilter.value = 'all'; applyFilters(); } });
+        } else {
+            const l = props.levels?.find(x => String(x.id) === String(levelFilter.value));
+            if (l) chips.push({ key: 'level', label: l.name, clear: () => { levelFilter.value = 'all'; applyFilters(); } });
+        }
+    }
+    if (groupFilter.value !== 'all') {
+        const g = props.groups?.find(x => String(x.id) === String(groupFilter.value));
+        if (g) chips.push({ key: 'group', label: g.name, clear: () => { groupFilter.value = 'all'; applyFilters(); } });
+    }
+    return chips;
 });
 
 const applyFilters = () => {
@@ -173,7 +204,7 @@ const changeTypeMeta = (type) => {
     <Head title="Tracking & Naik Jilid — Program Al-Qur'an" />
 
     <AuthenticatedLayout>
-        <div class="max-w-7xl mx-auto py-1 sm:py-2 space-y-4">
+        <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-28 md:pb-2 space-y-4">
             <QuranNav
                 active-tab="students"
                 page-title="Tracking & Kenaikan Jilid"
@@ -185,8 +216,8 @@ const changeTypeMeta = (type) => {
                 :is-global-admin="isGlobalAdmin"
             />
 
-            <!-- Clean Filter Bar -->
-            <div class="flex flex-wrap items-center gap-2">
+            <!-- ==================== DESKTOP FILTER BAR (100% PRESERVED) ==================== -->
+            <div class="hidden md:flex flex-wrap items-center gap-2">
                 <div class="relative flex-1 min-w-[200px]">
                     <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
@@ -235,7 +266,63 @@ const changeTypeMeta = (type) => {
                 </button>
             </div>
 
-            <!-- Desktop Table -->
+            <!-- ==================== MOBILE SEARCH + FILTER SHEET TRIGGER (< md) ==================== -->
+            <div class="md:hidden space-y-2">
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1 min-w-0">
+                        <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Cari nama siswa atau NIS..."
+                            class="w-full h-10 pl-9 pr-8 text-[13px] bg-white border border-slate-200/90 rounded-xl text-slate-800 placeholder:text-slate-400 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
+                        />
+                        <span
+                            v-if="isFiltering"
+                            class="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#00796B] rounded-full animate-spin absolute right-3 top-1/2 -translate-y-1/2"
+                        />
+                        <button
+                            v-else-if="searchQuery"
+                            type="button"
+                            @click="searchQuery = ''"
+                            class="p-1 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2"
+                        >
+                            <XMarkIcon class="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="showMobileFilterSheet = true"
+                        class="h-10 px-3 rounded-xl border text-xs font-medium inline-flex items-center gap-1.5 shrink-0 active:scale-95 transition-all"
+                        :class="activeFilterCount > 0 ? 'bg-teal-50 border-[#00796B]/40 text-[#00796B]' : 'bg-white border-slate-200/90 text-slate-700'"
+                    >
+                        <AdjustmentsHorizontalIcon class="w-4 h-4" />
+                        <span>Filter</span>
+                        <span v-if="activeFilterCount > 0" class="w-4 h-4 rounded-full bg-[#00796B] text-white text-[10px] font-semibold flex items-center justify-center tabular-nums">
+                            {{ activeFilterCount }}
+                        </span>
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                    <span class="tabular-nums font-medium">{{ students.length }} siswa tampil</span>
+                    <div v-if="activeFilterChips.length" class="flex flex-wrap items-center justify-end gap-1">
+                        <button
+                            v-for="chip in activeFilterChips"
+                            :key="chip.key"
+                            type="button"
+                            @click="chip.clear"
+                            class="inline-flex items-center gap-1 h-6 px-2 rounded-full bg-teal-50 text-[#00796B] border border-teal-200/80 text-[11px] font-medium active:scale-95"
+                        >
+                            <span>{{ chip.label }}</span>
+                            <XMarkIcon class="w-3 h-3" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== DESKTOP TABLE (100% PRESERVED) ==================== -->
             <div class="hidden md:block bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
                 <div class="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between text-xs">
                     <span class="font-medium text-slate-600 tabular-nums">{{ students.length }} siswa</span>
@@ -323,52 +410,125 @@ const changeTypeMeta = (type) => {
                 </div>
             </div>
 
-            <!-- Mobile Card List -->
-            <div class="md:hidden bg-white rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden">
-                <div v-if="students.length === 0" class="px-4 py-10 text-center text-xs text-slate-400">
+            <!-- ==================== MOBILE NATIVE CARD LIST (< md) ==================== -->
+            <div class="md:hidden space-y-2.5">
+                <div v-if="students.length === 0" class="bg-white rounded-2xl border border-slate-200/80 px-4 py-10 text-center text-xs text-slate-400">
                     Tidak ada data siswa sesuai filter.
                 </div>
-                <div v-for="st in students" :key="'m-'+st.id" class="p-3.5 space-y-2.5">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="min-w-0">
-                            <div class="text-sm font-semibold text-slate-900 truncate">{{ st.full_name }}</div>
-                            <div class="text-xs text-slate-500">Kelas {{ st.classroom_name }} · {{ st.teacher_name }}</div>
+
+                <div
+                    v-for="st in students"
+                    :key="'m-' + st.id"
+                    class="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+                >
+                    <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-9 h-9 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold flex items-center justify-center shrink-0">
+                                {{ st.full_name?.charAt(0) }}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-sm font-semibold text-slate-900 truncate">{{ st.full_name }}</div>
+                                <div class="text-xs text-slate-500 truncate">
+                                    Kelas {{ st.classroom_name }} · {{ st.teacher_name }}
+                                </div>
+                            </div>
                         </div>
                         <span
-                            class="px-2 py-0.5 rounded-md text-[11px] font-medium border shrink-0"
+                            class="px-2 py-0.5 rounded-md text-[11px] font-semibold border shrink-0"
                             :class="st.level_id ? 'bg-teal-50 text-[#00796B] border-teal-200/70' : 'bg-slate-50 text-slate-400 border-slate-200/80'"
                         >
                             {{ st.level_name }}
                         </span>
                     </div>
-                    <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="text-slate-500 truncate">{{ st.group_name }}</span>
-                        <span v-if="st.promotions_count > 0" class="text-[11px] font-medium text-[#00796B] shrink-0">Naik {{ st.promotions_count }}×</span>
+
+                    <div class="flex items-center justify-between gap-2 text-xs bg-slate-50/80 rounded-xl px-3 py-2">
+                        <div class="min-w-0 truncate text-slate-600">
+                            <span class="font-medium text-slate-800">{{ st.group_name }}</span>
+                            <span v-if="st.session_name !== '-'" class="text-slate-400"> · {{ st.session_name }}</span>
+                        </div>
+                        <span v-if="st.promotions_count > 0" class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00796B] shrink-0 tabular-nums">
+                            <CheckBadgeIcon class="w-3.5 h-3.5" />
+                            Naik {{ st.promotions_count }}×
+                        </span>
                     </div>
-                    <div class="flex items-center gap-2 pt-1">
+
+                    <div class="grid gap-2" :class="st.can_promote ? 'grid-cols-2' : 'grid-cols-1'">
                         <button
                             v-if="st.can_promote"
                             type="button"
                             @click="openPromoteModal(st)"
-                            class="flex-1 h-8 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] transition-colors inline-flex items-center justify-center gap-1"
+                            class="h-10 rounded-xl text-xs font-semibold text-white bg-[#00796B] active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5 shadow-xs"
                         >
-                            <ArrowUpCircleIcon class="w-3.5 h-3.5" />
+                            <ArrowUpCircleIcon class="w-4 h-4" />
                             <span>{{ st.level_id ? 'Naik / Pindah' : 'Plot Kelompok' }}</span>
                         </button>
                         <button
                             type="button"
                             @click="openHistory(st)"
-                            class="flex-1 h-8 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors inline-flex items-center justify-center gap-1"
+                            class="h-10 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200/90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5"
                         >
-                            <ClockIcon class="w-3.5 h-3.5 text-slate-400" />
-                            <span>Riwayat</span>
+                            <ClockIcon class="w-4 h-4 text-slate-500" />
+                            <span>Lihat Riwayat</span>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== MODAL: NAIK JILID / PINDAH KELOMPOK ==================== -->
+        <!-- ==================== MOBILE FILTER BOTTOM SHEET ==================== -->
+        <QuranDialog
+            :show="showMobileFilterSheet"
+            variant="sheet"
+            title="Filter Siswa"
+            subtitle="Saring daftar siswa berdasarkan kelas, jilid, atau kelompok."
+            @close="showMobileFilterSheet = false"
+        >
+            <div class="p-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kelas Formal</label>
+                    <select v-model="classroomFilter" class="w-full h-11 rounded-xl border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <option value="all">Semua Kelas</option>
+                        <option v-for="c in classrooms" :key="c.id" :value="c.id">Kelas {{ c.name }}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Jilid Saat Ini</label>
+                    <select v-model="levelFilter" class="w-full h-11 rounded-xl border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <option value="all">Semua Jilid</option>
+                        <option value="unplotted">Belum Diplot</option>
+                        <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kelompok / Halaqah</label>
+                    <select v-model="groupFilter" class="w-full h-11 rounded-xl border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <option value="all">Semua Kelompok</option>
+                        <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <template #footer>
+                <div class="grid grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        @click="() => { resetFilters(); showMobileFilterSheet = false; }"
+                        class="h-10 rounded-xl text-xs font-medium text-slate-700 bg-white border border-slate-200"
+                    >
+                        Reset
+                    </button>
+                    <button
+                        type="button"
+                        @click="() => { applyFilters(); showMobileFilterSheet = false; }"
+                        class="h-10 rounded-xl text-xs font-semibold text-white bg-[#00796B]"
+                    >
+                        Terapkan Filter
+                    </button>
+                </div>
+            </template>
+        </QuranDialog>
+
+        <!-- ==================== MODAL / SHEET: NAIK JILID / PINDAH KELOMPOK ==================== -->
         <QuranDialog
             :show="showPromoteModal && !!targetStudent"
             variant="modal"
@@ -378,12 +538,11 @@ const changeTypeMeta = (type) => {
             @close="showPromoteModal = false"
         >
             <form id="quran-promote-form" @submit.prevent="submitPromote" class="space-y-4">
-                <!-- Segmented Switch -->
-                <div v-if="targetStudent?.level_id" class="grid grid-cols-2 p-1 rounded-lg bg-slate-100 gap-1">
+                <div v-if="targetStudent?.level_id" class="grid grid-cols-2 p-1 rounded-xl md:rounded-lg bg-slate-100 gap-1">
                     <button
                         type="button"
                         @click="onChangeTypeSwitch('promoted')"
-                        class="h-8 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                        class="h-9 md:h-8 rounded-lg md:rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
                         :class="promoteForm.change_type === 'promoted' ? 'bg-white text-[#00796B] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                     >
                         <ArrowUpCircleIcon class="w-4 h-4" />
@@ -392,7 +551,7 @@ const changeTypeMeta = (type) => {
                     <button
                         type="button"
                         @click="onChangeTypeSwitch('transferred')"
-                        class="h-8 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                        class="h-9 md:h-8 rounded-lg md:rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
                         :class="promoteForm.change_type === 'transferred' ? 'bg-white text-amber-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                     >
                         <ArrowsRightLeftIcon class="w-4 h-4" />
@@ -402,7 +561,7 @@ const changeTypeMeta = (type) => {
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Filter Jilid Tujuan</label>
-                    <select v-model="selectedTargetLevelId" @change="promoteForm.target_group_id = ''" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                    <select v-model="selectedTargetLevelId" @change="promoteForm.target_group_id = ''" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                         <option value="all">Tampilkan Semua Jilid</option>
                         <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
                     </select>
@@ -410,7 +569,7 @@ const changeTypeMeta = (type) => {
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Kelompok &amp; Pengampu Tujuan <span class="text-rose-500">*</span></label>
-                    <select v-model="promoteForm.target_group_id" required class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                    <select v-model="promoteForm.target_group_id" required class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                         <option value="">Pilih Kelompok Tujuan</option>
                         <option v-for="g in availableTargetGroups" :key="g.id" :value="g.id">
                             [{{ g.level_name }}] {{ g.name }} — {{ g.teacher_name }}{{ g.session_name ? ` (${g.session_name})` : '' }}
@@ -424,25 +583,25 @@ const changeTypeMeta = (type) => {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Tanggal <span class="text-rose-500">*</span></label>
-                        <input v-model="promoteForm.changed_at" required type="date" class="w-full h-9 rounded-lg border-slate-200 text-sm tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="promoteForm.changed_at" required type="date" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Nilai Tes (Opsional)</label>
-                        <input v-model="promoteForm.exam_score" type="text" placeholder="Contoh: A / 92" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="promoteForm.exam_score" type="text" placeholder="Contoh: A / 92" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Catatan (Opsional)</label>
-                    <textarea v-model="promoteForm.notes" rows="2" placeholder="Contoh: Lulus tes naik jilid dengan lancar" class="w-full rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    <textarea v-model="promoteForm.notes" rows="2" placeholder="Contoh: Lulus tes naik jilid dengan lancar" class="w-full rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                 </div>
             </form>
 
             <template #footer>
-                <button type="button" @click="showPromoteModal = false" class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                <button type="button" @click="showPromoteModal = false" class="h-10 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
                     Batal
                 </button>
-                <button type="submit" form="quran-promote-form" :disabled="promoteForm.processing || !promoteForm.target_group_id" class="h-8 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-40 transition-colors">
+                <button type="submit" form="quran-promote-form" :disabled="promoteForm.processing || !promoteForm.target_group_id" class="h-10 md:h-8 px-4 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-40 transition-colors">
                     {{ promoteForm.processing ? 'Menyimpan...' : 'Simpan & Catat Riwayat' }}
                 </button>
             </template>
@@ -458,7 +617,6 @@ const changeTypeMeta = (type) => {
             @close="showHistoryDrawer = false"
         >
             <div class="p-5">
-                <!-- Skeleton Loading Shimmer -->
                 <div v-if="loadingHistory" class="space-y-4 animate-pulse">
                     <div v-for="n in 3" :key="n" class="flex gap-3">
                         <div class="w-3 h-3 rounded-full bg-slate-200 mt-1.5 shrink-0" />

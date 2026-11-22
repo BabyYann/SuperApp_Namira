@@ -20,6 +20,8 @@ import {
     AcademicCapIcon,
     MapPinIcon,
     UserIcon,
+    AdjustmentsHorizontalIcon,
+    EllipsisHorizontalIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -45,9 +47,28 @@ const sessionFilter = ref(props.filters?.session_id ?? 'all');
 const levelFilter = ref(props.filters?.level_id ?? 'all');
 const searchQuery = ref(props.filters?.search ?? '');
 const isFiltering = ref(false);
+const showMobileFilterSheet = ref(false);
+
+const activeFilterCount = computed(() => {
+    let n = 0;
+    if (sessionFilter.value !== 'all') n++;
+    if (levelFilter.value !== 'all') n++;
+    return n;
+});
 
 const hasActiveFilter = computed(() => {
-    return sessionFilter.value !== 'all' || levelFilter.value !== 'all' || searchQuery.value.trim() !== '';
+    return activeFilterCount.value > 0 || searchQuery.value.trim() !== '';
+});
+
+const activeSessionLabel = computed(() => {
+    if (sessionFilter.value === 'all') return null;
+    if (sessionFilter.value === 'none') return 'Tanpa Sesi';
+    return props.sessions?.find(s => String(s.id) === String(sessionFilter.value))?.name || null;
+});
+
+const activeLevelLabel = computed(() => {
+    if (levelFilter.value === 'all') return null;
+    return props.levels?.find(l => String(l.id) === String(levelFilter.value))?.name || null;
 });
 
 const applyFilters = () => {
@@ -97,7 +118,7 @@ const assessedPercent = computed(() => {
     return Math.min(100, Math.round((props.stats.assessed_students / props.stats.plotted_students) * 100));
 });
 
-// Expand members per group card (reactive Set replacement for crisp updates)
+// Expand members per group card
 const expandedGroupIds = ref(new Set());
 const toggleGroupExpand = (id) => {
     const next = new Set(expandedGroupIds.value);
@@ -105,6 +126,9 @@ const toggleGroupExpand = (id) => {
     else next.add(id);
     expandedGroupIds.value = next;
 };
+
+// Mobile Group Action Sheet (safe thumb overflow menu)
+const actionSheetGroup = ref(null);
 
 // ==================== CONFIRM DIALOG ====================
 const confirmState = ref({
@@ -359,7 +383,7 @@ const askRemoveMember = (member, groupName) => {
     <Head title="Kelompok & Sesi — Program Al-Qur'an" />
 
     <AuthenticatedLayout>
-        <div class="max-w-7xl mx-auto py-1 sm:py-2 space-y-4">
+        <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-28 md:pb-2 space-y-4">
             <QuranNav
                 active-tab="index"
                 page-title="Kelompok & Sesi Mengaji"
@@ -370,6 +394,7 @@ const askRemoveMember = (member, groupName) => {
                 :can-manage="canManage"
                 :is-global-admin="isGlobalAdmin"
             >
+                <!-- Desktop Actions (100% Preserved) -->
                 <template #actions>
                     <button
                         type="button"
@@ -393,10 +418,32 @@ const askRemoveMember = (member, groupName) => {
                         <span>Kelompok Baru</span>
                     </button>
                 </template>
+
+                <!-- Mobile Native Compact Actions -->
+                <template #mobile-actions>
+                    <button
+                        type="button"
+                        @click="showSessionsDrawer = true"
+                        class="h-9 px-2.5 rounded-xl text-xs font-medium text-slate-700 bg-white border border-slate-200/90 active:scale-95 transition-all inline-flex items-center gap-1"
+                        title="Sesi Waktu"
+                    >
+                        <ClockIcon class="w-4 h-4 text-slate-500" />
+                        <span class="tabular-nums">{{ sessions.length }}</span>
+                    </button>
+                    <button
+                        v-if="canManage"
+                        type="button"
+                        @click="openCreateGroup"
+                        class="h-9 px-3 rounded-xl text-xs font-semibold text-white bg-[#00796B] active:scale-95 transition-all inline-flex items-center gap-1 shadow-xs"
+                    >
+                        <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                        <span>Baru</span>
+                    </button>
+                </template>
             </QuranNav>
 
-            <!-- Compact Unified Metrics Strip (1 calm container, zero card bloat) -->
-            <div class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 divide-x divide-slate-200/70 overflow-hidden">
+            <!-- ==================== DESKTOP METRICS STRIP (100% PRESERVED) ==================== -->
+            <div class="hidden md:grid bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] grid-cols-4 divide-x divide-slate-200/70 overflow-hidden">
                 <div class="px-4 py-3">
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-slate-500 font-medium">Siswa Terplot</span>
@@ -453,28 +500,56 @@ const askRemoveMember = (member, groupName) => {
                 </div>
             </div>
 
+            <!-- ==================== MOBILE COMPACT GLANCEABLE STATS BAR (< md) ==================== -->
+            <div class="md:hidden bg-white rounded-xl border border-slate-200/80 px-3 py-2.5 space-y-2">
+                <div class="grid grid-cols-4 divide-x divide-slate-100 text-center">
+                    <div class="px-1">
+                        <div class="text-sm font-semibold text-slate-900 tabular-nums leading-none">{{ stats.plotted_students }}<span class="text-[10px] font-normal text-slate-400">/{{ stats.total_students }}</span></div>
+                        <div class="text-[10px] text-slate-500 mt-1">Terplot</div>
+                    </div>
+                    <div class="px-1">
+                        <div class="text-sm font-semibold text-slate-900 tabular-nums leading-none">{{ stats.total_groups }}</div>
+                        <div class="text-[10px] text-slate-500 mt-1">Kelompok</div>
+                    </div>
+                    <div class="px-1">
+                        <div class="text-sm font-semibold text-[#00796B] tabular-nums leading-none">{{ stats.assessed_students }}</div>
+                        <div class="text-[10px] text-slate-500 mt-1">Dinilai</div>
+                    </div>
+                    <div class="px-1">
+                        <div class="text-sm font-semibold text-slate-900 tabular-nums leading-none">{{ stats.promotions_semester }}</div>
+                        <div class="text-[10px] text-slate-500 mt-1">Naik</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                        <div class="h-full rounded-full bg-[#00796B] transition-all duration-500" :style="{ width: `${plottedPercent}%` }" />
+                    </div>
+                    <span class="text-[10px] font-medium text-slate-500 tabular-nums shrink-0">{{ plottedPercent }}% terplot</span>
+                </div>
+            </div>
+
             <!-- Quiet inline hint only when sessions are empty -->
             <div
                 v-if="canManage && sessions.length === 0"
-                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-2.5 rounded-xl bg-teal-50/60 border border-teal-200/70 text-xs"
+                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl bg-teal-50/60 border border-teal-200/70 text-xs"
             >
                 <div class="flex items-center gap-2 text-teal-900">
                     <SparklesIcon class="w-4 h-4 text-[#00796B] shrink-0" />
-                    <span>Belum ada sesi waktu mengaji. Anda dapat langsung mengisi 3 sesi default (Pagi, Menengah, Siang).</span>
+                    <span>Belum ada sesi waktu mengaji. Isi 3 sesi default (Pagi, Menengah, Siang)?</span>
                 </div>
                 <button
                     type="button"
                     :disabled="seedingSessions"
                     @click="seedSessions"
-                    class="h-7 px-3 rounded-lg bg-white border border-teal-300/80 text-[#00796B] font-medium hover:bg-teal-50 transition-colors shrink-0 disabled:opacity-50"
+                    class="h-8 md:h-7 px-3 rounded-lg bg-white border border-teal-300/80 text-[#00796B] font-medium hover:bg-teal-50 transition-colors shrink-0 disabled:opacity-50"
                 >
                     {{ seedingSessions ? 'Menyiapkan...' : 'Isi 3 Sesi Default' }}
                 </button>
             </div>
 
-            <!-- Unified Filter Toolbar + Single-Line Jilid Filter Rail -->
-            <div class="space-y-2.5">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+            <!-- ==================== DESKTOP FILTER BAR + JILID RAIL (100% PRESERVED) ==================== -->
+            <div class="hidden md:block space-y-2.5">
+                <div class="flex items-center gap-2">
                     <div class="relative flex-1 min-w-0">
                         <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <input
@@ -519,7 +594,6 @@ const askRemoveMember = (member, groupName) => {
                     </div>
                 </div>
 
-                <!-- Clean Horizontal Jilid Filter Rail -->
                 <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
                     <button
                         type="button"
@@ -552,8 +626,70 @@ const askRemoveMember = (member, groupName) => {
                 </div>
             </div>
 
-            <!-- Groups Grid -->
-            <div v-if="groups.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+            <!-- ==================== MOBILE SEARCH + FILTER SHEET TRIGGER (< md) ==================== -->
+            <div class="md:hidden space-y-2">
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1 min-w-0">
+                        <MagnifyingGlassIcon class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Cari kelompok atau pengampu..."
+                            class="w-full h-10 pl-9 pr-8 text-[13px] bg-white border border-slate-200/90 rounded-xl text-slate-800 placeholder:text-slate-400 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
+                        />
+                        <span
+                            v-if="isFiltering"
+                            class="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#00796B] rounded-full animate-spin absolute right-3 top-1/2 -translate-y-1/2"
+                        />
+                        <button
+                            v-else-if="searchQuery"
+                            type="button"
+                            @click="searchQuery = ''"
+                            class="p-1 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2"
+                        >
+                            <XMarkIcon class="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="showMobileFilterSheet = true"
+                        class="relative h-10 px-3 rounded-xl border text-xs font-medium inline-flex items-center gap-1.5 shrink-0 active:scale-95 transition-all"
+                        :class="activeFilterCount > 0 ? 'bg-teal-50 border-[#00796B]/40 text-[#00796B]' : 'bg-white border-slate-200/90 text-slate-700'"
+                    >
+                        <AdjustmentsHorizontalIcon class="w-4 h-4" />
+                        <span>Filter</span>
+                        <span v-if="activeFilterCount > 0" class="w-4 h-4 rounded-full bg-[#00796B] text-white text-[10px] font-semibold flex items-center justify-center tabular-nums">
+                            {{ activeFilterCount }}
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Active Filter Removable Chips -->
+                <div v-if="activeSessionLabel || activeLevelLabel" class="flex flex-wrap items-center gap-1.5">
+                    <button
+                        v-if="activeLevelLabel"
+                        type="button"
+                        @click="selectLevelFilter('all')"
+                        class="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-teal-50 text-[#00796B] border border-teal-200/80 text-[11px] font-medium active:scale-95"
+                    >
+                        <span>{{ activeLevelLabel }}</span>
+                        <XMarkIcon class="w-3 h-3" />
+                    </button>
+                    <button
+                        v-if="activeSessionLabel"
+                        type="button"
+                        @click="selectSessionFilter('all')"
+                        class="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium active:scale-95"
+                    >
+                        <span>{{ activeSessionLabel }}</span>
+                        <XMarkIcon class="w-3 h-3" />
+                    </button>
+                </div>
+            </div>
+
+            <!-- ==================== DESKTOP GROUPS GRID (100% PRESERVED) ==================== -->
+            <div v-if="groups.length > 0" class="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-3.5">
                 <div
                     v-for="group in groups"
                     :key="group.id"
@@ -592,7 +728,6 @@ const askRemoveMember = (member, groupName) => {
                                 </div>
                             </div>
 
-                            <!-- Compact Progress Ring / Counter -->
                             <div class="text-right shrink-0 pl-2">
                                 <div class="text-lg font-semibold text-slate-900 leading-none tabular-nums">
                                     {{ group.members_count }}
@@ -614,7 +749,6 @@ const askRemoveMember = (member, groupName) => {
                             </div>
                         </div>
 
-                        <!-- Card Action Bar -->
                         <div class="flex flex-wrap items-center justify-between gap-2 mt-3.5 pt-3 border-t border-slate-100">
                             <button
                                 type="button"
@@ -667,7 +801,6 @@ const askRemoveMember = (member, groupName) => {
                         </div>
                     </div>
 
-                    <!-- Smooth Animated Accordion Member List -->
                     <QuranCollapse :open="expandedGroupIds.has(group.id)">
                         <div class="bg-slate-50/70 border-t border-slate-100 px-4 py-2.5 max-h-64 overflow-y-auto">
                             <div v-if="group.members.length === 0" class="py-4 text-center text-xs text-slate-400">
@@ -714,6 +847,140 @@ const askRemoveMember = (member, groupName) => {
                 </div>
             </div>
 
+            <!-- ==================== MOBILE NATIVE GROUP CARDS (< md) ==================== -->
+            <div v-if="groups.length > 0" class="md:hidden space-y-3">
+                <div
+                    v-for="group in groups"
+                    :key="'mg-' + group.id"
+                    class="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden"
+                >
+                    <div class="p-4 space-y-3">
+                        <!-- Top meta + safe overflow menu button -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70">
+                                        {{ group.level?.name }}
+                                    </span>
+                                    <span v-if="group.session" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
+                                        <ClockIcon class="w-3 h-3 text-slate-400" />
+                                        {{ group.session.name }}
+                                    </span>
+                                </div>
+                                <h3 class="text-[15px] font-semibold text-slate-900 mt-1.5 leading-snug">
+                                    {{ group.name }}
+                                </h3>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    {{ group.teacher?.name || '-' }}
+                                    <span v-if="group.room_name"> · {{ group.room_name }}</span>
+                                </p>
+                            </div>
+
+                            <button
+                                v-if="canManage"
+                                type="button"
+                                @click="actionSheetGroup = group"
+                                class="w-9 h-9 -mr-1.5 -mt-1 rounded-xl text-slate-400 hover:text-slate-700 active:bg-slate-100 flex items-center justify-center shrink-0 transition-colors"
+                                aria-label="Menu Kelompok"
+                            >
+                                <EllipsisHorizontalIcon class="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <!-- Progress strip -->
+                        <div class="flex items-center gap-2.5">
+                            <div class="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                <div
+                                    class="h-full rounded-full transition-all duration-300"
+                                    :class="group.assessed_count === group.members_count && group.members_count > 0 ? 'bg-[#00796B]' : 'bg-amber-400'"
+                                    :style="{ width: `${group.members_count ? Math.round((group.assessed_count / group.members_count) * 100) : 0}%` }"
+                                />
+                            </div>
+                            <span class="text-[11px] font-medium text-slate-500 tabular-nums shrink-0">
+                                {{ group.assessed_count }}/{{ group.members_count }} dinilai
+                            </span>
+                        </div>
+
+                        <!-- Thumb-friendly 40px primary actions -->
+                        <div class="grid gap-2 pt-0.5" :class="canManage ? 'grid-cols-2' : 'grid-cols-2'">
+                            <button
+                                v-if="canManage"
+                                type="button"
+                                @click="openEnrollDrawer(group)"
+                                class="h-10 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200/90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5"
+                            >
+                                <UserPlusIcon class="w-4 h-4 text-slate-500" />
+                                <span>Plotting</span>
+                            </button>
+                            <button
+                                v-else
+                                type="button"
+                                @click="toggleGroupExpand(group.id)"
+                                class="h-10 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200/90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5"
+                            >
+                                <span>Anggota ({{ group.members_count }})</span>
+                                <ChevronDownIcon class="w-3.5 h-3.5 transition-transform" :class="expandedGroupIds.has(group.id) ? 'rotate-180' : ''" />
+                            </button>
+
+                            <Link
+                                :href="route('quran.assessments.index', { group_id: group.id, unit_id: isGlobalAdmin ? unit.id : undefined, academic_year_id: activeYear.id })"
+                                class="h-10 rounded-xl text-xs font-semibold text-white bg-[#00796B] active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5 shadow-xs"
+                            >
+                                <PencilSquareIcon class="w-4 h-4" />
+                                <span>Input Nilai</span>
+                            </Link>
+                        </div>
+
+                        <!-- Secondary Expand Row when canManage -->
+                        <button
+                            v-if="canManage"
+                            type="button"
+                            @click="toggleGroupExpand(group.id)"
+                            class="w-full pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-medium text-slate-500 active:text-slate-900"
+                        >
+                            <span>{{ expandedGroupIds.has(group.id) ? 'Sembunyikan daftar siswa' : `Lihat ${group.members_count} siswa terdaftar` }}</span>
+                            <ChevronDownIcon
+                                class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                                :class="expandedGroupIds.has(group.id) ? 'rotate-180 text-[#00796B]' : ''"
+                            />
+                        </button>
+                    </div>
+
+                    <QuranCollapse :open="expandedGroupIds.has(group.id)">
+                        <div class="bg-slate-50/80 border-t border-slate-100 px-4 py-2 max-h-64 overflow-y-auto divide-y divide-slate-200/60">
+                            <div v-if="group.members.length === 0" class="py-4 text-center text-xs text-slate-400">
+                                Belum ada siswa di kelompok ini.
+                            </div>
+                            <div
+                                v-for="(m, idx) in group.members"
+                                :key="'mm-' + m.enrollment_id"
+                                class="py-2.5 flex items-center justify-between gap-2 text-xs"
+                            >
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="w-4 text-[11px] text-slate-400 tabular-nums shrink-0">{{ idx + 1 }}.</span>
+                                    <div class="min-w-0">
+                                        <div class="font-medium text-slate-800 truncate">{{ m.full_name }}</div>
+                                        <div class="text-[11px] text-slate-400">Kelas {{ m.classroom_name }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="w-2 h-2 rounded-full" :class="m.is_assessed ? 'bg-[#00796B]' : 'bg-slate-300'" />
+                                    <button
+                                        v-if="canManage"
+                                        type="button"
+                                        @click="askRemoveMember(m, group.name)"
+                                        class="w-8 h-8 rounded-lg text-slate-400 active:bg-rose-50 active:text-rose-600 inline-flex items-center justify-center"
+                                        aria-label="Keluarkan siswa"
+                                    >
+                                        <XMarkIcon class="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </QuranCollapse>
+                </div>
+            </div>
+
             <!-- Calm Empty State -->
             <div v-else class="bg-white rounded-xl border border-slate-200/80 p-10 text-center">
                 <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
@@ -732,7 +999,7 @@ const askRemoveMember = (member, groupName) => {
                         v-if="hasActiveFilter"
                         type="button"
                         @click="resetFilters"
-                        class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                        class="h-9 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
                     >
                         Reset Filter
                     </button>
@@ -740,7 +1007,7 @@ const askRemoveMember = (member, groupName) => {
                         v-else-if="canManage"
                         type="button"
                         @click="openCreateGroup"
-                        class="h-8 px-3.5 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] transition-colors inline-flex items-center gap-1.5"
+                        class="h-9 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] transition-colors inline-flex items-center gap-1.5"
                     >
                         <PlusIcon class="w-3.5 h-3.5" />
                         <span>Buat Kelompok Pertama</span>
@@ -748,6 +1015,107 @@ const askRemoveMember = (member, groupName) => {
                 </div>
             </div>
         </div>
+
+        <!-- ==================== MOBILE FILTER BOTTOM SHEET ==================== -->
+        <QuranDialog
+            :show="showMobileFilterSheet"
+            variant="sheet"
+            title="Filter Kelompok"
+            subtitle="Saring daftar kelompok berdasarkan jilid atau sesi."
+            @close="showMobileFilterSheet = false"
+        >
+            <div class="p-4 space-y-5">
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-slate-700">Jilid / Tingkat</label>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button
+                            type="button"
+                            @click="levelFilter = 'all'"
+                            class="h-9 px-3 rounded-xl text-xs font-medium border transition-colors"
+                            :class="levelFilter === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'"
+                        >
+                            Semua Jilid
+                        </button>
+                        <button
+                            v-for="lvl in levelDistribution"
+                            :key="'mf-' + lvl.id"
+                            type="button"
+                            @click="levelFilter = String(levelFilter) === String(lvl.id) ? 'all' : lvl.id"
+                            class="h-9 px-3 rounded-xl text-xs font-medium border transition-colors inline-flex items-center gap-1.5"
+                            :class="String(levelFilter) === String(lvl.id) ? 'bg-[#00796B] text-white border-[#00796B]' : 'bg-white text-slate-600 border-slate-200'"
+                        >
+                            <span>{{ lvl.name }}</span>
+                            <span class="text-[10px] opacity-75 tabular-nums">{{ lvl.count }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-slate-700">Sesi Waktu</label>
+                    <select v-model="sessionFilter" class="w-full h-11 rounded-xl border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <option value="all">Semua Sesi</option>
+                        <option v-for="s in sessions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.start_time }}–{{ s.end_time }})</option>
+                        <option value="none">Tanpa Sesi</option>
+                    </select>
+                </div>
+            </div>
+
+            <template #footer>
+                <div class="grid grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        @click="() => { resetFilters(); showMobileFilterSheet = false; }"
+                        class="h-10 rounded-xl text-xs font-medium text-slate-700 bg-white border border-slate-200"
+                    >
+                        Reset
+                    </button>
+                    <button
+                        type="button"
+                        @click="() => { applyFilters(); showMobileFilterSheet = false; }"
+                        class="h-10 rounded-xl text-xs font-semibold text-white bg-[#00796B]"
+                    >
+                        Terapkan Filter
+                    </button>
+                </div>
+            </template>
+        </QuranDialog>
+
+        <!-- ==================== MOBILE GROUP ACTION SHEET (SAFE OVERFLOW) ==================== -->
+        <QuranDialog
+            :show="!!actionSheetGroup"
+            variant="sheet"
+            :title="actionSheetGroup?.name || ''"
+            :subtitle="`${actionSheetGroup?.level?.name || ''} · ${actionSheetGroup?.teacher?.name || '-'}`"
+            @close="actionSheetGroup = null"
+        >
+            <div v-if="actionSheetGroup" class="p-3 space-y-1">
+                <button
+                    type="button"
+                    @click="() => { const g = actionSheetGroup; actionSheetGroup = null; openEnrollDrawer(g); }"
+                    class="w-full h-11 px-3.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-800 active:bg-slate-100 transition-colors"
+                >
+                    <UserPlusIcon class="w-5 h-5 text-[#00796B]" />
+                    <span>Plotting Siswa ke Kelompok</span>
+                </button>
+                <button
+                    type="button"
+                    @click="() => { const g = actionSheetGroup; actionSheetGroup = null; openEditGroup(g); }"
+                    class="w-full h-11 px-3.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-800 active:bg-slate-100 transition-colors"
+                >
+                    <PencilSquareIcon class="w-5 h-5 text-slate-500" />
+                    <span>Edit Info Kelompok</span>
+                </button>
+                <div class="border-t border-slate-100 my-1" />
+                <button
+                    type="button"
+                    @click="() => { const g = actionSheetGroup; actionSheetGroup = null; askDeleteGroup(g); }"
+                    class="w-full h-11 px-3.5 rounded-xl flex items-center gap-3 text-sm font-medium text-rose-600 active:bg-rose-50 transition-colors"
+                >
+                    <TrashIcon class="w-5 h-5" />
+                    <span>Hapus Kelompok</span>
+                </button>
+            </div>
+        </QuranDialog>
 
         <!-- ==================== DRAWER: KELOLA SESI WAKTU ==================== -->
         <QuranDialog
@@ -767,7 +1135,7 @@ const askRemoveMember = (member, groupName) => {
                         type="button"
                         :disabled="seedingSessions"
                         @click="seedSessions"
-                        class="mt-3 h-8 px-3 rounded-lg text-xs font-medium text-[#00796B] bg-teal-50 border border-teal-200/80 hover:bg-teal-100/70 transition-colors inline-flex items-center gap-1.5"
+                        class="mt-3 h-9 md:h-8 px-3 rounded-xl md:rounded-lg text-xs font-medium text-[#00796B] bg-teal-50 border border-teal-200/80 hover:bg-teal-100/70 transition-colors inline-flex items-center gap-1.5"
                     >
                         <SparklesIcon class="w-3.5 h-3.5" />
                         <span>Isi 3 Sesi Default</span>
@@ -799,18 +1167,18 @@ const askRemoveMember = (member, groupName) => {
                         <button
                             type="button"
                             @click="openEditSession(sess)"
-                            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                            class="w-8 h-8 md:w-7 md:h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors inline-flex items-center justify-center"
                             title="Edit Sesi"
                         >
-                            <PencilSquareIcon class="w-3.5 h-3.5" />
+                            <PencilSquareIcon class="w-4 h-4 md:w-3.5 md:h-3.5" />
                         </button>
                         <button
                             type="button"
                             @click="askDeleteSession(sess)"
-                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            class="w-8 h-8 md:w-7 md:h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors inline-flex items-center justify-center"
                             title="Hapus Sesi"
                         >
-                            <TrashIcon class="w-3.5 h-3.5" />
+                            <TrashIcon class="w-4 h-4 md:w-3.5 md:h-3.5" />
                         </button>
                     </div>
                 </div>
@@ -818,11 +1186,11 @@ const askRemoveMember = (member, groupName) => {
 
             <template v-if="canManage" #footer>
                 <div class="flex items-center justify-between gap-2">
-                    <span class="text-[11px] text-slate-400">Klik nama sesi untuk memfilter kelompok.</span>
+                    <span class="text-[11px] text-slate-400">Ketuk sesi untuk memfilter.</span>
                     <button
                         type="button"
                         @click="openCreateSession"
-                        class="h-8 px-3.5 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] transition-colors inline-flex items-center gap-1.5"
+                        class="h-10 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] transition-colors inline-flex items-center gap-1.5"
                     >
                         <PlusIcon class="w-3.5 h-3.5" />
                         <span>Tambah Sesi</span>
@@ -831,7 +1199,7 @@ const askRemoveMember = (member, groupName) => {
             </template>
         </QuranDialog>
 
-        <!-- ==================== MODAL: TAMBAH / EDIT SESI ==================== -->
+        <!-- ==================== MODAL / SHEET: TAMBAH / EDIT SESI ==================== -->
         <QuranDialog
             :show="showSessionModal"
             variant="modal"
@@ -842,39 +1210,39 @@ const askRemoveMember = (member, groupName) => {
             <form id="quran-session-form" @submit.prevent="submitSession" class="space-y-3.5">
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Nama Sesi <span class="text-rose-500">*</span></label>
-                    <input v-model="sessionForm.name" required type="text" placeholder="Contoh: Sesi 1 (Pagi)" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    <input v-model="sessionForm.name" required type="text" placeholder="Contoh: Sesi 1 (Pagi)" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Jam Mulai</label>
-                        <input v-model="sessionForm.start_time" type="time" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="sessionForm.start_time" type="time" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Jam Selesai</label>
-                        <input v-model="sessionForm.end_time" type="time" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="sessionForm.end_time" type="time" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Hari Pelaksanaan</label>
-                    <input v-model="sessionForm.days" type="text" placeholder="Senin - Jumat" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    <input v-model="sessionForm.days" type="text" placeholder="Senin - Jumat" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Keterangan Target Kelas</label>
-                    <input v-model="sessionForm.target_note" type="text" placeholder="Contoh: Kelas 1 & 2" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    <input v-model="sessionForm.target_note" type="text" placeholder="Contoh: Kelas 1 & 2" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                 </div>
             </form>
 
             <template #footer>
-                <button type="button" @click="showSessionModal = false" class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                <button type="button" @click="showSessionModal = false" class="h-10 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
                     Batal
                 </button>
-                <button type="submit" form="quran-session-form" :disabled="sessionForm.processing" class="h-8 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 transition-colors">
+                <button type="submit" form="quran-session-form" :disabled="sessionForm.processing" class="h-10 md:h-8 px-4 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 transition-colors">
                     {{ sessionForm.processing ? 'Menyimpan...' : 'Simpan Sesi' }}
                 </button>
             </template>
         </QuranDialog>
 
-        <!-- ==================== MODAL: TAMBAH / EDIT KELOMPOK ==================== -->
+        <!-- ==================== MODAL / SHEET: TAMBAH / EDIT KELOMPOK ==================== -->
         <QuranDialog
             :show="showGroupModal"
             variant="modal"
@@ -887,14 +1255,14 @@ const askRemoveMember = (member, groupName) => {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Jilid / Tingkat <span class="text-rose-500">*</span></label>
-                        <select v-model="groupForm.level_id" @change="autoSuggestGroupName" required class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <select v-model="groupForm.level_id" @change="autoSuggestGroupName" required class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                             <option value="">Pilih Jilid</option>
                             <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Sesi Waktu</label>
-                        <select v-model="groupForm.session_id" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <select v-model="groupForm.session_id" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                             <option value="">Tanpa Sesi Khusus</option>
                             <option v-for="s in sessions" :key="s.id" :value="s.id">{{ s.name }} ({{ s.start_time }}–{{ s.end_time }})</option>
                         </select>
@@ -903,7 +1271,7 @@ const askRemoveMember = (member, groupName) => {
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Guru Pengampu Utama <span class="text-rose-500">*</span></label>
-                    <select v-model="groupForm.teacher_id" @change="autoSuggestGroupName" required class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                    <select v-model="groupForm.teacher_id" @change="autoSuggestGroupName" required class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                         <option value="">Pilih Guru Pengampu</option>
                         <option v-for="t in teachers" :key="t.id" :value="t.id">
                             {{ t.name }} — {{ t.role_label }}
@@ -914,12 +1282,12 @@ const askRemoveMember = (member, groupName) => {
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Nama Kelompok <span class="text-rose-500">*</span></label>
-                    <input v-model="groupForm.name" required type="text" placeholder="Contoh: Jilid 5 A - Ustz. Nur Halimah" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    <input v-model="groupForm.name" required type="text" placeholder="Contoh: Jilid 5 A - Ustz. Nur Halimah" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Guru Asisten (Opsional)</label>
-                    <select v-model="groupForm.assistant_teacher_id" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                    <select v-model="groupForm.assistant_teacher_id" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                         <option value="">Tidak Ada Asisten</option>
                         <option v-for="t in teachers" :key="t.id" :value="t.id">
                             {{ t.name }} — {{ t.role_label }}
@@ -931,20 +1299,20 @@ const askRemoveMember = (member, groupName) => {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Ruangan / Lokasi</label>
-                        <input v-model="groupForm.room_name" type="text" placeholder="Masjid / R. 3A" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="groupForm.room_name" type="text" placeholder="Masjid / R. 3A" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Kuota Maks.</label>
-                        <input v-model="groupForm.max_quota" type="number" min="1" max="200" class="w-full h-9 rounded-lg border-slate-200 text-sm tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="groupForm.max_quota" type="number" min="1" max="200" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                 </div>
             </form>
 
             <template #footer>
-                <button type="button" @click="showGroupModal = false" class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                <button type="button" @click="showGroupModal = false" class="h-10 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
                     Batal
                 </button>
-                <button type="submit" form="quran-group-form" :disabled="groupForm.processing" class="h-8 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 transition-colors">
+                <button type="submit" form="quran-group-form" :disabled="groupForm.processing" class="h-10 md:h-8 px-4 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 transition-colors">
                     {{ groupForm.processing ? 'Menyimpan...' : (editingGroup ? 'Simpan Perubahan' : 'Buat Kelompok') }}
                 </button>
             </template>
@@ -956,12 +1324,11 @@ const askRemoveMember = (member, groupName) => {
             variant="drawer"
             max-width="xl"
             :title="`Plotting Siswa — ${enrollTargetGroup?.name || ''}`"
-            :subtitle="`${enrollTargetGroup?.level?.name || ''} · Pilih siswa lintas kelas formal untuk masuk ke kelompok ini.`"
+            :subtitle="`${enrollTargetGroup?.level?.name || ''} · Pilih siswa lintas kelas formal.`"
             @close="showEnrollDrawer = false"
         >
             <div class="flex flex-col h-full">
-                <!-- Sticky Filter Section inside Drawer -->
-                <div class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs border-b border-slate-200/80 px-5 py-3 space-y-2.5">
+                <div class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs border-b border-slate-200/80 px-4 sm:px-5 py-3 space-y-2.5">
                     <div class="flex flex-wrap items-center gap-2">
                         <div class="relative flex-1 min-w-[160px]">
                             <MagnifyingGlassIcon class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -969,14 +1336,14 @@ const askRemoveMember = (member, groupName) => {
                                 v-model="enrollSearch"
                                 type="text"
                                 placeholder="Cari nama atau NIS..."
-                                class="w-full h-8 pl-8 pr-3 text-xs bg-white border border-slate-200 rounded-lg focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
+                                class="w-full h-9 md:h-8 pl-8 pr-3 text-xs bg-white border border-slate-200 rounded-xl md:rounded-lg focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
                             />
                         </div>
-                        <select v-model="enrollClassroomFilter" class="h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <select v-model="enrollClassroomFilter" class="h-9 md:h-8 px-2.5 text-xs bg-white border border-slate-200 rounded-xl md:rounded-lg text-slate-700 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                             <option value="all">Semua Kelas</option>
                             <option v-for="c in classrooms" :key="c.id" :value="c.id">Kelas {{ c.name }}</option>
                         </select>
-                        <label class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-600 cursor-pointer select-none">
+                        <label class="inline-flex items-center gap-1.5 h-9 md:h-8 px-2.5 rounded-xl md:rounded-lg bg-white border border-slate-200 text-xs text-slate-600 cursor-pointer select-none">
                             <input type="checkbox" v-model="enrollOnlyUnplotted" class="rounded border-slate-300 text-[#00796B] focus:ring-[#00796B]/30" />
                             <span>Belum diplot</span>
                         </label>
@@ -996,7 +1363,6 @@ const askRemoveMember = (member, groupName) => {
                     </div>
                 </div>
 
-                <!-- Candidate List -->
                 <div class="divide-y divide-slate-100 px-3 py-1">
                     <div v-if="filteredEnrollCandidates.length === 0" class="py-12 text-center text-xs text-slate-400">
                         Tidak ada kandidat siswa sesuai filter.
@@ -1004,14 +1370,14 @@ const askRemoveMember = (member, groupName) => {
                     <label
                         v-for="st in filteredEnrollCandidates"
                         :key="st.id"
-                        class="flex items-center justify-between gap-3 px-2.5 py-2.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                        class="flex items-center justify-between gap-3 px-2.5 py-3 md:py-2.5 rounded-lg hover:bg-slate-50 active:bg-slate-100 cursor-pointer transition-colors"
                     >
                         <div class="flex items-center gap-3 min-w-0">
                             <input
                                 type="checkbox"
                                 :value="st.id"
                                 v-model="enrollSelectedIds"
-                                class="rounded border-slate-300 text-[#00796B] focus:ring-[#00796B]/30"
+                                class="w-4 h-4 rounded border-slate-300 text-[#00796B] focus:ring-[#00796B]/30"
                             />
                             <div class="min-w-0">
                                 <div class="text-[13px] font-medium text-slate-800 truncate">{{ st.full_name }}</div>
@@ -1035,17 +1401,17 @@ const askRemoveMember = (member, groupName) => {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div class="flex items-center gap-2 text-xs">
                         <label class="text-slate-500 font-medium shrink-0">Tgl Mulai:</label>
-                        <input v-model="enrollForm.started_at" type="date" class="h-8 rounded-lg border-slate-200 text-xs tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="enrollForm.started_at" type="date" class="h-9 md:h-8 rounded-lg border-slate-200 text-xs tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                     <div class="flex items-center justify-end gap-2">
-                        <button type="button" @click="showEnrollDrawer = false" class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                        <button type="button" @click="showEnrollDrawer = false" class="h-10 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
                             Batal
                         </button>
                         <button
                             type="button"
                             @click="submitEnroll"
                             :disabled="enrollSelectedIds.length === 0 || enrollForm.processing"
-                            class="h-8 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-40 transition-colors"
+                            class="h-10 md:h-8 px-4 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-40 transition-colors"
                         >
                             {{ enrollForm.processing ? 'Memproses...' : `Masukkan ${enrollSelectedIds.length} Siswa` }}
                         </button>

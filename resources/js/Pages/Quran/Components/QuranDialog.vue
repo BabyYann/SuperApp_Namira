@@ -38,12 +38,12 @@ onUnmounted(() => {
 });
 
 const modalWidthClass = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    '2xl': 'max-w-2xl',
-}[props.maxWidth] || 'max-w-lg';
+    sm: 'sm:max-w-sm',
+    md: 'sm:max-w-md',
+    lg: 'sm:max-w-lg',
+    xl: 'sm:max-w-xl',
+    '2xl': 'sm:max-w-2xl',
+}[props.maxWidth] || 'sm:max-w-lg';
 
 const drawerWidthClass = {
     sm: 'sm:max-w-sm',
@@ -59,28 +59,34 @@ const drawerWidthClass = {
         <Transition name="q-backdrop">
             <div
                 v-if="show"
-                class="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-[2px]"
+                class="fixed inset-0 z-[100] bg-slate-950/45 backdrop-blur-[2px]"
                 @click="close"
             />
         </Transition>
 
-        <!-- Centered Modal -->
+        <!-- Centered Modal on Desktop (`sm:`+) / Native Bottom Sheet on Mobile (`< sm`) -->
         <Transition v-if="variant === 'modal'" name="q-modal">
             <div
                 v-if="show"
-                class="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none overflow-y-auto"
+                class="fixed inset-0 z-[101] flex items-end sm:items-center justify-center sm:p-4 pointer-events-none overflow-y-auto"
             >
                 <div
                     role="dialog"
                     aria-modal="true"
                     :class="[
-                        'pointer-events-auto relative w-full bg-white rounded-xl border border-slate-200/90 shadow-xl shadow-slate-900/10 flex flex-col max-h-[90vh] overflow-hidden',
+                        'pointer-events-auto relative w-full bg-white border-t sm:border border-slate-200/90 shadow-xl shadow-slate-900/15 flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden',
+                        'rounded-t-2xl sm:rounded-xl',
                         modalWidthClass,
                     ]"
                 >
+                    <!-- Mobile Sheet Handle -->
+                    <div class="sm:hidden flex justify-center pt-2.5 pb-1 shrink-0">
+                        <span class="w-10 h-1 rounded-full bg-slate-200" />
+                    </div>
+
                     <div
                         v-if="title || $slots.header"
-                        class="flex items-start justify-between gap-4 px-5 py-4 border-b border-slate-100 shrink-0"
+                        class="flex items-start justify-between gap-4 px-5 py-3.5 sm:py-4 border-b border-slate-100 shrink-0"
                     >
                         <slot name="header">
                             <div class="min-w-0">
@@ -96,20 +102,20 @@ const drawerWidthClass = {
                             v-if="closeable"
                             type="button"
                             @click="close"
-                            class="p-1.5 -mr-1.5 -mt-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+                            class="p-2 sm:p-1.5 -mr-1.5 -mt-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
                             aria-label="Tutup"
                         >
                             <XMarkIcon class="w-4 h-4" />
                         </button>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto px-5 py-4">
+                    <div class="flex-1 overflow-y-auto px-5 py-4 overscroll-contain">
                         <slot />
                     </div>
 
                     <div
                         v-if="$slots.footer"
-                        class="px-5 py-3.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0"
+                        class="px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:pb-3.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0"
                     >
                         <slot name="footer" />
                     </div>
@@ -132,9 +138,8 @@ const drawerWidthClass = {
                         drawerWidthClass,
                     ]"
                 >
-                    <!-- Mobile Drag Indicator -->
                     <div class="sm:hidden flex justify-center pt-2.5 pb-1 shrink-0">
-                        <span class="w-9 h-1 rounded-full bg-slate-200" />
+                        <span class="w-10 h-1 rounded-full bg-slate-200" />
                     </div>
 
                     <div
@@ -155,20 +160,20 @@ const drawerWidthClass = {
                             v-if="closeable"
                             type="button"
                             @click="close"
-                            class="p-1.5 -mr-1.5 -mt-0.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+                            class="p-2 sm:p-1.5 -mr-1.5 -mt-0.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
                             aria-label="Tutup"
                         >
                             <XMarkIcon class="w-4 h-4" />
                         </button>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto">
+                    <div class="flex-1 overflow-y-auto overscroll-contain">
                         <slot />
                     </div>
 
                     <div
                         v-if="$slots.footer"
-                        class="px-5 py-3.5 bg-white border-t border-slate-200/80 shrink-0"
+                        class="px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:pb-3.5 bg-white border-t border-slate-200/80 shrink-0"
                     >
                         <slot name="footer" />
                     </div>
@@ -176,7 +181,7 @@ const drawerWidthClass = {
             </div>
         </Transition>
 
-        <!-- Bottom Sheet (Mobile Focused) -->
+        <!-- Dedicated Bottom Sheet (Mobile Focused) -->
         <Transition v-else name="q-sheet">
             <div
                 v-if="show"
@@ -185,15 +190,15 @@ const drawerWidthClass = {
                 <div
                     role="dialog"
                     aria-modal="true"
-                    class="pointer-events-auto relative w-full max-w-xl max-h-[90vh] bg-white rounded-t-2xl border-t border-slate-200/90 shadow-2xl shadow-slate-900/20 flex flex-col overflow-hidden"
+                    class="pointer-events-auto relative w-full max-w-xl max-h-[92vh] bg-white rounded-t-2xl border-t border-slate-200/90 shadow-2xl shadow-slate-900/20 flex flex-col overflow-hidden"
                 >
                     <div class="flex justify-center pt-2.5 pb-1 shrink-0">
-                        <span class="w-9 h-1 rounded-full bg-slate-200" />
+                        <span class="w-10 h-1 rounded-full bg-slate-200" />
                     </div>
 
                     <div
                         v-if="title || $slots.header"
-                        class="flex items-start justify-between gap-3 px-5 py-3 border-b border-slate-100 shrink-0"
+                        class="flex items-start justify-between gap-3 px-4 py-3 border-b border-slate-100 shrink-0"
                     >
                         <slot name="header">
                             <div class="min-w-0">
@@ -209,20 +214,20 @@ const drawerWidthClass = {
                             v-if="closeable"
                             type="button"
                             @click="close"
-                            class="p-1.5 -mr-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+                            class="p-2 -mr-1.5 -mt-0.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
                             aria-label="Tutup"
                         >
                             <XMarkIcon class="w-4 h-4" />
                         </button>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto">
+                    <div class="flex-1 overflow-y-auto overscroll-contain">
                         <slot />
                     </div>
 
                     <div
                         v-if="$slots.footer"
-                        class="px-5 py-3.5 bg-white border-t border-slate-200/80 shrink-0"
+                        class="px-4 py-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] bg-white border-t border-slate-200/80 shrink-0"
                     >
                         <slot name="footer" />
                     </div>
@@ -243,15 +248,22 @@ const drawerWidthClass = {
 }
 
 .q-modal-enter-active {
-    transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1), transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .q-modal-leave-active {
-    transition: opacity 140ms ease-in, transform 140ms ease-in;
+    transition: opacity 160ms ease-in, transform 180ms ease-in;
 }
 .q-modal-enter-from,
 .q-modal-leave-to {
     opacity: 0;
-    transform: translateY(8px) scale(0.97);
+    transform: translateY(100%);
+}
+@media (min-width: 640px) {
+    .q-modal-enter-from,
+    .q-modal-leave-to {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+    }
 }
 
 .q-drawer-enter-active {
@@ -263,7 +275,7 @@ const drawerWidthClass = {
 .q-drawer-enter-from,
 .q-drawer-leave-to {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(100%);
 }
 @media (min-width: 640px) {
     .q-drawer-enter-from,

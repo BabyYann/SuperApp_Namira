@@ -12,6 +12,7 @@ import {
     ChevronDownIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    ChevronUpDownIcon,
     LockClosedIcon,
     PencilSquareIcon,
     AcademicCapIcon,
@@ -81,6 +82,35 @@ const materiList = computed(() => props.rubrics?.materi || []);
 const surahList = computed(() => props.rubrics?.surah_pendek || []);
 const fallbackDoaList = computed(() => props.rubrics?.doa_harian || []);
 const fallbackHadistList = computed(() => props.rubrics?.hadist || []);
+
+const getStudentRubricIds = (st) => {
+    const ids = [
+        ...materiList.value.map(i => String(i.id)),
+        ...surahList.value.map(i => String(i.id)),
+    ];
+    if (!props.usesGradeRubrics) {
+        ids.push(...fallbackHadistList.value.map(i => String(i.id)));
+        ids.push(...fallbackDoaList.value.map(i => String(i.id)));
+    } else if (st?.grade_level) {
+        const gRub = props.gradeRubricsByGrade?.[String(st.grade_level)] || {};
+        ['hadist', 'doa_harian', 'niat_sholat', 'bacaan_sholat'].forEach(cat => {
+            (gRub[cat] || []).forEach(i => ids.push(String(i.id)));
+        });
+    }
+    return ids;
+};
+
+const studentProgress = (st) => {
+    const ids = getStudentRubricIds(st);
+    const total = ids.length;
+    const entryGrades = localEntries.value[st.student_id]?.grades || {};
+    const filled = ids.filter(id => entryGrades[id] && entryGrades[id] !== '-').length;
+    return {
+        filled,
+        total,
+        percent: total > 0 ? Math.round((filled / total) * 100) : 0,
+    };
+};
 
 const studentSections = computed(() => {
     const list = props.students || [];
@@ -166,6 +196,7 @@ const onGradeKeydown = (e, studentId, itemId) => {
 // Confirm navigation if dirty
 const pendingNav = ref(null);
 const showLeaveConfirm = ref(false);
+const showMobileGroupSheet = ref(false);
 
 const executeNavigate = (overrides = {}) => {
     router.get(route('quran.assessments.index'), {
@@ -219,7 +250,7 @@ const saveAllScores = () => {
     });
 };
 
-// ==================== MOBILE BOTTOM SHEET (TACTILE 1-TAP + NEXT/PREV) ====================
+// ==================== MOBILE BOTTOM SHEET (TACTILE 1-TAP + QUICK-FILL + JUMP + NEXT/PREV) ====================
 const mobileStudentIndex = ref(-1);
 const showMobileSheet = ref(false);
 
@@ -228,33 +259,38 @@ const mobileStudent = computed(() => {
     return props.students?.[mobileStudentIndex.value] || null;
 });
 
+const mobileStudentProgress = computed(() => {
+    if (!mobileStudent.value) return { filled: 0, total: 0, percent: 0 };
+    return studentProgress(mobileStudent.value);
+});
+
 const mobileRubricBlocks = computed(() => {
     const st = mobileStudent.value;
     if (!st) return [];
 
     const blocks = [];
     if (materiList.value.length) {
-        blocks.push({ key: 'materi', prefix: 'M', title: `Materi Pokok (${props.selectedGroup?.level_name})`, dot: 'bg-[#00796B]', items: materiList.value });
+        blocks.push({ key: 'materi', shortLabel: 'Materi', prefix: 'M', title: `Materi Pokok (${props.selectedGroup?.level_name})`, dot: 'bg-[#00796B]', items: materiList.value });
     }
     if (surahList.value.length) {
-        blocks.push({ key: 'surah', prefix: 'S', title: `Surah Pendek (${props.selectedGroup?.level_name})`, dot: 'bg-amber-500', items: surahList.value });
+        blocks.push({ key: 'surah', shortLabel: 'Surah', prefix: 'S', title: `Surah Pendek (${props.selectedGroup?.level_name})`, dot: 'bg-amber-500', items: surahList.value });
     }
 
     if (!props.usesGradeRubrics) {
         if (fallbackHadistList.value.length) {
-            blocks.push({ key: 'hadist', prefix: 'H', title: 'Hadist', dot: 'bg-violet-500', items: fallbackHadistList.value });
+            blocks.push({ key: 'hadist', shortLabel: 'Hadist', prefix: 'H', title: 'Hadist', dot: 'bg-violet-500', items: fallbackHadistList.value });
         }
         if (fallbackDoaList.value.length) {
-            blocks.push({ key: 'doa', prefix: 'D', title: 'Doa Harian', dot: 'bg-sky-500', items: fallbackDoaList.value });
+            blocks.push({ key: 'doa', shortLabel: 'Doa', prefix: 'D', title: 'Doa Harian', dot: 'bg-sky-500', items: fallbackDoaList.value });
         }
     } else {
         const gKey = st.grade_level ? String(st.grade_level) : null;
         const gRub = gKey ? (props.gradeRubricsByGrade?.[gKey] || {}) : {};
         const gradeSuffix = gKey ? ` (Kelas ${gKey})` : '';
-        if (gRub.hadist?.length) blocks.push({ key: 'hadist', prefix: 'H', title: `Hadist${gradeSuffix}`, dot: 'bg-violet-500', items: gRub.hadist });
-        if (gRub.doa_harian?.length) blocks.push({ key: 'doa', prefix: 'D', title: `Doa Harian${gradeSuffix}`, dot: 'bg-sky-500', items: gRub.doa_harian });
-        if (gRub.niat_sholat?.length) blocks.push({ key: 'niat', prefix: 'N', title: `Niat Sholat & Bersuci${gradeSuffix}`, dot: 'bg-teal-600', items: gRub.niat_sholat });
-        if (gRub.bacaan_sholat?.length) blocks.push({ key: 'bacaan', prefix: 'B', title: `Bacaan Sholat${gradeSuffix}`, dot: 'bg-indigo-500', items: gRub.bacaan_sholat });
+        if (gRub.hadist?.length) blocks.push({ key: 'hadist', shortLabel: 'Hadist', prefix: 'H', title: `Hadist${gradeSuffix}`, dot: 'bg-violet-500', items: gRub.hadist });
+        if (gRub.doa_harian?.length) blocks.push({ key: 'doa', shortLabel: 'Doa', prefix: 'D', title: `Doa Harian${gradeSuffix}`, dot: 'bg-sky-500', items: gRub.doa_harian });
+        if (gRub.niat_sholat?.length) blocks.push({ key: 'niat', shortLabel: 'Niat', prefix: 'N', title: `Niat Sholat & Bersuci${gradeSuffix}`, dot: 'bg-teal-600', items: gRub.niat_sholat });
+        if (gRub.bacaan_sholat?.length) blocks.push({ key: 'bacaan', shortLabel: 'Bacaan', prefix: 'B', title: `Bacaan Sholat${gradeSuffix}`, dot: 'bg-indigo-500', items: gRub.bacaan_sholat });
     }
     return blocks;
 });
@@ -273,6 +309,22 @@ const setMobileGrade = (studentId, itemId, g) => {
     localEntries.value[studentId].grades[String(itemId)] = cur === g ? '-' : g;
 };
 
+const fillCategoryGrades = (studentId, items, grade) => {
+    items.forEach(item => {
+        localEntries.value[studentId].grades[String(item.id)] = grade;
+    });
+};
+
+const scrollToSheetSection = (sectionId) => {
+    const el = document.getElementById(`q-sheet-sec-${sectionId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+const selectedGroupStats = computed(() => {
+    const g = (props.groups || []).find(x => x.id === props.selectedGroup?.id);
+    return g || { filled_count: 0, members_count: props.students?.length || 0 };
+});
+
 const handleBeforeUnload = (e) => {
     if (isDirty.value) {
         e.preventDefault();
@@ -288,7 +340,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
     <Head title="Input Nilai — Program Al-Qur'an" />
 
     <AuthenticatedLayout>
-        <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-24 space-y-4">
+        <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-40 md:pb-24 space-y-4">
             <QuranNav
                 active-tab="assessments"
                 page-title="Input Nilai Al-Qur'an"
@@ -299,6 +351,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                 :can-manage="canManage"
                 :is-global-admin="isGlobalAdmin"
             >
+                <!-- Desktop Header CTA (100% Preserved) -->
                 <template v-if="!isLocked && selectedGroup && students.length > 0" #actions>
                     <button
                         type="button"
@@ -310,6 +363,28 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                         <CheckIcon v-else class="w-3.5 h-3.5 stroke-[2.5]" />
                         <span>{{ isSaving ? 'Menyimpan...' : 'Simpan Nilai' }}</span>
                     </button>
+                </template>
+
+                <!-- Mobile Header Semester Toggle -->
+                <template v-if="!isLocked" #mobile-actions>
+                    <div class="inline-flex items-center p-0.5 rounded-xl bg-slate-200/70 gap-0.5 h-9">
+                        <button
+                            type="button"
+                            @click="navigateWith({ semester: 'ganjil' })"
+                            class="h-8 px-2.5 rounded-lg text-[11px] font-semibold transition-all"
+                            :class="semester === 'ganjil' ? 'bg-white text-[#00796B] shadow-xs' : 'text-slate-600'"
+                        >
+                            Ganjil
+                        </button>
+                        <button
+                            type="button"
+                            @click="navigateWith({ semester: 'genap' })"
+                            class="h-8 px-2.5 rounded-lg text-[11px] font-semibold transition-all"
+                            :class="semester === 'genap' ? 'bg-white text-[#00796B] shadow-xs' : 'text-slate-600'"
+                        >
+                            Genap
+                        </button>
+                    </div>
                 </template>
             </QuranNav>
 
@@ -325,82 +400,109 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
             </div>
 
             <template v-else>
-                <!-- Filter Controls: Segmented Role + Semester -->
-                <div class="flex flex-wrap items-center justify-between gap-2.5">
-                    <div class="inline-flex items-center p-1 rounded-lg bg-slate-200/60 gap-0.5">
-                        <button
-                            v-for="opt in [
-                                { key: 'all', label: 'Semua' },
-                                { key: 'main', label: 'Pengampu Utama' },
-                                { key: 'assistant', label: 'Asisten' },
-                            ]"
-                            :key="opt.key"
-                            type="button"
-                            @click="navigateWith({ role_filter: opt.key, group_id: null })"
-                            class="h-7 px-3 rounded-md text-xs font-medium transition-all"
-                            :class="roleFilter === opt.key ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        >
-                            {{ opt.label }}
-                        </button>
+                <!-- ==================== DESKTOP FILTER + GROUP STRIP (100% PRESERVED) ==================== -->
+                <div class="hidden md:block space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2.5">
+                        <div class="inline-flex items-center p-1 rounded-lg bg-slate-200/60 gap-0.5">
+                            <button
+                                v-for="opt in [
+                                    { key: 'all', label: 'Semua' },
+                                    { key: 'main', label: 'Pengampu Utama' },
+                                    { key: 'assistant', label: 'Asisten' },
+                                ]"
+                                :key="opt.key"
+                                type="button"
+                                @click="navigateWith({ role_filter: opt.key, group_id: null })"
+                                class="h-7 px-3 rounded-md text-xs font-medium transition-all"
+                                :class="roleFilter === opt.key ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            >
+                                {{ opt.label }}
+                            </button>
+                        </div>
+
+                        <div class="inline-flex items-center p-1 rounded-lg bg-slate-200/60 gap-0.5">
+                            <button
+                                type="button"
+                                @click="navigateWith({ semester: 'ganjil' })"
+                                class="h-7 px-3 rounded-md text-xs font-medium transition-all"
+                                :class="semester === 'ganjil' ? 'bg-white text-[#00796B] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            >
+                                Sem. Ganjil
+                            </button>
+                            <button
+                                type="button"
+                                @click="navigateWith({ semester: 'genap' })"
+                                class="h-7 px-3 rounded-md text-xs font-medium transition-all"
+                                :class="semester === 'genap' ? 'bg-white text-[#00796B] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            >
+                                Sem. Genap
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="inline-flex items-center p-1 rounded-lg bg-slate-200/60 gap-0.5">
+                    <div v-if="groups.length > 0" class="flex flex-nowrap overflow-x-auto gap-2 pb-1 scrollbar-none">
                         <button
+                            v-for="g in groups"
+                            :key="g.id"
                             type="button"
-                            @click="navigateWith({ semester: 'ganjil' })"
-                            class="h-7 px-3 rounded-md text-xs font-medium transition-all"
-                            :class="semester === 'ganjil' ? 'bg-white text-[#00796B] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                            @click="navigateWith({ group_id: g.id })"
+                            class="px-3.5 py-2.5 rounded-xl border text-left transition-all shrink-0 min-w-[175px] max-w-[230px]"
+                            :class="selectedGroup && selectedGroup.id === g.id
+                                ? 'bg-white border-[#00796B] ring-2 ring-[#00796B]/12 shadow-xs'
+                                : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'"
                         >
-                            Sem. Ganjil
-                        </button>
-                        <button
-                            type="button"
-                            @click="navigateWith({ semester: 'genap' })"
-                            class="h-7 px-3 rounded-md text-xs font-medium transition-all"
-                            :class="semester === 'genap' ? 'bg-white text-[#00796B] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
-                        >
-                            Sem. Genap
+                            <div class="flex items-center justify-between gap-2">
+                                <span
+                                    class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md border"
+                                    :class="selectedGroup && selectedGroup.id === g.id
+                                        ? 'bg-teal-50 text-[#00796B] border-teal-200/80'
+                                        : 'bg-slate-100 text-slate-600 border-transparent'"
+                                >
+                                    {{ g.level_name }}
+                                </span>
+                                <span
+                                    class="text-[11px] font-medium tabular-nums"
+                                    :class="g.filled_count === g.members_count && g.members_count > 0 ? 'text-[#00796B]' : 'text-slate-400'"
+                                >
+                                    {{ g.filled_count }}/{{ g.members_count }}
+                                </span>
+                            </div>
+                            <div class="text-xs font-semibold text-slate-900 mt-1.5 truncate">{{ g.name }}</div>
+                            <div class="text-[11px] text-slate-400 truncate mt-0.5">{{ g.teacher_name }}</div>
                         </button>
                     </div>
                 </div>
 
-                <!-- Horizontal Group Selector Strip -->
-                <div v-if="groups.length > 0" class="flex flex-nowrap overflow-x-auto gap-2 pb-1 scrollbar-none">
+                <!-- ==================== MOBILE COMPACT GROUP SWITCHER CARD (< md) ==================== -->
+                <div v-if="groups.length > 0 && selectedGroup" class="md:hidden">
                     <button
-                        v-for="g in groups"
-                        :key="g.id"
                         type="button"
-                        @click="navigateWith({ group_id: g.id })"
-                        class="px-3.5 py-2.5 rounded-xl border text-left transition-all shrink-0 min-w-[175px] max-w-[230px]"
-                        :class="selectedGroup && selectedGroup.id === g.id
-                            ? 'bg-white border-[#00796B] ring-2 ring-[#00796B]/12 shadow-xs'
-                            : 'bg-white/70 border-slate-200/80 hover:bg-white hover:border-slate-300'"
+                        @click="showMobileGroupSheet = true"
+                        class="w-full bg-white rounded-2xl border border-slate-200/90 p-3.5 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] active:scale-[0.99] transition-all space-y-2"
                     >
                         <div class="flex items-center justify-between gap-2">
-                            <span
-                                class="text-[10px] font-semibold px-1.5 py-0.5 rounded-md border"
-                                :class="selectedGroup && selectedGroup.id === g.id
-                                    ? 'bg-teal-50 text-[#00796B] border-teal-200/80'
-                                    : 'bg-slate-100 text-slate-600 border-transparent'"
-                            >
-                                {{ g.level_name }}
-                            </span>
-                            <span
-                                class="text-[11px] font-medium tabular-nums"
-                                :class="g.filled_count === g.members_count && g.members_count > 0 ? 'text-[#00796B]' : 'text-slate-400'"
-                            >
-                                {{ g.filled_count }}/{{ g.members_count }}
-                            </span>
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70 shrink-0">
+                                    {{ selectedGroup.level_name }}
+                                </span>
+                                <span class="text-sm font-semibold text-slate-900 truncate">{{ selectedGroup.name }}</span>
+                            </div>
+                            <div class="inline-flex items-center gap-1 text-[11px] font-medium text-[#00796B] shrink-0">
+                                <span v-if="groups.length > 1">Ganti</span>
+                                <ChevronUpDownIcon class="w-4 h-4" />
+                            </div>
                         </div>
-                        <div class="text-xs font-semibold text-slate-900 mt-1.5 truncate">{{ g.name }}</div>
-                        <div class="text-[11px] text-slate-400 truncate mt-0.5">{{ g.teacher_name }}</div>
+                        <div class="flex items-center justify-between gap-3 text-xs text-slate-500">
+                            <span class="truncate">{{ selectedGroup.teacher_name }}<span v-if="selectedGroup.session_name"> · {{ selectedGroup.session_name }}</span></span>
+                            <span class="font-semibold tabular-nums shrink-0 text-[#00796B]">{{ selectedGroupStats.filled_count }}/{{ selectedGroupStats.members_count }}</span>
+                        </div>
                     </button>
                 </div>
 
                 <!-- Selected Group Workspace -->
                 <div v-if="selectedGroup" class="space-y-4">
-                    <!-- Calm Group Context Strip -->
-                    <div class="bg-white rounded-xl border border-slate-200/80 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <!-- Desktop Context Strip (100% Preserved) -->
+                    <div class="hidden md:flex bg-white rounded-xl border border-slate-200/80 px-4 py-3 items-center justify-between gap-2">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
                                 <h2 class="text-sm font-semibold text-slate-900">{{ selectedGroup.name }}</h2>
@@ -417,7 +519,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                             </p>
                         </div>
 
-                        <div class="hidden md:flex items-center gap-1.5 text-[11px] text-slate-400 shrink-0">
+                        <div class="flex items-center gap-1.5 text-[11px] text-slate-400 shrink-0">
                             <kbd class="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600 font-mono text-[10px]">A</kbd>
                             <kbd class="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600 font-mono text-[10px]">B</kbd>
                             <kbd class="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600 font-mono text-[10px]">C</kbd>
@@ -430,14 +532,13 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                         Belum ada siswa aktif di kelompok {{ selectedGroup.name }}.
                     </div>
 
-                    <!-- ==================== DESKTOP MATRIX SUB-TABLES ==================== -->
+                    <!-- ==================== DESKTOP MATRIX SUB-TABLES (100% PRESERVED) ==================== -->
                     <div v-else class="hidden md:block space-y-4">
                         <div
                             v-for="sec in studentSections"
                             :key="sec.key"
                             class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden"
                         >
-                            <!-- Section Header + Collapsible Rubric Legend -->
                             <div class="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center justify-between gap-3">
                                 <div class="flex items-center gap-2">
                                     <span v-if="sec.gradeLabel" class="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-900 text-white">
@@ -464,7 +565,6 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                                 </button>
                             </div>
 
-                            <!-- Animated Collapsible Rubric Legend -->
                             <QuranCollapse :open="!!showLegendMap[sec.key]">
                                 <div class="px-4 py-3 bg-white border-b border-slate-100 grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                                     <div v-if="sec.materi.length" class="space-y-1">
@@ -494,7 +594,6 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                                 </div>
                             </QuranCollapse>
 
-                            <!-- Matrix Table -->
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm whitespace-nowrap border-collapse">
                                     <thead>
@@ -598,7 +697,6 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                                                 </td>
                                             </tr>
 
-                                            <!-- Subtle Quiet Inline Teacher Note Row -->
                                             <tr v-if="localEntries[st.student_id]" class="bg-slate-50/40 border-b border-slate-200/70">
                                                 <td
                                                     class="px-4 py-1.5 sticky left-0 bg-slate-50/90 border-r border-slate-200/70 z-10"
@@ -629,37 +727,55 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                         </div>
                     </div>
 
-                    <!-- ==================== MOBILE STUDENT LIST ==================== -->
-                    <div v-if="students.length > 0" class="block md:hidden bg-white rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden">
-                        <button
-                            v-for="(st, idx) in students"
-                            :key="'mob-'+st.student_id"
-                            type="button"
-                            @click="openMobileInput(idx)"
-                            class="w-full p-3.5 flex items-center justify-between gap-3 text-left active:bg-slate-50 transition-colors"
-                            :class="dirtyStudentIds.has(st.student_id) ? 'shadow-[inset_3px_0_0_#00796B]' : ''"
-                        >
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs flex items-center justify-center shrink-0">
-                                    {{ st.full_name?.charAt(0) }}
+                    <!-- ==================== MOBILE NATIVE STUDENT PROGRESS LIST (< md) ==================== -->
+                    <div v-if="students.length > 0" class="md:hidden space-y-2">
+                        <div class="flex items-center justify-between text-[11px] text-slate-500 px-0.5">
+                            <span class="font-medium tabular-nums">{{ students.length }} siswa · Ketuk nama untuk input nilai</span>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                            <button
+                                v-for="(st, idx) in students"
+                                :key="'mob-' + st.student_id"
+                                type="button"
+                                @click="openMobileInput(idx)"
+                                class="w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left active:bg-slate-50 transition-colors"
+                                :class="dirtyStudentIds.has(st.student_id) ? 'shadow-[inset_3px_0_0_#00796B]' : ''"
+                            >
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                    <div
+                                        class="w-9 h-9 rounded-full font-semibold text-xs flex items-center justify-center shrink-0"
+                                        :class="studentProgress(st).percent === 100 ? 'bg-teal-50 text-[#00796B] border border-teal-200/70' : 'bg-slate-100 text-slate-600'"
+                                    >
+                                        <CheckIcon v-if="studentProgress(st).percent === 100 && !dirtyStudentIds.has(st.student_id)" class="w-4 h-4 stroke-[2.5]" />
+                                        <span v-else>{{ st.full_name?.charAt(0) }}</span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-sm font-semibold text-slate-900 truncate">{{ st.full_name }}</div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-[11px] text-slate-500 shrink-0">Kls {{ st.classroom_name }}</span>
+                                            <div class="flex-1 max-w-[90px] h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                                <div
+                                                    class="h-full rounded-full transition-all duration-300"
+                                                    :class="studentProgress(st).percent === 100 ? 'bg-[#00796B]' : 'bg-amber-400'"
+                                                    :style="{ width: `${studentProgress(st).percent}%` }"
+                                                />
+                                            </div>
+                                            <span class="text-[10px] text-slate-400 tabular-nums">{{ studentProgress(st).filled }}/{{ studentProgress(st).total }}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="min-w-0">
-                                    <div class="text-sm font-medium text-slate-900 truncate">{{ st.full_name }}</div>
-                                    <div class="text-xs text-slate-500">Kelas {{ st.classroom_name }}</div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <span
+                                        v-if="dirtyStudentIds.has(st.student_id)"
+                                        class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80"
+                                    >
+                                        Diubah
+                                    </span>
+                                    <ChevronRightIcon class="w-4 h-4 text-slate-400" />
                                 </div>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <span
-                                    class="text-[11px] font-medium px-2 py-0.5 rounded-md border"
-                                    :class="dirtyStudentIds.has(st.student_id)
-                                        ? 'bg-amber-50 text-amber-700 border-amber-200/80'
-                                        : (st.has_saved_assessment ? 'bg-teal-50 text-[#00796B] border-teal-200/70' : 'bg-slate-50 text-slate-500 border-slate-200/80')"
-                                >
-                                    {{ dirtyStudentIds.has(st.student_id) ? 'Diubah' : (st.has_saved_assessment ? 'Tersimpan' : 'Isi Nilai') }}
-                                </span>
-                                <ChevronRightIcon class="w-4 h-4 text-slate-400" />
-                            </div>
-                        </button>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -674,14 +790,67 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
             </template>
         </div>
 
-        <!-- ==================== FLOATING DIRTY SAVE BAR (LINEAR / STRIPE MOTION) ==================== -->
+        <!-- ==================== MOBILE GROUP PICKER BOTTOM SHEET ==================== -->
+        <QuranDialog
+            :show="showMobileGroupSheet"
+            variant="sheet"
+            title="Pilih Kelompok Mengaji"
+            subtitle="Saring peran pengampu dan pilih kelompok untuk dinilai."
+            @close="showMobileGroupSheet = false"
+        >
+            <div class="p-4 space-y-4">
+                <div class="grid grid-cols-3 p-1 rounded-xl bg-slate-100 gap-1">
+                    <button
+                        v-for="opt in [
+                            { key: 'all', label: 'Semua' },
+                            { key: 'main', label: 'Utama' },
+                            { key: 'assistant', label: 'Asisten' },
+                        ]"
+                        :key="opt.key"
+                        type="button"
+                        @click="() => { showMobileGroupSheet = false; navigateWith({ role_filter: opt.key, group_id: null }); }"
+                        class="h-9 rounded-lg text-xs font-semibold transition-all"
+                        :class="roleFilter === opt.key ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'"
+                    >
+                        {{ opt.label }}
+                    </button>
+                </div>
+
+                <div class="divide-y divide-slate-100 rounded-xl border border-slate-200/80 overflow-hidden bg-white">
+                    <button
+                        v-for="g in groups"
+                        :key="'mgp-' + g.id"
+                        type="button"
+                        @click="() => { showMobileGroupSheet = false; navigateWith({ group_id: g.id }); }"
+                        class="w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left transition-colors active:bg-slate-50"
+                        :class="selectedGroup && selectedGroup.id === g.id ? 'bg-teal-50/40' : ''"
+                    >
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70">{{ g.level_name }}</span>
+                                <span class="text-sm font-semibold text-slate-900 truncate">{{ g.name }}</span>
+                            </div>
+                            <div class="text-xs text-slate-500 mt-0.5 truncate">{{ g.teacher_name }}</div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-xs font-semibold tabular-nums" :class="g.filled_count === g.members_count && g.members_count > 0 ? 'text-[#00796B]' : 'text-slate-400'">
+                                {{ g.filled_count }}/{{ g.members_count }}
+                            </span>
+                            <CheckIcon v-if="selectedGroup && selectedGroup.id === g.id" class="w-4 h-4 text-[#00796B]" />
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </QuranDialog>
+
+        <!-- ==================== FLOATING DIRTY SAVE BAR (CLEARS MOBILE FAB!) ==================== -->
         <Teleport to="body">
             <Transition name="q-float">
                 <div
                     v-if="isDirty && !isLocked && !showMobileSheet"
-                    class="fixed bottom-20 md:bottom-5 inset-x-4 z-[90] flex justify-center pointer-events-none"
+                    class="fixed bottom-[94px] md:bottom-5 inset-x-3 md:inset-x-4 z-[90] flex justify-center pointer-events-none"
                 >
-                    <div class="pointer-events-auto flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-900 text-white shadow-xl shadow-slate-900/25 border border-slate-700/80 max-w-md w-full sm:w-auto">
+                    <div class="pointer-events-auto flex items-center gap-2.5 md:gap-3 px-3.5 md:px-4 py-2.5 rounded-2xl md:rounded-xl bg-slate-900 text-white shadow-xl shadow-slate-900/30 border border-slate-700/80 max-w-md w-full sm:w-auto">
                         <span class="relative flex h-2 w-2 shrink-0">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
@@ -693,7 +862,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                             type="button"
                             @click="discardChanges"
                             :disabled="isSaving"
-                            class="h-7 px-2.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                            class="h-8 md:h-7 px-2.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
                         >
                             Batal
                         </button>
@@ -701,17 +870,17 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                             type="button"
                             @click="saveAllScores"
                             :disabled="isSaving"
-                            class="h-7 px-3.5 rounded-lg text-xs font-medium bg-[#00796B] hover:bg-[#00897B] text-white transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
+                            class="h-8 md:h-7 px-3.5 rounded-lg text-xs font-semibold bg-[#00796B] hover:bg-[#00897B] text-white transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
                         >
                             <span v-if="isSaving" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>{{ isSaving ? 'Menyimpan...' : 'Simpan Semua' }}</span>
+                            <span>{{ isSaving ? 'Menyimpan...' : 'Simpan' }}</span>
                         </button>
                     </div>
                 </div>
             </Transition>
         </Teleport>
 
-        <!-- ==================== MOBILE TACTILE 1-TAP BOTTOM SHEET ==================== -->
+        <!-- ==================== MOBILE TACTILE 1-TAP GRADING BOTTOM SHEET ==================== -->
         <QuranDialog
             :show="showMobileSheet && !!mobileStudent && !!localEntries[mobileStudent?.student_id]"
             variant="sheet"
@@ -719,87 +888,147 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
             :subtitle="`Kelas ${mobileStudent?.classroom_name || ''} · ${selectedGroup?.level_name || ''} (${mobileStudentIndex + 1}/${students.length})`"
             @close="closeMobileInput"
         >
-            <div v-if="mobileStudent && localEntries[mobileStudent.student_id]" class="p-4 space-y-5">
-                <div v-for="block in mobileRubricBlocks" :key="block.key" class="space-y-2">
-                    <div class="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                        <span class="w-2 h-2 rounded-full" :class="block.dot" />
-                        <span>{{ block.title }}</span>
+            <div v-if="mobileStudent && localEntries[mobileStudent.student_id]">
+                <!-- Sticky Progress + Category Jump Bar inside Sheet -->
+                <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 pt-2.5 pb-2.5 space-y-2">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                                class="h-full rounded-full bg-[#00796B] transition-all duration-300"
+                                :style="{ width: `${mobileStudentProgress.percent}%` }"
+                            />
+                        </div>
+                        <span class="text-[11px] font-semibold text-slate-600 tabular-nums shrink-0">
+                            {{ mobileStudentProgress.filled }}/{{ mobileStudentProgress.total }} terisi
+                        </span>
                     </div>
 
-                    <div class="divide-y divide-slate-100 rounded-xl border border-slate-200/80 bg-white overflow-hidden">
-                        <div
-                            v-for="(item, idx) in block.items"
-                            :key="`${block.key}-${item.id}`"
-                            class="p-3 space-y-2"
+                    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                        <button
+                            v-for="block in mobileRubricBlocks"
+                            :key="'jump-' + block.key"
+                            type="button"
+                            @click="scrollToSheetSection(block.key)"
+                            class="h-7 px-2.5 rounded-full bg-slate-100 active:bg-slate-200 text-slate-700 text-[11px] font-medium whitespace-nowrap shrink-0 inline-flex items-center gap-1.5"
                         >
-                            <div class="text-xs font-medium text-slate-700 leading-snug">
-                                <span class="text-slate-400 font-semibold mr-1">{{ block.prefix }}{{ idx + 1 }}.</span>
-                                {{ item.title }}
-                            </div>
-                            <!-- Tactile 1-tap A/B/C/D buttons (no slow native picker!) -->
-                            <div class="grid grid-cols-5 gap-1.5">
-                                <button
-                                    v-for="g in grades"
-                                    :key="g"
-                                    type="button"
-                                    @click="setMobileGrade(mobileStudent.student_id, item.id, g)"
-                                    class="h-8 rounded-lg text-xs font-semibold border transition-all active:scale-95"
-                                    :class="localEntries[mobileStudent.student_id].grades[String(item.id)] === g
-                                        ? gradePillActiveClass(g)
-                                        : 'bg-slate-50 text-slate-500 border-slate-200/80 hover:bg-slate-100'"
-                                >
-                                    {{ g }}
-                                </button>
-                            </div>
-                        </div>
+                            <span class="w-1.5 h-1.5 rounded-full" :class="block.dot" />
+                            <span>{{ block.shortLabel }}</span>
+                        </button>
+                        <button
+                            type="button"
+                            @click="scrollToSheetSection('catatan')"
+                            class="h-7 px-2.5 rounded-full bg-slate-100 active:bg-slate-200 text-slate-700 text-[11px] font-medium whitespace-nowrap shrink-0"
+                        >
+                            Catatan
+                        </button>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Catatan Guru Al-Qur'an</label>
-                    <textarea
-                        v-model="localEntries[mobileStudent.student_id].teacher_note"
-                        rows="3"
-                        maxlength="300"
-                        placeholder="Tulis catatan guru (opsional)..."
-                        class="w-full rounded-xl border-slate-200 text-xs focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
-                    />
+                <!-- Rubric Sections -->
+                <div class="p-4 space-y-5">
+                    <div
+                        v-for="block in mobileRubricBlocks"
+                        :id="`q-sheet-sec-${block.key}`"
+                        :key="block.key"
+                        class="space-y-2 scroll-mt-24"
+                    >
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 text-xs font-semibold text-slate-800 min-w-0">
+                                <span class="w-2 h-2 rounded-full shrink-0" :class="block.dot" />
+                                <span class="truncate">{{ block.title }}</span>
+                            </div>
+                            <!-- Quick Fill All A / B per Category -->
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button
+                                    type="button"
+                                    @click="fillCategoryGrades(mobileStudent.student_id, block.items, 'A')"
+                                    class="h-6 px-2 rounded-md bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-[10px] font-semibold active:scale-95 transition-transform"
+                                >
+                                    Semua A
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="fillCategoryGrades(mobileStudent.student_id, block.items, 'B')"
+                                    class="h-6 px-2 rounded-md bg-sky-50 border border-sky-200/80 text-sky-700 text-[10px] font-semibold active:scale-95 transition-transform"
+                                >
+                                    Semua B
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="divide-y divide-slate-100 rounded-xl border border-slate-200/80 bg-white overflow-hidden">
+                            <div
+                                v-for="(item, idx) in block.items"
+                                :key="`${block.key}-${item.id}`"
+                                class="p-3 space-y-2.5"
+                            >
+                                <div class="text-xs font-medium text-slate-800 leading-snug">
+                                    <span class="text-slate-400 font-semibold mr-1">{{ block.prefix }}{{ idx + 1 }}.</span>
+                                    {{ item.title }}
+                                </div>
+                                <div class="grid grid-cols-5 gap-1.5">
+                                    <button
+                                        v-for="g in grades"
+                                        :key="g"
+                                        type="button"
+                                        @click="setMobileGrade(mobileStudent.student_id, item.id, g)"
+                                        class="h-10 rounded-xl text-xs font-semibold border transition-all active:scale-95"
+                                        :class="localEntries[mobileStudent.student_id].grades[String(item.id)] === g
+                                            ? gradePillActiveClass(g)
+                                            : 'bg-slate-50 text-slate-500 border-slate-200/80'"
+                                    >
+                                        {{ g }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="q-sheet-sec-catatan" class="scroll-mt-24">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Catatan Guru Al-Qur'an</label>
+                        <textarea
+                            v-model="localEntries[mobileStudent.student_id].teacher_note"
+                            rows="3"
+                            maxlength="300"
+                            placeholder="Tulis catatan guru untuk rapor (opsional)..."
+                            class="w-full rounded-xl border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
+                        />
+                    </div>
                 </div>
             </div>
 
             <template #footer>
                 <div class="flex items-center justify-between gap-2">
-                    <!-- Prev / Next student stepper -->
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1.5">
                         <button
                             type="button"
                             :disabled="mobileStudentIndex <= 0"
                             @click="mobileStudentIndex--"
-                            class="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 inline-flex items-center justify-center transition-colors"
+                            class="h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-600 active:bg-slate-50 disabled:opacity-30 inline-flex items-center justify-center transition-colors"
                             aria-label="Siswa sebelumnya"
                         >
-                            <ChevronLeftIcon class="w-4 h-4" />
+                            <ChevronLeftIcon class="w-5 h-5" />
                         </button>
                         <button
                             type="button"
                             :disabled="mobileStudentIndex >= students.length - 1"
                             @click="mobileStudentIndex++"
-                            class="h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 inline-flex items-center justify-center transition-colors"
+                            class="h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-600 active:bg-slate-50 disabled:opacity-30 inline-flex items-center justify-center transition-colors"
                             aria-label="Siswa berikutnya"
                         >
-                            <ChevronRightIcon class="w-4 h-4" />
+                            <ChevronRightIcon class="w-5 h-5" />
                         </button>
                     </div>
 
                     <div class="flex items-center gap-2 flex-1 justify-end">
-                        <button type="button" @click="closeMobileInput" class="h-9 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200">
+                        <button type="button" @click="closeMobileInput" class="h-10 px-3.5 rounded-xl text-xs font-medium text-slate-600 bg-white border border-slate-200">
                             Tutup
                         </button>
                         <button
                             type="button"
                             @click="() => { closeMobileInput(); saveAllScores(); }"
                             :disabled="isSaving"
-                            class="h-9 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] active:scale-[0.98] transition-all"
+                            class="h-10 px-4 rounded-xl text-xs font-semibold text-white bg-[#00796B] active:scale-[0.98] transition-all"
                         >
                             Simpan Semua
                         </button>

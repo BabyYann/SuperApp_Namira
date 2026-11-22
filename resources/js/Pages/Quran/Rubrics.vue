@@ -15,6 +15,7 @@ import {
     BookOpenIcon,
     AcademicCapIcon,
     InformationCircleIcon,
+    ChevronUpDownIcon,
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -33,6 +34,7 @@ const scopeTab = ref('level'); // 'level' | 'grade'
 const selectedLevelId = ref(props.levels?.[0]?.id || null);
 const selectedGrade = ref(props.availableGrades?.[0] || '1');
 const showGradeGuide = ref(false);
+const showMobilePickerSheet = ref(false);
 
 const selectedLevel = computed(() => {
     return (props.levels || []).find(l => l.id === selectedLevelId.value) || props.levels?.[0] || null;
@@ -187,7 +189,7 @@ const gradeSections = [
     <Head title="Rubrik Materi — Program Al-Qur'an" />
 
     <AuthenticatedLayout>
-        <div class="max-w-7xl mx-auto py-1 sm:py-2 space-y-4">
+        <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-28 md:pb-2 space-y-4">
             <QuranNav
                 active-tab="rubrics"
                 page-title="Master Jilid & Rubrik Materi"
@@ -196,6 +198,7 @@ const gradeSections = [
                 :can-manage="canManage"
                 :is-global-admin="isGlobalAdmin"
             >
+                <!-- Desktop Header Actions (100% Preserved) -->
                 <template #actions>
                     <button
                         type="button"
@@ -217,20 +220,42 @@ const gradeSections = [
                         <span>Jilid Baru</span>
                     </button>
                 </template>
+
+                <!-- Mobile Header Actions -->
+                <template #mobile-actions>
+                    <button
+                        type="button"
+                        @click="showGradeGuide = !showGradeGuide"
+                        class="w-9 h-9 rounded-xl border inline-flex items-center justify-center active:scale-95 transition-all"
+                        :class="showGradeGuide ? 'bg-teal-50 text-[#00796B] border-teal-200' : 'bg-white text-slate-600 border-slate-200/90'"
+                        aria-label="Standar Nilai"
+                    >
+                        <InformationCircleIcon class="w-4 h-4" />
+                    </button>
+                    <button
+                        v-if="canManage"
+                        type="button"
+                        @click="openLevelModal"
+                        class="h-9 px-3 rounded-xl text-xs font-semibold text-white bg-[#00796B] active:scale-95 transition-all inline-flex items-center gap-1 shadow-xs"
+                    >
+                        <PlusIcon class="w-4 h-4 stroke-[2.5]" />
+                        <span>Jilid</span>
+                    </button>
+                </template>
             </QuranNav>
 
-            <!-- Collapsible Grade Standard Reference (hidden by default to keep workspace clean!) -->
+            <!-- Collapsible Grade Standard Reference -->
             <QuranCollapse :open="showGradeGuide">
                 <div class="bg-white rounded-xl border border-slate-200/80 p-3.5 mb-1">
                     <div class="text-xs font-semibold text-slate-700 mb-2.5">Standar Predikat Metode Ummi</div>
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
                         <div class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-emerald-50/60 border border-emerald-200/60">
                             <span class="w-7 h-7 rounded-md bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">A</span>
-                            <div class="text-xs leading-tight"><div class="font-semibold text-slate-800 tabular-nums">91 – 95</div><div class="text-[11px] text-slate-500">Sangat Lancar / Tartil</div></div>
+                            <div class="text-xs leading-tight"><div class="font-semibold text-slate-800 tabular-nums">91 – 95</div><div class="text-[11px] text-slate-500">Sangat Lancar</div></div>
                         </div>
                         <div class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-sky-50/60 border border-sky-200/60">
                             <span class="w-7 h-7 rounded-md bg-sky-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">B</span>
-                            <div class="text-xs leading-tight"><div class="font-semibold text-slate-800 tabular-nums">81 – 90</div><div class="text-[11px] text-slate-500">Lancar / Cukup Tartil</div></div>
+                            <div class="text-xs leading-tight"><div class="font-semibold text-slate-800 tabular-nums">81 – 90</div><div class="text-[11px] text-slate-500">Lancar / Tartil</div></div>
                         </div>
                         <div class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-amber-50/60 border border-amber-200/60">
                             <span class="w-7 h-7 rounded-md bg-amber-500 text-white text-xs font-semibold flex items-center justify-center shrink-0">C</span>
@@ -238,31 +263,33 @@ const gradeSections = [
                         </div>
                         <div class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-rose-50/60 border border-rose-200/60">
                             <span class="w-7 h-7 rounded-md bg-rose-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">D</span>
-                            <div class="text-xs leading-tight"><div class="font-semibold text-slate-800 tabular-nums">65 – 70</div><div class="text-[11px] text-slate-500">Belum Lancar / Ulang</div></div>
+                            <div class="text-xs leading-tight"><div class="font-semibold text-slate-800 tabular-nums">65 – 70</div><div class="text-[11px] text-slate-500">Belum Lancar</div></div>
                         </div>
                     </div>
                 </div>
             </QuranCollapse>
 
-            <!-- Scope Segmented Switcher -->
-            <div class="inline-flex flex-wrap items-center p-1 rounded-lg bg-slate-200/60 gap-0.5">
+            <!-- Scope Segmented Switcher (Full-width on mobile, inline on desktop) -->
+            <div class="grid grid-cols-2 md:inline-flex items-center p-1 rounded-xl md:rounded-lg bg-slate-200/60 gap-1 md:gap-0.5">
                 <button
                     type="button"
                     @click="scopeTab = 'level'"
-                    class="h-8 px-3.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-all"
+                    class="h-9 md:h-8 px-3 md:px-3.5 rounded-lg md:rounded-md text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-all"
                     :class="scopeTab === 'level' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                 >
-                    <BookOpenIcon class="w-3.5 h-3.5" :class="scopeTab === 'level' ? 'text-[#00796B]' : 'text-slate-400'" />
-                    <span>Per Jilid (Materi &amp; Surah)</span>
+                    <BookOpenIcon class="w-3.5 h-3.5 shrink-0" :class="scopeTab === 'level' ? 'text-[#00796B]' : 'text-slate-400'" />
+                    <span class="md:hidden">Per Jilid</span>
+                    <span class="hidden md:inline">Per Jilid (Materi &amp; Surah)</span>
                 </button>
                 <button
                     type="button"
                     @click="scopeTab = 'grade'"
-                    class="h-8 px-3.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-all"
+                    class="h-9 md:h-8 px-3 md:px-3.5 rounded-lg md:rounded-md text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-all"
                     :class="scopeTab === 'grade' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
                 >
-                    <AcademicCapIcon class="w-3.5 h-3.5" :class="scopeTab === 'grade' ? 'text-[#00796B]' : 'text-slate-400'" />
-                    <span>Per Kelas (Hadist, Doa &amp; Ibadah)</span>
+                    <AcademicCapIcon class="w-3.5 h-3.5 shrink-0" :class="scopeTab === 'grade' ? 'text-[#00796B]' : 'text-slate-400'" />
+                    <span class="md:hidden">Per Kelas</span>
+                    <span class="hidden md:inline">Per Kelas (Hadist, Doa &amp; Ibadah)</span>
                 </button>
             </div>
 
@@ -270,7 +297,7 @@ const gradeSections = [
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
                 <!-- Left Rail: Jilid / Kelas Selector -->
                 <aside class="lg:col-span-3">
-                    <!-- Desktop Vertical Rail -->
+                    <!-- Desktop Vertical Rail (100% Preserved) -->
                     <div class="hidden lg:block bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-1.5 space-y-0.5">
                         <template v-if="scopeTab === 'level'">
                             <button
@@ -318,12 +345,12 @@ const gradeSections = [
                         </template>
                     </div>
 
-                    <!-- Mobile Horizontal Pill Strip -->
-                    <div class="lg:hidden flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+                    <!-- Tablet Horizontal Pill Strip (`md` only) -->
+                    <div class="hidden md:flex lg:hidden items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
                         <template v-if="scopeTab === 'level'">
                             <button
                                 v-for="lvl in levels"
-                                :key="'ml-'+lvl.id"
+                                :key="'tl-'+lvl.id"
                                 type="button"
                                 @click="selectedLevelId = lvl.id"
                                 class="h-8 px-3 rounded-lg text-xs font-medium border whitespace-nowrap shrink-0 transition-colors"
@@ -337,7 +364,7 @@ const gradeSections = [
                         <template v-else>
                             <button
                                 v-for="g in availableGrades"
-                                :key="'mg-'+g"
+                                :key="'tg-'+g"
                                 type="button"
                                 @click="selectedGrade = g"
                                 class="h-8 px-3 rounded-lg text-xs font-medium border whitespace-nowrap shrink-0 transition-colors inline-flex items-center gap-1.5"
@@ -350,9 +377,31 @@ const gradeSections = [
                             </button>
                         </template>
                     </div>
+
+                    <!-- Mobile Tappable Selector Card (< md) -->
+                    <button
+                        type="button"
+                        @click="showMobilePickerSheet = true"
+                        class="md:hidden w-full bg-white rounded-2xl border border-slate-200/90 px-4 py-3 flex items-center justify-between gap-3 active:scale-[0.99] transition-all shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+                    >
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70 shrink-0">
+                                {{ scopeTab === 'level' ? `#${selectedLevel?.sort_order || 1}` : `Kelas ${selectedGrade}` }}
+                            </span>
+                            <span class="text-sm font-semibold text-slate-900 truncate">
+                                {{ scopeTab === 'level' ? (selectedLevel?.name || 'Pilih Jilid') : `Rubrik Kelas ${selectedGrade}` }}
+                            </span>
+                        </div>
+                        <div class="inline-flex items-center gap-1 text-xs font-medium text-[#00796B] shrink-0">
+                            <span class="tabular-nums text-slate-400">
+                                {{ scopeTab === 'level' ? (selectedLevel?.rubric_items || []).length : (gradeRubrics[String(selectedGrade)] || []).length }} item
+                            </span>
+                            <ChevronUpDownIcon class="w-4 h-4" />
+                        </div>
+                    </button>
                 </aside>
 
-                <!-- Right Detail Workspace with Smooth Switch Transition -->
+                <!-- Right Detail Workspace -->
                 <div class="lg:col-span-9">
                     <Transition name="q-panel" mode="out-in">
                         <!-- Level Rubrics -->
@@ -364,7 +413,7 @@ const gradeSections = [
                             <div
                                 v-for="sec in levelSections"
                                 :key="sec.key"
-                                class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] flex flex-col overflow-hidden"
+                                class="bg-white rounded-2xl md:rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] flex flex-col overflow-hidden"
                             >
                                 <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
                                     <div class="flex items-center gap-2 min-w-0">
@@ -381,7 +430,7 @@ const gradeSections = [
                                     <li
                                         v-for="(item, idx) in levelItemsByCategory(sec.key)"
                                         :key="item.id"
-                                        class="group flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-slate-50/80 transition-colors"
+                                        class="group flex items-center justify-between gap-2 px-2 py-2.5 md:py-2 rounded-lg hover:bg-slate-50/80 transition-colors"
                                     >
                                         <div class="flex items-center gap-2.5 flex-1 min-w-0">
                                             <span class="text-[11px] text-slate-400 tabular-nums w-5 text-right shrink-0">{{ idx + 1 }}.</span>
@@ -391,16 +440,16 @@ const gradeSections = [
                                                     @keyup.enter="saveEditItem(item)"
                                                     @keyup.esc="editingItemId = null"
                                                     type="text"
-                                                    class="flex-1 h-7 text-xs rounded-md border-[#00796B] px-2 focus:ring-2 focus:ring-[#00796B]/15"
+                                                    class="flex-1 h-9 md:h-7 text-xs rounded-lg md:rounded-md border-[#00796B] px-2.5 md:px-2 focus:ring-2 focus:ring-[#00796B]/15"
                                                 />
-                                                <button type="button" @click="saveEditItem(item)" class="p-1 text-[#00796B] hover:bg-teal-50 rounded"><CheckIcon class="w-3.5 h-3.5" /></button>
-                                                <button type="button" @click="editingItemId = null" class="p-1 text-slate-400 hover:bg-slate-200 rounded"><XMarkIcon class="w-3.5 h-3.5" /></button>
+                                                <button type="button" @click="saveEditItem(item)" class="w-8 h-8 md:w-auto md:h-auto p-1 text-[#00796B] hover:bg-teal-50 rounded-lg inline-flex items-center justify-center"><CheckIcon class="w-4 h-4 md:w-3.5 md:h-3.5" /></button>
+                                                <button type="button" @click="editingItemId = null" class="w-8 h-8 md:w-auto md:h-auto p-1 text-slate-400 hover:bg-slate-200 rounded-lg inline-flex items-center justify-center"><XMarkIcon class="w-4 h-4 md:w-3.5 md:h-3.5" /></button>
                                             </template>
                                             <span v-else class="text-xs font-medium text-slate-700 leading-snug">{{ item.title }}</span>
                                         </div>
                                         <div v-if="canManage && editingItemId !== item.id" class="flex items-center gap-0.5 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                            <button type="button" @click="startEditItem(item)" class="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md" title="Edit"><PencilSquareIcon class="w-3.5 h-3.5" /></button>
-                                            <button type="button" @click="askDeleteItem(item)" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md" title="Hapus"><TrashIcon class="w-3.5 h-3.5" /></button>
+                                            <button type="button" @click="startEditItem(item)" class="w-8 h-8 md:w-auto md:h-auto p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg md:rounded-md inline-flex items-center justify-center" title="Edit"><PencilSquareIcon class="w-4 h-4 md:w-3.5 md:h-3.5" /></button>
+                                            <button type="button" @click="askDeleteItem(item)" class="w-8 h-8 md:w-auto md:h-auto p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg md:rounded-md inline-flex items-center justify-center" title="Hapus"><TrashIcon class="w-4 h-4 md:w-3.5 md:h-3.5" /></button>
                                         </div>
                                     </li>
                                     <li v-if="levelItemsByCategory(sec.key).length === 0" class="py-6 text-center text-xs text-slate-400">
@@ -413,12 +462,12 @@ const gradeSections = [
                                         v-model="newTitles[sec.key]"
                                         type="text"
                                         :placeholder="`Tambah ${sec.title.toLowerCase()}...`"
-                                        class="flex-1 h-8 text-xs rounded-lg bg-white border-slate-200 px-2.5 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
+                                        class="flex-1 h-10 md:h-8 text-xs rounded-xl md:rounded-lg bg-white border-slate-200 px-3 md:px-2.5 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
                                     />
                                     <button
                                         type="submit"
                                         :disabled="addingCategory === sec.key || !(newTitles[sec.key] || '').trim()"
-                                        class="h-8 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium disabled:opacity-40 transition-colors inline-flex items-center gap-1 shrink-0"
+                                        class="h-10 md:h-8 px-3.5 md:px-3 rounded-xl md:rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium disabled:opacity-40 transition-colors inline-flex items-center gap-1 shrink-0"
                                     >
                                         <PlusIcon class="w-3.5 h-3.5" />
                                         <span>Tambah</span>
@@ -436,7 +485,7 @@ const gradeSections = [
                             <div
                                 v-for="sec in gradeSections"
                                 :key="'g-'+sec.key"
-                                class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] flex flex-col overflow-hidden"
+                                class="bg-white rounded-2xl md:rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] flex flex-col overflow-hidden"
                             >
                                 <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
                                     <div class="flex items-center gap-2 min-w-0">
@@ -453,7 +502,7 @@ const gradeSections = [
                                     <li
                                         v-for="(item, idx) in gradeItemsByCategory(sec.key)"
                                         :key="item.id"
-                                        class="group flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-slate-50/80 transition-colors"
+                                        class="group flex items-center justify-between gap-2 px-2 py-2.5 md:py-2 rounded-lg hover:bg-slate-50/80 transition-colors"
                                     >
                                         <div class="flex items-center gap-2.5 flex-1 min-w-0">
                                             <span class="text-[11px] text-slate-400 tabular-nums w-5 text-right shrink-0">{{ idx + 1 }}.</span>
@@ -463,16 +512,16 @@ const gradeSections = [
                                                     @keyup.enter="saveEditItem(item)"
                                                     @keyup.esc="editingItemId = null"
                                                     type="text"
-                                                    class="flex-1 h-7 text-xs rounded-md border-[#00796B] px-2 focus:ring-2 focus:ring-[#00796B]/15"
+                                                    class="flex-1 h-9 md:h-7 text-xs rounded-lg md:rounded-md border-[#00796B] px-2.5 md:px-2 focus:ring-2 focus:ring-[#00796B]/15"
                                                 />
-                                                <button type="button" @click="saveEditItem(item)" class="p-1 text-[#00796B] hover:bg-teal-50 rounded"><CheckIcon class="w-3.5 h-3.5" /></button>
-                                                <button type="button" @click="editingItemId = null" class="p-1 text-slate-400 hover:bg-slate-200 rounded"><XMarkIcon class="w-3.5 h-3.5" /></button>
+                                                <button type="button" @click="saveEditItem(item)" class="w-8 h-8 md:w-auto md:h-auto p-1 text-[#00796B] hover:bg-teal-50 rounded-lg inline-flex items-center justify-center"><CheckIcon class="w-4 h-4 md:w-3.5 md:h-3.5" /></button>
+                                                <button type="button" @click="editingItemId = null" class="w-8 h-8 md:w-auto md:h-auto p-1 text-slate-400 hover:bg-slate-200 rounded-lg inline-flex items-center justify-center"><XMarkIcon class="w-4 h-4 md:w-3.5 md:h-3.5" /></button>
                                             </template>
                                             <span v-else class="text-xs font-medium text-slate-700 leading-snug">{{ item.title }}</span>
                                         </div>
                                         <div v-if="canManage && editingItemId !== item.id" class="flex items-center gap-0.5 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                            <button type="button" @click="startEditItem(item)" class="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md" title="Edit"><PencilSquareIcon class="w-3.5 h-3.5" /></button>
-                                            <button type="button" @click="askDeleteItem(item)" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md" title="Hapus"><TrashIcon class="w-3.5 h-3.5" /></button>
+                                            <button type="button" @click="startEditItem(item)" class="w-8 h-8 md:w-auto md:h-auto p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg md:rounded-md inline-flex items-center justify-center" title="Edit"><PencilSquareIcon class="w-4 h-4 md:w-3.5 md:h-3.5" /></button>
+                                            <button type="button" @click="askDeleteItem(item)" class="w-8 h-8 md:w-auto md:h-auto p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg md:rounded-md inline-flex items-center justify-center" title="Hapus"><TrashIcon class="w-4 h-4 md:w-3.5 md:h-3.5" /></button>
                                         </div>
                                     </li>
                                     <li v-if="gradeItemsByCategory(sec.key).length === 0" class="py-6 text-center text-xs text-slate-400">
@@ -485,12 +534,12 @@ const gradeSections = [
                                         v-model="newTitles[sec.key]"
                                         type="text"
                                         :placeholder="`Tambah ${sec.title.toLowerCase()} Kelas ${selectedGrade}...`"
-                                        class="flex-1 h-8 text-xs rounded-lg bg-white border-slate-200 px-2.5 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
+                                        class="flex-1 h-10 md:h-8 text-xs rounded-xl md:rounded-lg bg-white border-slate-200 px-3 md:px-2.5 focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15"
                                     />
                                     <button
                                         type="submit"
                                         :disabled="addingCategory === sec.key || !(newTitles[sec.key] || '').trim()"
-                                        class="h-8 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium disabled:opacity-40 transition-colors inline-flex items-center gap-1 shrink-0"
+                                        class="h-10 md:h-8 px-3.5 md:px-3 rounded-xl md:rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium disabled:opacity-40 transition-colors inline-flex items-center gap-1 shrink-0"
                                     >
                                         <PlusIcon class="w-3.5 h-3.5" />
                                         <span>Tambah</span>
@@ -503,7 +552,56 @@ const gradeSections = [
             </div>
         </div>
 
-        <!-- Modal: Tambah Jilid Baru -->
+        <!-- ==================== MOBILE JILID / KELAS PICKER BOTTOM SHEET ==================== -->
+        <QuranDialog
+            :show="showMobilePickerSheet"
+            variant="sheet"
+            :title="scopeTab === 'level' ? 'Pilih Jilid / Jenjang' : 'Pilih Kelas Formal'"
+            :subtitle="scopeTab === 'level' ? 'Lihat & atur rubrik Materi Pokok dan Surah Pendek.' : 'Lihat & atur rubrik Hadist, Doa, Niat, dan Bacaan Sholat.'"
+            @close="showMobilePickerSheet = false"
+        >
+            <div class="p-4">
+                <div class="divide-y divide-slate-100 rounded-xl border border-slate-200/80 overflow-hidden bg-white">
+                    <template v-if="scopeTab === 'level'">
+                        <button
+                            v-for="lvl in levels"
+                            :key="'mp-' + lvl.id"
+                            type="button"
+                            @click="() => { selectedLevelId = lvl.id; showMobilePickerSheet = false; }"
+                            class="w-full px-4 py-3 flex items-center justify-between text-left text-sm active:bg-slate-50 transition-colors"
+                            :class="selectedLevel && selectedLevel.id === lvl.id ? 'bg-teal-50/50 text-[#00796B] font-semibold' : 'text-slate-700 font-medium'"
+                        >
+                            <span>
+                                <span class="text-slate-400 tabular-nums mr-2">{{ lvl.sort_order }}.</span>
+                                {{ lvl.name }}
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-400 tabular-nums">{{ (lvl.rubric_items || []).length }} item</span>
+                                <CheckIcon v-if="selectedLevel && selectedLevel.id === lvl.id" class="w-4 h-4 text-[#00796B]" />
+                            </div>
+                        </button>
+                    </template>
+                    <template v-else>
+                        <button
+                            v-for="g in availableGrades"
+                            :key="'mpg-' + g"
+                            type="button"
+                            @click="() => { selectedGrade = g; showMobilePickerSheet = false; }"
+                            class="w-full px-4 py-3 flex items-center justify-between text-left text-sm active:bg-slate-50 transition-colors"
+                            :class="String(selectedGrade) === String(g) ? 'bg-teal-50/50 text-[#00796B] font-semibold' : 'text-slate-700 font-medium'"
+                        >
+                            <span>Kelas {{ g }}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-400 tabular-nums">{{ (gradeRubrics[String(g)] || []).length }} item</span>
+                                <CheckIcon v-if="String(selectedGrade) === String(g)" class="w-4 h-4 text-[#00796B]" />
+                            </div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </QuranDialog>
+
+        <!-- Modal / Sheet: Tambah Jilid Baru -->
         <QuranDialog
             :show="showLevelModal"
             variant="modal"
@@ -515,26 +613,26 @@ const gradeSections = [
             <form id="quran-level-form" @submit.prevent="submitLevel" class="space-y-3.5">
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Nama Jilid / Tingkat <span class="text-rose-500">*</span></label>
-                    <input v-model="levelForm.name" required type="text" placeholder="Contoh: Pra-TK / Tahfidz Juz 29" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    <input v-model="levelForm.name" required type="text" placeholder="Contoh: Pra-TK / Tahfidz Juz 29" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     <p v-if="levelForm.errors.name" class="text-xs text-rose-600 mt-1">{{ levelForm.errors.name }}</p>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Kode Singkat</label>
-                        <input v-model="levelForm.code" type="text" placeholder="MQ / J1" class="w-full h-9 rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="levelForm.code" type="text" placeholder="MQ / J1" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Urutan Jenjang</label>
-                        <input v-model="levelForm.sort_order" type="number" min="1" max="99" class="w-full h-9 rounded-lg border-slate-200 text-sm tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                        <input v-model="levelForm.sort_order" type="number" min="1" max="99" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm tabular-nums focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                     </div>
                 </div>
             </form>
 
             <template #footer>
-                <button type="button" @click="showLevelModal = false" class="h-8 px-3.5 rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
+                <button type="button" @click="showLevelModal = false" class="h-10 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
                     Batal
                 </button>
-                <button type="submit" form="quran-level-form" :disabled="levelForm.processing" class="h-8 px-4 rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 transition-colors">
+                <button type="submit" form="quran-level-form" :disabled="levelForm.processing" class="h-10 md:h-8 px-4 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-50 transition-colors">
                     {{ levelForm.processing ? 'Menyimpan...' : 'Simpan Jilid' }}
                 </button>
             </template>
@@ -543,7 +641,7 @@ const gradeSections = [
         <!-- Confirm Delete Rubric Item -->
         <QuranConfirmDialog
             :show="!!deleteTarget"
-            :title="`Hapus item rubrik?`"
+            title="Hapus item rubrik?"
             :message="deleteTarget ? `Item &quot;${deleteTarget.title}&quot; akan dihapus dari daftar rubrik penilaian.` : ''"
             confirm-label="Hapus Item"
             :processing="deletingItem"
