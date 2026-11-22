@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\EnsureDaycareUnit;
 use App\Modules\Daycare\Controllers\DaycareChildrenController;
 use App\Modules\Daycare\Controllers\DaycareAttendanceController;
 use App\Modules\Daycare\Controllers\DaycareDailyLogController;
@@ -8,10 +9,12 @@ use App\Modules\Daycare\Controllers\DaycareGrowthController;
 use App\Modules\Daycare\Controllers\DaycareJournalController;
 use App\Modules\Daycare\Controllers\DaycareReportController;
 
+// Staff & Caregiver operational routes (strictly excluded from siswa/student/orang_tua and non-Daycare units)
 Route::middleware([
     'auth',
     'verified',
-    'role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|staff_yayasan|admin_unit|staff_unit|kepala_sekolah|teacher|guru|wali_kelas|orang_tua|siswa|student',
+    'role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|staff_yayasan|admin_unit|staff_unit|kepala_sekolah|teacher|guru|wali_kelas',
+    EnsureDaycareUnit::class,
 ])->prefix('daycare')->name('daycare.')->group(function () {
     // Master Children & Profiles
     Route::get('/children', [DaycareChildrenController::class, 'index'])->name('children.index');
@@ -27,8 +30,7 @@ Route::middleware([
     Route::post('/attendance/check-in', [DaycareAttendanceController::class, 'checkIn'])->name('attendance.check-in');
     Route::post('/attendance/check-out', [DaycareAttendanceController::class, 'checkOut'])->name('attendance.check-out');
 
-    // Daily Care Logs (Timeline)
-    Route::get('/children/{student}/logs', [DaycareDailyLogController::class, 'index'])->name('logs.index');
+    // Daily Care Logs (Timeline - displayed inside children.show)
     Route::post('/children/{student}/logs', [DaycareDailyLogController::class, 'store'])->name('logs.store');
     Route::delete('/logs/{log}', [DaycareDailyLogController::class, 'destroy'])->name('logs.destroy');
 
@@ -37,7 +39,13 @@ Route::middleware([
 
     // Developmental Journal
     Route::post('/children/{student}/journals', [DaycareJournalController::class, 'store'])->name('journals.store');
+});
 
-    // Parent Output: Daily Report 1-Page Summary
+// Parent/Staff Daily Report 1-Page Summary (ownership & unit access enforced inside controller)
+Route::middleware([
+    'auth',
+    'verified',
+    'role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|staff_yayasan|admin_unit|staff_unit|kepala_sekolah|teacher|guru|wali_kelas|orang_tua|siswa|student',
+])->prefix('daycare')->name('daycare.')->group(function () {
     Route::get('/children/{student}/daily-report', [DaycareReportController::class, 'dailyReport'])->name('reports.daily');
 });

@@ -167,7 +167,16 @@ class TeacherController extends Controller
             });
         }
 
-        $availableUsers = $availableUsersQuery->latest()->get(['id', 'name', 'email']);
+        // Return lightweight plain arrays to avoid N+1 on User::$appends['profile_photo_url']
+        $availableUsers = $availableUsersQuery
+            ->latest()
+            ->get(['id', 'name', 'email'])
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+            ])
+            ->values();
 
         // Statistics
         $totalTeachers = Teacher::where('unit_id', $unitId)->count();

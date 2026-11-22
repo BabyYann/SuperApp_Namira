@@ -592,15 +592,15 @@ class ScheduleController extends Controller
                 ' . ($logoUrl ? '<img src="' . $logoUrl . '" class="logo" alt="Logo">' : '') . '
                 <div class="header-text">
                     <h1>YAYASAN NAMIRA SCHOOL</h1>
-                    <h2>' . ($unit->name ?? 'SATUAN PENDIDIKAN NAMIRA') . '</h2>
-                    <p>' . ($unit->address ?? 'Jalan Pasar 1 No. 58, Tanjung Sari, Medan Selayang') . '</p>
+                    <h2>' . e($unit->name ?? 'SATUAN PENDIDIKAN NAMIRA') . '</h2>
+                    <p>' . e($unit->address ?? 'Probolinggo, Jawa Timur') . '</p>
                 </div>
             </div>
 
             <div class="meta">
-                <div class="meta-item"><span class="meta-label">Kelas:</span> ' . $classroom->name . '</div>
-                <div class="meta-item"><span class="meta-label">Wali Kelas:</span> ' . ($classroom->homeroomTeacher->full_name ?? '-') . '</div>
-                <div class="meta-item"><span class="meta-label">Tahun Ajaran:</span> ' . ($activeYear->name ?? '-') . '</div>
+                <div class="meta-item"><span class="meta-label">Kelas:</span> ' . e($classroom->name) . '</div>
+                <div class="meta-item"><span class="meta-label">Wali Kelas:</span> ' . e($classroom->homeroomTeacher?->full_name ?? '-') . '</div>
+                <div class="meta-item"><span class="meta-label">Tahun Ajaran:</span> ' . e($activeYear->name ?? '-') . '</div>
             </div>
 
             <table>
@@ -618,10 +618,12 @@ class ScheduleController extends Controller
                 foreach ($schedule[$day]->sortBy('start_time') as $item) {
                     $startTime = \Carbon\Carbon::parse($item->start_time)->format('H:i');
                     $endTime = \Carbon\Carbon::parse($item->end_time)->format('H:i');
+                    $subjectName = e($item->subject?->name ?? '-');
+                    $teacherName = e($item->teacher?->full_name ?? '-');
                     $html .= '<div class="schedule-item">
                         <span class="time">' . $startTime . ' - ' . $endTime . '</span>
-                        <span class="subject">' . $item->subject->name . '</span>
-                        <span class="teacher">' . $item->teacher->full_name . '</span>
+                        <span class="subject">' . $subjectName . '</span>
+                        <span class="teacher">' . $teacherName . '</span>
                     </div>';
                 }
             } else {
@@ -634,7 +636,7 @@ class ScheduleController extends Controller
 
             <div class="footer">
                 <div class="signature">
-                    <p>Medan, ' . now()->translatedFormat('d F Y') . '</p>
+                    <p>Probolinggo, ' . now()->translatedFormat('d F Y') . '</p>
                     <p>Kepala Sekolah</p>
                     <div class="signature-line"></div>
                     <p style="font-weight: bold;">( ..................................... )</p>

@@ -16,6 +16,19 @@ use Inertia\Inertia;
 
 class DaycareChildrenController extends Controller
 {
+    private function authorizeStudentUnit(Student $student): void
+    {
+        $user = auth()->user();
+        if ($user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])) {
+            return;
+        }
+
+        $unitId = session('active_unit_id');
+        if (!$unitId || (int) $student->unit_id !== (int) $unitId) {
+            abort(403, 'Akses Ditolak: Data ananda bukan milik unit Anda.');
+        }
+    }
+
     public function index(Request $request)
     {
         $unitId = session('active_unit_id');
@@ -130,6 +143,7 @@ class DaycareChildrenController extends Controller
 
     public function show(Student $student, Request $request)
     {
+        $this->authorizeStudentUnit($student);
         $student->load(['daycareProfile', 'authorizedPickups']);
 
         $date = $request->query('date', now()->toDateString());
@@ -170,6 +184,7 @@ class DaycareChildrenController extends Controller
 
     public function update(Request $request, Student $student)
     {
+        $this->authorizeStudentUnit($student);
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'nickname' => 'nullable|string|max:100',
@@ -216,6 +231,7 @@ class DaycareChildrenController extends Controller
 
     public function storePickup(Request $request, Student $student)
     {
+        $this->authorizeStudentUnit($student);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'relationship' => 'required|string|max:100',
@@ -236,6 +252,9 @@ class DaycareChildrenController extends Controller
 
     public function destroyPickup(DaycareAuthorizedPickup $pickup)
     {
+        if ($pickup->student) {
+            $this->authorizeStudentUnit($pickup->student);
+        }
         if ($pickup->photo) {
             Storage::disk('public')->delete($pickup->photo);
         }

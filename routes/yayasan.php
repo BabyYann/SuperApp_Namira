@@ -11,13 +11,13 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::middleware(['role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|admin_unit|staff_yayasan|staff_unit|kepala_sekolah|koordinator_kurikulum'])->group(function () {
         Route::get('/monitoring', [\App\Modules\Yayasan\Controllers\MonitoringController::class, 'index'])->name('monitoring.index');
         Route::resource('units', \App\Modules\Yayasan\Controllers\UnitController::class);
-        Route::resource('academic-years', \App\Modules\Yayasan\Controllers\AcademicYearController::class);
+        Route::resource('academic-years', \App\Modules\Yayasan\Controllers\AcademicYearController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::post('academic-years/{academic_year}/activate', [\App\Modules\Yayasan\Controllers\AcademicYearController::class, 'setAsActive'])->name('academic-years.activate');
-        Route::resource('users', \App\Modules\Yayasan\Controllers\UserController::class);
+        Route::resource('users', \App\Modules\Yayasan\Controllers\UserController::class)->except(['show']);
         Route::post('users/{user}/reset-password', [\App\Modules\Yayasan\Controllers\UserController::class, 'resetPassword'])->name('users.reset-password');
         Route::post('users/{user}/sync-profiles-unit', [\App\Modules\Yayasan\Controllers\UserController::class, 'syncProfilesUnit'])->name('users.sync-profiles-unit');
         Route::post('users/{user}/unlink-profile', [\App\Modules\Yayasan\Controllers\UserController::class, 'unlinkProfile'])->name('users.unlink-profile');
-        Route::resource('attendance-locations', \App\Modules\Yayasan\Controllers\AttendanceLocationController::class);
+        Route::resource('attendance-locations', \App\Modules\Yayasan\Controllers\AttendanceLocationController::class)->only(['index', 'store', 'update', 'destroy']);
     });
 
     // Super Admin Global Settings (Control Center)
@@ -38,14 +38,14 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::post('/switch-unit', [\App\Modules\Yayasan\Controllers\UnitController::class, 'switch'])->name('switch-unit');
 
     // Academic Module
-    Route::resource('teachers', \App\Modules\Academic\Controllers\TeacherController::class);
+    Route::resource('teachers', \App\Modules\Academic\Controllers\TeacherController::class)->except(['create', 'edit']);
     Route::post('classrooms/{classroom}/add-student', [\App\Modules\Academic\Controllers\ClassroomController::class, 'addStudent'])->name('classrooms.add-student');
     Route::delete('classrooms/{classroom}/remove-student/{student}', [\App\Modules\Academic\Controllers\ClassroomController::class, 'removeStudent'])->name('classrooms.remove-student');
-    Route::resource('classrooms', \App\Modules\Academic\Controllers\ClassroomController::class);
+    Route::resource('classrooms', \App\Modules\Academic\Controllers\ClassroomController::class)->except(['create', 'edit']);
     Route::post('students/import-va', [\App\Modules\Academic\Controllers\StudentController::class, 'importVa'])->name('students.import-va');
     Route::post('students/import-excel', [\App\Modules\Academic\Controllers\StudentController::class, 'importExcel'])->name('students.import-excel');
     Route::post('students/bulk-update-year', [\App\Modules\Academic\Controllers\StudentController::class, 'bulkUpdateYear'])->name('students.bulk-update-year');
-    Route::resource('students', \App\Modules\Academic\Controllers\StudentController::class);
+    Route::resource('students', \App\Modules\Academic\Controllers\StudentController::class)->except(['create', 'edit']);
     Route::resource('subjects', \App\Modules\Academic\Controllers\SubjectController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('learning-objectives', \App\Modules\Academic\Controllers\LearningObjectiveController::class)->only(['index', 'store', 'update', 'destroy']);
     
@@ -76,15 +76,15 @@ Route::prefix('yayasan')->name('yayasan.')->middleware(['role:super_admin_yayasa
     Route::prefix('finance')->name('finance.')->middleware(['feature:feature_finance', 'role:super_admin_yayasan|admin_yayasan|pembina_yayasan|pengawas_yayasan|admin_unit|kepala_sekolah|finance|staff_admin_keuangan'])->group(function () {
         Route::get('/', [\App\Modules\Finance\Controllers\FinanceDashboardController::class, 'index'])->name('dashboard');
         
-        Route::resource('accounts', \App\Modules\Finance\Controllers\FinanceAccountController::class);
-        Route::resource('types', \App\Modules\Finance\Controllers\FinanceTypeController::class);
-        Route::resource('bills', \App\Modules\Finance\Controllers\StudentBillController::class);
+        Route::resource('accounts', \App\Modules\Finance\Controllers\FinanceAccountController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('types', \App\Modules\Finance\Controllers\FinanceTypeController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('bills', \App\Modules\Finance\Controllers\StudentBillController::class)->except(['edit']);
         Route::post('bills/{bill}/confirm-payment', [\App\Modules\Finance\Controllers\StudentBillController::class, 'confirmPayment'])->name('bills.confirm-payment');
         
         // Transactions
         Route::get('transactions/import', [\App\Modules\Finance\Controllers\TransactionController::class, 'import'])->name('transactions.import');
         Route::post('transactions/import', [\App\Modules\Finance\Controllers\TransactionController::class, 'processImport'])->name('transactions.import.process');
-        Route::resource('transactions', \App\Modules\Finance\Controllers\TransactionController::class)->only(['index', 'create', 'store', 'show']);
+        Route::resource('transactions', \App\Modules\Finance\Controllers\TransactionController::class)->only(['index', 'store']);
 
         // Reports
         Route::prefix('reports')->name('reports.')->group(function () {

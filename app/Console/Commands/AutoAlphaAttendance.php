@@ -53,8 +53,11 @@ class AutoAlphaAttendance extends Command
             if ($user->teacher_profile) $unitId = $user->teacher_profile->unit_id;
             elseif ($user->staff) $unitId = $user->staff->unit_id;
 
-            // 3. Check Holiday (Global OR Unit Specific)
+            // 3. Check Official Holiday (only event_type = 'libur', Global OR Unit Specific)
             $isHoliday = Holiday::whereDate('date', $today)
+                ->where(function ($q) {
+                    $q->where('event_type', 'libur')->orWhereNull('event_type');
+                })
                 ->where(function($q) use ($unitId) {
                     $q->whereNull('unit_id') // Global
                       ->orWhere('unit_id', $unitId); // Unit Specific

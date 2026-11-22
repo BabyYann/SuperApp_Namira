@@ -51,16 +51,28 @@ class FcmService
                 }
 
                 $response = Http::withoutVerifying()
+                    ->timeout(10)
                     ->withToken($accessToken)
                     ->post("https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send", $messagePayload);
 
                 if ($response->failed()) {
-                    Log::error("FCM failed for token: " . substr($token, 0, 20) . "... Error: " . $response->body());
-                    // Cleanup inactive tokens if token expired or unregistered
                     $resData = $response->json();
-                    $errorCode = $resData['error']['status'] ?? '';
-                    if ($errorCode === 'NOT_FOUND' || $errorCode === 'UNREGISTERED') {
+                    $errorStatus = strtoupper((string) ($resData['error']['status'] ?? ''));
+                    $detailCodes = collect($resData['error']['details'] ?? [])
+                        ->pluck('errorCode')
+                        ->filter()
+                        ->map(fn ($c) => strtoupper((string) $c))
+                        ->all();
+
+                    $staleCodes = ['NOT_FOUND', 'UNREGISTERED', 'INVALID_ARGUMENT', 'SENDER_ID_MISMATCH'];
+                    $isStaleToken = in_array($errorStatus, $staleCodes, true)
+                        || !empty(array_intersect($detailCodes, $staleCodes));
+
+                    if ($isStaleToken) {
                         \App\Models\UserDeviceToken::where('token', $token)->delete();
+                        Log::info("FCM pruned stale token (" . ($detailCodes[0] ?? $errorStatus) . "): " . substr($token, 0, 20) . "...");
+                    } else {
+                        Log::error("FCM failed for token: " . substr($token, 0, 20) . "... Error: " . $response->body());
                     }
                 }
             }

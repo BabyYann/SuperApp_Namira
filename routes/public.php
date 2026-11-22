@@ -296,30 +296,38 @@ Route::get('/karir/{vacancy:slug}', [\App\Http\Controllers\PublicCareerControlle
 Route::post('/karir/{vacancy:slug}/lamar', [\App\Http\Controllers\PublicCareerController::class, 'apply'])->name('careers.apply');
 
 Route::get('/sitemap.xml', function () {
-    $baseUrl = config('app.url', 'https://namiraschool.com');
+    $baseUrl = rtrim(config('app.url', 'https://namiraschool.com'), '/');
     
     $news = \App\Models\News::where('status', 'published')->latest('published_at')->get(['slug', 'updated_at']);
-    $events = \App\Models\Event::where('status', '!=', 'cancelled')->latest('start_date')->get(['id', 'updated_at']);
+    $events = \App\Models\Event::where('status', '!=', 'cancelled')->latest('start_date')->get(['slug', 'updated_at']);
 
     $xml = '<?xml version="1.0" encoding="UTF-8"?>';
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     
     // Main pages
     $xml .= '<url><loc>' . $baseUrl . '</loc><changefreq>daily</changefreq><priority>1.0</priority></url>';
+    $xml .= '<url><loc>' . $baseUrl . '/spmb</loc><changefreq>daily</changefreq><priority>0.95</priority></url>';
     $xml .= '<url><loc>' . $baseUrl . '/berita</loc><changefreq>daily</changefreq><priority>0.9</priority></url>';
     $xml .= '<url><loc>' . $baseUrl . '/events</loc><changefreq>daily</changefreq><priority>0.9</priority></url>';
+    $xml .= '<url><loc>' . $baseUrl . '/karir</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>';
     $xml .= '<url><loc>' . $baseUrl . '/testimonials</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>';
     
     // News detail pages
     foreach ($news as $item) {
+        if (empty($item->slug)) {
+            continue;
+        }
         $lastMod = $item->updated_at ? $item->updated_at->toAtomString() : date('c');
         $xml .= '<url><loc>' . $baseUrl . '/berita/' . urlencode($item->slug) . '</loc><lastmod>' . $lastMod . '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>';
     }
 
-    // Event detail pages
+    // Event detail pages (bound by slug)
     foreach ($events as $item) {
+        if (empty($item->slug)) {
+            continue;
+        }
         $lastMod = $item->updated_at ? $item->updated_at->toAtomString() : date('c');
-        $xml .= '<url><loc>' . $baseUrl . '/events/' . $item->id . '</loc><lastmod>' . $lastMod . '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>';
+        $xml .= '<url><loc>' . $baseUrl . '/events/' . urlencode($item->slug) . '</loc><lastmod>' . $lastMod . '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>';
     }
 
     $xml .= '</urlset>';
@@ -327,158 +335,4 @@ Route::get('/sitemap.xml', function () {
     return response($xml, 200, [
         'Content-Type' => 'text/xml'
     ]);
-});
-
-Route::get('/cleanup-demo-student', function () {
-    try {
-        $user = \App\Models\User::where('email', 'siswa.demo@namiraschool.com')->first();
-        if ($user) {
-            $student = \App\Modules\Academic\Models\Student::where('user_id', $user->id)->first();
-            if ($student) {
-                // Delete demo bills & transactions
-                \App\Modules\Finance\Models\StudentBill::where('student_id', $student->id)->forceDelete();
-                \App\Modules\Finance\Models\Transaction::where('student_id', $student->id)->delete();
-                // Delete student
-                $student->forceDelete();
-            }
-            // Delete roles
-            \Illuminate\Support\Facades\DB::table('model_has_roles')->where('model_id', $user->id)->delete();
-            // Delete user
-            $user->delete();
-        }
-
-        // Clean demo finance type if exists and has no other bills
-        $ft = \App\Modules\Finance\Models\FinanceType::where('name', 'SPP Bulanan SMP Namira')->first();
-        if ($ft && \App\Modules\Finance\Models\StudentBill::where('finance_type_id', $ft->id)->count() === 0) {
-            $ft->delete();
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Akun dummy siswa demo (Ahmad Zaki Pratama) & data demo berhasil dibersihkan total!',
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-    }
-});
-
-Route::get('/download-pdf-guru-sd', function () {
-    $teachers = [
-        ["nama" => "Abdul Adjis Afifi", "NIY" => "3259201301", "email" => "abdul@namira.school", "no_hp" => "085204854927"],
-        ["nama" => "Anggun Happy Ananda, S.Pd", "NIY" => "3190201302", "email" => "Anggunhappyananda@gmail.com", "no_hp" => "085331362000"],
-        ["nama" => "Hj Muthmainnah", "NIY" => "3175201506", "email" => "hj@namira.school", "no_hp" => "085204610367"],
-        ["nama" => "Sudar", "NIY" => "32201607", "email" => "sudar@namira.school", "no_hp" => "-"],
-        ["nama" => "Kholifatul Khoiriyah, S.Si", "NIY" => "3192201609", "email" => "kholifatulk084@gmail.com", "no_hp" => "087861564895"],
-        ["nama" => "Hisyam Farih, S.E", "NIY" => "3291201711", "email" => "anahisyam45@gmail.com", "no_hp" => "082232243354"],
-        ["nama" => "Riyadhatul Badiah, S.E", "NIY" => "3195201715", "email" => "riyahafidz07@gmail.com", "no_hp" => "085259122195"],
-        ["nama" => "Meylinda Kurnia Sofiyani, S.Psi", "NIY" => "3192201821", "email" => "meylindakurnia12@gmail.com", "no_hp" => "085234588078"],
-        ["nama" => "Maulidia Khoiry, S.Pd", "NIY" => "3199201824", "email" => "maulidiakhoiriy@gmail.com", "no_hp" => "082331530162"],
-        ["nama" => "Husnul Sri Maulidiah, S.Pd", "NIY" => "3197201933", "email" => "Husnulsrimaulidiah@gmail.com", "no_hp" => "081556823582"],
-        ["nama" => "Mochammad", "NIY" => "3260201934", "email" => "mochammad@namira.school", "no_hp" => "082331530162"],
-        ["nama" => "Halimatus Sa'diyah, S.Pd", "NIY" => "3196201935", "email" => "Halimasadiyah238@gmail.com", "no_hp" => "085331167567"],
-        ["nama" => "Cahya Arief Khoirumah S.Pd", "NIY" => "3196202037", "email" => "khoirumahcahya1104@gmail.com", "no_hp" => "085804014742"],
-        ["nama" => "Dwi Arifatun Nisa' S.Pd", "NIY" => "3196202039", "email" => "dwi@namira.school", "no_hp" => "082316283056"],
-        ["nama" => "Siti Anisa S.Hum", "NIY" => "3197202041", "email" => "sitiianisaa456@gmail.com", "no_hp" => "085230217949"],
-        ["nama" => "Agung Prassetiyo", "NIY" => "3198202142", "email" => "agungprassetiyo511@gmail.com", "no_hp" => "085217208502"],
-        ["nama" => "Azkiyah Amalina S.Pd", "NIY" => "3197202143", "email" => "azkiyahamalina79@gmail.com", "no_hp" => "085335821035"],
-        ["nama" => "Rosyidah S.Pd", "NIY" => "3198201744", "email" => "rosyidahnamira123@gmail.com", "no_hp" => "082338795422"],
-        ["nama" => "Mia Nurhidayati S.E", "NIY" => "3198202247", "email" => "mianurhidayati7@gmail.com", "no_hp" => "081359564307"],
-        ["nama" => "Siti Aminatul Qomariyah", "NIY" => "3101202249", "email" => "syarifahaminatul@gmail.com", "no_hp" => "081233171193"],
-        ["nama" => "Khusnul Hotimah S.Pd", "NIY" => "3100202251", "email" => "khusnulhotimah1123@gmail.com", "no_hp" => "081357135188"],
-        ["nama" => "Nur Halimah", "NIY" => "3198202252", "email" => "Hnurhalimah091@gmail.com", "no_hp" => "085290443736"],
-        ["nama" => "Fajar Ridwan Abilillah S.Pd", "NIY" => "3100202253", "email" => "fajar@namira.school", "no_hp" => "0895630439320"],
-        ["nama" => "Halifah", "NIY" => "3272201654", "email" => "halifah@namira.school", "no_hp" => "-"],
-        ["nama" => "Ike Nurjannah S.Pd", "NIY" => "3100202355", "email" => "ikenurjannah618@gmail.com", "no_hp" => "085608029378"],
-        ["nama" => "Muhammad Farid S.Pd", "NIY" => "3100202356", "email" => "faridjenny24@gmail.com", "no_hp" => "085234789280"],
-        ["nama" => "Rehanatil Jannah", "NIY" => "3101202357", "email" => "jannahrehanatil@gmail.com", "no_hp" => "082337975497"],
-        ["nama" => "Iva Mutma'inah S.Pd", "NIY" => "3100202358", "email" => "ivamutmainah.1507@gmail.com", "no_hp" => "082330345815"],
-        ["nama" => "Alfina Ananda Putri S.Pd", "NIY" => "3101202359", "email" => "putrialnanda12@gmail.com", "no_hp" => "082245621324"],
-        ["nama" => "Firdani Sholeh Pradana S.Pd", "NIY" => "3190202360", "email" => "dani.firdani@gmail.com", "no_hp" => "082335345167"],
-        ["nama" => "Ahmad Baidhowi S.Pd", "NIY" => "3197202461", "email" => "ahmadbaidhowi108@gmail.com", "no_hp" => "081336535501"],
-        ["nama" => "Shofiyah Husein S.Pd", "NIY" => "3102202462", "email" => "shofiyahhusein682@gmail.com", "no_hp" => "085732439937"],
-        ["nama" => "Abd Hannan", "NIY" => "3291202463", "email" => "abd@namira.school", "no_hp" => "082269523244"],
-        ["nama" => "Yazid Mubtafi S.Pd", "NIY" => "3101202464", "email" => "yazimubtafi7@gmail.com", "no_hp" => "083137368121"],
-        ["nama" => "Intan Maufirah", "NIY" => "3101202465", "email" => "syfintan847@gmail.com", "no_hp" => "085853664685"],
-        ["nama" => "Helmi Mufidah", "NIY" => "3102202466", "email" => "helmimufida05@gmail.com", "no_hp" => "083157513651"],
-        ["nama" => "Dandik Nofian Putra Pratama", "NIY" => "3299202467", "email" => "dandik@namira.school", "no_hp" => "081280356087"],
-        ["nama" => "Nadifah S.Pd", "NIY" => "3103202468", "email" => "ndf.5403@gmail.com", "no_hp" => "085233858252"],
-        ["nama" => "Mamluatul Hasanah S.Pd", "NIY" => "3100202469", "email" => "mamluatulhasanah1520@gmail.com", "no_hp" => "085850797267"],
-        ["nama" => "Nur Aini Trischa Ananda", "NIY" => "3100202470", "email" => "nurainifriscaananda@gmail.com", "no_hp" => "083845072546"],
-        ["nama" => "Hermawan Diva Ardi Wijaya", "NIY" => "3102202471", "email" => "hermawan@namira.school", "no_hp" => "083852801326"],
-        ["nama" => "Putri Agustini S.Sos", "NIY" => "3101202472", "email" => "putriagustini1303@gmail.com", "no_hp" => "082266837207"],
-        ["nama" => "Muhammad Syarifudin S.Pd", "NIY" => "3101202473", "email" => "muhammadsyarifudin032001@gmail.com", "no_hp" => "085648235862"],
-        ["nama" => "Deny Setiawan S.Pd", "NIY" => "3102202475", "email" => "setiawandeny1602@gmail.com", "no_hp" => "081259894411"],
-        ["nama" => "Hasbullah S.Pd.I", "NIY" => "3102202475", "email" => "hasbulcs1@gmail.com", "no_hp" => "085231224112"],
-        ["nama" => "SARIF", "NIY" => "3105202576", "email" => "syarifsya726@gmail.com", "no_hp" => "083155792854"],
-        ["nama" => "Meirinda Zahratul M. S.Pd", "NIY" => "3102202577", "email" => "meirindazm@gmail.com", "no_hp" => "081259081907"],
-        ["nama" => "Rian Hidayad S. Kom", "NIY" => "3102202578", "email" => "rianbru18@gmail.com", "no_hp" => "082140560121"],
-        ["nama" => "Ahmad Kamil Fadoli S.Pd", "NIY" => "3196202579", "email" => "kamilfadoli20@gmail.com", "no_hp" => "082318246720"],
-        ["nama" => "Astutik, S.Pd.I", "NIY" => "3180201380", "email" => "astutik7749@gmail.com", "no_hp" => "082330221399"]
-    ];
-
-    $html = view('pdf.guru-sd-list', compact('teachers'))->render();
-    
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
-    return $pdf->download('Daftar_Akun_Guru_SD_Namira.pdf');
-});
-
-Route::get('/download-pdf-guru-pavlov-daycare', function () {
-    $pavlovTeachers = [
-        ["nama" => "Inayah", "NIY" => "41841902", "email" => "inayahzamzami84@gmail.com", "no_hp" => "085234293443"],
-        ["nama" => "Ummil Atiqoh", "NIY" => "41931903", "email" => "ummilatiqoh@gmail.com", "no_hp" => "081357897098"],
-        ["nama" => "Fatimatus Sahro", "NIY" => "41992105", "email" => "fatimatussahro1011@gmail.com", "no_hp" => "085269396801"],
-        ["nama" => "Khairun Nisak", "NIY" => "42972106", "email" => "anisnisak422@gmail.com", "no_hp" => "082330623382"],
-        ["nama" => "Erina Kholidhatus Sholihah", "NIY" => "41012207", "email" => "erinasholihah@gmail.com", "no_hp" => "085607026588"],
-        ["nama" => "Siti Nurhalisah", "NIY" => "41012211", "email" => "sitinurkholisah143@gmail.com", "no_hp" => "083892373324"],
-        ["nama" => "Anis Srifa Ambami", "NIY" => "41002313", "email" => "anisrifaambami@gmail.com", "no_hp" => "089520864248"],
-        ["nama" => "Aprilia Safianti", "NIY" => "41992314", "email" => "apriliasafianti4@gmail.com", "no_hp" => "082244063358"],
-        ["nama" => "Nadita Arifianti Meilani", "NIY" => "41052315", "email" => "naditarifiantimeilani@gmail.com", "no_hp" => "085601612322"],
-        ["nama" => "Lailatul Mukarromah", "NIY" => "41002317", "email" => "lailamukarromah44@gmail.com", "no_hp" => "082247317975"],
-        ["nama" => "Weni Mushonifah", "NIY" => "41002318", "email" => "wenimusonnifah@gmail.com", "no_hp" => "085850669118"],
-        ["nama" => "Nadhifatul Qolbiyah", "NIY" => "41002419", "email" => "nadhifatulqolbiyah622@gmail.com", "no_hp" => "082334062180"],
-        ["nama" => "Kurratul Aini", "NIY" => "41992420", "email" => "kurratulaini145@yahoo.com", "no_hp" => "082228547474"],
-        ["nama" => "Inayatul Maula", "NIY" => "41012422", "email" => "inytl.maula18@gmail.com", "no_hp" => "082245812260"],
-        ["nama" => "Ike Putri Nur Aida", "NIY" => "41012523", "email" => "ikeputrinuraida@gmail.com", "no_hp" => "085746202577"],
-        ["nama" => "Radita Rodiana", "NIY" => "41022524", "email" => "raditarodiana85@gmail.com", "no_hp" => "082245812759"],
-        ["nama" => "Qurrotu Aini", "NIY" => "41022525", "email" => "qurrotu.aini.004@gmail.com", "no_hp" => "082140263050"],
-        ["nama" => "Hairul Zahroni", "NIY" => "", "email" => "hairul@namira.school", "no_hp" => "-"],
-        ["nama" => "Intan Ike Susanti", "NIY" => "41032527", "email" => "intanintan1751@gmail.com", "no_hp" => "085234501158"],
-        ["nama" => "Emilia Monica Ramlan", "NIY" => "41212528", "email" => "emiliam.ramlan@gmail.com", "no_hp" => "085258835152"],
-        ["nama" => "Fitriyah Rizki Amalia", "NIY" => "", "email" => "fitriyah@namira.school", "no_hp" => "-"],
-        ["nama" => "Masruhin", "NIY" => "", "email" => "masruhin@namira.school", "no_hp" => "-"]
-    ];
-
-    $daycareTeachers = [
-        ["nama" => "Badriyah", "unit" => "TPA Kraksaan", "NIY" => "91901301", "email" => "badriyah@namira.school", "no_hp" => "-"],
-        ["nama" => "Murniati, S.M", "unit" => "TPA Kraksaan", "NIY" => "91971602", "email" => "murniati@namira.school", "no_hp" => "082315022331"],
-        ["nama" => "Dwi Cahya Ningsih, S.M", "unit" => "TPA Kraksaan", "NIY" => "91971703", "email" => "dwi.cahya@namira.school", "no_hp" => "-"],
-        ["nama" => "Nurul Jannah", "unit" => "TPA Kraksaan", "NIY" => "91901704", "email" => "nuruljannah5486@gmail.com", "no_hp" => "082330503892"],
-        ["nama" => "Toni Arso Akbar", "unit" => "TPA Kraksaan", "NIY" => "92801907", "email" => "toni@namira.school", "no_hp" => "085232628298"],
-        ["nama" => "Siti Nura", "unit" => "TPA Kraksaan", "NIY" => "91012008", "email" => "noragebangan@gmail.com", "no_hp" => "085237183429"],
-        ["nama" => "Mahfud Diono", "unit" => "TPA Kraksaan", "NIY" => "", "email" => "mahfud@namira.school", "no_hp" => "-"],
-        ["nama" => "Indi Desi Hasanah", "unit" => "TPA Kraksaan", "NIY" => "91042310", "email" => "iindi4803@gmail.com", "no_hp" => "085755087910"],
-        ["nama" => "Joni", "unit" => "TPA Kraksaan", "NIY" => "", "email" => "joni@namira.school", "no_hp" => "-"],
-        ["nama" => "Alifia Nailus Dzikria", "unit" => "TPA Kraksaan", "NIY" => "", "email" => "alifia@namira.school", "no_hp" => "-"],
-        ["nama" => "Sofiatun Hasanah", "unit" => "TPA Kraksaan", "NIY" => "91052313", "email" => "sofiatulhasanah361@gmail.com", "no_hp" => "082325750806"],
-        ["nama" => "Rizki Ayu Syahtika", "unit" => "TPA Kraksaan", "NIY" => "91992514", "email" => "rizkyayusyahtika@gmail.com", "no_hp" => "085935094033"],
-        ["nama" => "Nawal Savina", "unit" => "TPA Kraksaan", "NIY" => "91062515", "email" => "nawalsavina02@gmail.com", "no_hp" => "089517033430"],
-        ["nama" => "Nabilla Ilamalia", "unit" => "TPA Dringu", "NIY" => "", "email" => "nabilla.ilamalia@namira.school", "no_hp" => "-"],
-        ["nama" => "Silvia Anggrayni", "unit" => "TPA Dringu", "NIY" => "", "email" => "silvia@namira.school", "no_hp" => "-"]
-    ];
-
-    $paudTeachers = [
-        ["nama" => "Nur Asia, S. Pd", "unit" => "PG Kraksaan", "NIY" => "11931603", "email" => "asianur90@gmail.com", "no_hp" => "082330512794"],
-        ["nama" => "Dwi Indah Puji Astutik, S. Ap", "unit" => "PG Kraksaan", "NIY" => "11951905", "email" => "dwieindah13579@gmail.com", "no_hp" => "085236108090"],
-        ["nama" => "Tania Nafisah Sehba", "unit" => "PG Kraksaan", "NIY" => "11022407", "email" => "tanianafisah7@gmail.com", "no_hp" => "081515288041"],
-        ["nama" => "Durrotun Nafilah", "unit" => "PG Kraksaan", "NIY" => "11022408", "email" => "durrotunnafilah80@gmail.com", "no_hp" => "082359339513"],
-        ["nama" => "Eva Maghfirah, S. Pd", "unit" => "TK Kraksaan", "NIY" => "21761301", "email" => "firah.ifamaghfirah@gmail.com", "no_hp" => "085257282845"],
-        ["nama" => "Oemi Maktoem, S.Pd", "unit" => "TK Kraksaan", "NIY" => "21881402", "email" => "verinmaktumah@gmail.com", "no_hp" => "082330436690"],
-        ["nama" => "Siti Fatimah", "unit" => "TK Kraksaan", "NIY" => "21951403", "email" => "sfatimah8810@gmail.com", "no_hp" => "082330947254"],
-        ["nama" => "Mustika Ratu Ningsih, S. Pd", "unit" => "TK Kraksaan", "NIY" => "21901504", "email" => "khusnulkhotimahtika@gmail.com", "no_hp" => "082257887417"]
-    ];
-
-    $html = view('pdf.guru-pavlov-daycare-list', compact('pavlovTeachers', 'daycareTeachers', 'paudTeachers'))->render();
-    
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
-    return $pdf->download('Daftar_Akun_Guru_Pavlov_Daycare_PAUD_Namira.pdf');
 });

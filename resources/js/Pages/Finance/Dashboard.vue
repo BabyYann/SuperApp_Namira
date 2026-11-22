@@ -138,15 +138,15 @@ const chartOptions = {
                 <!-- Quick Actions Pill Grid -->
                 <div class="grid grid-cols-2 gap-3">
                     <a 
-                        :href="route('yayasan.finance.transactions.create')" 
+                        :href="route('yayasan.finance.transactions.import')" 
                         class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center gap-3 active:scale-95 transition-transform"
                     >
                         <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
                             <BanknotesIcon class="w-5 h-5" />
                         </div>
                         <div>
-                            <h4 class="font-extrabold text-xs text-slate-800">Catat Bayar</h4>
-                            <p class="text-[10px] text-slate-400">Input manual</p>
+                            <h4 class="font-extrabold text-xs text-slate-800">Import Mutasi</h4>
+                            <p class="text-[10px] text-slate-400">Upload mutasi bank</p>
                         </div>
                     </a>
 

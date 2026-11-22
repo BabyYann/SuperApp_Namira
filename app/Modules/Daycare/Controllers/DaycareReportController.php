@@ -13,6 +13,25 @@ class DaycareReportController extends Controller
 {
     public function dailyReport(Student $student, Request $request)
     {
+        $user = auth()->user();
+        $isGlobal = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan']);
+        $isStaff = $user->hasAnyRole(['admin_unit', 'staff_unit', 'kepala_sekolah', 'teacher', 'guru', 'wali_kelas']);
+
+        if (!$isGlobal) {
+            if ($isStaff) {
+                $unitId = session('active_unit_id');
+                $activeUnit = $unitId ? \App\Modules\Yayasan\Models\Unit::find($unitId) : null;
+                if (!$activeUnit || (!$activeUnit->isDaycare() && !$activeUnit->hasFeature('daycare')) || (int) $student->unit_id !== (int) $unitId) {
+                    abort(403, 'Akses Ditolak: Laporan harian ini bukan milik unit Daycare Anda.');
+                }
+            } else {
+                // Orang tua / siswa hanya boleh mengakses laporan miliknya sendiri
+                if ((int) $student->user_id !== (int) $user->id) {
+                    abort(403, 'Akses Ditolak: Anda hanya dapat melihat laporan harian ananda Anda sendiri.');
+                }
+            }
+        }
+
         $date = $request->query('date', now()->toDateString());
 
         $student->load(['daycareProfile', 'unit']);

@@ -59,8 +59,11 @@ class SendTeachingJournalReminder extends Command
         foreach ($schedules as $schedule) {
             $unitId = $schedule->unit_id;
 
-            // Check if today is a Holiday for this unit
+            // Check if today is an Official Holiday (only event_type = 'libur') for this unit
             $isHoliday = Holiday::whereDate('date', $today)
+                ->where(function ($q) {
+                    $q->where('event_type', 'libur')->orWhereNull('event_type');
+                })
                 ->where(function ($q) use ($unitId) {
                     $q->whereNull('unit_id')->orWhere('unit_id', $unitId);
                 })->exists();

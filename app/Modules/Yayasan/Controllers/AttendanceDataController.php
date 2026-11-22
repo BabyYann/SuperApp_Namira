@@ -733,7 +733,7 @@ class AttendanceDataController extends Controller
                         'type' => 'weekend',
                     ];
                 } elseif ($isHoliday) {
-                    $holidayTitle = $holidayDetails[$cDateStr]->name ?? 'Libur Resmi';
+                    $holidayTitle = $holidayDetails[$cDateStr]->description ?? 'Libur Resmi';
                     $dailyRecords[] = [
                         'id' => null,
                         'date' => $cDateStr,
@@ -962,7 +962,7 @@ class AttendanceDataController extends Controller
                         'type' => 'weekend',
                     ];
                 } elseif ($isHoliday) {
-                    $holidayTitle = $holidayDetails[$cDateStr]->name ?? 'Libur Resmi';
+                    $holidayTitle = $holidayDetails[$cDateStr]->description ?? 'Libur Resmi';
                     $dailyRecords[] = (object) [
                         'date' => $cDateStr,
                         'day_name' => $dayName,

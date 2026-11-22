@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { 
     PlusIcon, CalendarDaysIcon, CalendarIcon, XMarkIcon, PencilSquareIcon, 
     BuildingOffice2Icon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon,
@@ -34,8 +34,18 @@ const form = useForm({
 const currentYear = ref(props.filters?.year || new Date().getFullYear());
 const currentMonth = ref(props.filters?.month || new Date().getMonth() + 1);
 
+watch(() => props.filters, (f) => {
+    if (f?.year) currentYear.value = f.year;
+    if (f?.month) currentMonth.value = f.month;
+}, { deep: true });
+
 const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
                     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+const currentMonthHolidays = computed(() => {
+    const prefix = `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}`;
+    return (props.holidays || []).filter(h => (h.date || '').startsWith(prefix));
+});
 
 // Calendar Generation
 const calendarDays = computed(() => {
@@ -56,7 +66,7 @@ const calendarDays = computed(() => {
     // Current month days
     for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const events = props.holidays.filter(h => h.date.startsWith(dateStr));
+        const events = currentMonthHolidays.value.filter(h => h.date.startsWith(dateStr));
         days.push({ 
             day: d, 
             date: dateStr,
@@ -80,11 +90,14 @@ const changeMonth = (delta) => {
         newMonth = 1;
         newYear++;
     }
+
+    currentMonth.value = newMonth;
+    currentYear.value = newYear;
     
     router.get(route('yayasan.holidays.index'), {
         year: newYear,
         month: newMonth,
-    }, { preserveState: true });
+    }, { preserveState: true, preserveScroll: true });
 };
 
 const openModal = (date = null) => {
@@ -132,6 +145,18 @@ const deleteHoliday = (id) => {
     if (confirm('Hapus event ini?')) {
         router.delete(route('yayasan.holidays.destroy', id));
     }
+};
+
+const formatHolidayDate = (dateVal) => {
+    if (!dateVal) return '-';
+    const parts = String(dateVal).split('T')[0].split('-').map(Number);
+    if (parts.length !== 3) return dateVal;
+    return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
 };
 
 const getEventTypeColor = (type) => {
@@ -251,19 +276,19 @@ const getEventTypeBadge = (type) => {
             <!-- Event List (Alternative View) -->
             <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
                 <div class="p-4 border-b bg-gray-50 font-bold text-gray-700">
-                    Daftar Event Bulan Ini ({{ holidays.length }})
+                    Daftar Event {{ monthNames[currentMonth - 1] }} {{ currentYear }} ({{ currentMonthHolidays.length }})
                 </div>
-                <div v-if="holidays.length === 0" class="p-8 text-center text-gray-400">
+                <div v-if="currentMonthHolidays.length === 0" class="p-8 text-center text-gray-400">
                     Tidak ada event di bulan ini
                 </div>
                 <div v-else class="divide-y">
-                    <div v-for="h in holidays" :key="h.id" class="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div v-for="h in currentMonthHolidays" :key="h.id" class="p-4 flex items-center justify-between hover:bg-gray-50">
                         <div class="flex items-center gap-4">
-                            <div class="w-2 h-10 rounded-full" :class="getEventTypeColor(h.event_type)"></div>
+                            <div class="w-2 h-10 rounded-full flex-shrink-0" :style="{ backgroundColor: h.display_color || h.color || '#6b7280' }"></div>
                             <div>
                                 <div class="font-bold text-gray-800">{{ h.description }}</div>
                                 <div class="text-xs text-gray-500 flex items-center gap-3">
-                                    <span>{{ new Date(h.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) }}</span>
+                                    <span>{{ formatHolidayDate(h.date) }}</span>
                                     <span v-if="h.start_time" class="flex items-center gap-1">
                                         <ClockIcon class="w-3 h-3" />
                                         {{ h.start_time }} - {{ h.end_time || '?' }}
