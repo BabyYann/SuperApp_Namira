@@ -809,6 +809,7 @@ class AdminSpmbController extends Controller
                 'academic_year' => '2027/2028',
                 'allow_future_inden' => true,
                 'inden_academic_years' => ['2028/2029', '2029/2030', '2030/2031'],
+                'closed_academic_years' => $spmbService->isSdKotaUnit($targetUnit) ? ['2027/2028'] : [],
                 'quota' => $isTkKbUnit ? 40 : 60,
                 'registration_fee' => 250000,
                 'bank_name' => 'Bank Jatim',
@@ -882,6 +883,7 @@ class AdminSpmbController extends Controller
             'isTkKb' => $isTkKbUnit,
             'registrationUrl' => $this->resolveUnitRegistrationUrl($targetUnit),
             'resolvedFutureIndenYears' => $setting->getFutureIndenAcademicYears(),
+            'resolvedClosedYears' => $setting->getClosedAcademicYears(),
             'suggestedFutureYears' => SpmbSetting::generateNextAcademicYears($setting->academic_year ?: '2027/2028', 5),
         ]);
     }
@@ -908,6 +910,9 @@ class AdminSpmbController extends Controller
             'allow_future_inden' => 'nullable|boolean',
             'inden_academic_years' => 'nullable|array',
             'inden_academic_years.*' => 'string|max:20',
+            'closed_academic_years' => 'nullable|array',
+            'closed_academic_years.*' => 'string|max:20',
+            'sync_academic_year_lists' => 'nullable|boolean',
             'quota' => 'required|integer|min:1',
             'registration_fee' => 'required|numeric|min:0',
             'admission_fee_total' => 'nullable|numeric|min:0',
@@ -941,6 +946,18 @@ class AdminSpmbController extends Controller
             ksort($sanitizedFutureYears);
         }
 
+        $sanitizedClosedYears = [];
+        if ($request->has('closed_academic_years') && is_array($request->input('closed_academic_years'))) {
+            foreach ($request->input('closed_academic_years') as $yr) {
+                $norm = SpmbSetting::normalizeAcademicYear(is_string($yr) ? $yr : null);
+                $st = $norm ? SpmbSetting::extractStartYear($norm) : null;
+                if ($norm && $st !== null) {
+                    $sanitizedClosedYears[$st] = $norm;
+                }
+            }
+            ksort($sanitizedClosedYears);
+        }
+
         $data = $request->only([
             'name', 'quota', 'registration_fee',
             'admission_fee_total', 'min_down_payment_percentage',
@@ -954,8 +971,11 @@ class AdminSpmbController extends Controller
         $data['allow_future_inden'] = $request->has('allow_future_inden')
             ? $request->boolean('allow_future_inden')
             : (bool) ($setting->allow_future_inden ?? true);
-        if ($request->has('inden_academic_years')) {
+        if ($request->has('inden_academic_years') || $request->boolean('sync_academic_year_lists')) {
             $data['inden_academic_years'] = array_values($sanitizedFutureYears);
+        }
+        if ($request->has('closed_academic_years') || $request->boolean('sync_academic_year_lists')) {
+            $data['closed_academic_years'] = array_values($sanitizedClosedYears);
         }
 
         if (Schema::hasColumn('spmb_settings', 'whatsapp_group_link')) {

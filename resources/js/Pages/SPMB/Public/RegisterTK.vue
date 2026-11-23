@@ -35,6 +35,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    closedRequestedAcademicYear: {
+        type: String,
+        default: '',
+    },
     totalApplicants: Number,
     isLockedForPublic: {
         type: Boolean,
@@ -50,9 +54,11 @@ const fileNamePaymentProof = ref('');
 const isCopied = ref(false);
 const submitErrorBanner = ref('');
 
+const firstOpenAcademicYear = (props.academicYearOptions || []).find((opt) => !opt.is_closed)?.value || '';
+
 const form = useForm({
     unit_id: props.unit?.id || props.tkUnits?.[0]?.id || '',
-    academic_year: props.selectedAcademicYear || props.setting?.academic_year || '2027/2028',
+    academic_year: props.selectedAcademicYear || firstOpenAcademicYear,
 
     // Step 1: Biodata Calon Murid Usia Dini
     full_name: '',
@@ -113,8 +119,11 @@ const activeIsLockedForPublic = computed(() => {
 
 watch(() => form.unit_id, () => {
     const opts = activeYearOptions.value;
-    if (opts.length > 0 && !opts.some((o) => o.value === form.academic_year)) {
-        form.academic_year = opts[0].value;
+    const openOpts = opts.filter((o) => !o.is_closed);
+    if (openOpts.length > 0 && !openOpts.some((o) => o.value === form.academic_year)) {
+        form.academic_year = openOpts[0].value;
+    } else if (openOpts.length === 0) {
+        form.academic_year = '';
     }
 });
 
@@ -168,6 +177,10 @@ const onPaymentProofChange = async (e) => {
 const validateStep1 = () => {
     if (!form.unit_id) {
         alert('Mohon pilih unit TK / KB Namira tujuan terlebih dahulu.');
+        return false;
+    }
+    if (!form.academic_year || selectedYearOption.value?.is_closed) {
+        alert('Mohon pilih Tahun Ajaran pendaftaran yang masih tersedia (belum penuh).');
         return false;
     }
     if (!form.full_name || !form.birth_place || !form.birth_date || !form.gender) {
@@ -406,6 +419,7 @@ const submitRegistration = () => {
                     :options="activeYearOptions"
                     accent="amber"
                     :unit-label="activeUnitName"
+                    :closed-notice-year="closedRequestedAcademicYear"
                     :error="form.errors.academic_year"
                 />
 

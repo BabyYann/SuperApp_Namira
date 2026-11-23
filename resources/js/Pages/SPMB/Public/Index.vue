@@ -60,10 +60,23 @@ const props = defineProps({
 });
 
 const academicYearLabel = computed(() => props.sdSetting?.academic_year || '2027/2028');
-const sdFutureYears = computed(() => (props.sdYearOptions || []).filter((y) => y.is_future_inden));
-const sdKotaFutureYears = computed(() => (props.sdKotaYearOptions || []).filter((y) => y.is_future_inden));
-const smpFutureYears = computed(() => (props.smpYearOptions || []).filter((y) => y.is_future_inden));
-const tkFutureYears = computed(() => (props.tkYearOptions || []).filter((y) => y.is_future_inden));
+const sdFutureYears = computed(() => (props.sdYearOptions || []).filter((y) => y.is_future_inden && !y.is_closed));
+const sdKotaFutureYears = computed(() => (props.sdKotaYearOptions || []).filter((y) => y.is_future_inden && !y.is_closed));
+const smpFutureYears = computed(() => (props.smpYearOptions || []).filter((y) => y.is_future_inden && !y.is_closed));
+const tkFutureYears = computed(() => (props.tkYearOptions || []).filter((y) => y.is_future_inden && !y.is_closed));
+
+const sdPrimaryOption = computed(() => (props.sdYearOptions || []).find((y) => !y.is_future_inden) || null);
+const sdPrimaryClosed = computed(() => Boolean(sdPrimaryOption.value?.is_closed));
+const sdDefaultOpenYear = computed(() => (props.sdYearOptions || []).find((y) => !y.is_closed)?.value || null);
+
+const sdKotaPrimaryOption = computed(() => (props.sdKotaYearOptions || []).find((y) => !y.is_future_inden) || null);
+const sdKotaPrimaryClosed = computed(() => Boolean(sdKotaPrimaryOption.value?.is_closed));
+const sdKotaDefaultOpenYear = computed(() => (props.sdKotaYearOptions || []).find((y) => !y.is_closed)?.value || null);
+
+const smpPrimaryOption = computed(() => (props.smpYearOptions || []).find((y) => !y.is_future_inden) || null);
+const smpPrimaryClosed = computed(() => Boolean(smpPrimaryOption.value?.is_closed));
+const smpDefaultOpenYear = computed(() => (props.smpYearOptions || []).find((y) => !y.is_closed)?.value || null);
+
 const sdQuota = computed(() => props.sdSetting?.quota || 60);
 const sdKotaQuota = computed(() => props.sdKotaSetting?.quota || 60);
 const waNumber = computed(() => {
@@ -786,8 +799,14 @@ onUnmounted(() => {
                                             onerror="this.onerror=null; this.src='/images/landing/logo-sd.png';"
                                         />
                                     </div>
+                                    <span
+                                        v-if="sdPrimaryClosed"
+                                        class="px-3 py-1 rounded-full bg-rose-600/95 text-white text-[10px] font-mono-code font-bold uppercase tracking-[0.14em]"
+                                    >
+                                        TA {{ sdSetting?.academic_year || academicYearLabel }} Penuh
+                                    </span>
                                     <span class="px-3 py-1 rounded-full bg-[#DFB86B] text-[#0B2820] text-[10px] font-mono-code font-bold uppercase tracking-[0.14em]">
-                                        Pendaftaran Dibuka
+                                        {{ sdPrimaryClosed && sdDefaultOpenYear ? `Inden ${sdDefaultOpenYear}+ Dibuka` : 'Pendaftaran Dibuka' }}
                                     </span>
                                 </div>
                             </div>
@@ -847,12 +866,22 @@ onUnmounted(() => {
 
                                 <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
                                     <Link
-                                        href="/spmb/daftar/sd"
+                                        v-if="sdDefaultOpenYear"
+                                        :href="sdPrimaryClosed ? `/spmb/daftar/sd?ta=${encodeURIComponent(sdDefaultOpenYear)}` : '/spmb/daftar/sd'"
                                         class="js-magnetic group inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-[#DFB86B] hover:bg-[#E7C782] text-[#0B2820] text-xs sm:text-sm font-extrabold tracking-wide transition-colors"
                                     >
-                                        <span>Daftar SD Kraksaan ({{ sdSetting?.academic_year || academicYearLabel }})</span>
+                                        <span>
+                                            {{ sdPrimaryClosed ? `Daftar Inden SD Kraksaan (${sdDefaultOpenYear})` : `Daftar SD Kraksaan (${sdSetting?.academic_year || academicYearLabel})` }}
+                                        </span>
                                         <ArrowRightIcon class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                     </Link>
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white/15 text-white/75 text-xs sm:text-sm font-bold cursor-not-allowed"
+                                    >
+                                        <LockClosedIcon class="w-4 h-4" />
+                                        <span>Kuota Pendaftaran Penuh</span>
+                                    </span>
 
                                     <span class="text-[11px] font-mono-code text-[#F6F2E9]/50">
                                         /spmb/daftar/sd
@@ -891,12 +920,20 @@ onUnmounted(() => {
                                                 onerror="this.onerror=null; this.src='/images/landing/logo-sd.png';"
                                             />
                                         </div>
-                                        <span
-                                            v-if="sdKotaSetting?.is_active"
-                                            class="px-3 py-1 rounded-full bg-[#DFB86B] text-[#0B2820] text-[10px] font-mono-code font-bold uppercase tracking-[0.14em]"
-                                        >
-                                            Jalur Inden Dibuka
-                                        </span>
+                                        <div class="flex flex-wrap items-center justify-end gap-1.5">
+                                            <span
+                                                v-if="sdKotaPrimaryClosed"
+                                                class="px-2.5 py-1 rounded-full bg-rose-600/95 text-white text-[10px] font-mono-code font-bold uppercase tracking-[0.12em] shadow-xs"
+                                            >
+                                                TA {{ sdKotaSetting?.academic_year || academicYearLabel }} Penuh
+                                            </span>
+                                            <span
+                                                v-if="sdKotaSetting?.is_active && sdKotaDefaultOpenYear"
+                                                class="px-3 py-1 rounded-full bg-[#DFB86B] text-[#0B2820] text-[10px] font-mono-code font-bold uppercase tracking-[0.14em]"
+                                            >
+                                                {{ sdKotaPrimaryClosed ? `Inden ${sdKotaDefaultOpenYear}+ Dibuka` : 'Jalur Inden Dibuka' }}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div class="absolute bottom-4 left-5 right-5 flex items-end justify-between text-white">
                                         <div>
@@ -930,8 +967,22 @@ onUnmounted(() => {
                                         </div>
                                     </div>
 
+                                    <!-- Closed Primary Academic Year Notice for SD Kota -->
+                                    <div
+                                        v-if="sdKotaPrimaryClosed"
+                                        class="mt-4 rounded-2xl bg-rose-50 border border-rose-200/90 px-3.5 py-2.5 text-[11px] text-rose-900 leading-snug"
+                                    >
+                                        <strong class="font-bold">TA {{ sdKotaSetting?.academic_year || academicYearLabel }} Tutup (Kuota Penuh):</strong>
+                                        <span v-if="sdKotaDefaultOpenYear">
+                                            Pendaftaran saat ini dibuka untuk <strong>Jalur Inden TA {{ sdKotaDefaultOpenYear }}</strong> dan tahun ajaran mendatang.
+                                        </span>
+                                        <span v-else>
+                                            Seluruh kuota pendaftaran unit ini saat ini sudah penuh.
+                                        </span>
+                                    </div>
+
                                     <!-- Multi-Year Inden Deep-Link Pills -->
-                                    <div v-if="sdKotaFutureYears.length > 0" class="mt-5 flex flex-wrap items-center gap-1.5">
+                                    <div v-if="sdKotaFutureYears.length > 0" class="mt-4 flex flex-wrap items-center gap-1.5">
                                         <span class="font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#0B2820]/55 mr-1">
                                             Inden TA:
                                         </span>
@@ -949,12 +1000,22 @@ onUnmounted(() => {
 
                             <div class="px-6 sm:px-8 pb-6 sm:pb-8 flex flex-wrap items-center justify-between gap-3">
                                 <Link
-                                    href="/spmb/daftar/sd-kota"
+                                    v-if="sdKotaDefaultOpenYear"
+                                    :href="sdKotaPrimaryClosed ? `/spmb/daftar/sd-kota?ta=${encodeURIComponent(sdKotaDefaultOpenYear)}` : '/spmb/daftar/sd-kota'"
                                     class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-full bg-[#0B2820] hover:bg-[#133E32] text-[#F6F2E9] text-xs sm:text-sm font-bold tracking-wide transition-colors"
                                 >
-                                    <span>Daftar SD Kota ({{ sdKotaSetting?.academic_year || academicYearLabel }})</span>
+                                    <span>
+                                        {{ sdKotaPrimaryClosed ? `Daftar Inden SD Kota (${sdKotaDefaultOpenYear})` : `Daftar SD Kota (${sdKotaSetting?.academic_year || academicYearLabel})` }}
+                                    </span>
                                     <ArrowRightIcon class="w-4 h-4 text-[#DFB86B] transition-transform duration-300 group-hover:translate-x-1" />
                                 </Link>
+                                <span
+                                    v-else
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-slate-200 text-slate-600 text-xs sm:text-sm font-bold cursor-not-allowed"
+                                >
+                                    <LockClosedIcon class="w-4 h-4" />
+                                    <span>Kuota Pendaftaran Penuh</span>
+                                </span>
                             </div>
                         </article>
                     </Motion>
@@ -985,12 +1046,20 @@ onUnmounted(() => {
                                                 onerror="this.onerror=null; this.src='/images/landing/logo-smp.png';"
                                             />
                                         </div>
-                                        <span
-                                            v-if="smpSetting?.is_active"
-                                            class="px-3 py-1 rounded-full bg-[#162C46] border border-white/25 text-white text-[10px] font-mono-code font-semibold uppercase tracking-[0.14em]"
-                                        >
-                                            Jalur Inden Dibuka
-                                        </span>
+                                        <div class="flex flex-wrap items-center justify-end gap-1.5">
+                                            <span
+                                                v-if="smpPrimaryClosed"
+                                                class="px-2.5 py-1 rounded-full bg-rose-600/95 text-white text-[10px] font-mono-code font-bold uppercase tracking-[0.12em]"
+                                            >
+                                                TA {{ smpSetting?.academic_year || academicYearLabel }} Penuh
+                                            </span>
+                                            <span
+                                                v-if="smpSetting?.is_active && smpDefaultOpenYear"
+                                                class="px-3 py-1 rounded-full bg-[#162C46] border border-white/25 text-white text-[10px] font-mono-code font-semibold uppercase tracking-[0.14em]"
+                                            >
+                                                {{ smpPrimaryClosed ? `Inden ${smpDefaultOpenYear}+ Dibuka` : 'Jalur Inden Dibuka' }}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div class="absolute bottom-4 left-5 right-5 flex items-end justify-between text-white">
                                         <div>
@@ -1024,8 +1093,21 @@ onUnmounted(() => {
                                         </div>
                                     </div>
 
+                                    <div
+                                        v-if="smpPrimaryClosed"
+                                        class="mt-4 rounded-2xl bg-rose-50 border border-rose-200/90 px-3.5 py-2.5 text-[11px] text-rose-900 leading-snug"
+                                    >
+                                        <strong class="font-bold">TA {{ smpSetting?.academic_year || academicYearLabel }} Tutup (Kuota Penuh):</strong>
+                                        <span v-if="smpDefaultOpenYear">
+                                            Pendaftaran saat ini dibuka untuk <strong>Jalur Inden TA {{ smpDefaultOpenYear }}</strong> dan tahun ajaran mendatang.
+                                        </span>
+                                        <span v-else>
+                                            Seluruh kuota pendaftaran unit ini saat ini sudah penuh.
+                                        </span>
+                                    </div>
+
                                     <!-- Multi-Year Inden Deep-Link Pills -->
-                                    <div v-if="smpFutureYears.length > 0" class="mt-5 flex flex-wrap items-center gap-1.5">
+                                    <div v-if="smpFutureYears.length > 0" class="mt-4 flex flex-wrap items-center gap-1.5">
                                         <span class="font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#162C46]/60 mr-1">
                                             Inden TA:
                                         </span>
@@ -1043,12 +1125,22 @@ onUnmounted(() => {
 
                             <div class="px-6 sm:px-8 pb-6 sm:pb-8">
                                 <Link
-                                    href="/spmb/daftar/smp"
+                                    v-if="smpDefaultOpenYear"
+                                    :href="smpPrimaryClosed ? `/spmb/daftar/smp?ta=${encodeURIComponent(smpDefaultOpenYear)}` : '/spmb/daftar/smp'"
                                     class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-full bg-[#162C46] hover:bg-[#1E3B5E] text-white text-xs sm:text-sm font-bold tracking-wide transition-colors"
                                 >
-                                    <span>Daftar SMP ({{ smpSetting?.academic_year || academicYearLabel }})</span>
+                                    <span>
+                                        {{ smpPrimaryClosed ? `Daftar Inden SMP (${smpDefaultOpenYear})` : `Daftar SMP (${smpSetting?.academic_year || academicYearLabel})` }}
+                                    </span>
                                     <ArrowRightIcon class="w-4 h-4 text-[#DFB86B] transition-transform duration-300 group-hover:translate-x-1" />
                                 </Link>
+                                <span
+                                    v-else
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-slate-200 text-slate-600 text-xs sm:text-sm font-bold cursor-not-allowed"
+                                >
+                                    <LockClosedIcon class="w-4 h-4" />
+                                    <span>Kuota Pendaftaran Penuh</span>
+                                </span>
                             </div>
                         </article>
                     </Motion>

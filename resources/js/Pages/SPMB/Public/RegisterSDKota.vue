@@ -32,6 +32,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    closedRequestedAcademicYear: {
+        type: String,
+        default: '',
+    },
     isLockedForPublic: {
         type: Boolean,
         default: false,
@@ -44,9 +48,11 @@ const showPassword = ref(false);
 const paymentPreview = ref(null);
 const isCopied = ref(false);
 
+const firstOpenAcademicYear = (props.academicYearOptions || []).find((opt) => !opt.is_closed)?.value || '';
+
 const form = useForm({
-    // Pilihan Tahun Ajaran Masuk
-    academic_year: props.selectedAcademicYear || props.setting?.academic_year || '2027/2028',
+    // Pilihan Tahun Ajaran Masuk (hanya dari TA yang masih terbuka)
+    academic_year: props.selectedAcademicYear || firstOpenAcademicYear,
 
     // Step 1: Biodata Calon Murid
     full_name: '',
@@ -155,6 +161,10 @@ const onCategoryChange = (val) => {
 };
 
 const validateStep1 = () => {
+    if (!form.academic_year || selectedYearOption.value?.is_closed) {
+        alert('Mohon pilih Tahun Ajaran pendaftaran yang masih tersedia (belum penuh).');
+        return false;
+    }
     if (!form.full_name || !form.birth_place || !form.birth_date || !form.gender) {
         alert('Mohon lengkapi data wajib calon murid (Nama Lengkap, Tempat & Tanggal Lahir, Jenis Kelamin).');
         return false;
@@ -372,6 +382,7 @@ const submitRegistration = () => {
                     :options="academicYearOptions"
                     accent="emerald"
                     unit-label="SD Namira Kota Probolinggo"
+                    :closed-notice-year="closedRequestedAcademicYear"
                     :error="form.errors.academic_year"
                 />
 

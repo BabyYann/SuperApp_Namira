@@ -1,6 +1,12 @@
 <script setup>
 import { computed } from 'vue';
-import { CalendarDaysIcon, SparklesIcon, CheckCircleIcon } from '@heroicons/vue/24/outline';
+import {
+    CalendarDaysIcon,
+    SparklesIcon,
+    CheckCircleIcon,
+    LockClosedIcon,
+    ExclamationTriangleIcon,
+} from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     modelValue: {
@@ -19,6 +25,10 @@ const props = defineProps({
         type: String,
         default: 'Sekolah Islam Namira',
     },
+    closedNoticeYear: {
+        type: String,
+        default: '',
+    },
     error: {
         type: String,
         default: '',
@@ -27,8 +37,13 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
+const openOptions = computed(() => (props.options || []).filter((opt) => !opt.is_closed));
+const closedOptions = computed(() => (props.options || []).filter((opt) => opt.is_closed));
+const closedYearsLabel = computed(() => closedOptions.value.map((o) => `TA ${o.value}`).join(', '));
+const openYearsLabel = computed(() => openOptions.value.map((o) => `TA ${o.value}`).join(', '));
+
 const selectedOption = computed(() => {
-    return (props.options || []).find((opt) => opt.value === props.modelValue) || null;
+    return (props.options || []).find((opt) => opt.value === props.modelValue && !opt.is_closed) || null;
 });
 
 const theme = computed(() => {
@@ -79,8 +94,11 @@ const theme = computed(() => {
     };
 });
 
-const selectYear = (value) => {
-    emit('update:modelValue', value);
+const selectYear = (opt) => {
+    if (!opt || opt.is_closed) {
+        return;
+    }
+    emit('update:modelValue', opt.value);
 };
 </script>
 
@@ -97,12 +115,35 @@ const selectYear = (value) => {
                 </h2>
             </div>
             <span
-                v-if="options.length > 1"
+                v-if="openOptions.length > 1"
                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold self-start sm:self-auto shrink-0"
             >
                 <SparklesIcon class="w-3 h-3" />
                 <span>Tersedia Jalur Inden Multi-Tahun</span>
             </span>
+        </div>
+
+        <!-- Closed / Full Academic Year Notice -->
+        <div
+            v-if="closedOptions.length > 0"
+            class="rounded-xl border border-rose-200 bg-rose-50/85 p-3.5 flex items-start gap-2.5 text-xs text-rose-950"
+        >
+            <ExclamationTriangleIcon class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div class="leading-relaxed text-[11px] sm:text-xs">
+                <strong class="font-bold text-rose-900">
+                    Informasi Kuota Penuh ({{ closedNoticeYear ? `TA ${closedNoticeYear}` : closedYearsLabel }}):
+                </strong>
+                Pendaftaran <strong>{{ unitLabel }}</strong> untuk
+                <strong>{{ closedNoticeYear ? `TA ${closedNoticeYear}` : closedYearsLabel }}</strong>
+                sudah <strong>penuh dan ditutup</strong>.
+                <template v-if="openOptions.length > 0">
+                    Bapak/Ibu dapat langsung mendaftar <strong>Jalur Inden</strong> untuk
+                    <strong>{{ openYearsLabel }}</strong> di bawah ini.
+                </template>
+                <template v-else>
+                    Saat ini seluruh periode pendaftaran untuk unit ini sudah penuh. Silakan hubungi panitia via WhatsApp.
+                </template>
+            </div>
         </div>
 
         <div
@@ -113,33 +154,45 @@ const selectYear = (value) => {
                 v-for="opt in options"
                 :key="opt.value"
                 type="button"
-                @click="selectYear(opt.value)"
-                class="text-left p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between gap-2.5 select-none"
-                :class="modelValue === opt.value
-                    ? (opt.is_future_inden ? theme.activeFutureCard : theme.activeCard)
-                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'"
+                :disabled="opt.is_closed"
+                @click="selectYear(opt)"
+                class="text-left p-3.5 rounded-xl border transition flex flex-col justify-between gap-2.5 select-none"
+                :class="opt.is_closed
+                    ? 'border-rose-200/80 bg-slate-100/90 opacity-75 cursor-not-allowed'
+                    : (modelValue === opt.value
+                        ? (opt.is_future_inden ? theme.activeFutureCard : theme.activeCard) + ' cursor-pointer'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 cursor-pointer')"
             >
                 <div class="flex items-start justify-between gap-2">
                     <span
                         class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide"
-                        :class="modelValue === opt.value
-                            ? (opt.is_future_inden ? theme.futureBadge : theme.activeBadge)
-                            : (opt.is_future_inden ? theme.idleFutureBadge : theme.idleCurrentBadge)"
+                        :class="opt.is_closed
+                            ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                            : (modelValue === opt.value
+                                ? (opt.is_future_inden ? theme.futureBadge : theme.activeBadge)
+                                : (opt.is_future_inden ? theme.idleFutureBadge : theme.idleCurrentBadge))"
                     >
                         {{ opt.badge }}
                     </span>
+                    <LockClosedIcon
+                        v-if="opt.is_closed"
+                        class="w-4 h-4 shrink-0 text-rose-500"
+                    />
                     <CheckCircleIcon
-                        v-if="modelValue === opt.value"
+                        v-else-if="modelValue === opt.value"
                         class="w-4 h-4 shrink-0"
                         :class="opt.is_future_inden ? theme.futureCheck : theme.check"
                     />
                 </div>
 
                 <div>
-                    <strong class="block text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                    <strong
+                        class="block text-sm sm:text-base font-black tracking-tight"
+                        :class="opt.is_closed ? 'text-slate-500 line-through decoration-rose-400/70' : 'text-slate-900'"
+                    >
                         {{ opt.label }}
                     </strong>
-                    <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                    <p class="text-[11px] mt-0.5 leading-snug" :class="opt.is_closed ? 'text-rose-700/85 font-medium' : 'text-slate-500'">
                         {{ opt.description }}
                     </p>
                 </div>

@@ -440,3 +440,93 @@ it('guards future-year Inden portal announcements, prints accurate PDF academic 
 
     expect($futureApp->fresh()->academic_year)->toBe('2030/2031');
 });
+
+it('blocks registration for closed/full academic years on SD Kota (2027/2028) while keeping 2028/2029+ Inden open and admin-configurable', function () {
+    $this->sdKotaSetting->update([
+        'closed_academic_years' => ['2027/2028'],
+    ]);
+
+    // 1. Landing page reports 2027/2028 closed and 2028/2029 open on SD Kota
+    $this->get(route('spmb.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('sdKotaYearOptions.0.value', '2027/2028')
+            ->where('sdKotaYearOptions.0.is_closed', true)
+            ->where('sdKotaYearOptions.1.value', '2028/2029')
+            ->where('sdKotaYearOptions.1.is_closed', false)
+        );
+
+    // 2. Opening /spmb/daftar/sd-kota without ?ta automatically selects first OPEN year (2028/2029)
+    $this->get(route('spmb.register.sd-kota'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('SPMB/Public/RegisterSDKota')
+            ->where('selectedAcademicYear', '2028/2029')
+            ->where('closedRequestedAcademicYear', null)
+        );
+
+    // 3. Opening /spmb/daftar/sd-kota?ta=2027/2028 skips closed 2027/2028 -> selects 2028/2029 + passes closed notice
+    $this->get(route('spmb.register.sd-kota', ['ta' => '2027/2028']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('selectedAcademicYear', '2028/2029')
+            ->where('closedRequestedAcademicYear', '2027/2028')
+        );
+
+    // 4. Direct POST attempting to register for closed 2027/2028 MUST be rejected
+    $this->post(route('spmb.store.sd-kota'), makeBaseApplicantPayload([
+        'full_name' => 'Blocked 2027 Child',
+        'academic_year' => '2027/2028',
+        'parent_phone' => '081234500501',
+    ]))->assertSessionHasErrors('academic_year');
+
+    expect(SpmbApplicant::where('unit_id', $this->sdKotaUnit->id)->count())->toBe(0);
+
+    // 5. POST with omitted academic_year falls back to first OPEN year (2028/2029), NEVER closed 2027/2028
+    $this->post(route('spmb.store.sd-kota'), makeBaseApplicantPayload([
+        'full_name' => 'Fallback Open 2028 Child',
+        'parent_phone' => '081234500502',
+    ]))->assertSessionHasNoErrors();
+
+    $fallbackApp = SpmbApplicant::where('full_name', 'Fallback Open 2028 Child')->firstOrFail();
+    expect($fallbackApp->academic_year)->toBe('2028/2029')
+        ->and($fallbackApp->registration_number)->toBe('IND-SDK-28001');
+
+    // 6. Explicit POST for open 2028/2029 Inden succeeds cleanly
+    $this->post(route('spmb.store.sd-kota'), makeBaseApplicantPayload([
+        'full_name' => 'Explicit Inden 2028 Child',
+        'academic_year' => '2028/2029',
+        'parent_phone' => '081234500503',
+    ]))->assertSessionHasNoErrors();
+
+    $explicitApp = SpmbApplicant::where('full_name', 'Explicit Inden 2028 Child')->firstOrFail();
+    expect($explicitApp->academic_year)->toBe('2028/2029')
+        ->and($explicitApp->registration_number)->toBe('IND-SDK-28002');
+
+    // 7. Admin can update closed_academic_years (reopen 2027/2028 via empty array + sync_academic_year_lists flag)
+    auth()->logout();
+    session()->flush();
+    app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $superAdmin = createUserWithRole('super_admin_yayasan');
+    $this->actingAs($superAdmin)
+        ->post(route('spmb.admin.update-settings'), [
+            'unit_id' => $this->sdKotaUnit->id,
+            'name' => 'SPMB Inden SD Namira Kota',
+            'academic_year' => '2027/2028',
+            'allow_future_inden' => true,
+            'inden_academic_years' => ['2028/2029', '2029/2030', '2030/2031'],
+            'closed_academic_years' => [],
+            'sync_academic_year_lists' => true,
+            'quota' => 60,
+            'registration_fee' => 250000,
+            'admission_fee_total' => 8500000,
+            'min_down_payment_percentage' => 60,
+            'bank_name' => 'Bank Jatim',
+            'is_active' => true,
+            'announcement_released' => false,
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($this->sdKotaSetting->fresh()->getClosedAcademicYears())->toBe([]);
+});

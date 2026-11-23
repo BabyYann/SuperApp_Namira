@@ -35,6 +35,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    closedRequestedAcademicYear: {
+        type: String,
+        default: '',
+    },
     isLockedForPublic: {
         type: Boolean,
         default: false,
@@ -47,9 +51,11 @@ const isCopied = ref(false);
 const showPassword = ref(false);
 const paymentPreview = ref(null);
 
+const firstOpenAcademicYear = (props.academicYearOptions || []).find((opt) => !opt.is_closed)?.value || '';
+
 const form = useForm({
-    // Pilihan Tahun Ajaran Masuk
-    academic_year: props.selectedAcademicYear || props.setting?.academic_year || '2027/2028',
+    // Pilihan Tahun Ajaran Masuk (hanya dari TA yang masih terbuka)
+    academic_year: props.selectedAcademicYear || firstOpenAcademicYear,
 
     // Step 1: Biodata Santri
     full_name: '',
@@ -146,6 +152,11 @@ const copyAccountNumber = () => {
 };
 
 const validateStep1 = () => {
+    const selectedOpt = (props.academicYearOptions || []).find((opt) => opt.value === form.academic_year);
+    if (!form.academic_year || selectedOpt?.is_closed) {
+        alert('Mohon pilih Tahun Ajaran pendaftaran yang masih tersedia (belum penuh).');
+        return false;
+    }
     if (!form.full_name || !form.birth_place || !form.birth_date || !form.gender) {
         alert('Mohon lengkapi data wajib calon santri (Nama Lengkap, Tempat & Tanggal Lahir, Jenis Kelamin).');
         return false;
@@ -348,6 +359,7 @@ const submitRegistration = () => {
                     :options="academicYearOptions"
                     accent="blue"
                     unit-label="SMP Namira Kota Probolinggo"
+                    :closed-notice-year="closedRequestedAcademicYear"
                     :error="form.errors.academic_year"
                 />
 

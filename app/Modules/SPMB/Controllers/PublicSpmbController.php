@@ -178,6 +178,7 @@ class PublicSpmbController extends Controller
                 'academic_year' => '2027/2028',
                 'allow_future_inden' => true,
                 'inden_academic_years' => $defaultFutureYears,
+                'closed_academic_years' => ['2027/2028'],
                 'quota' => 60,
                 'registration_fee' => 250000,
                 'bank_name' => 'Bank Jatim',
@@ -237,7 +238,8 @@ class PublicSpmbController extends Controller
     }
 
     /**
-     * Resolve pre-selected academic year from query string (?ta=2028/2029 or ?ta=2028-2029).
+     * Resolve pre-selected OPEN academic year from query string (?ta=2028/2029 or ?ta=2028-2029).
+     * Automatically skips closed/full academic years and picks the first open intake year.
      */
     protected function resolveRequestedAcademicYear(Request $request, SpmbSetting $setting): string
     {
@@ -249,7 +251,35 @@ class PublicSpmbController extends Controller
             return $normalized;
         }
 
-        return $allowed[0] ?? ($setting->academic_year ?: '2027/2028');
+        return $setting->getDefaultOpenAcademicYear() ?? '';
+    }
+
+    /**
+     * Detect if the visitor explicitly requested an academic year that is already closed / full.
+     */
+    protected function resolveClosedRequestedAcademicYear(Request $request, SpmbSetting $setting): ?string
+    {
+        $raw = $request->query('ta') ?: $request->query('tahun_ajaran');
+        $normalized = SpmbSetting::normalizeAcademicYear(is_string($raw) ? $raw : null);
+
+        if ($normalized && $setting->isAcademicYearClosed($normalized)) {
+            return $normalized;
+        }
+
+        return null;
+    }
+
+    /**
+     * Build a clear validation message when a submitted academic year is closed/full or disallowed.
+     */
+    protected function resolveAcademicYearErrorMessage(SpmbSetting $setting, string $unitLabel, ?string $submittedYear): string
+    {
+        $normalized = SpmbSetting::normalizeAcademicYear($submittedYear);
+        if ($normalized && $setting->isAcademicYearClosed($normalized)) {
+            return "Pendaftaran Tahun Ajaran {$normalized} untuk {$unitLabel} sudah ditutup karena kuota penuh. Silakan pilih Tahun Ajaran Inden yang masih tersedia.";
+        }
+
+        return "Tahun ajaran pendaftaran yang dipilih tidak tersedia untuk {$unitLabel}.";
     }
 
     /**
@@ -403,6 +433,7 @@ class PublicSpmbController extends Controller
             'totalApplicants' => $totalApplicants,
             'academicYearOptions' => $academicYearOptions,
             'selectedAcademicYear' => $selectedAcademicYear,
+            'closedRequestedAcademicYear' => $this->resolveClosedRequestedAcademicYear($request, $setting),
             'isLockedForPublic' => $this->isLockedForPublicVisitor($unit),
         ]);
     }
@@ -421,6 +452,11 @@ class PublicSpmbController extends Controller
 
         $this->prepareAcademicYearInput($request);
         $allowedYears = $setting->getAllowedAcademicYears();
+        if (empty($allowedYears)) {
+            return back()->withErrors([
+                'academic_year' => 'Seluruh tahun ajaran pendaftaran untuk SD Namira Kraksaan saat ini sudah penuh dan ditutup.',
+            ])->withInput();
+        }
 
         // 1. Validate input
         $request->validate([
@@ -474,7 +510,7 @@ class PublicSpmbController extends Controller
             'birth_cert' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
             'parent_id_card' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
         ], [
-            'academic_year.in' => 'Tahun ajaran pendaftaran yang dipilih tidak tersedia untuk SD Namira Kraksaan.',
+            'academic_year.in' => $this->resolveAcademicYearErrorMessage($setting, 'SD Namira Kraksaan', $request->input('academic_year')),
             'full_name.required' => 'Nama lengkap calon murid wajib diisi.',
             'gender.required' => 'Jenis kelamin wajib dipilih.',
             'birth_place.required' => 'Tempat lahir wajib diisi.',
@@ -493,7 +529,7 @@ class PublicSpmbController extends Controller
             ])->withInput();
         }
 
-        $targetAcademicYear = $request->input('academic_year') ?: ($setting->academic_year ?: '2027/2028');
+        $targetAcademicYear = $request->input('academic_year') ?: $setting->getDefaultOpenAcademicYear();
         $isFutureInden = $setting->isFutureIndenYear($targetAcademicYear);
         $cleanPhone = $spmbService->normalizePhone($request->parent_phone);
 
@@ -632,6 +668,7 @@ class PublicSpmbController extends Controller
             'totalApplicants' => $totalApplicants,
             'academicYearOptions' => $academicYearOptions,
             'selectedAcademicYear' => $selectedAcademicYear,
+            'closedRequestedAcademicYear' => $this->resolveClosedRequestedAcademicYear($request, $setting),
             'isLockedForPublic' => $this->isLockedForPublicVisitor($unit),
         ]);
     }
@@ -650,6 +687,11 @@ class PublicSpmbController extends Controller
 
         $this->prepareAcademicYearInput($request);
         $allowedYears = $setting->getAllowedAcademicYears();
+        if (empty($allowedYears)) {
+            return back()->withErrors([
+                'academic_year' => 'Seluruh tahun ajaran pendaftaran untuk SD Namira Kota Probolinggo saat ini sudah penuh dan ditutup.',
+            ])->withInput();
+        }
 
         $request->validate([
             'academic_year' => ['nullable', 'string', Rule::in($allowedYears)],
@@ -697,7 +739,7 @@ class PublicSpmbController extends Controller
             'birth_cert' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
             'parent_id_card' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
         ], [
-            'academic_year.in' => 'Tahun ajaran pendaftaran yang dipilih tidak tersedia untuk SD Namira Kota Probolinggo.',
+            'academic_year.in' => $this->resolveAcademicYearErrorMessage($setting, 'SD Namira Kota Probolinggo', $request->input('academic_year')),
             'full_name.required' => 'Nama lengkap calon murid wajib diisi.',
             'gender.required' => 'Jenis kelamin wajib dipilih.',
             'birth_place.required' => 'Tempat lahir wajib diisi.',
@@ -716,7 +758,7 @@ class PublicSpmbController extends Controller
             ])->withInput();
         }
 
-        $targetAcademicYear = $request->input('academic_year') ?: ($setting->academic_year ?: '2027/2028');
+        $targetAcademicYear = $request->input('academic_year') ?: $setting->getDefaultOpenAcademicYear();
         $cleanPhone = $spmbService->normalizePhone($request->parent_phone);
 
         $existingApplicant = $this->findDuplicateApplicant($unit->id, $targetAcademicYear, $cleanPhone, (string) $request->full_name);
@@ -837,6 +879,7 @@ class PublicSpmbController extends Controller
             'totalApplicants' => $totalApplicants,
             'academicYearOptions' => $academicYearOptions,
             'selectedAcademicYear' => $selectedAcademicYear,
+            'closedRequestedAcademicYear' => $this->resolveClosedRequestedAcademicYear($request, $setting),
             'isLockedForPublic' => $this->isLockedForPublicVisitor($unit),
         ]);
     }
@@ -855,6 +898,11 @@ class PublicSpmbController extends Controller
 
         $this->prepareAcademicYearInput($request);
         $allowedYears = $setting->getAllowedAcademicYears();
+        if (empty($allowedYears)) {
+            return back()->withErrors([
+                'academic_year' => 'Seluruh tahun ajaran pendaftaran untuk SMP Namira saat ini sudah penuh dan ditutup.',
+            ])->withInput();
+        }
 
         // 1. Validate input
         $request->validate([
@@ -903,7 +951,7 @@ class PublicSpmbController extends Controller
             'birth_cert' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
             'parent_id_card' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
         ], [
-            'academic_year.in' => 'Tahun ajaran pendaftaran yang dipilih tidak tersedia untuk SMP Namira.',
+            'academic_year.in' => $this->resolveAcademicYearErrorMessage($setting, 'SMP Namira', $request->input('academic_year')),
             'full_name.required' => 'Nama lengkap calon santri wajib diisi.',
             'gender.required' => 'Jenis kelamin wajib dipilih.',
             'birth_place.required' => 'Tempat lahir wajib diisi.',
@@ -923,7 +971,7 @@ class PublicSpmbController extends Controller
             ])->withInput();
         }
 
-        $targetAcademicYear = $request->input('academic_year') ?: ($setting->academic_year ?: '2027/2028');
+        $targetAcademicYear = $request->input('academic_year') ?: $setting->getDefaultOpenAcademicYear();
         $cleanPhone = $spmbService->normalizePhone($request->parent_phone);
 
         $existingApplicant = $this->findDuplicateApplicant($unit->id, $targetAcademicYear, $cleanPhone, (string) $request->full_name);
@@ -1082,6 +1130,7 @@ class PublicSpmbController extends Controller
             ], $entries),
             'academicYearOptions' => $activeEntry['academic_year_options'],
             'selectedAcademicYear' => $selectedAcademicYear,
+            'closedRequestedAcademicYear' => $this->resolveClosedRequestedAcademicYear($request, $activeEntry['setting']),
             'totalApplicants' => $totalApplicants,
             'isLockedForPublic' => ! $activeEntry['is_open_for_public'],
         ]);
@@ -1111,6 +1160,11 @@ class PublicSpmbController extends Controller
 
         $this->prepareAcademicYearInput($request);
         $allowedYears = $setting->getAllowedAcademicYears();
+        if (empty($allowedYears)) {
+            return back()->withErrors([
+                'academic_year' => "Seluruh tahun ajaran pendaftaran untuk {$unit->name} saat ini sudah penuh dan ditutup.",
+            ])->withInput();
+        }
 
         $request->validate([
             'academic_year' => ['nullable', 'string', Rule::in($allowedYears)],
@@ -1157,7 +1211,7 @@ class PublicSpmbController extends Controller
             'birth_cert' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
             'parent_id_card' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
         ], [
-            'academic_year.in' => "Tahun ajaran pendaftaran yang dipilih tidak tersedia untuk {$unit->name}.",
+            'academic_year.in' => $this->resolveAcademicYearErrorMessage($setting, $unit->name, $request->input('academic_year')),
             'full_name.required' => 'Nama lengkap calon murid wajib diisi.',
             'gender.required' => 'Jenis kelamin wajib dipilih.',
             'birth_place.required' => 'Tempat lahir wajib diisi.',
@@ -1174,7 +1228,7 @@ class PublicSpmbController extends Controller
             ])->withInput();
         }
 
-        $targetAcademicYear = $request->input('academic_year') ?: ($setting->academic_year ?: '2027/2028');
+        $targetAcademicYear = $request->input('academic_year') ?: $setting->getDefaultOpenAcademicYear();
         $isFutureInden = $setting->isFutureIndenYear($targetAcademicYear);
         $cleanPhone = $spmbService->normalizePhone($request->parent_phone);
 

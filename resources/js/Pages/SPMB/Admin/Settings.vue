@@ -42,6 +42,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    resolvedClosedYears: {
+        type: Array,
+        default: () => [],
+    },
     suggestedFutureYears: {
         type: Array,
         default: () => [],
@@ -54,6 +58,8 @@ const settingForm = useForm({
     academic_year: props.setting?.academic_year || '2027/2028',
     allow_future_inden: Boolean(props.setting?.allow_future_inden ?? true),
     inden_academic_years: [...(props.resolvedFutureIndenYears || [])],
+    closed_academic_years: [...(props.resolvedClosedYears || [])],
+    sync_academic_year_lists: true,
     quota: props.setting?.quota || 60,
     registration_fee: props.setting?.registration_fee || 250000,
     admission_fee_total: props.setting?.admission_fee_total || 8500000,
@@ -97,6 +103,34 @@ const toggleFutureYear = (yr) => {
     }
     list.sort();
     settingForm.inden_academic_years = list;
+};
+
+const allConfigurableYears = computed(() => {
+    const primary = String(settingForm.academic_year || '2027/2028').trim();
+    const futures = settingForm.allow_future_inden ? (settingForm.inden_academic_years || []) : [];
+    return Array.from(new Set([primary, ...futures].filter(Boolean))).sort();
+});
+
+const openConfiguredYears = computed(() => {
+    const closed = settingForm.closed_academic_years || [];
+    return allConfigurableYears.value.filter((yr) => !closed.includes(yr));
+});
+
+const closedConfiguredYears = computed(() => {
+    const closed = settingForm.closed_academic_years || [];
+    return allConfigurableYears.value.filter((yr) => closed.includes(yr));
+});
+
+const toggleClosedYear = (yr) => {
+    const list = [...(settingForm.closed_academic_years || [])];
+    const idx = list.indexOf(yr);
+    if (idx >= 0) {
+        list.splice(idx, 1);
+    } else {
+        list.push(yr);
+    }
+    list.sort();
+    settingForm.closed_academic_years = list;
 };
 
 const addCustomFutureYear = () => {
@@ -159,6 +193,8 @@ watch(() => [props.unit?.id, props.setting?.id], () => {
     settingForm.academic_year = props.setting?.academic_year || '2027/2028';
     settingForm.allow_future_inden = Boolean(props.setting?.allow_future_inden ?? true);
     settingForm.inden_academic_years = [...(props.resolvedFutureIndenYears || [])];
+    settingForm.closed_academic_years = [...(props.resolvedClosedYears || [])];
+    settingForm.sync_academic_year_lists = true;
     settingForm.quota = props.setting?.quota || 60;
     settingForm.registration_fee = props.setting?.registration_fee || 250000;
     settingForm.admission_fee_total = props.setting?.admission_fee_total || 8500000;
@@ -376,11 +412,49 @@ const removePanitia = (panitia) => {
                                                 <span>Tambah TA</span>
                                             </button>
                                         </div>
+                                    </div>
 
-                                        <p class="text-[11px] text-slate-600 dark:text-slate-400">
-                                            Pilihan aktif di formulir:
+                                    <div class="pt-3 border-t border-purple-200/70 dark:border-purple-800/50 space-y-2">
+                                        <div>
+                                            <span class="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                                Status Kuota per Tahun Ajaran (Klik untuk Tutup / Tandai Kuota Penuh):
+                                            </span>
+                                            <p class="text-[10px] text-slate-500 dark:text-slate-400">
+                                                Tahun ajaran yang ditandai <strong>Penuh / Tutup</strong> akan dinonaktifkan pada formulir pendaftaran dan ditolak di server, sementara TA lainnya tetap terbuka.
+                                            </p>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                            <button
+                                                v-for="yr in allConfigurableYears"
+                                                :key="`close-${yr}`"
+                                                type="button"
+                                                @click="toggleClosedYear(yr)"
+                                                class="px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition border inline-flex items-center gap-1.5"
+                                                :class="(settingForm.closed_academic_years || []).includes(yr)
+                                                    ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
+                                                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:border-rose-400'"
+                                            >
+                                                <LockClosedIcon v-if="(settingForm.closed_academic_years || []).includes(yr)" class="w-3.5 h-3.5" />
+                                                <LockOpenIcon v-else class="w-3.5 h-3.5" />
+                                                <span>TA {{ yr }}</span>
+                                                <span class="text-[10px] font-sans uppercase px-1.5 py-0.5 rounded bg-black/10">
+                                                    {{ (settingForm.closed_academic_years || []).includes(yr) ? 'Penuh/Tutup' : 'Dibuka' }}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+                                        <p>
+                                            Pilihan <strong class="text-emerald-700 dark:text-emerald-400">Terbuka</strong> di formulir:
                                             <strong class="font-mono text-slate-900 dark:text-white">
-                                                {{ [settingForm.academic_year, ...(settingForm.inden_academic_years || [])].join(' • ') }}
+                                                {{ openConfiguredYears.length > 0 ? openConfiguredYears.join(' • ') : 'Tidak ada (semua penuh)' }}
+                                            </strong>
+                                        </p>
+                                        <p v-if="closedConfiguredYears.length > 0">
+                                            Status <strong class="text-rose-600 dark:text-rose-400">Ditutup / Kuota Penuh</strong>:
+                                            <strong class="font-mono text-rose-700 dark:text-rose-300">
+                                                {{ closedConfiguredYears.join(' • ') }}
                                             </strong>
                                         </p>
                                     </div>
