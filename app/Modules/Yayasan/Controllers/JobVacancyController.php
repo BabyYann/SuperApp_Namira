@@ -116,7 +116,7 @@ class JobVacancyController extends Controller
         // Unit-scoped Humas/Admin Unit can only publish vacancies for their own active unit
         $targetUnitId = $access['isUnitScoped']
             ? $access['activeUnitId']
-            : ($validated['unit_id'] ?: null);
+            : (!empty($validated['unit_id']) ? $validated['unit_id'] : null);
 
         JobVacancy::create([
             'title' => $validated['title'],
@@ -124,7 +124,7 @@ class JobVacancyController extends Controller
             'category' => $validated['category'],
             'type' => $validated['type'],
             'quota' => $validated['quota'],
-            'deadline' => $validated['deadline'] ?: null,
+            'deadline' => !empty($validated['deadline']) ? $validated['deadline'] : null,
             'description' => $validated['description'],
             'requirements' => $validated['requirements'],
             'status' => $validated['status'],
@@ -159,7 +159,7 @@ class JobVacancyController extends Controller
 
         $targetUnitId = $access['isUnitScoped']
             ? $access['activeUnitId']
-            : ($validated['unit_id'] ?: null);
+            : (!empty($validated['unit_id']) ? $validated['unit_id'] : null);
 
         $jobVacancy->update([
             'title' => $validated['title'],
@@ -167,7 +167,7 @@ class JobVacancyController extends Controller
             'category' => $validated['category'],
             'type' => $validated['type'],
             'quota' => $validated['quota'],
-            'deadline' => $validated['deadline'] ?: null,
+            'deadline' => !empty($validated['deadline']) ? $validated['deadline'] : null,
             'description' => $validated['description'],
             'requirements' => $validated['requirements'],
             'status' => $validated['status'],
