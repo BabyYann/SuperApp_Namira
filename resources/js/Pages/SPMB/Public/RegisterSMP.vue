@@ -21,11 +21,24 @@ import {
 } from '@heroicons/vue/24/outline';
 
 import { compressImageFile } from '@/Utils/imageCompressor';
+import AcademicYearSelector from '@/Components/SPMB/AcademicYearSelector.vue';
 
 const props = defineProps({
     unit: Object,
     setting: Object,
     totalApplicants: Number,
+    academicYearOptions: {
+        type: Array,
+        default: () => [],
+    },
+    selectedAcademicYear: {
+        type: String,
+        default: '',
+    },
+    isLockedForPublic: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const currentStep = ref(1);
@@ -35,6 +48,9 @@ const showPassword = ref(false);
 const paymentPreview = ref(null);
 
 const form = useForm({
+    // Pilihan Tahun Ajaran Masuk
+    academic_year: props.selectedAcademicYear || props.setting?.academic_year || '2027/2028',
+
     // Step 1: Biodata Santri
     full_name: '',
     nickname: '',
@@ -168,6 +184,12 @@ const goToStep2 = () => {
     }
 };
 
+const selectedYearOption = computed(() => {
+    return (props.academicYearOptions || []).find((opt) => opt.value === form.academic_year) || null;
+});
+
+const isFutureIndenSelected = computed(() => Boolean(selectedYearOption.value?.is_future_inden));
+
 const submitRegistration = () => {
     if (!form.registration_payment_proof) {
         alert('Mohon lampirkan foto struk transfer atau bukti bayar pendaftaran.');
@@ -175,8 +197,14 @@ const submitRegistration = () => {
     }
 
     form.post(route('spmb.store.smp'), {
-        preserveScroll: true,
-        onError: () => {
+        forceFormData: true,
+        preserveScroll: false,
+        onError: (errors) => {
+            const errorKeys = Object.keys(errors || {});
+            const hasStep1Error = errorKeys.some((k) => k !== 'registration_payment_proof');
+            if (hasStep1Error) {
+                currentStep.value = 1;
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
@@ -188,6 +216,12 @@ const submitRegistration = () => {
 
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 selection:bg-blue-100 selection:text-blue-900">
         
+        <!-- Admin Preview Banner -->
+        <div v-if="isLockedForPublic" class="bg-amber-400 text-slate-950 font-bold px-4 py-2 text-center text-xs flex items-center justify-center gap-2">
+            <LockClosedIcon class="w-4 h-4 shrink-0" />
+            <span>MODE PRATINJAU ADMINISTRATOR: Formulir SMP Namira ini sedang dikunci untuk publik.</span>
+        </div>
+
         <!-- Institutional Header Bar -->
         <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
             <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -231,11 +265,16 @@ const submitRegistration = () => {
                         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs mb-1.5">
                             <span class="font-bold text-blue-900 tracking-wide uppercase">SMP Namira Kota Probolinggo</span>
                             <span class="text-slate-300 hidden sm:inline">&bull;</span>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-800 text-[11px] font-semibold border border-blue-200/60">
-                                Jalur Inden
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border"
+                                :class="isFutureIndenSelected
+                                    ? 'bg-indigo-50 text-indigo-800 border-indigo-200/80'
+                                    : 'bg-blue-50 text-blue-800 border-blue-200/60'"
+                            >
+                                {{ isFutureIndenSelected ? 'Jalur Inden Tahun Mendatang' : 'Jalur Inden' }}
                             </span>
-                            <span class="text-slate-500 text-xs">
-                                TA {{ setting?.academic_year || '2027/2028' }}
+                            <span class="text-slate-600 text-xs font-bold">
+                                TA {{ form.academic_year || setting?.academic_year || '2027/2028' }}
                             </span>
                         </div>
                         
@@ -244,7 +283,7 @@ const submitRegistration = () => {
                         </h1>
                         
                         <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                            Khusus calon murid yang telah terdaftar pada data inden. Lengkapi biodata calon murid dan konfirmasi pembayaran formulir.
+                            Terbuka untuk pendaftaran tahap berjalan maupun <strong>Jalur Inden Tahun Ajaran Mendatang</strong>. Lengkapi biodata calon murid dan konfirmasi pembayaran formulir.
                         </p>
                     </div>
                 </div>
@@ -303,6 +342,15 @@ const submitRegistration = () => {
             <!-- STEP 1: BIODATA -->
             <div v-show="currentStep === 1" class="space-y-5">
                 
+                <!-- Bagian 0: Pilihan Tahun Ajaran Masuk (Berjalan vs Inden Tahun Mendatang) -->
+                <AcademicYearSelector
+                    v-model="form.academic_year"
+                    :options="academicYearOptions"
+                    accent="blue"
+                    unit-label="SMP Namira Kota Probolinggo"
+                    :error="form.errors.academic_year"
+                />
+
                 <!-- Notice Banner: Deferred Supporting Documents -->
                 <div class="bg-blue-50/70 border border-blue-200/80 rounded-xl p-4 flex items-start gap-3 text-xs text-blue-950">
                     <InformationCircleIcon class="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />

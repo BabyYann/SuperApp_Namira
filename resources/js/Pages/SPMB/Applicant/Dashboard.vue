@@ -34,6 +34,20 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    isFutureInden: {
+        type: Boolean,
+        default: false,
+    },
+});
+
+const applicantAcademicYear = computed(() => props.applicant?.academic_year || props.setting?.academic_year || '2027/2028');
+
+const isTkKb = computed(() => {
+    const unitName = (props.applicant?.unit?.name || '').toLowerCase();
+    const unitCode = (props.applicant?.unit?.code || '').toUpperCase();
+    return ['TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'].includes(unitCode)
+        || unitName.includes('tk ')
+        || unitName.includes('kb ');
 });
 
 const normalizeCategoryValue = (cat) => {
@@ -322,10 +336,10 @@ const supportingDocsCompletedCount = computed(() => {
                 <div class="flex items-center gap-2.5 sm:gap-3">
                     <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-xs">
                         <img 
-                            :src="isSmp ? '/images/landing/logo-smp.webp' : '/images/landing/logo-sd.webp'" 
+                            :src="isSmp ? '/images/landing/logo-smp.webp' : (isTkKb ? '/images/landing/logo-tk.webp' : '/images/landing/logo-sd.webp')" 
                             :alt="`Logo ${unitDisplayName}`" 
                             class="w-full h-full object-contain"
-                            :onerror="`this.onerror=null; this.src='${isSmp ? '/images/landing/logo-smp.png' : '/images/landing/logo-sd.png'}';`"
+                            :onerror="`this.onerror=null; this.src='${isSmp ? '/images/landing/logo-smp.png' : (isTkKb ? '/images/landing/logo-tk.png' : '/images/landing/logo-sd.png')}';`"
                         />
                     </div>
                     <div>
@@ -372,7 +386,7 @@ const supportingDocsCompletedCount = computed(() => {
                         ? 'bg-[#064e3b] text-white border-[#064e3b] shadow-2xs'
                         : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 border-slate-200'"
                 >
-                    {{ sib.full_name }} ({{ sib.unit_name }})
+                    {{ sib.full_name }} ({{ sib.unit_name }} &bull; TA {{ sib.academic_year }})
                 </a>
             </div>
 
@@ -384,8 +398,21 @@ const supportingDocsCompletedCount = computed(() => {
                 {{ $page.props.flash.error }}
             </div>
 
-            <!-- Announcement Gating Banner -->
-            <div v-if="!isAnnouncementReleased" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 sm:p-5 shadow-xs flex items-start gap-3.5 sm:gap-4">
+            <!-- Future Academic Year Inden Notice Banner -->
+            <div v-if="isFutureInden" class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-4 sm:p-5 shadow-xs flex items-start gap-3.5 sm:gap-4">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                    <CalendarDaysIcon class="w-5 h-5" />
+                </div>
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-purple-950">Pendaftaran Jalur Inden Tahun Ajaran {{ applicantAcademicYear }}</h3>
+                    <p class="text-[11px] sm:text-xs text-purple-900/85 mt-1 leading-relaxed">
+                        Terima kasih telah memesan kursi lebih awal untuk <strong>{{ unitDisplayName }} TA {{ applicantAcademicYear }}</strong>. Data ananda telah tercatat dalam daftar prioritas Inden. Jadwal observasi, seleksi, dan pengumuman resmi untuk TA {{ applicantAcademicYear }} akan diinformasikan oleh panitia menjelang periode penerimaan tahun tersebut.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Announcement Gating Banner (For Current Active Intake Year) -->
+            <div v-else-if="!isAnnouncementReleased" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 sm:p-5 shadow-xs flex items-start gap-3.5 sm:gap-4">
                 <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                     <ClockIcon class="w-5 h-5" />
                 </div>
@@ -459,8 +486,8 @@ const supportingDocsCompletedCount = computed(() => {
                         <strong class="text-sm font-extrabold text-emerald-700 block mt-0.5">
                             {{ !isAnnouncementReleased && ['accepted', 'reserve', 'rejected'].includes(applicant.status) ? 'Menunggu Pengumuman' : applicant.status_label }}
                         </strong>
-                        <span class="text-[10px] text-slate-400 block mt-1">
-                            {{ applicant.is_inden ? 'Jalur Inden' : 'Jalur Umum' }} &bull; TA {{ setting?.academic_year || '2027/2028' }}
+                        <span class="text-[10px] text-slate-500 font-semibold block mt-1">
+                            {{ applicant.is_inden ? 'Jalur Inden' : 'Jalur Umum' }} &bull; TA {{ applicantAcademicYear }}
                         </span>
                     </div>
                 </div>
@@ -485,7 +512,7 @@ const supportingDocsCompletedCount = computed(() => {
                             Gabung Grup WhatsApp Resmi SPMB {{ unitDisplayName }}
                         </h3>
                         <p class="text-[11px] sm:text-xs text-emerald-100/90 mt-1 leading-relaxed max-w-2xl">
-                            Seluruh informasi jadwal observasi, pengumuman resmi, dan koordinasi orang tua calon murid baru Tahun Ajaran {{ setting?.academic_year || '2027/2028' }} disampaikan melalui grup WhatsApp resmi ini.
+                            Seluruh informasi jadwal observasi, pengumuman resmi, dan koordinasi orang tua calon murid baru Tahun Ajaran {{ applicantAcademicYear }} disampaikan melalui grup WhatsApp resmi ini.
                         </p>
                     </div>
                 </div>
@@ -740,13 +767,13 @@ const supportingDocsCompletedCount = computed(() => {
                         class="p-3 rounded-xl border text-xs transition"
                         :class="applicant.observation_date 
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
-                            : (setting?.selection_date ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-500')"
+                            : (!isFutureInden && setting?.selection_date ? 'bg-blue-50 border-blue-200 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-500')"
                     >
                         <CheckCircleIcon v-if="applicant.observation_date" class="w-5 h-5 text-emerald-700 mx-auto mb-1" />
-                        <CalendarDaysIcon v-else class="w-5 h-5 mx-auto mb-1" :class="setting?.selection_date ? 'text-blue-600' : 'text-slate-400'" />
+                        <CalendarDaysIcon v-else class="w-5 h-5 mx-auto mb-1" :class="!isFutureInden && setting?.selection_date ? 'text-blue-600' : 'text-slate-400'" />
                         <strong class="block text-[11px]">{{ isSmp ? '3. Seleksi & Tes' : '3. Jadwal Tes' }}</strong>
-                        <span class="text-[10px] font-semibold block mt-0.5" :class="applicant.observation_date ? 'text-emerald-700' : (setting?.selection_date ? 'text-blue-700' : 'text-slate-400')">
-                            {{ applicant.observation_date ? 'Diterbitkan' : (setting?.selection_date ? formatDate(setting.selection_date) : 'Belum') }}
+                        <span class="text-[10px] font-semibold block mt-0.5" :class="applicant.observation_date ? 'text-emerald-700' : (!isFutureInden && setting?.selection_date ? 'text-blue-700' : 'text-slate-400')">
+                            {{ applicant.observation_date ? 'Diterbitkan' : (!isFutureInden && setting?.selection_date ? formatDate(setting.selection_date) : (isFutureInden ? `Menunggu TA ${applicantAcademicYear}` : 'Belum')) }}
                         </span>
                     </div>
 
@@ -960,7 +987,7 @@ const supportingDocsCompletedCount = computed(() => {
                             <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Offline</span>
                         </div>
                         <div class="space-y-1 text-slate-600 pt-1">
-                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.observation_date ? formatDate(applicant.observation_date) : (setting?.selection_date ? formatDate(setting.selection_date) : 'Menunggu Penetapan Panitia') }}</strong></div>
+                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.observation_date ? formatDate(applicant.observation_date) : (!isFutureInden && setting?.selection_date ? formatDate(setting.selection_date) : (isFutureInden ? `Menunggu Jadwal Seleksi TA ${applicantAcademicYear}` : 'Menunggu Penetapan Panitia')) }}</strong></div>
                             <div>Waktu: <strong class="text-slate-900">{{ applicant.observation_time || (isSmp ? '08:00 - 10:00 WIB' : 'Akan diinfokan via WA') }}</strong></div>
                             <div>Lokasi: <strong class="text-slate-900">{{ applicant.observation_location || `Gedung ${unitDisplayName}` }}</strong></div>
                         </div>
@@ -973,7 +1000,7 @@ const supportingDocsCompletedCount = computed(() => {
                             <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">Offline</span>
                         </div>
                         <div class="space-y-1 text-slate-600 pt-1">
-                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.psychotest_date ? formatDate(applicant.psychotest_date) : (applicant.observation_date ? formatDate(applicant.observation_date) : (setting?.selection_date ? formatDate(setting.selection_date) : 'Menunggu Penetapan Panitia')) }}</strong></div>
+                            <div>Hari/Tgl: <strong class="text-slate-900">{{ applicant.psychotest_date ? formatDate(applicant.psychotest_date) : (applicant.observation_date ? formatDate(applicant.observation_date) : (!isFutureInden && setting?.selection_date ? formatDate(setting.selection_date) : (isFutureInden ? `Menunggu Jadwal Seleksi TA ${applicantAcademicYear}` : 'Menunggu Penetapan Panitia'))) }}</strong></div>
                             <div>Waktu: <strong class="text-slate-900">{{ applicant.psychotest_time || (isSmp ? '10:00 - 12:00 WIB' : 'Akan diinfokan via WA') }}</strong></div>
                             <div>Lokasi: <strong class="text-slate-900">{{ applicant.psychotest_location || `Gedung ${unitDisplayName}` }}</strong></div>
                         </div>
@@ -1235,7 +1262,7 @@ const supportingDocsCompletedCount = computed(() => {
                             <div>
                                 <label class="block font-semibold text-slate-700 mb-1">Kategori Pendaftar *</label>
                                 <select v-model="editForm.category" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
-                                    <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
+                                    <option :value="isSmp ? 'internal_sd' : (isTkKb ? 'internal_kb' : 'internal_tk')">{{ isSmp ? 'Alumni SD Namira (Internal)' : (isTkKb ? 'Internal KB / Daycare Namira' : 'Alumni TK Namira (Internal)') }}</option>
                                     <option value="eksternal_umum">Pendaftar Umum (Eksternal)</option>
                                 </select>
                                 <p v-if="editForm.errors.category" class="text-rose-600 text-[11px] mt-1">{{ editForm.errors.category }}</p>

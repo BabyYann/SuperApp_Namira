@@ -24,13 +24,48 @@ const props = defineProps({
     units: Array,
     sdUnit: Object,
     sdSetting: Object,
+    sdYearOptions: {
+        type: Array,
+        default: () => [],
+    },
+    sdKotaUnit: Object,
+    sdKotaSetting: Object,
+    sdKotaYearOptions: {
+        type: Array,
+        default: () => [],
+    },
     smpUnit: Object,
     smpSetting: Object,
+    smpYearOptions: {
+        type: Array,
+        default: () => [],
+    },
+    tkUnits: {
+        type: Array,
+        default: () => [],
+    },
+    tkUnlocked: {
+        type: Boolean,
+        default: false,
+    },
+    tkYearOptions: {
+        type: Array,
+        default: () => [],
+    },
+    canPreviewLockedUnits: {
+        type: Boolean,
+        default: false,
+    },
     isLockedForPublic: Boolean,
 });
 
 const academicYearLabel = computed(() => props.sdSetting?.academic_year || '2027/2028');
+const sdFutureYears = computed(() => (props.sdYearOptions || []).filter((y) => y.is_future_inden));
+const sdKotaFutureYears = computed(() => (props.sdKotaYearOptions || []).filter((y) => y.is_future_inden));
+const smpFutureYears = computed(() => (props.smpYearOptions || []).filter((y) => y.is_future_inden));
+const tkFutureYears = computed(() => (props.tkYearOptions || []).filter((y) => y.is_future_inden));
 const sdQuota = computed(() => props.sdSetting?.quota || 60);
+const sdKotaQuota = computed(() => props.sdKotaSetting?.quota || 60);
 const waNumber = computed(() => {
     const raw = String(props.sdSetting?.contact_whatsapp || '082332922521').replace(/[^0-9]/g, '');
     return raw.startsWith('0') ? '62' + raw.slice(1) : raw;
@@ -46,8 +81,9 @@ const waTkHref = computed(
 // Interactive flow tabs powered by Motion spring layoutId
 const activeFlow = ref('sd');
 const flowTabs = [
-    { key: 'sd', label: 'Alur SD Namira', badge: 'Kraksaan' },
-    { key: 'smp', label: 'Alur SMP Namira', badge: 'Jalur Inden' },
+    { key: 'sd', label: 'Alur SD Kraksaan' },
+    { key: 'sd_kota', label: 'Alur SD Kota' },
+    { key: 'smp', label: 'Alur SMP Namira' },
 ];
 
 const stepsByUnit = {
@@ -55,8 +91,8 @@ const stepsByUnit = {
         {
             num: '01',
             tag: 'Online · 5 Menit',
-            title: 'Isi Biodata & QRIS',
-            desc: 'Lengkapi data calon murid, buat kata sandi akun portal, lalu unggah bukti pembayaran formulir via QRIS.',
+            title: 'Pilih TA, Biodata & QRIS',
+            desc: 'Pilih tahun ajaran masuk (TA berjalan atau Inden 2028/2029+), lengkapi biodata, lalu unggah bukti bayar QRIS.',
         },
         {
             num: '02',
@@ -68,7 +104,7 @@ const stepsByUnit = {
             num: '03',
             tag: 'Tatap Muka',
             title: 'Observasi & Psikotes',
-            desc: 'Hadir ke kampus SD Namira Kraksaan sesuai jadwal untuk observasi kesiapan belajar & psikotes ananda.',
+            desc: 'Hadir ke kampus SD Namira Kraksaan sesuai jadwal tahun ajaran pilihan untuk observasi & psikotes ananda.',
         },
         {
             num: '04',
@@ -83,24 +119,56 @@ const stepsByUnit = {
             desc: 'Selesaikan biaya masuk secara bertahap (minimal termin 60%) melalui Virtual Account Bank Jatim.',
         },
     ],
+    sd_kota: [
+        {
+            num: '01',
+            tag: 'Jalur Inden',
+            title: 'Pilih Tahun Ajaran Inden',
+            desc: 'Pilih target tahun ajaran masuk SD Namira Kota Probolinggo (TA berjalan maupun Inden tahun mendatang) dan isi biodata.',
+        },
+        {
+            num: '02',
+            tag: 'Konfirmasi Bayar',
+            title: 'Unggah Bukti Pendaftaran',
+            desc: 'Lampirkan bukti pembayaran inden atau kuitansi resmi Anda untuk pembuatan akun Portal Calon Siswa.',
+        },
+        {
+            num: '03',
+            tag: 'Fleksibel',
+            title: 'Lengkapi Dokumen',
+            desc: 'Pas Foto, KK, Akta Kelahiran, dan KTP Orang Tua dapat dilengkapi kapan saja melalui Portal Calon Siswa.',
+        },
+        {
+            num: '04',
+            tag: 'Prioritas Kursi',
+            title: 'Observasi & Pengumuman',
+            desc: 'Pendaftar Inden diprioritaskan pada agenda observasi sesuai tahun ajaran yang dipilih dengan hasil transparan.',
+        },
+        {
+            num: '05',
+            tag: 'Resmi Siswa',
+            title: 'Daftar Ulang & Penetapan',
+            desc: 'Selesaikan administrasi daftar ulang melalui Virtual Account resmi dan terima status siswa SD Namira Kota.',
+        },
+    ],
     smp: [
         {
             num: '01',
             tag: 'Jalur Inden',
             title: 'Registrasi Calon Santri',
-            desc: 'Daftarkan biodata calon santri SMP Namira dan pilih preferensi program Full Day atau Asrama.',
+            desc: 'Pilih tahun ajaran masuk (TA berjalan atau Inden 2028/2029+), lengkapi biodata calon santri SMP Namira.',
         },
         {
             num: '02',
             tag: 'Verifikasi Berkas',
-            title: 'Unggah Dokumen Rapor',
-            desc: 'Lengkapi berkas identitas dan rekam jejak akademik di Portal Calon Siswa secara daring.',
+            title: 'Konfirmasi & Portal Akun',
+            desc: 'Unggah bukti pembayaran pendaftaran dan pantau status verifikasi secara langsung melalui Portal Calon Siswa.',
         },
         {
             num: '03',
             tag: 'Seleksi Terpadu',
             title: 'Tes Akademik & Mengaji',
-            desc: 'Ikuti asesmen akademik dasar, observasi baca Al-Qur’an, serta wawancara singkat bersama orang tua.',
+            desc: 'Ikuti asesmen akademik dasar, observasi baca Al-Qur’an, serta wawancara komitmen bersama orang tua.',
         },
         {
             num: '04',
@@ -123,12 +191,16 @@ const currentSteps = computed(() => stepsByUnit[activeFlow.value]);
 const openFaq = ref(0);
 const faqs = [
     {
+        q: 'Apakah bisa mendaftar Inden untuk Tahun Ajaran mendatang (2028/2029 atau 2029/2030)?',
+        a: 'Bisa! Orang tua kini leluasa memesan kursi lebih awal melalui Jalur Inden multi-tahun ajaran (misalnya TA 2028/2029, 2029/2030, hingga 2030/2031) untuk SD Namira Kraksaan, SD Namira Kota Probolinggo, maupun SMP Namira langsung dari pilihan Tahun Ajaran di formulir pendaftaran.',
+    },
+    {
         q: 'Apakah pendaftaran bisa dilakukan sepenuhnya dari rumah?',
-        a: 'Ya. Pengisian formulir, pembayaran QRIS, unggah dokumen, hingga pantauan pengumuman seluruhnya berjalan melalui Portal Calon Siswa. Kehadiran ke sekolah hanya dibutuhkan pada jadwal observasi & psikotes tatap muka.',
+        a: 'Ya. Pengisian formulir, pembayaran QRIS/transfer, unggah dokumen, hingga pantauan pengumuman seluruhnya berjalan melalui Portal Calon Siswa. Kehadiran ke sekolah hanya dibutuhkan pada jadwal observasi & psikotes tatap muka.',
     },
     {
         q: 'Bagaimana skema pembayaran biaya daftar ulang?',
-        a: 'Yayasan Namira menyediakan skema pembayaran daftar ulang yang fleksibel melalui Virtual Account Bank Jatim dengan pembayaran awal minimal 60% dan pelunasan bertahap sesuai ketentuan unit.',
+        a: 'Yayasan Namira menyediakan skema pembayaran daftar ulang resmi melalui Virtual Account Bank Jatim dengan ketentuan termin sesuai masing-masing satuan pendidikan.',
     },
     {
         q: 'Apakah lulusan TK Namira mendapat prioritas ke SD Namira?',
@@ -141,10 +213,10 @@ const marqueeItems = [
     'Akreditasi Unggul',
     'Metode Ummi & Tahfidz',
     'SD Namira Kraksaan',
-    'TK & KB Namira',
+    'SD Namira Kota Probolinggo',
     'SMP Namira Bilingual',
-    'Pendidikan Berbasis Fitrah',
-    `Tahun Ajaran ${props.sdSetting?.academic_year || '2027/2028'}`,
+    'Inden Multi-Tahun Ajaran',
+    `TA ${props.sdSetting?.academic_year || '2027/2028'} · 2028/2029 · 2029/2030`,
 ];
 
 // Spotlight cursor state on dark flagship SD card
@@ -534,9 +606,9 @@ onUnmounted(() => {
 
                         <!-- Grounded Editorial Copy -->
                         <p class="js-hero-copy text-sm sm:text-base text-[#0B2820]/70 max-w-xl leading-[1.75]">
-                            Sekolah Islam Terpadu Namira menghadirkan pendidikan berjenjang dari
-                            <strong class="font-semibold text-[#0B2820]">TK/KB, SD Kraksaan, hingga SMP</strong>
-                            — memadukan adab islami, tahfidz Metode Ummi, dan keunggulan akademik dalam lingkungan yang hangat.
+                            Sekolah Islam Terpadu Namira menghadirkan pendidikan berjenjang untuk
+                            <strong class="font-semibold text-[#0B2820]">SD Kraksaan, SD Kota Probolinggo, SMP, dan TK/KB</strong>
+                            — kini terbuka pula pemesanan kursi <strong class="font-semibold text-[#0B2820]">Jalur Inden Tahun Ajaran Mendatang</strong> (2028/2029, 2029/2030, dst.).
                         </p>
 
                         <!-- Magnetic Primary + Hairline Secondary Actions -->
@@ -598,10 +670,10 @@ onUnmounted(() => {
                             <div class="js-hero-float absolute inset-x-4 bottom-4 rounded-2xl bg-[#F6F2E9]/92 backdrop-blur-md border border-white/60 p-4 flex items-center justify-between gap-3">
                                 <div>
                                     <span class="block font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#9C7026] font-semibold">
-                                        Gelombang Aktif
+                                        Gelombang Aktif &amp; Inden
                                     </span>
                                     <p class="text-xs sm:text-sm font-extrabold text-[#0B2820] mt-0.5">
-                                        SD Kraksaan, SMP Inden &amp; TK/KB
+                                        SD Kraksaan, SD Kota &amp; SMP
                                     </p>
                                 </div>
                                 <button
@@ -757,6 +829,20 @@ onUnmounted(() => {
                                             </p>
                                         </div>
                                     </div>
+                                    <!-- Multi-Year Inden Deep-Link Pills -->
+                                    <div v-if="sdFutureYears.length > 0" class="mt-5 flex flex-wrap items-center gap-2">
+                                        <span class="font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#DFB86B]/90 mr-1">
+                                            Inden Multi-TA:
+                                        </span>
+                                        <Link
+                                            v-for="yr in sdFutureYears"
+                                            :key="yr.value"
+                                            :href="`/spmb/daftar/sd?ta=${encodeURIComponent(yr.value)}`"
+                                            class="px-3 py-1 rounded-full bg-white/8 hover:bg-[#DFB86B] text-[#F6F2E9] hover:text-[#0B2820] border border-[#DFB86B]/30 text-[11px] font-mono-code font-semibold transition-colors"
+                                        >
+                                            Inden {{ yr.value }} &rarr;
+                                        </Link>
+                                    </div>
                                 </div>
 
                                 <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
@@ -764,7 +850,7 @@ onUnmounted(() => {
                                         href="/spmb/daftar/sd"
                                         class="js-magnetic group inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-[#DFB86B] hover:bg-[#E7C782] text-[#0B2820] text-xs sm:text-sm font-extrabold tracking-wide transition-colors"
                                     >
-                                        <span>Daftar SD Namira Sekarang</span>
+                                        <span>Daftar SD Kraksaan ({{ sdSetting?.academic_year || academicYearLabel }})</span>
                                         <ArrowRightIcon class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                     </Link>
 
@@ -777,13 +863,107 @@ onUnmounted(() => {
                     </article>
                 </Motion>
 
-                <!-- ROW 2: ASYMMETRIC 7/5 SPLIT — SMP NAMIRA + TK & KB NAMIRA -->
+                <!-- ROW 2: ARCHITECTURAL 6/6 SPLIT — SD NAMIRA KOTA PROBOLINGGO + SMP NAMIRA -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-                    <!-- SMP NAMIRA (Left 7 Cols) -->
+                    <!-- SD NAMIRA KOTA PROBOLINGGO (Left 6 Cols) -->
                     <Motion
                         :while-hover="{ y: -5 }"
                         :transition="{ type: 'spring', stiffness: 320, damping: 28 }"
-                        class="js-unit-card lg:col-span-7 flex"
+                        class="js-unit-card lg:col-span-6 flex"
+                    >
+                        <article class="w-full rounded-[28px] bg-white border border-[#0B2820]/10 overflow-hidden shadow-[0_18px_45px_-28px_rgba(11,40,32,0.22)] flex flex-col justify-between">
+                            <div>
+                                <!-- Editorial Media Strip -->
+                                <div class="relative h-52 sm:h-60 overflow-hidden bg-[#0F3328]">
+                                    <img
+                                        src="/images/landing/banner-2.webp"
+                                        alt="Kampus SD Namira Kota Probolinggo"
+                                        class="js-unit-photo w-full h-full object-cover"
+                                        onerror="this.onerror=null; this.src='/images/landing/banner-2.jpg';"
+                                    />
+                                    <div class="absolute inset-0 bg-gradient-to-t from-[#0B2820]/88 via-[#0B2820]/25 to-transparent" />
+                                    <div class="absolute top-4 left-4 right-4 flex items-center justify-between gap-2">
+                                        <div class="w-11 h-11 rounded-2xl bg-white p-1.5 shadow-sm flex items-center justify-center">
+                                            <img
+                                                src="/images/landing/logo-sd.webp"
+                                                alt="Logo SD Namira Kota Probolinggo"
+                                                class="w-full h-full object-contain"
+                                                onerror="this.onerror=null; this.src='/images/landing/logo-sd.png';"
+                                            />
+                                        </div>
+                                        <span
+                                            v-if="sdKotaSetting?.is_active"
+                                            class="px-3 py-1 rounded-full bg-[#DFB86B] text-[#0B2820] text-[10px] font-mono-code font-bold uppercase tracking-[0.14em]"
+                                        >
+                                            Jalur Inden Dibuka
+                                        </span>
+                                    </div>
+                                    <div class="absolute bottom-4 left-5 right-5 flex items-end justify-between text-white">
+                                        <div>
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.18em] text-[#DFB86B]">
+                                                Jenjang Dasar · Kota Probolinggo
+                                            </span>
+                                            <h3 class="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] mt-0.5">
+                                                SD Namira Kota
+                                            </h3>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-6 sm:p-8">
+                                    <p class="text-xs sm:text-sm text-[#0B2820]/70 leading-relaxed">
+                                        Satuan pendidikan Sekolah Dasar Islam terpadu di Kota Probolinggo dengan pembiasaan adab Qur’ani, Metode Ummi, dan kesiapan literasi global.
+                                    </p>
+
+                                    <div class="mt-6 pt-5 border-t border-[#0B2820]/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                                        <div>
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#9C7026] font-semibold">Jalur</span>
+                                            <span class="block font-bold text-[#0B2820] mt-0.5">Inden SD Kota (SD-02)</span>
+                                        </div>
+                                        <div class="sm:border-l sm:border-[#0B2820]/10 sm:pl-4">
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#9C7026] font-semibold">Kuota</span>
+                                            <span class="block font-bold text-[#0B2820] mt-0.5">{{ sdKotaQuota }} Kursi / TA</span>
+                                        </div>
+                                        <div class="sm:border-l sm:border-[#0B2820]/10 sm:pl-4">
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#9C7026] font-semibold">Berkas</span>
+                                            <span class="block font-bold text-[#0B2820] mt-0.5">Unggah Fleksibel</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Multi-Year Inden Deep-Link Pills -->
+                                    <div v-if="sdKotaFutureYears.length > 0" class="mt-5 flex flex-wrap items-center gap-1.5">
+                                        <span class="font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#0B2820]/55 mr-1">
+                                            Inden TA:
+                                        </span>
+                                        <Link
+                                            v-for="yr in sdKotaFutureYears"
+                                            :key="yr.value"
+                                            :href="`/spmb/daftar/sd-kota?ta=${encodeURIComponent(yr.value)}`"
+                                            class="px-2.5 py-1 rounded-full bg-[#F6F2E9] hover:bg-[#0B2820] text-[#0B2820] hover:text-[#DFB86B] border border-[#0B2820]/15 text-[11px] font-mono-code font-semibold transition-colors"
+                                        >
+                                            {{ yr.value }} &rarr;
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px-6 sm:px-8 pb-6 sm:pb-8 flex flex-wrap items-center justify-between gap-3">
+                                <Link
+                                    href="/spmb/daftar/sd-kota"
+                                    class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-full bg-[#0B2820] hover:bg-[#133E32] text-[#F6F2E9] text-xs sm:text-sm font-bold tracking-wide transition-colors"
+                                >
+                                    <span>Daftar SD Kota ({{ sdKotaSetting?.academic_year || academicYearLabel }})</span>
+                                    <ArrowRightIcon class="w-4 h-4 text-[#DFB86B] transition-transform duration-300 group-hover:translate-x-1" />
+                                </Link>
+                            </div>
+                        </article>
+                    </Motion>
+
+                    <!-- SMP NAMIRA (Right 6 Cols) -->
+                    <Motion
+                        :while-hover="{ y: -5 }"
+                        :transition="{ type: 'spring', stiffness: 320, damping: 28 }"
+                        class="js-unit-card lg:col-span-6 flex"
                     >
                         <article class="w-full rounded-[28px] bg-white border border-[#0B2820]/10 overflow-hidden shadow-[0_18px_45px_-28px_rgba(11,40,32,0.22)] flex flex-col justify-between">
                             <div>
@@ -843,6 +1023,21 @@ onUnmounted(() => {
                                             <span class="block font-bold text-[#0B2820] mt-0.5">Asrama &amp; Full Day</span>
                                         </div>
                                     </div>
+
+                                    <!-- Multi-Year Inden Deep-Link Pills -->
+                                    <div v-if="smpFutureYears.length > 0" class="mt-5 flex flex-wrap items-center gap-1.5">
+                                        <span class="font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#162C46]/60 mr-1">
+                                            Inden TA:
+                                        </span>
+                                        <Link
+                                            v-for="yr in smpFutureYears"
+                                            :key="yr.value"
+                                            :href="`/spmb/daftar/smp?ta=${encodeURIComponent(yr.value)}`"
+                                            class="px-2.5 py-1 rounded-full bg-[#EEF2F7] hover:bg-[#162C46] text-[#162C46] hover:text-white border border-[#162C46]/15 text-[11px] font-mono-code font-semibold transition-colors"
+                                        >
+                                            {{ yr.value }} &rarr;
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
 
@@ -851,89 +1046,114 @@ onUnmounted(() => {
                                     href="/spmb/daftar/smp"
                                     class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-full bg-[#162C46] hover:bg-[#1E3B5E] text-white text-xs sm:text-sm font-bold tracking-wide transition-colors"
                                 >
-                                    <span>Daftar SMP Jalur Inden</span>
+                                    <span>Daftar SMP ({{ smpSetting?.academic_year || academicYearLabel }})</span>
                                     <ArrowRightIcon class="w-4 h-4 text-[#DFB86B] transition-transform duration-300 group-hover:translate-x-1" />
                                 </Link>
                             </div>
                         </article>
                     </Motion>
+                </div>
 
-                    <!-- TK & KB NAMIRA (Right 5 Cols — Warm Parchment Edition) -->
-                    <Motion
-                        :while-hover="{ y: -5 }"
-                        :transition="{ type: 'spring', stiffness: 320, damping: 28 }"
-                        class="js-unit-card lg:col-span-5 flex"
-                    >
-                        <article class="w-full rounded-[28px] bg-[#ECE5D6] border border-[#0B2820]/12 overflow-hidden flex flex-col justify-between">
-                            <div>
-                                <div class="relative h-52 sm:h-60 overflow-hidden bg-[#2C2418]">
-                                    <img
-                                        src="/images/landing/banner-3.webp"
-                                        alt="Lingkungan TK & KB Namira"
-                                        class="js-unit-photo w-full h-full object-cover"
-                                        onerror="this.onerror=null; this.src='/images/landing/banner-3.jpg';"
-                                    />
-                                    <div class="absolute inset-0 bg-gradient-to-t from-[#241D13]/85 via-[#241D13]/20 to-transparent" />
-                                    <div class="absolute top-4 left-4 right-4 flex items-center justify-between">
-                                        <div class="w-11 h-11 rounded-2xl bg-[#F6F2E9] p-1.5 shadow-sm flex items-center justify-center">
-                                            <img
-                                                src="/images/landing/logo-tk.webp"
-                                                alt="Logo TK & KB Namira"
-                                                class="w-full h-full object-contain"
-                                                onerror="this.onerror=null; this.src='/images/landing/logo-tk.png';"
-                                            />
-                                        </div>
-                                        <span class="px-3 py-1 rounded-full bg-[#F6F2E9]/90 text-[#0B2820] text-[10px] font-mono-code font-semibold uppercase tracking-[0.14em]">
-                                            Kraksaan &amp; Dringu
-                                        </span>
+                <!-- ROW 3: WARM PARCHMENT ARCHITECTURAL BAND — TK & KB NAMIRA (UNLOCKABLE VIA ADMIN SETTINGS) -->
+                <Motion
+                    :while-hover="{ y: -4 }"
+                    :transition="{ type: 'spring', stiffness: 320, damping: 28 }"
+                    class="js-unit-card mt-6"
+                >
+                    <article class="rounded-[28px] bg-[#ECE5D6] border border-[#0B2820]/12 overflow-hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-12">
+                            <div class="lg:col-span-4 relative min-h-[220px] lg:min-h-full overflow-hidden bg-[#2C2418]">
+                                <img
+                                    src="/images/landing/banner-3.webp"
+                                    alt="Lingkungan TK & KB Namira"
+                                    class="js-unit-photo w-full h-full object-cover"
+                                    onerror="this.onerror=null; this.src='/images/landing/banner-3.jpg';"
+                                />
+                                <div class="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#241D13]/85 via-[#241D13]/25 to-transparent" />
+                                <div class="absolute top-4 left-4 right-4 flex items-center justify-between gap-2">
+                                    <div class="w-11 h-11 rounded-2xl bg-[#F6F2E9] p-1.5 shadow-sm flex items-center justify-center">
+                                        <img
+                                            src="/images/landing/logo-tk.webp"
+                                            alt="Logo TK & KB Namira"
+                                            class="w-full h-full object-contain"
+                                            onerror="this.onerror=null; this.src='/images/landing/logo-tk.png';"
+                                        />
                                     </div>
-                                    <div class="absolute bottom-4 left-5 right-5 text-white">
-                                        <span class="block font-mono-code text-[10px] uppercase tracking-[0.18em] text-[#DFB86B]">
-                                            Pendidikan Usia Dini
-                                        </span>
-                                        <h3 class="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] mt-0.5">
-                                            TK &amp; KB Namira
-                                        </h3>
-                                    </div>
+                                    <span
+                                        class="px-3 py-1 rounded-full text-[10px] font-mono-code font-semibold uppercase tracking-[0.14em]"
+                                        :class="tkUnlocked ? 'bg-[#0B2820] text-[#DFB86B]' : 'bg-[#F6F2E9]/90 text-[#0B2820]'"
+                                    >
+                                        {{ tkUnlocked ? 'Pendaftaran Online Dibuka' : 'Kraksaan & Dringu' }}
+                                    </span>
                                 </div>
+                            </div>
 
-                                <div class="p-6 sm:p-8">
-                                    <p class="text-xs sm:text-sm text-[#0B2820]/75 leading-relaxed">
-                                        Fondasi karakter karimah, stimulasi motorik kreatif, dan kecintaan awal terhadap Al-Qur’an dalam ruang bermain yang aman.
+                            <div class="lg:col-span-8 p-6 sm:p-8 lg:p-9 flex flex-col justify-between gap-6">
+                                <div>
+                                    <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono-code uppercase tracking-[0.18em] text-[#9C7026] font-semibold">
+                                        <span>Pendidikan Usia Dini · TK &amp; KB Namira</span>
+                                        <span>{{ tkUnlocked ? 'Tersedia Inden Multi-TA' : 'Pendaftaran Online Segera Dibuka' }}</span>
+                                    </div>
+                                    <h3 class="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-[#0B2820] mt-2">
+                                        TK &amp; KB Namira Kraksaan &amp; Dringu
+                                    </h3>
+                                    <p class="text-xs sm:text-sm text-[#0B2820]/75 mt-2 leading-relaxed max-w-2xl">
+                                        Fondasi karakter karimah, stimulasi motorik kreatif, dan kecintaan awal terhadap Al-Qur’an dalam ruang bermain yang aman — dengan prioritas khusus melanjutkan ke jenjang SD Namira.
                                     </p>
 
-                                    <ul class="mt-5 pt-5 border-t border-[#0B2820]/12 space-y-2.5 text-xs font-semibold text-[#0B2820]/85">
-                                        <li class="flex items-center justify-between gap-2">
-                                            <span>Tersedia Unit Kraksaan &amp; Dringu</span>
-                                            <span class="font-mono-code text-[10px] text-[#9C7026]">01</span>
-                                        </li>
-                                        <li class="flex items-center justify-between gap-2">
-                                            <span>Prioritas Khusus Lanjut ke SD Namira</span>
-                                            <span class="font-mono-code text-[10px] text-[#9C7026]">02</span>
-                                        </li>
-                                        <li class="flex items-center justify-between gap-2">
-                                            <span>Fasilitas Bermain Aman &amp; Edukatif</span>
-                                            <span class="font-mono-code text-[10px] text-[#9C7026]">03</span>
-                                        </li>
-                                    </ul>
+                                    <!-- Multi-Year Inden Pills (Shown publicly ONLY when TK is unlocked by Admin) -->
+                                    <div v-if="tkUnlocked && tkFutureYears.length > 0" class="mt-4 flex flex-wrap items-center gap-1.5">
+                                        <span class="font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#9C7026] mr-1">
+                                            Inden TA:
+                                        </span>
+                                        <Link
+                                            v-for="yr in tkFutureYears"
+                                            :key="yr.value"
+                                            :href="`/spmb/daftar/tk?ta=${encodeURIComponent(yr.value)}`"
+                                            class="px-2.5 py-1 rounded-full bg-[#F6F2E9] hover:bg-[#0B2820] text-[#0B2820] hover:text-[#DFB86B] border border-[#0B2820]/15 text-[11px] font-mono-code font-semibold transition-colors"
+                                        >
+                                            {{ yr.value }} &rarr;
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <Link
+                                        v-if="tkUnlocked"
+                                        href="/spmb/daftar/tk"
+                                        class="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-[#0B2820] hover:bg-[#133E32] text-[#F6F2E9] text-xs sm:text-sm font-bold tracking-wide transition-colors"
+                                    >
+                                        <span>Daftar TK &amp; KB Online</span>
+                                        <ArrowRightIcon class="w-4 h-4 text-[#DFB86B] transition-transform duration-300 group-hover:translate-x-1" />
+                                    </Link>
+
+                                    <a
+                                        :href="waTkHref"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold tracking-wide transition-colors"
+                                        :class="tkUnlocked
+                                            ? 'border border-[#0B2820]/25 hover:border-[#0B2820] text-[#0B2820]'
+                                            : 'bg-[#0B2820] hover:bg-[#133E32] text-[#F6F2E9]'"
+                                    >
+                                        <PhoneIcon class="w-4 h-4 text-[#DFB86B]" />
+                                        <span>{{ tkUnlocked ? 'Konsultasi WA TK/KB' : 'Konsultasi & Info TK/KB' }}</span>
+                                        <ArrowUpRightIcon class="w-4 h-4 opacity-70 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                                    </a>
+
+                                    <Link
+                                        v-if="!tkUnlocked && canPreviewLockedUnits"
+                                        href="/spmb/daftar/tk"
+                                        class="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#C4933F]/20 hover:bg-[#C4933F]/35 text-[#0B2820] border border-[#C4933F]/50 text-xs font-bold transition-colors"
+                                    >
+                                        <LockClosedIcon class="w-3.5 h-3.5" />
+                                        <span>Pratinjau Form TK/KB (Admin)</span>
+                                    </Link>
                                 </div>
                             </div>
-
-                            <div class="px-6 sm:px-8 pb-6 sm:pb-8">
-                                <a
-                                    :href="waTkHref"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="group w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-[#0B2820] hover:bg-[#133E32] text-[#F6F2E9] text-xs sm:text-sm font-bold tracking-wide transition-colors"
-                                >
-                                    <PhoneIcon class="w-4 h-4 text-[#DFB86B]" />
-                                    <span>Konsultasi &amp; Daftar TK/KB</span>
-                                    <ArrowUpRightIcon class="w-4 h-4 opacity-70 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                                </a>
-                            </div>
-                        </article>
-                    </Motion>
-                </div>
+                        </div>
+                    </article>
+                </Motion>
             </div>
         </section>
 

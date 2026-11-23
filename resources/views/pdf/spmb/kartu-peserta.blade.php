@@ -184,30 +184,48 @@
 
 @php
     $unitCode = strtoupper($applicant->unit?->code ?? '');
-    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || $unitCode === 'SMP';
-    $isSdKota = $unitCode === 'SD-02' || str_contains(strtolower($applicant->unit?->name ?? ''), 'kota');
+    $unitNameLower = strtolower($applicant->unit?->name ?? '');
+    $isSmp = str_contains($unitNameLower, 'smp') || $unitCode === 'SMP';
+    $isSdKota = $unitCode === 'SD-02' || (str_contains($unitNameLower, 'sd') && str_contains($unitNameLower, 'kota'));
+    $isTkKb = in_array($unitCode, ['TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'], true)
+        || strtoupper($applicant->unit?->category ?? '') === 'TK';
     $schoolName = $isSmp
         ? ($applicant->unit?->name ?? 'SMP Namira Kota Probolinggo')
-        : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan');
-    $schoolTitle = $isSmp ? 'SMP NAMIRA (JUNIOR HIGH SCHOOL)' : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN (ELEMENTARY SCHOOL)');
+        : ($isTkKb ? ($applicant->unit?->name ?? 'TK / KB Namira') : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan'));
+    $schoolTitle = $isSmp
+        ? 'SMP NAMIRA (JUNIOR HIGH SCHOOL)'
+        : ($isTkKb ? strtoupper($schoolName) . ' (PENDIDIKAN USIA DINI)' : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN (ELEMENTARY SCHOOL)'));
     $schoolAddress = $applicant->unit?->address ?: (
         $isSmp
             ? 'Jl. KH. Ahmad Dahlan, Kota Probolinggo - Jawa Timur'
             : ($isSdKota ? 'Kota Probolinggo - Jawa Timur' : 'Kec. Kraksaan, Kabupaten Probolinggo - Jawa Timur')
     );
-    $signCity = (!$isSmp && !$isSdKota) ? 'Kraksaan' : 'Probolinggo';
-    $agenda1Title = $isSmp ? '1. Seleksi Akademik (Bahasa Indonesia & Matematika)' : '1. Agenda Observasi Dasar Anak';
-    $agenda2Title = $isSmp ? '2. Observasi Calon Murid (Wawancara & Mengaji)' : '2. Agenda Psikotes Calon Siswa';
-    $defaultLocation = $isSmp ? 'Gedung SMP Namira Kota Probolinggo' : ($isSdKota ? 'Gedung SD Namira Kota Probolinggo' : 'Gedung SD Namira Kraksaan');
-    $primaryColor = $isSmp ? '#1e3a8a' : '#064e3b';
-    $secondaryColor = $isSmp ? '#2563eb' : '#047857';
+    $signCity = (!$isSmp && !$isSdKota && !str_contains($unitNameLower, 'dringu')) ? 'Kraksaan' : 'Probolinggo';
+    $agenda1Title = $isSmp
+        ? '1. Seleksi Akademik (Bahasa Indonesia & Matematika)'
+        : ($isTkKb ? '1. Agenda Observasi & Pengenalan Lingkungan' : '1. Agenda Observasi Dasar Anak');
+    $agenda2Title = $isSmp
+        ? '2. Observasi Calon Murid (Wawancara & Mengaji)'
+        : ($isTkKb ? '2. Wawancara Orang Tua / Wali' : '2. Agenda Psikotes Calon Siswa');
+    $defaultLocation = $isSmp
+        ? 'Gedung SMP Namira Kota Probolinggo'
+        : ($isTkKb ? "Gedung {$schoolName}" : ($isSdKota ? 'Gedung SD Namira Kota Probolinggo' : 'Gedung SD Namira Kraksaan'));
+    $primaryColor = $isSmp ? '#1e3a8a' : ($isTkKb ? '#92400e' : '#064e3b');
+    $secondaryColor = $isSmp ? '#2563eb' : ($isTkKb ? '#b45309' : '#047857');
 
-    $logoFile = $isSmp ? public_path('images/landing/logo-smp.png') : public_path('images/landing/logo-sd.png');
+    $logoFile = $isSmp
+        ? public_path('images/landing/logo-smp.png')
+        : ($isTkKb ? public_path('images/landing/logo-tk.png') : public_path('images/landing/logo-sd.png'));
     $logoBase64 = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
+
+    $applicantAcademicYear = $applicant->academic_year ?: ($setting?->academic_year ?? '2027/2028');
+    $isFutureInden = $setting ? $setting->isFutureIndenYear($applicantAcademicYear) : false;
 
     $agenda1DateDisplay = $applicant->observation_date
         ? $applicant->observation_date->translatedFormat('l, d F Y')
-        : ($setting?->selection_date ? $setting->selection_date->translatedFormat('l, d F Y') : 'Menunggu Penetapan Panitia');
+        : (! $isFutureInden && $setting?->selection_date
+            ? $setting->selection_date->translatedFormat('l, d F Y')
+            : ($isFutureInden ? "Menunggu Jadwal Seleksi TA {$applicantAcademicYear}" : 'Menunggu Penetapan Panitia'));
     $agenda2DateDisplay = $applicant->psychotest_date
         ? $applicant->psychotest_date->translatedFormat('l, d F Y')
         : $agenda1DateDisplay;
@@ -234,7 +252,7 @@
 
     <!-- Title Badge -->
     <div class="title-badge" style="background-color: {{ $primaryColor }};">
-        Kartu Tanda Peserta SPMB (TA {{ $setting->academic_year ?? '2027/2028' }})
+        Kartu Tanda Peserta SPMB {{ $applicant->is_inden ? 'Jalur Inden ' : '' }}(TA {{ $applicantAcademicYear }})
     </div>
 
     <!-- Nomor Registrasi -->

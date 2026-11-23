@@ -117,24 +117,32 @@
 
 @php
     $unitCode = strtoupper($applicant->unit?->code ?? '');
-    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || $unitCode === 'SMP';
-    $isSdKota = $unitCode === 'SD-02' || str_contains(strtolower($applicant->unit?->name ?? ''), 'kota');
+    $unitNameLower = strtolower($applicant->unit?->name ?? '');
+    $isSmp = str_contains($unitNameLower, 'smp') || $unitCode === 'SMP';
+    $isSdKota = $unitCode === 'SD-02' || (str_contains($unitNameLower, 'sd') && str_contains($unitNameLower, 'kota'));
+    $isTkKb = in_array($unitCode, ['TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'], true)
+        || strtoupper($applicant->unit?->category ?? '') === 'TK';
     $schoolName = $isSmp
         ? ($applicant->unit?->name ?? 'SMP NAMIRA KOTA PROBOLINGGO')
-        : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN');
+        : ($isTkKb ? strtoupper($applicant->unit?->name ?? 'TK / KB NAMIRA') : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN'));
     $schoolAddress = $applicant->unit?->address ?: (
         $isSmp
             ? 'Jl. KH. Ahmad Dahlan, Kota Probolinggo - Jawa Timur'
             : ($isSdKota ? 'Kota Probolinggo - Jawa Timur' : 'Kec. Kraksaan, Kabupaten Probolinggo - Jawa Timur')
     );
-    $signCity = (!$isSmp && !$isSdKota) ? 'Kraksaan' : 'Probolinggo';
-    $schoolEmail = $isSmp ? 'smp@namiraschool.com' : 'sd@namiraschool.com';
-    $docCode = $isSmp ? 'SMP' : ($isSdKota ? 'SD-02' : 'SD');
-    $unitLabel = $isSmp ? 'SMP Namira' : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan');
-    $selectionDesc = $isSmp ? 'seleksi akademik (Bahasa Indonesia & Matematika), serta observasi calon murid (wawancara & mengaji)' : 'observasi perkembangan dasar, serta psikotes';
+    $signCity = (!$isSmp && !$isSdKota && !str_contains($unitNameLower, 'dringu')) ? 'Kraksaan' : 'Probolinggo';
+    $schoolEmail = $isSmp ? 'smp@namiraschool.com' : ($isTkKb ? 'tk@namiraschool.com' : 'sd@namiraschool.com');
+    $docCode = $isSmp ? 'SMP' : ($isTkKb ? ($unitCode ?: 'TK') : ($isSdKota ? 'SD-02' : 'SD'));
+    $unitLabel = $isSmp ? 'SMP Namira' : ($isTkKb ? ($applicant->unit?->name ?? 'TK / KB Namira') : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan'));
+    $selectionDesc = $isSmp
+        ? 'seleksi akademik (Bahasa Indonesia & Matematika), serta observasi calon murid (wawancara & mengaji)'
+        : ($isTkKb ? 'observasi kesiapan usia dini dan wawancara orang tua' : 'observasi perkembangan dasar, serta psikotes');
     $parentsDisplay = collect([$applicant->father_name, $applicant->mother_name])->filter()->implode(' / ') ?: '-';
+    $applicantAcademicYear = $applicant->academic_year ?: ($setting->academic_year ?? '2027/2028');
 
-    $logoFile = $isSmp ? public_path('images/landing/logo-smp.png') : public_path('images/landing/logo-sd.png');
+    $logoFile = $isSmp
+        ? public_path('images/landing/logo-smp.png')
+        : ($isTkKb ? public_path('images/landing/logo-tk.png') : public_path('images/landing/logo-sd.png'));
     $logoBase64 = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
 @endphp
 <table style="width: 100%; border-bottom: 3px double #000000; padding-bottom: 8px; margin-bottom: 20px;">
@@ -161,7 +169,7 @@
     <div class="num">Nomor: {{ $applicant->registration_number }}/SPMB-{{ $docCode }}/{{ date('Y') }}</div>
 </div>
 
-<p>Berdasarkan hasil seleksi administrasi, {{ $selectionDesc }} calon peserta didik baru {{ $unitLabel }} Tahun Ajaran {{ $setting->academic_year ?? '2027/2028' }}, Panitia Penerimaan Peserta Didik Baru dengan ini menerangkan bahwa:</p>
+<p>Berdasarkan hasil seleksi administrasi, {{ $selectionDesc }} calon peserta didik baru {{ $unitLabel }} Tahun Ajaran {{ $applicantAcademicYear }}, Panitia Penerimaan Peserta Didik Baru dengan ini menerangkan bahwa:</p>
 
     <table class="content-table">
         <tr>
@@ -200,7 +208,7 @@
 
     <div class="status-box">
         <div class="text">★ DITERIMA SEBAGAI PESERTA DIDIK BARU ★</div>
-        <div style="font-size: 10pt; color: #166534; margin-top: 2px;">{{ strtoupper($unitLabel) }} TAHUN AJARAN {{ $setting->academic_year ?? '2027/2028' }}</div>
+        <div style="font-size: 10pt; color: #166534; margin-top: 2px;">{{ strtoupper($unitLabel) }} TAHUN AJARAN {{ $applicantAcademicYear }}</div>
     </div>
 
     <p>Kepada Orang Tua / Wali murid diharapkan untuk segera menyelesaikan proses <strong>Daftar Ulang</strong> dengan ketentuan sebagai berikut:</p>

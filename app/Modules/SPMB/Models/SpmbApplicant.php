@@ -18,6 +18,7 @@ class SpmbApplicant extends Model
     protected $fillable = [
         'registration_number',
         'unit_id',
+        'academic_year',
         'user_id',
         'category',
         'status',
@@ -212,12 +213,18 @@ class SpmbApplicant extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        $isSmp = str_contains(strtolower($this->unit?->name ?? ''), 'smp');
+        $unitCode = strtoupper($this->unit?->code ?? '');
+        $unitName = strtolower($this->unit?->name ?? '');
+        $isSmp = $unitCode === 'SMP' || str_contains($unitName, 'smp');
+        $isTkKb = in_array($unitCode, ['TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'], true)
+            || strtoupper($this->unit?->category ?? '') === 'TK';
 
         return match ($this->status) {
             'submitted' => 'Menunggu Verifikasi',
             'verified' => 'Terverifikasi (Siap Jadwal)',
-            'scheduled' => $isSmp ? 'Jadwal Seleksi Akademik & Observasi Diterbitkan' : 'Jadwal Observasi & Psikotes Diterbitkan',
+            'scheduled' => $isSmp
+                ? 'Jadwal Seleksi Akademik & Observasi Diterbitkan'
+                : ($isTkKb ? 'Jadwal Observasi & Perkenalan Diterbitkan' : 'Jadwal Observasi & Psikotes Diterbitkan'),
             'evaluated' => 'Selesai Seleksi / Penilaian',
             'accepted' => 'Diterima (Lolos Seleksi)',
             'reserve' => 'Cadangan',
@@ -232,9 +239,20 @@ class SpmbApplicant extends Model
 
     public function getCategoryLabelAttribute(): string
     {
-        $isSmp = str_contains(strtolower($this->unit?->name ?? ''), 'smp');
-        if (in_array($this->category, ['internal_tk', 'internal_sd', 'internal'])) {
-            return $isSmp ? 'Alumni SD Namira' : 'Alumni TK Namira';
+        $unitCode = strtoupper($this->unit?->code ?? '');
+        $unitName = strtolower($this->unit?->name ?? '');
+        $isSmp = $unitCode === 'SMP' || str_contains($unitName, 'smp');
+        $isTkKb = in_array($unitCode, ['TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'], true)
+            || strtoupper($this->unit?->category ?? '') === 'TK';
+
+        if (in_array($this->category, ['internal_tk', 'internal_sd', 'internal_kb', 'internal'])) {
+            if ($isSmp) {
+                return 'Alumni SD Namira';
+            }
+            if ($isTkKb) {
+                return 'Alumni KB / Daycare Namira';
+            }
+            return 'Alumni TK Namira';
         }
         return 'Pendaftar Umum';
     }
@@ -249,7 +267,8 @@ class SpmbApplicant extends Model
         }
 
         $unitName = $this->unit ? $this->unit->name : 'Sekolah Islam Namira';
-        $greeting = "Assalamu'alaikum Ayah/Bunda {$this->father_name} / {$this->mother_name},\nKami dari Panitia SPMB {$unitName} menginfokan terkait pendaftaran Ananda {$this->full_name} (No. Reg: {$this->registration_number}).\n";
+        $taSuffix = $this->academic_year ? " - TA {$this->academic_year}" : '';
+        $greeting = "Assalamu'alaikum Ayah/Bunda {$this->father_name} / {$this->mother_name},\nKami dari Panitia SPMB {$unitName}{$taSuffix} menginfokan terkait pendaftaran Ananda {$this->full_name} (No. Reg: {$this->registration_number}).\n";
 
         return "https://wa.me/{$phone}?text=" . urlencode($greeting);
     }

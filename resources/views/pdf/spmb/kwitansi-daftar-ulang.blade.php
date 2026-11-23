@@ -250,25 +250,33 @@
 
 @php
     $unitCode = strtoupper($applicant->unit?->code ?? '');
-    $isSmp = str_contains(strtolower($applicant->unit?->name ?? ''), 'smp') || $unitCode === 'SMP';
-    $isSdKota = $unitCode === 'SD-02' || str_contains(strtolower($applicant->unit?->name ?? ''), 'kota');
+    $unitNameLower = strtolower($applicant->unit?->name ?? '');
+    $isSmp = str_contains($unitNameLower, 'smp') || $unitCode === 'SMP';
+    $isSdKota = $unitCode === 'SD-02' || (str_contains($unitNameLower, 'sd') && str_contains($unitNameLower, 'kota'));
+    $isTkKb = in_array($unitCode, ['TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'], true)
+        || strtoupper($applicant->unit?->category ?? '') === 'TK';
 
     $schoolName = $isSmp
         ? ($applicant->unit?->name ?? 'SMP NAMIRA KOTA PROBOLINGGO')
-        : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN');
-    $unitLabel = $isSmp ? 'SMP Namira Kota Probolinggo' : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan');
+        : ($isTkKb ? strtoupper($applicant->unit?->name ?? 'TK / KB NAMIRA') : ($isSdKota ? 'SD NAMIRA KOTA PROBOLINGGO' : 'SD NAMIRA KRAKSAAN'));
+    $unitLabel = $isSmp
+        ? 'SMP Namira Kota Probolinggo'
+        : ($isTkKb ? ($applicant->unit?->name ?? 'TK / KB Namira') : ($isSdKota ? 'SD Namira Kota Probolinggo' : 'SD Namira Kraksaan'));
     $schoolAddress = $applicant->unit?->address ?: (
         $isSmp
             ? 'Jl. KH. Ahmad Dahlan, Kota Probolinggo - Jawa Timur'
             : ($isSdKota ? 'Kota Probolinggo - Jawa Timur' : 'Kec. Kraksaan, Kabupaten Probolinggo - Jawa Timur')
     );
-    $signCity = (!$isSmp && !$isSdKota) ? 'Kraksaan' : 'Probolinggo';
-    $schoolEmail = $isSmp ? 'smp@namiraschool.com' : 'sd@namiraschool.com';
+    $signCity = (!$isSmp && !$isSdKota && !str_contains($unitNameLower, 'dringu')) ? 'Kraksaan' : 'Probolinggo';
+    $schoolEmail = $isSmp ? 'smp@namiraschool.com' : ($isTkKb ? 'tk@namiraschool.com' : 'sd@namiraschool.com');
+    $applicantAcademicYear = $applicant->academic_year ?: ($setting->academic_year ?? '2027/2028');
 
-    $primaryColor = $isSmp ? '#1e3a8a' : '#064e3b';
-    $secondaryColor = $isSmp ? '#1d4ed8' : '#047857';
+    $primaryColor = $isSmp ? '#1e3a8a' : ($isTkKb ? '#92400e' : '#064e3b');
+    $secondaryColor = $isSmp ? '#1d4ed8' : ($isTkKb ? '#b45309' : '#047857');
 
-    $logoFile = $isSmp ? public_path('images/landing/logo-smp.png') : public_path('images/landing/logo-sd.png');
+    $logoFile = $isSmp
+        ? public_path('images/landing/logo-smp.png')
+        : ($isTkKb ? public_path('images/landing/logo-tk.png') : public_path('images/landing/logo-sd.png'));
     $logoBase64 = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
 
     $dpPercentage = (int) ($setting?->min_down_payment_percentage ?? 60);
@@ -350,7 +358,7 @@
                 <td style="vertical-align: middle; width: 58%;">
                     <div class="doc-heading" style="color: {{ $primaryColor }};">Kwitansi Resmi</div>
                     <div class="doc-subheading">
-                        Bukti Pembayaran Daftar Ulang SPMB Tahun Ajaran {{ $setting->academic_year ?? '2027/2028' }}
+                        Bukti Pembayaran Daftar Ulang SPMB Tahun Ajaran {{ $applicantAcademicYear }}
                     </div>
                 </td>
                 <td style="vertical-align: middle; width: 42%;">

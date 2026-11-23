@@ -48,6 +48,14 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    academicYearBreakdown: {
+        type: Array,
+        default: () => [],
+    },
+    academicYearOptions: {
+        type: Array,
+        default: () => [],
+    },
     indenMasterList: {
         type: Array,
         default: null,
@@ -60,20 +68,43 @@ const props = defineProps({
         type: String,
         default: null,
     },
+    registrationUrl: {
+        type: String,
+        default: null,
+    },
+    isTkKb: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const spmbUnits = computed(() => {
     return (props.availableUnits || []).filter((u) => {
         const c = (u.code || '').toUpperCase();
         const n = (u.name || '').toLowerCase();
-        return ['SD', 'SD-02', 'SMP'].includes(c) || n.includes('sd') || n.includes('smp');
+        return ['SD', 'SD-02', 'SMP', 'TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'].includes(c)
+            || u.is_tk_kb
+            || n.includes('sd')
+            || n.includes('smp')
+            || n.includes('tk ')
+            || n.includes('kb ');
     });
 });
 
+const isFutureApplicantYear = (year) => {
+    const base = String(props.setting?.academic_year || '2027/2028');
+    const target = String(year || base);
+    const mBase = base.match(/^(\d{4})\//);
+    const mTarget = target.match(/^(\d{4})\//);
+    if (!mBase || !mTarget) return false;
+    return Number(mTarget[1]) > Number(mBase[1]);
+};
+
 const isLinkCopied = ref(false);
-const copyPrivateLink = () => {
-    if (!props.privateRegistrationUrl || !navigator?.clipboard) return;
-    navigator.clipboard.writeText(props.privateRegistrationUrl).then(() => {
+const copyPrivateLink = (targetUrl = null) => {
+    const urlToCopy = targetUrl || props.privateRegistrationUrl || props.registrationUrl;
+    if (!urlToCopy || !navigator?.clipboard) return;
+    navigator.clipboard.writeText(urlToCopy).then(() => {
         isLinkCopied.value = true;
         setTimeout(() => { isLinkCopied.value = false; }, 2500);
     });
@@ -123,6 +154,7 @@ const isSmp = computed(() => {
 });
 
 const search = ref(props.filters?.search || '');
+const academicYear = ref(props.filters?.academic_year || 'all');
 const category = ref(props.filters?.category || 'all');
 const status = ref(props.filters?.status || 'all');
 
@@ -251,6 +283,7 @@ const vaTemplateDownloadUrl = computed(() => {
         only_accepted: vaTemplateOnlyAccepted.value ? 1 : 0,
         include_existing: vaTemplateIncludeExisting.value ? 1 : 0,
         search: search.value || undefined,
+        academic_year: academicYear.value !== 'all' ? academicYear.value : undefined,
         category: category.value !== 'all' ? category.value : undefined,
         status: !vaTemplateOnlyAccepted.value && status.value !== 'all' ? status.value : undefined,
     });
@@ -385,6 +418,7 @@ const editBiodataForm = useForm({
     religion: 'Islam',
     child_order: 1,
     total_siblings: 1,
+    academic_year: '',
     is_inden: false,
     category: 'eksternal_umum',
     previous_school: '',
@@ -410,6 +444,7 @@ const openEditBiodataModal = (app) => {
     editBiodataForm.religion = app.religion || 'Islam';
     editBiodataForm.child_order = app.child_order || 1;
     editBiodataForm.total_siblings = app.total_siblings || 1;
+    editBiodataForm.academic_year = app.academic_year || props.setting?.academic_year || '2027/2028';
     editBiodataForm.is_inden = Boolean(app.is_inden);
     editBiodataForm.category = normalizeCategoryValue(app.category);
     editBiodataForm.previous_school = app.previous_school || '';
@@ -457,6 +492,7 @@ const applyFilters = () => {
     router.get(route('spmb.admin.index'), {
         unit_id: props.unit?.id || undefined,
         search: search.value || undefined,
+        academic_year: academicYear.value !== 'all' ? academicYear.value : undefined,
         category: category.value !== 'all' ? category.value : undefined,
         status: status.value !== 'all' ? status.value : undefined,
     }, {
@@ -471,7 +507,7 @@ watch(search, () => {
     searchTimeout = setTimeout(applyFilters, 400);
 });
 
-watch([category, status], () => {
+watch([academicYear, category, status], () => {
     applyFilters();
 });
 
@@ -532,6 +568,7 @@ const getStatusBadgeClass = (s) => {
                         :href="route('spmb.admin.export', {
                             unit_id: unit?.id,
                             search: search || undefined,
+                            academic_year: academicYear !== 'all' ? academicYear : undefined,
                             category: category !== 'all' ? category : undefined,
                             status: status !== 'all' ? status : undefined,
                         })"
@@ -577,6 +614,7 @@ const getStatusBadgeClass = (s) => {
                         :href="route('spmb.admin.export', {
                             unit_id: unit?.id,
                             search: search || undefined,
+                            academic_year: academicYear !== 'all' ? academicYear : undefined,
                             category: category !== 'all' ? category : undefined,
                             status: status !== 'all' ? status : undefined,
                         })"
@@ -596,23 +634,69 @@ const getStatusBadgeClass = (s) => {
                 </div>
             </div>
 
-            <!-- Unit Switcher Pills (SD Namira Kraksaan | SD Namira Kota Probolinggo | SMP Namira) -->
+            <!-- Unit Switcher Pills (SD Kraksaan | SD Kota | SMP | TK/KB) -->
             <div v-if="spmbUnits.length > 1" class="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
                 <span class="text-[11px] font-bold text-slate-400 px-2 uppercase tracking-wider">Pilih Unit SPMB:</span>
                 <Link
                     v-for="u in spmbUnits"
                     :key="u.id"
                     :href="route('spmb.admin.index', { unit_id: u.id })"
-                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition border"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold transition border inline-flex items-center gap-1.5"
                     :class="unit?.id === u.id
                         ? 'bg-[#064e3b] text-white border-[#064e3b] shadow-2xs'
                         : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'"
                 >
-                    {{ u.code === 'SD' ? 'SD Namira Kraksaan' : u.name }} ({{ u.code }})
+                    <span>{{ u.code === 'SD' ? 'SD Namira Kraksaan' : u.name }} ({{ u.code }})</span>
+                    <span
+                        v-if="u.is_active === false"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase"
+                        :class="unit?.id === u.id ? 'bg-amber-400 text-slate-950' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'"
+                    >
+                        Terkunci
+                    </span>
                 </Link>
             </div>
 
-            <!-- Banner Link Private Khusus SD Namira Kota Probolinggo (SD-02) -->
+            <!-- Banner Status TK/KB (Sistem Siap, Terkunci Publik sampai di-Unlock di Pengaturan) -->
+            <div v-if="isTkKb" class="bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/70 rounded-xl md:rounded-2xl p-3.5 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div class="flex items-start sm:items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <LinkIcon class="w-5 h-5" />
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-xs md:text-sm font-extrabold text-amber-950 dark:text-amber-200 leading-tight flex flex-wrap items-center gap-2">
+                            <span>Formulir SPMB {{ unit?.name }}</span>
+                            <span
+                                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase"
+                                :class="setting?.is_active ? 'bg-emerald-600 text-white' : 'bg-amber-200 text-amber-950'"
+                            >
+                                {{ setting?.is_active ? 'Terbuka Publik' : 'Terkunci (Siap Di-Unlock)' }}
+                            </span>
+                        </h3>
+                        <p class="text-[11px] text-amber-900/80 dark:text-amber-300/80 mt-0.5 truncate font-mono">
+                            {{ registrationUrl }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
+                    <a
+                        :href="registrationUrl"
+                        target="_blank"
+                        class="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 text-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-700 text-xs font-bold transition"
+                    >
+                        Pratinjau Form
+                    </a>
+                    <Link
+                        :href="route('spmb.admin.settings', { unit_id: unit?.id })"
+                        class="px-3.5 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold transition shadow-2xs"
+                    >
+                        {{ setting?.is_active ? 'Atur Pengaturan' : 'Unlock di Pengaturan' }}
+                    </Link>
+                </div>
+            </div>
+
+            <!-- Banner Link Khusus SD Namira Kota Probolinggo (SD-02) -->
             <div v-if="privateRegistrationUrl" class="bg-emerald-50/90 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/70 rounded-xl md:rounded-2xl p-3.5 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
                 <div class="flex items-start sm:items-center gap-3 min-w-0">
                     <div class="w-9 h-9 rounded-xl bg-[#064e3b] text-amber-300 flex items-center justify-center shrink-0 shadow-xs">
@@ -620,7 +704,7 @@ const getStatusBadgeClass = (s) => {
                     </div>
                     <div class="min-w-0">
                         <h3 class="text-xs md:text-sm font-extrabold text-emerald-950 dark:text-emerald-200 leading-tight">
-                            Link Private Formulir Inden — SD Namira Kota Probolinggo (SD-02)
+                            Link Formulir Inden — SD Namira Kota Probolinggo (SD-02)
                         </h3>
                         <p class="text-[11px] text-emerald-800/90 dark:text-emerald-300/80 mt-0.5 truncate font-mono">
                             {{ privateRegistrationUrl }}
@@ -631,13 +715,13 @@ const getStatusBadgeClass = (s) => {
                 <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
                     <button
                         type="button"
-                        @click="copyPrivateLink"
+                        @click="copyPrivateLink(privateRegistrationUrl)"
                         class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-2xs"
                         :class="isLinkCopied ? 'bg-emerald-600 text-white' : 'bg-[#064e3b] hover:bg-emerald-800 text-white'"
                     >
                         <ClipboardDocumentCheckIcon v-if="isLinkCopied" class="w-4 h-4 text-amber-300" />
                         <ClipboardIcon v-else class="w-4 h-4 text-amber-300" />
-                        <span>{{ isLinkCopied ? 'Link Tersalin!' : 'Salin Link Private' }}</span>
+                        <span>{{ isLinkCopied ? 'Link Tersalin!' : 'Salin Link' }}</span>
                     </button>
                     <a
                         :href="privateRegistrationUrl"
@@ -647,6 +731,41 @@ const getStatusBadgeClass = (s) => {
                         Buka Form
                     </a>
                 </div>
+            </div>
+
+            <!-- Academic Year Quick Switcher Strip (Multi-TA & Inden Tahun Mendatang) -->
+            <div v-if="academicYearBreakdown && academicYearBreakdown.length > 0" class="flex flex-wrap items-center gap-1.5 md:gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                <span class="text-[10px] md:text-[11px] font-bold text-slate-400 px-2 uppercase tracking-wider">Tahun Ajaran:</span>
+                <button
+                    type="button"
+                    @click="academicYear = 'all'"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition border"
+                    :class="academicYear === 'all'
+                        ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'"
+                >
+                    Semua TA
+                </button>
+                <button
+                    v-for="item in academicYearBreakdown"
+                    :key="item.year"
+                    type="button"
+                    @click="academicYear = item.year"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition border inline-flex items-center gap-1.5"
+                    :class="academicYear === item.year
+                        ? (item.is_future_inden ? 'bg-purple-700 text-white border-purple-700' : 'bg-emerald-700 text-white border-emerald-700')
+                        : (item.is_future_inden
+                            ? 'bg-purple-50/70 dark:bg-purple-950/30 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100')"
+                >
+                    <span>{{ item.is_future_inden ? `Inden ${item.year}` : `TA ${item.year}` }}</span>
+                    <span
+                        class="px-1.5 py-0.2 rounded-full text-[10px] font-black"
+                        :class="academicYear === item.year ? 'bg-white/20 text-white' : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200'"
+                    >
+                        {{ item.count }}
+                    </span>
+                </button>
             </div>
 
             <!-- 📱 MOBILE ULTRA-COMPACT STATS STRIP (6 Kolom Klik-Filter dalam 1 Baris, md:hidden) -->
@@ -841,9 +960,18 @@ const getStatusBadgeClass = (s) => {
                                 </span>
                             </div>
                             <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-1.5">
+                                <div class="flex flex-wrap items-center gap-1">
                                     <span class="text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
                                         {{ app.registration_number }}
+                                    </span>
+                                    <span
+                                        v-if="app.academic_year"
+                                        class="px-1.5 py-0.2 rounded text-[8px] font-extrabold font-mono border"
+                                        :class="isFutureApplicantYear(app.academic_year)
+                                            ? 'bg-indigo-100 text-indigo-800 border-indigo-200'
+                                            : 'bg-slate-100 text-slate-700 border-slate-200'"
+                                    >
+                                        TA {{ app.academic_year }}
                                     </span>
                                     <span 
                                         v-if="app.is_inden"
@@ -853,9 +981,9 @@ const getStatusBadgeClass = (s) => {
                                     </span>
                                     <span 
                                         class="px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase"
-                                        :class="['internal_tk', 'internal_sd', 'internal'].includes(app.category) ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'"
+                                        :class="['internal_tk', 'internal_sd', 'internal_kb', 'internal'].includes(app.category) ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'"
                                     >
-                                        {{ ['internal_tk', 'internal_sd', 'internal'].includes(app.category) ? (isSmp ? 'SD Namira' : 'TK Namira') : 'Umum' }}
+                                        {{ ['internal_tk', 'internal_sd', 'internal_kb', 'internal'].includes(app.category) ? (isSmp ? 'SD Namira' : (isTkKb ? 'KB Namira' : 'TK Namira')) : 'Umum' }}
                                     </span>
                                 </div>
                                 <h4 class="font-extrabold text-xs text-slate-900 dark:text-white leading-tight truncate mt-0.5">
@@ -1014,18 +1142,29 @@ const getStatusBadgeClass = (s) => {
                                     <span class="font-mono font-bold text-emerald-700 dark:text-emerald-400 block">
                                         {{ app.registration_number }}
                                     </span>
-                                    <span 
-                                        v-if="app.is_inden"
-                                        class="inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-200 mt-0.5"
-                                    >
-                                        Jalur Inden
-                                    </span>
-                                    <span 
-                                        v-else
-                                        class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-slate-100 text-slate-600 mt-0.5"
-                                    >
-                                        Jalur Umum
-                                    </span>
+                                    <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                                        <span
+                                            v-if="app.academic_year"
+                                            class="inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold font-mono border"
+                                            :class="isFutureApplicantYear(app.academic_year)
+                                                ? 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-700'
+                                                : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'"
+                                        >
+                                            TA {{ app.academic_year }}
+                                        </span>
+                                        <span 
+                                            v-if="app.is_inden"
+                                            class="inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-200"
+                                        >
+                                            Jalur Inden
+                                        </span>
+                                        <span 
+                                            v-else
+                                            class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-slate-100 text-slate-600"
+                                        >
+                                            Jalur Umum
+                                        </span>
+                                    </div>
                                 </td>
 
                                 <!-- Asal Sekolah -->
@@ -1440,6 +1579,12 @@ const getStatusBadgeClass = (s) => {
                                 <input v-model="editBiodataForm.nisn" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white">
                             </div>
                             <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tahun Ajaran Masuk *</label>
+                                <select v-model="editBiodataForm.academic_year" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-white">
+                                    <option v-for="yr in academicYearOptions" :key="yr" :value="yr">TA {{ yr }}</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Jalur Pendaftaran *</label>
                                 <select v-model="editBiodataForm.is_inden" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
                                     <option :value="false">Jalur Umum (Reguler)</option>
@@ -1449,7 +1594,7 @@ const getStatusBadgeClass = (s) => {
                             <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori Pendaftar *</label>
                                 <select v-model="editBiodataForm.category" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
-                                    <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
+                                    <option :value="isSmp ? 'internal_sd' : (isTkKb ? 'internal_kb' : 'internal_tk')">{{ isSmp ? 'Alumni SD Namira (Internal)' : (isTkKb ? 'Internal KB / Daycare Namira' : 'Alumni TK Namira (Internal)') }}</option>
                                     <option value="eksternal_umum">Pendaftar Umum (Eksternal)</option>
                                 </select>
                                 <p v-if="editBiodataForm.errors.category" class="text-rose-600 text-[11px] mt-1">{{ editBiodataForm.errors.category }}</p>

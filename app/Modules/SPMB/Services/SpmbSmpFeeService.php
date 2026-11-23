@@ -41,9 +41,9 @@ class SpmbSmpFeeService
     /**
      * Format academic year shorthand (e.g. "2027/2028" -> "27/28").
      */
-    public function shortAcademicYear(?SpmbSetting $setting): string
+    public function shortAcademicYear(?SpmbSetting $setting, ?SpmbApplicant $applicant = null): string
     {
-        $year = $setting?->academic_year ?: '2027/2028';
+        $year = $applicant?->academic_year ?: ($setting?->academic_year ?: '2027/2028');
         if (preg_match('/(\d{4})\/(\d{4})/', $year, $m)) {
             return substr($m[1], -2).'/'.substr($m[2], -2);
         }
@@ -52,7 +52,7 @@ class SpmbSmpFeeService
     }
 
     /**
-     * Build the 7 standard SMP TA 2027/2028 breakdown items for an applicant.
+     * Build the 7 standard SMP breakdown items for an applicant.
      */
     public function buildDefaultItems(
         SpmbApplicant $applicant,
@@ -78,7 +78,9 @@ class SpmbSmpFeeService
             $notes[] = 'POT. ADIK KANDUNG';
         }
 
-        $shortYear = $this->shortAcademicYear($setting);
+        $shortYear = $this->shortAcademicYear($setting, $applicant);
+        $targetYear = $applicant->academic_year ?: ($setting?->academic_year ?: '2027/2028');
+        $startYear = SpmbSetting::extractStartYear($targetYear) ?? 2027;
 
         return [
             [
@@ -114,7 +116,7 @@ class SpmbSmpFeeService
             [
                 'key' => 'buku_paket',
                 'label' => 'BUKU PAKET PENDAMPING',
-                'sublabel' => 'DIINFORMASIKAN JUNI 2027',
+                'sublabel' => "DIINFORMASIKAN JUNI {$startYear}",
                 'amount' => 0,
             ],
             [

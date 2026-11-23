@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
@@ -14,7 +14,12 @@ import {
     PhotoIcon,
     ShieldCheckIcon,
     ArrowPathIcon,
-    BuildingLibraryIcon
+    BuildingLibraryIcon,
+    SparklesIcon,
+    PlusIcon,
+    LockClosedIcon,
+    LockOpenIcon,
+    LinkIcon
 } from '@heroicons/vue/24/outline';
 import { compressImageFile } from '@/Utils/imageCompressor';
 import { toDateInputValue } from '@/Utils/dateHelper';
@@ -25,12 +30,30 @@ const props = defineProps({
     teachers: Array,
     assignedPanitia: Array,
     availableUnits: Array,
+    isTkKb: {
+        type: Boolean,
+        default: false,
+    },
+    registrationUrl: {
+        type: String,
+        default: '',
+    },
+    resolvedFutureIndenYears: {
+        type: Array,
+        default: () => [],
+    },
+    suggestedFutureYears: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const settingForm = useForm({
     unit_id: props.unit?.id,
     name: props.setting?.name || 'Pendaftaran Murid Baru',
     academic_year: props.setting?.academic_year || '2027/2028',
+    allow_future_inden: Boolean(props.setting?.allow_future_inden ?? true),
+    inden_academic_years: [...(props.resolvedFutureIndenYears || [])],
     quota: props.setting?.quota || 60,
     registration_fee: props.setting?.registration_fee || 250000,
     admission_fee_total: props.setting?.admission_fee_total || 8500000,
@@ -44,9 +67,56 @@ const settingForm = useForm({
     announcement_date: toDateInputValue(props.setting?.announcement_date),
     announcement_released: Boolean(props.setting?.announcement_released ?? false),
     notes: props.setting?.notes || '',
-    is_active: props.setting?.is_active ?? true,
+    is_active: Boolean(props.setting?.is_active ?? !props.isTkKb),
     qris_image: null,
 });
+
+const customFutureYear = ref('');
+
+const candidateFutureYears = computed(() => {
+    const m = String(settingForm.academic_year || '2027/2028').match(/^(\d{4})\/(\d{4})$/);
+    const baseStart = m ? Number(m[1]) : 2027;
+    const generated = [];
+    for (let i = 1; i <= 5; i++) {
+        generated.push(`${baseStart + i}/${baseStart + i + 1}`);
+    }
+    const merged = Array.from(new Set([...generated, ...(settingForm.inden_academic_years || [])]));
+    return merged.filter((yr) => {
+        const ym = String(yr).match(/^(\d{4})\/(\d{4})$/);
+        return ym && Number(ym[1]) > baseStart && Number(ym[2]) === Number(ym[1]) + 1;
+    }).sort();
+});
+
+const toggleFutureYear = (yr) => {
+    const list = [...(settingForm.inden_academic_years || [])];
+    const idx = list.indexOf(yr);
+    if (idx >= 0) {
+        list.splice(idx, 1);
+    } else {
+        list.push(yr);
+    }
+    list.sort();
+    settingForm.inden_academic_years = list;
+};
+
+const addCustomFutureYear = () => {
+    const raw = customFutureYear.value.trim().replace('-', '/');
+    const m = raw.match(/^(\d{4})\/(\d{4})$/);
+    if (!m || Number(m[2]) !== Number(m[1]) + 1) {
+        alert('Format tahun ajaran tidak valid. Gunakan format YYYY/YYYY berurutan, contoh: 2031/2032.');
+        return;
+    }
+    const baseMatch = String(settingForm.academic_year || '2027/2028').match(/^(\d{4})\//);
+    const baseStart = baseMatch ? Number(baseMatch[1]) : 2027;
+    if (Number(m[1]) <= baseStart) {
+        alert(`Tahun ajaran Inden harus lebih besar dari Tahun Ajaran aktif (${settingForm.academic_year}).`);
+        return;
+    }
+    if (!settingForm.inden_academic_years.includes(raw)) {
+        settingForm.inden_academic_years = [...settingForm.inden_academic_years, raw].sort();
+    }
+    customFutureYear.value = '';
+};
 
 const qrisPreview = ref(props.setting?.qris_image_url || null);
 const isCompressing = ref(false);
@@ -87,6 +157,8 @@ watch(() => [props.unit?.id, props.setting?.id], () => {
     settingForm.unit_id = props.unit?.id;
     settingForm.name = props.setting?.name || 'Pendaftaran Murid Baru';
     settingForm.academic_year = props.setting?.academic_year || '2027/2028';
+    settingForm.allow_future_inden = Boolean(props.setting?.allow_future_inden ?? true);
+    settingForm.inden_academic_years = [...(props.resolvedFutureIndenYears || [])];
     settingForm.quota = props.setting?.quota || 60;
     settingForm.registration_fee = props.setting?.registration_fee || 250000;
     settingForm.admission_fee_total = props.setting?.admission_fee_total || 8500000;
@@ -100,7 +172,7 @@ watch(() => [props.unit?.id, props.setting?.id], () => {
     settingForm.announcement_date = toDateInputValue(props.setting?.announcement_date);
     settingForm.announcement_released = Boolean(props.setting?.announcement_released ?? false);
     settingForm.notes = props.setting?.notes || '';
-    settingForm.is_active = props.setting?.is_active ?? true;
+    settingForm.is_active = Boolean(props.setting?.is_active ?? !props.isTkKb);
     settingForm.qris_image = null;
     qrisPreview.value = props.setting?.qris_image_url || null;
 });
@@ -153,20 +225,71 @@ const removePanitia = (panitia) => {
                     Atur kuota, biaya formulir, rekening transfer/QRIS, serta delegasikan wewenang panitia kepada guru {{ unit?.name || 'unit' }}.
                 </p>
 
-                <!-- Unit Tabs Switcher (If multiple units available, e.g. for Yayasan Super Admin) -->
+                <!-- Unit Tabs Switcher (SD Kraksaan, SD Kota, SMP, TK/KB) -->
                 <div v-if="availableUnits && availableUnits.length > 1" class="flex flex-wrap items-center gap-2 mt-4 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl w-fit border border-slate-200 dark:border-slate-700">
                     <Link 
                         v-for="u in availableUnits" 
                         :key="u.id"
                         :href="route('spmb.admin.settings', { unit_id: u.id })"
-                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
                         :class="unit?.id === u.id 
                             ? 'bg-[#064e3b] text-white shadow-sm' 
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700'"
                     >
-                        <BuildingLibraryIcon class="w-4 h-4" />
-                        <span>{{ u.name }}</span>
+                        <BuildingLibraryIcon class="w-4 h-4 shrink-0" />
+                        <span>{{ u.code === 'SD' ? 'SD Namira Kraksaan' : u.name }}</span>
+                        <span
+                            v-if="u.is_active === false"
+                            class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase"
+                            :class="unit?.id === u.id ? 'bg-amber-400 text-slate-950' : 'bg-amber-100 text-amber-800'"
+                        >
+                            Terkunci
+                        </span>
                     </Link>
+                </div>
+
+                <!-- Direct Link & Public Lock Status Card -->
+                <div
+                    v-if="registrationUrl"
+                    class="mt-4 rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    :class="settingForm.is_active
+                        ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60'
+                        : 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/70'"
+                >
+                    <div class="flex items-start gap-3 min-w-0">
+                        <div
+                            class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                            :class="settingForm.is_active ? 'bg-emerald-700 text-white' : 'bg-amber-500 text-slate-950'"
+                        >
+                            <LockOpenIcon v-if="settingForm.is_active" class="w-5 h-5" />
+                            <LockClosedIcon v-else class="w-5 h-5" />
+                        </div>
+                        <div class="min-w-0">
+                            <div class="font-extrabold text-slate-900 dark:text-white flex flex-wrap items-center gap-2">
+                                <span>{{ unit?.name }}</span>
+                                <span
+                                    class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase"
+                                    :class="settingForm.is_active ? 'bg-emerald-600 text-white' : 'bg-amber-400 text-slate-950'"
+                                >
+                                    {{ settingForm.is_active ? 'Aktif & Terbuka Publik' : 'Terkunci dari Publik (Siap Di-Unlock)' }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] font-mono text-slate-600 dark:text-slate-300 truncate mt-0.5">
+                                {{ registrationUrl }}
+                            </p>
+                            <p v-if="isTkKb && !settingForm.is_active" class="text-[11px] text-amber-900 dark:text-amber-300 mt-1">
+                                Sistem pendaftaran TK/KB sudah siap digunakan. Saat sudah siap diumumkan ke orang tua, cukup centang <strong>"Pendaftaran Dibuka untuk Umum"</strong> di bawah lalu klik Simpan.
+                            </p>
+                        </div>
+                    </div>
+                    <a
+                        :href="registrationUrl"
+                        target="_blank"
+                        class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 font-bold text-xs shrink-0 transition"
+                    >
+                        <LinkIcon class="w-4 h-4" />
+                        <span>{{ settingForm.is_active ? 'Buka Formulir' : 'Pratinjau Form (Admin)' }}</span>
+                    </a>
                 </div>
             </div>
 
@@ -187,13 +310,80 @@ const removePanitia = (panitia) => {
                                 </div>
 
                                 <div>
-                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tahun Ajaran</label>
-                                    <input v-model="settingForm.academic_year" type="text" placeholder="2027/2028" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Tahun Ajaran Aktif (Utama)</label>
+                                    <input v-model="settingForm.academic_year" type="text" placeholder="2027/2028" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs font-mono font-bold">
                                 </div>
 
                                 <div>
                                     <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Target Kuota Siswa</label>
                                     <input v-model="settingForm.quota" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white text-xs">
+                                </div>
+
+                                <!-- Multi-Year Future Inden Configurator -->
+                                <div class="sm:col-span-2 p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/25 border border-purple-200 dark:border-purple-800/60 space-y-3">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <span class="inline-flex items-center gap-1.5 font-extrabold text-purple-900 dark:text-purple-200 text-xs">
+                                                <SparklesIcon class="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                                <span>Opsi Pendaftaran Inden Tahun Ajaran Mendatang (Multi-Tahun)</span>
+                                            </span>
+                                            <p class="text-[11px] text-purple-800/80 dark:text-purple-300/80 mt-0.5 leading-relaxed">
+                                                Aktifkan agar orang tua leluasa mendaftar Inden lebih awal untuk tahun ajaran mendatang (misal 2028/2029, 2029/2030, dst.).
+                                            </p>
+                                        </div>
+                                        <label class="inline-flex items-center gap-2 cursor-pointer shrink-0 pt-0.5">
+                                            <input type="checkbox" v-model="settingForm.allow_future_inden" class="rounded text-purple-600 focus:ring-purple-500">
+                                            <span class="font-bold text-purple-900 dark:text-purple-200">Aktifkan</span>
+                                        </label>
+                                    </div>
+
+                                    <div v-if="settingForm.allow_future_inden" class="space-y-3 pt-2 border-t border-purple-200/70 dark:border-purple-800/50">
+                                        <div>
+                                            <span class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2">
+                                                Pilih Tahun Ajaran Mendatang yang Dibuka untuk Inden:
+                                            </span>
+                                            <div class="flex flex-wrap gap-2">
+                                                <button
+                                                    v-for="yr in candidateFutureYears"
+                                                    :key="yr"
+                                                    type="button"
+                                                    @click="toggleFutureYear(yr)"
+                                                    class="px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition border inline-flex items-center gap-1.5"
+                                                    :class="(settingForm.inden_academic_years || []).includes(yr)
+                                                        ? 'bg-purple-700 text-white border-purple-700 shadow-2xs'
+                                                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-purple-400'"
+                                                >
+                                                    <CheckCircleIcon v-if="(settingForm.inden_academic_years || []).includes(yr)" class="w-3.5 h-3.5 text-amber-300" />
+                                                    <span>TA {{ yr }}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                            <input
+                                                v-model="customFutureYear"
+                                                type="text"
+                                                placeholder="Tambah TA lain (contoh: 2031/2032)"
+                                                class="flex-1 bg-white dark:bg-slate-900 border border-purple-300 dark:border-purple-700 rounded-xl px-3 py-1.5 text-xs font-mono text-slate-900 dark:text-white"
+                                                @keyup.enter.prevent="addCustomFutureYear"
+                                            />
+                                            <button
+                                                type="button"
+                                                @click="addCustomFutureYear"
+                                                class="inline-flex items-center justify-center gap-1 px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold transition"
+                                            >
+                                                <PlusIcon class="w-3.5 h-3.5" />
+                                                <span>Tambah TA</span>
+                                            </button>
+                                        </div>
+
+                                        <p class="text-[11px] text-slate-600 dark:text-slate-400">
+                                            Pilihan aktif di formulir:
+                                            <strong class="font-mono text-slate-900 dark:text-white">
+                                                {{ [settingForm.academic_year, ...(settingForm.inden_academic_years || [])].join(' • ') }}
+                                            </strong>
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -289,11 +479,16 @@ const removePanitia = (panitia) => {
                             </div>
 
                             <!-- Status Pendaftaran Buka / Tutup -->
-                            <div class="flex items-center gap-3 pt-2">
-                                <input type="checkbox" id="isActive" v-model="settingForm.is_active" class="rounded text-emerald-600 focus:ring-emerald-500">
-                                <label for="isActive" class="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                    Pendaftaran Jalur Inden Sedang Dibuka untuk Umum
-                                </label>
+                            <div class="p-3.5 rounded-2xl border space-y-1" :class="settingForm.is_active ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800/60' : 'bg-amber-50/70 border-amber-300 dark:bg-amber-950/25 dark:border-amber-800/60'">
+                                <div class="flex items-center gap-3">
+                                    <input type="checkbox" id="isActive" v-model="settingForm.is_active" class="rounded text-emerald-600 focus:ring-emerald-500">
+                                    <label for="isActive" class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {{ isTkKb ? `Buka / Unlock Pendaftaran Online ${unit?.name || 'TK/KB'} untuk Umum` : 'Pendaftaran Sedang Dibuka untuk Umum' }}
+                                    </label>
+                                </div>
+                                <p v-if="isTkKb" class="text-[11px] text-slate-500 dark:text-slate-400 pl-6">
+                                    Biarkan tidak dicentang jika pendaftaran TK/KB belum diumumkan ke publik. Centang lalu simpan kapan saja untuk langsung membuka tombol daftar online di halaman SPMB publik.
+                                </p>
                             </div>
 
                             <!-- Rilis Pengumuman Resmi -->

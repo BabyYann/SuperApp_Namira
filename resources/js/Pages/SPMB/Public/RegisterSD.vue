@@ -13,15 +13,29 @@ import {
     InformationCircleIcon,
     ArrowDownTrayIcon,
     MagnifyingGlassPlusIcon,
-    XMarkIcon
+    XMarkIcon,
+    LockClosedIcon
 } from '@heroicons/vue/24/outline';
 
 import { compressImageFile } from '@/Utils/imageCompressor';
+import AcademicYearSelector from '@/Components/SPMB/AcademicYearSelector.vue';
 
 const props = defineProps({
     unit: Object,
     setting: Object,
     totalApplicants: Number,
+    academicYearOptions: {
+        type: Array,
+        default: () => [],
+    },
+    selectedAcademicYear: {
+        type: String,
+        default: '',
+    },
+    isLockedForPublic: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const currentStep = ref(1);
@@ -35,6 +49,9 @@ const qrisImageUrl = computed(() => {
 });
 
 const form = useForm({
+    // Pilihan Tahun Ajaran Masuk
+    academic_year: props.selectedAcademicYear || props.setting?.academic_year || '2027/2028',
+
     // Step 1: Biodata Calon Murid
     full_name: '',
     nickname: '',
@@ -120,6 +137,12 @@ const onCategoryChange = (val) => {
     }
 };
 
+const selectedYearOption = computed(() => {
+    return (props.academicYearOptions || []).find((opt) => opt.value === form.academic_year) || null;
+});
+
+const isFutureIndenSelected = computed(() => Boolean(selectedYearOption.value?.is_future_inden));
+
 const formattedFee = computed(() => {
     const fee = props.setting?.registration_fee || 250000;
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(fee);
@@ -200,6 +223,12 @@ const submitRegistration = () => {
 
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 selection:bg-emerald-100 selection:text-emerald-900">
         
+        <!-- Admin Preview Banner -->
+        <div v-if="isLockedForPublic" class="bg-amber-400 text-slate-950 font-bold px-4 py-2 text-center text-xs flex items-center justify-center gap-2">
+            <LockClosedIcon class="w-4 h-4 shrink-0" />
+            <span>MODE PRATINJAU ADMINISTRATOR: Formulir SD Namira Kraksaan ini sedang dikunci untuk publik.</span>
+        </div>
+
         <!-- Institutional Header Bar -->
         <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
             <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -243,11 +272,16 @@ const submitRegistration = () => {
                         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs mb-1.5">
                             <span class="font-bold text-emerald-900 tracking-wide uppercase">SD Namira Kraksaan</span>
                             <span class="text-slate-300 hidden sm:inline">&bull;</span>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-200/60">
-                                Gelombang Umum &amp; Inden
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border"
+                                :class="isFutureIndenSelected
+                                    ? 'bg-purple-50 text-purple-800 border-purple-200/80'
+                                    : 'bg-emerald-50 text-emerald-800 border-emerald-200/60'"
+                            >
+                                {{ isFutureIndenSelected ? 'Jalur Inden Tahun Mendatang' : 'Gelombang Umum & Inden' }}
                             </span>
-                            <span class="text-slate-500 text-xs">
-                                TA {{ setting?.academic_year || '2027/2028' }}
+                            <span class="text-slate-600 text-xs font-bold">
+                                TA {{ form.academic_year || setting?.academic_year || '2027/2028' }}
                             </span>
                         </div>
                         
@@ -320,6 +354,15 @@ const submitRegistration = () => {
             <!-- ================= STEP 1: BIODATA ================= -->
             <div v-show="currentStep === 1" class="space-y-4 sm:space-y-5">
                 
+                <!-- Bagian 0: Pilihan Tahun Ajaran Masuk (Berjalan vs Inden Tahun Mendatang) -->
+                <AcademicYearSelector
+                    v-model="form.academic_year"
+                    :options="academicYearOptions"
+                    accent="emerald"
+                    unit-label="SD Namira Kraksaan"
+                    :error="form.errors.academic_year"
+                />
+
                 <!-- Notice Banner: Deferred Supporting Documents -->
                 <div class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 sm:p-4 flex items-start gap-3 text-xs text-emerald-950">
                     <InformationCircleIcon class="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />

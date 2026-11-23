@@ -22,6 +22,16 @@ class ApplicantPortalController extends Controller
      */
     protected function isAnnouncementReleasedForApplicant(SpmbApplicant $applicant, ?SpmbSetting $setting): bool
     {
+        if (in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'], true)) {
+            return true;
+        }
+
+        // Guard future-year Inden applicants so current intake year's announcement toggle/date
+        // never leaks prematurely to 2028/2029 or 2029/2030 Inden parents.
+        if ($setting && $applicant->academic_year && $setting->isFutureIndenYear($applicant->academic_year)) {
+            return false;
+        }
+
         if ($setting && $setting->announcement_released) {
             return true;
         }
@@ -30,7 +40,7 @@ class ApplicantPortalController extends Controller
             return true;
         }
 
-        return in_array($applicant->status, ['partial_paid', 'fully_paid', 'enrolled'], true);
+        return false;
     }
 
     /**
@@ -94,11 +104,13 @@ class ApplicantPortalController extends Controller
                 'registration_number' => $item->registration_number,
                 'full_name' => $item->full_name,
                 'unit_name' => $item->unit?->code === 'SD' ? 'SD Namira Kraksaan' : ($item->unit?->name ?? 'Namira'),
+                'academic_year' => $item->academic_year ?: ($itemSetting?->academic_year ?? '2027/2028'),
                 'status_label' => $maskedLabel,
             ];
         })->values();
 
         $setting = $settingsByUnit->get($applicant->unit_id);
+        $isFutureInden = $setting ? $setting->isFutureIndenYear($applicant->academic_year) : false;
 
         // Gating Pengumuman Resmi: terbuka hanya jika ceklis rilis aktif, tanggal pengumuman sudah tiba, atau tahap daftar ulang.
         $isAnnouncementReleased = $this->isAnnouncementReleasedForApplicant($applicant, $setting);
@@ -122,6 +134,7 @@ class ApplicantPortalController extends Controller
             'siblings' => $siblings,
             'setting' => $setting,
             'isAnnouncementReleased' => $isAnnouncementReleased,
+            'isFutureInden' => $isFutureInden,
         ]);
     }
 
@@ -215,7 +228,7 @@ class ApplicantPortalController extends Controller
 
         if ($smpFeeService->isSmpApplicant($applicant)) {
             $receiptItems = $smpFeeService->resolveReceiptItems($applicant, $setting);
-            $shortAcademicYear = $smpFeeService->shortAcademicYear($setting);
+            $shortAcademicYear = $smpFeeService->shortAcademicYear($setting, $applicant);
             $treasurerName = $applicant->fee_breakdown['treasurer_name'] ?? 'Nadia Pramadianti, S.M.';
 
             $pdf = Pdf::loadView('pdf.spmb.kwitansi-daftar-ulang-smp', compact(
@@ -393,7 +406,7 @@ class ApplicantPortalController extends Controller
             'religion' => 'nullable|string|max:50',
             'child_order' => 'nullable|integer',
             'total_siblings' => 'nullable|integer',
-            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external_umum,external',
+            'category' => 'nullable|string|in:internal_sd,internal_tk,internal_kb,internal,eksternal_umum,external_umum,external',
             'previous_school' => 'nullable|string|max:255',
             'special_notes' => 'nullable|string|max:1000',
 
@@ -437,10 +450,12 @@ class ApplicantPortalController extends Controller
         $cleanPhone = $spmbService->normalizePhone($request->parent_phone);
         $normalizedInputName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $request->full_name)));
 
-        // Check duplicate phone + same child name in the same unit (allows twins/siblings)
+        // Check duplicate phone + same child name in the same unit & academic year (allows twins/siblings)
         $duplicateApplicant = SpmbApplicant::where('unit_id', $applicant->unit_id)
             ->where('parent_phone', $cleanPhone)
             ->where('id', '!=', $applicant->id)
+            ->where('status', '!=', 'cancelled')
+            ->when($applicant->academic_year, fn ($q) => $q->where('academic_year', $applicant->academic_year))
             ->get()
             ->first(function ($app) use ($normalizedInputName) {
                 $existingName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $app->full_name)));

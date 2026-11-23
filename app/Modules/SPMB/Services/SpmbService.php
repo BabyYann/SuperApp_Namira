@@ -16,12 +16,94 @@ use Illuminate\Support\Str;
 class SpmbService
 {
     /**
-     * Generate unique registration number.
-     * Format: IND-{UNIT_CODE}-{YY}{001} (e.g. IND-SDN-26001)
+     * Identify whether a unit is SMP Namira.
      */
-    public function generateRegistrationNumber(Unit $unit): string
+    public function isSmpUnit(?Unit $unit): bool
+    {
+        if (! $unit) {
+            return false;
+        }
+        $code = strtoupper($unit->code ?? '');
+        $name = strtolower($unit->name ?? '');
+
+        return $code === 'SMP' || str_contains($name, 'smp');
+    }
+
+    /**
+     * Identify whether a unit is SD Namira Kota Probolinggo (SD-02).
+     */
+    public function isSdKotaUnit(?Unit $unit): bool
+    {
+        if (! $unit) {
+            return false;
+        }
+        $code = strtoupper($unit->code ?? '');
+        $name = strtolower($unit->name ?? '');
+
+        return $code === 'SD-02' || (str_contains($name, 'sd') && str_contains($name, 'kota'));
+    }
+
+    /**
+     * Identify whether a unit is TK or KB Namira.
+     */
+    public function isTkOrKbUnit(?Unit $unit): bool
+    {
+        if (! $unit) {
+            return false;
+        }
+        $code = strtoupper($unit->code ?? '');
+        $name = strtolower($unit->name ?? '');
+        $cat = strtoupper($unit->category ?? '');
+
+        return in_array($code, ['TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'], true)
+            || $cat === 'TK'
+            || str_starts_with($code, 'TK')
+            || str_starts_with($code, 'KB')
+            || str_contains($name, 'tk ')
+            || str_contains($name, 'kb ');
+    }
+
+    /**
+     * Identify whether a unit is any supported SPMB school unit (SD, SD-02, SMP, TK/KB).
+     */
+    public function isSpmbUnit(?Unit $unit): bool
+    {
+        if (! $unit) {
+            return false;
+        }
+        $code = strtoupper($unit->code ?? '');
+        $name = strtolower($unit->name ?? '');
+
+        return in_array($code, ['SD', 'SD-02', 'SMP'], true)
+            || str_contains($name, 'sd')
+            || str_contains($name, 'smp')
+            || $this->isTkOrKbUnit($unit);
+    }
+
+    /**
+     * Generate unique registration number.
+     * Current active intake keeps existing YY sequence (e.g. IND-SDN-26062),
+     * while future-year Inden encodes the target intake start year (e.g. TA 2028/2029 -> IND-SDN-28001).
+     */
+    public function generateRegistrationNumber(Unit $unit, ?string $academicYear = null, ?string $primaryAcademicYear = null): string
     {
         $yearCode = date('y');
+        $normTarget = SpmbSetting::normalizeAcademicYear($academicYear);
+        $normPrimary = SpmbSetting::normalizeAcademicYear($primaryAcademicYear);
+
+        if ($normTarget && $normPrimary) {
+            $targetStart = SpmbSetting::extractStartYear($normTarget);
+            $primaryStart = SpmbSetting::extractStartYear($normPrimary);
+            if ($targetStart !== null && $primaryStart !== null && $targetStart > $primaryStart) {
+                $yearCode = substr((string) $targetStart, -2);
+            }
+        } elseif ($normTarget && ! $normPrimary) {
+            $targetStart = SpmbSetting::extractStartYear($normTarget);
+            if ($targetStart !== null && $targetStart > ((int) date('Y') + 1)) {
+                $yearCode = substr((string) $targetStart, -2);
+            }
+        }
+
         $code = strtoupper($unit->code ?? '');
         $name = strtolower($unit->name ?? '');
 
@@ -31,6 +113,14 @@ class SpmbService
             $unitCode = 'SDK';
         } elseif ($code === 'SD' || str_contains($name, 'sd')) {
             $unitCode = 'SDN';
+        } elseif ($code === 'TK-KRA') {
+            $unitCode = 'TKK';
+        } elseif ($code === 'TK-DRI') {
+            $unitCode = 'TKD';
+        } elseif ($code === 'KB-KRA') {
+            $unitCode = 'KBK';
+        } elseif ($code === 'KB-DRI') {
+            $unitCode = 'KBD';
         } elseif ($code === 'TK' || str_contains($name, 'tk')) {
             $unitCode = 'TKN';
         } elseif ($code === 'KB' || str_contains($name, 'kb')) {
@@ -49,16 +139,23 @@ class SpmbService
 
         $prefix = "IND-{$unitCode}-{$yearCode}";
 
-        $lastNumber = SpmbApplicant::where('registration_number', 'like', "{$prefix}%")
-            ->orderBy('id', 'desc')
-            ->value('registration_number');
+        $existingNumbers = SpmbApplicant::where('registration_number', 'like', "{$prefix}%")
+            ->lockForUpdate()
+            ->pluck('registration_number');
 
-        if ($lastNumber) {
-            $lastSequence = (int) substr($lastNumber, -3);
-            $newSequence = str_pad($lastSequence + 1, 3, '0', STR_PAD_LEFT);
-        } else {
-            $newSequence = '001';
+        $maxSequence = 0;
+        $prefixLen = strlen($prefix);
+        foreach ($existingNumbers as $regNum) {
+            $suffix = substr((string) $regNum, $prefixLen);
+            if (ctype_digit($suffix)) {
+                $val = (int) $suffix;
+                if ($val > $maxSequence) {
+                    $maxSequence = $val;
+                }
+            }
         }
+
+        $newSequence = str_pad((string) ($maxSequence + 1), 3, '0', STR_PAD_LEFT);
 
         return "{$prefix}{$newSequence}";
     }
@@ -68,7 +165,7 @@ class SpmbService
      */
     public function resolveUnitSlug(?Unit $unit): string
     {
-        if (!$unit) {
+        if (! $unit) {
             return 'sd-namira';
         }
         $code = strtoupper($unit->code ?? '');
@@ -79,6 +176,21 @@ class SpmbService
         }
         if ($code === 'SD-02' || (str_contains($name, 'sd') && str_contains($name, 'kota'))) {
             return 'sd-kota';
+        }
+        if ($code === 'TK-KRA' || (str_contains($name, 'tk') && str_contains($name, 'kraksaan'))) {
+            return 'tk-kraksaan';
+        }
+        if ($code === 'TK-DRI' || (str_contains($name, 'tk') && str_contains($name, 'dringu'))) {
+            return 'tk-dringu';
+        }
+        if ($code === 'KB-KRA' || (str_contains($name, 'kb') && str_contains($name, 'kraksaan'))) {
+            return 'kb-kraksaan';
+        }
+        if ($code === 'KB-DRI' || (str_contains($name, 'kb') && str_contains($name, 'dringu'))) {
+            return 'kb-dringu';
+        }
+        if ($this->isTkOrKbUnit($unit)) {
+            return 'tk-namira';
         }
         return 'sd-namira';
     }
@@ -245,7 +357,10 @@ class SpmbService
                 $nextSeq = $lastNis ? ((int)substr($lastNis, -4)) + 1 : 1;
                 $nis = $yearPrefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
-                $activeYear = \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
+                $targetYearModel = $applicant->academic_year
+                    ? \App\Modules\Yayasan\Models\AcademicYear::where('name', $applicant->academic_year)->first()
+                    : null;
+                $activeYear = $targetYearModel ?: \App\Modules\Yayasan\Models\AcademicYear::where('is_active', true)->first();
 
                 $studentData = [
                     'unit_id' => $applicant->unit_id,

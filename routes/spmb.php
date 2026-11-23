@@ -14,12 +14,22 @@ Route::get('/ppdb', function () {
 Route::get('/spmb/daftar/sd', [PublicSpmbController::class, 'registerSD'])->name('spmb.register.sd');
 Route::post('/spmb/daftar/sd', [PublicSpmbController::class, 'storeSD'])->name('spmb.store.sd');
 
-// Private Registration Link for SD Namira Kota Probolinggo (Unit SD-02 - Inden)
+// Registration Link for SD Namira Kota Probolinggo (Unit SD-02)
 Route::get('/spmb/daftar/sd-kota', [PublicSpmbController::class, 'registerSDKota'])->name('spmb.register.sd-kota');
 Route::post('/spmb/daftar/sd-kota', [PublicSpmbController::class, 'storeSDKota'])->name('spmb.store.sd-kota');
 
 Route::get('/spmb/daftar/smp', [PublicSpmbController::class, 'registerSMP'])->name('spmb.register.smp');
 Route::post('/spmb/daftar/smp', [PublicSpmbController::class, 'storeSMP'])->name('spmb.store.smp');
+
+// TK & KB Namira Registration (System ready; locked for public until unlocked by Admin in Settings)
+Route::get('/spmb/daftar/tk', [PublicSpmbController::class, 'registerTK'])->name('spmb.register.tk');
+Route::post('/spmb/daftar/tk', [PublicSpmbController::class, 'storeTK'])->name('spmb.store.tk');
+
+// Clean deep-link aliases for future-year Inden sharing (e.g. /spmb/daftar/sd/inden/2028-2029)
+Route::get('/spmb/daftar/{unitSlug}/inden/{academicYearSlug?}', [PublicSpmbController::class, 'redirectIndenLink'])
+    ->where('unitSlug', 'sd|sd-kota|smp|tk')
+    ->where('academicYearSlug', '\d{4}-\d{4}')
+    ->name('spmb.register.inden-redirect');
 
 // Secure read-only live monitor endpoint (verified via SHA-256 CSPRNG key hash + rate-limited)
 Route::get('/spmb/live-sync', [PublicSpmbController::class, 'liveMonitor'])

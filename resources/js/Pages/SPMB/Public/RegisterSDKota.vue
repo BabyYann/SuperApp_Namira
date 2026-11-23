@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { 
     ArrowLeftIcon, 
@@ -10,23 +10,44 @@ import {
     EyeIcon,
     EyeSlashIcon,
     InformationCircleIcon,
-    DocumentCheckIcon
+    DocumentCheckIcon,
+    LockClosedIcon,
+    QrCodeIcon,
+    ClipboardDocumentCheckIcon,
+    ClipboardIcon
 } from '@heroicons/vue/24/outline';
 
 import { compressImageFile } from '@/Utils/imageCompressor';
+import AcademicYearSelector from '@/Components/SPMB/AcademicYearSelector.vue';
 
 const props = defineProps({
     unit: Object,
     setting: Object,
     totalApplicants: Number,
+    academicYearOptions: {
+        type: Array,
+        default: () => [],
+    },
+    selectedAcademicYear: {
+        type: String,
+        default: '',
+    },
+    isLockedForPublic: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const currentStep = ref(1);
 const isCompressing = ref(false);
 const showPassword = ref(false);
 const paymentPreview = ref(null);
+const isCopied = ref(false);
 
 const form = useForm({
+    // Pilihan Tahun Ajaran Masuk
+    academic_year: props.selectedAcademicYear || props.setting?.academic_year || '2027/2028',
+
     // Step 1: Biodata Calon Murid
     full_name: '',
     nickname: '',
@@ -97,6 +118,27 @@ const onPaymentProofChange = async (e) => {
         form.registration_payment_proof = file;
         fileNamePaymentProof.value = file.name;
         paymentPreview.value = null;
+    }
+};
+
+const selectedYearOption = computed(() => {
+    return (props.academicYearOptions || []).find((opt) => opt.value === form.academic_year) || null;
+});
+
+const isFutureIndenSelected = computed(() => Boolean(selectedYearOption.value?.is_future_inden));
+
+const formattedFee = computed(() => {
+    const fee = props.setting?.registration_fee || 250000;
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(fee);
+});
+
+const copyAccountNumber = () => {
+    const acc = props.setting?.bank_account_number;
+    if (acc && navigator?.clipboard) {
+        navigator.clipboard.writeText(acc).then(() => {
+            isCopied.value = true;
+            setTimeout(() => { isCopied.value = false; }, 2500);
+        });
     }
 };
 
@@ -187,12 +229,26 @@ const submitRegistration = () => {
 
     <div class="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 selection:bg-emerald-100 selection:text-emerald-900">
         
+        <!-- Admin Preview Banner -->
+        <div v-if="isLockedForPublic" class="bg-amber-400 text-slate-950 font-bold px-4 py-2 text-center text-xs flex items-center justify-center gap-2">
+            <LockClosedIcon class="w-4 h-4 shrink-0" />
+            <span>MODE PRATINJAU ADMINISTRATOR: Formulir SD Namira Kota Probolinggo ini sedang dikunci untuk publik.</span>
+        </div>
+
         <!-- Institutional Header Bar -->
         <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
             <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-                <Link :href="route('login')" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-800 transition">
-                    <span>Sudah Punya Akun? Login Portal</span>
-                </Link>
+                <div class="flex items-center gap-3">
+                    <Link :href="route('spmb.index')" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-800 transition">
+                        <ArrowLeftIcon class="w-4 h-4" />
+                        <span class="hidden sm:inline">Pilihan Unit SPMB</span>
+                        <span class="sm:hidden">Kembali</span>
+                    </Link>
+                    <span class="text-slate-300 hidden sm:inline">|</span>
+                    <Link :href="route('login')" class="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline transition">
+                        <span>Login Portal</span>
+                    </Link>
+                </div>
 
                 <div class="flex items-center gap-2.5">
                     <img 
@@ -228,20 +284,25 @@ const submitRegistration = () => {
                         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs mb-1.5">
                             <span class="font-bold text-emerald-900 tracking-wide uppercase">SD Namira Kota Probolinggo</span>
                             <span class="text-slate-300 hidden sm:inline">&bull;</span>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-300/80">
-                                Link Khusus Pendaftar Inden (SD-02)
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border"
+                                :class="isFutureIndenSelected
+                                    ? 'bg-purple-50 text-purple-800 border-purple-300/80'
+                                    : 'bg-amber-50 text-amber-800 border-amber-300/80'"
+                            >
+                                {{ isFutureIndenSelected ? 'Jalur Inden Tahun Mendatang (SD-02)' : 'Jalur Inden SD Namira Kota (SD-02)' }}
                             </span>
-                            <span class="text-slate-500 text-xs font-semibold">
-                                TA {{ setting?.academic_year || '2027/2028' }}
+                            <span class="text-slate-600 text-xs font-bold">
+                                TA {{ form.academic_year || setting?.academic_year || '2027/2028' }}
                             </span>
                         </div>
                         
                         <h1 class="text-lg sm:text-2xl font-black text-slate-900 leading-tight">
-                            Formulir Kelanjutan Pendaftaran Inden
+                            {{ isFutureIndenSelected ? `Formulir Pendaftaran Inden TA ${form.academic_year}` : 'Formulir Pendaftaran Jalur Inden' }}
                         </h1>
                         
                         <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                            Khusus bagi Bapak/Ibu Orang Tua calon murid baru <strong>SD Namira Kota Probolinggo</strong> yang telah terdaftar inden dan melakukan pembayaran. Silakan lengkapi biodata dan unggah bukti bayar untuk masuk ke Portal Calon Siswa.
+                            Pendaftaran calon murid baru <strong>SD Namira Kota Probolinggo</strong> untuk tahap berjalan maupun pemesanan kursi <strong>Inden Tahun Ajaran Mendatang</strong>. Lengkapi biodata dan unggah bukti pembayaran untuk masuk ke Portal Calon Siswa.
                         </p>
                     </div>
                 </div>
@@ -305,6 +366,15 @@ const submitRegistration = () => {
             <!-- ================= STEP 1: BIODATA ================= -->
             <div v-show="currentStep === 1" class="space-y-4 sm:space-y-5">
                 
+                <!-- Bagian 0: Pilihan Tahun Ajaran Masuk (Berjalan vs Inden Tahun Mendatang) -->
+                <AcademicYearSelector
+                    v-model="form.academic_year"
+                    :options="academicYearOptions"
+                    accent="emerald"
+                    unit-label="SD Namira Kota Probolinggo"
+                    :error="form.errors.academic_year"
+                />
+
                 <!-- Notice Banner: Deferred Supporting Documents -->
                 <div class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 sm:p-4 flex items-start gap-3 text-xs text-emerald-950">
                     <InformationCircleIcon class="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
@@ -645,15 +715,70 @@ const submitRegistration = () => {
                         </span>
                     </div>
 
-                    <!-- Inden Notice Card (No QRIS needed, just upload existing payment receipt) -->
+                    <!-- Inden Notice Card (Handles both Existing Paid Inden & New Multi-Year Inden) -->
                     <div class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-3 text-xs text-emerald-950">
                         <DocumentCheckIcon class="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
                         <div class="space-y-1">
-                            <strong class="font-bold block text-emerald-900">Konfirmasi Bukti Pembayaran Pendaftar Inden:</strong>
+                            <strong class="font-bold block text-emerald-900">
+                                Konfirmasi Bukti Pembayaran Inden (TA {{ form.academic_year || setting?.academic_year || '2027/2028' }}):
+                            </strong>
                             <p class="text-[11px] sm:text-xs text-emerald-800 leading-relaxed">
-                                Karena Bapak/Ibu telah terdaftar pada jalur inden <strong>SD Namira Kota Probolinggo</strong> dan telah melakukan pembayaran sebelumnya, Bapak/Ibu <strong>tidak perlu melakukan pembayaran ulang</strong>. Cukup unggah foto kuitansi, struk transfer, atau <em>screenshot</em> bukti pembayaran pendaftaran Anda di bawah ini.
+                                Bagi Bapak/Ibu yang <strong>sudah pernah membayar biaya inden sebelumnya</strong>, cukup unggah foto kuitansi atau bukti transfer Anda di bawah ini tanpa perlu membayar ulang. Bagi <strong>pendaftar inden baru (termasuk TA 2028/2029, 2029/2030, dst.)</strong>, silakan lakukan pembayaran biaya formulir sebesar <strong>{{ formattedFee }}</strong> sesuai info rekening/panitia di bawah lalu unggah buktinya.
                             </p>
                         </div>
+                    </div>
+
+                    <!-- Optional Banking / QRIS Payment Details (When Configured in Settings) -->
+                    <div v-if="setting?.bank_account_number || setting?.qris_image_url" class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-500 font-medium">Biaya Pendaftaran / Inden:</span>
+                            <strong class="text-emerald-800 font-black text-sm">{{ formattedFee }}</strong>
+                        </div>
+                        <div v-if="setting?.bank_account_number" class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-500 font-medium">Bank Tujuan:</span>
+                                <strong class="text-slate-900 font-bold">{{ setting.bank_name || 'Bank Jatim' }}</strong>
+                            </div>
+                            <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 font-bold block uppercase">Nomor Rekening:</span>
+                                    <strong class="font-mono text-sm text-emerald-900 font-bold">{{ setting.bank_account_number }}</strong>
+                                </div>
+                                <button
+                                    type="button"
+                                    @click="copyAccountNumber"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition"
+                                    :class="isCopied ? 'bg-emerald-600 text-white' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'"
+                                >
+                                    <ClipboardDocumentCheckIcon v-if="isCopied" class="w-3.5 h-3.5" />
+                                    <ClipboardIcon v-else class="w-3.5 h-3.5" />
+                                    <span>{{ isCopied ? 'Tersalin!' : 'Salin' }}</span>
+                                </button>
+                            </div>
+                            <div v-if="setting?.bank_account_holder" class="flex items-center justify-between">
+                                <span class="text-slate-500 font-medium">Atas Nama:</span>
+                                <strong class="text-slate-900 font-bold">{{ setting.bank_account_holder }}</strong>
+                            </div>
+                        </div>
+                        <div v-if="setting?.qris_image_url" class="pt-3 border-t border-slate-200 flex flex-col items-center">
+                            <span class="text-[11px] font-bold text-slate-600 uppercase mb-2 flex items-center gap-1.5">
+                                <QrCodeIcon class="w-4 h-4 text-emerald-700" />
+                                <span>Scan QRIS Resmi SD Namira Kota:</span>
+                            </span>
+                            <div class="bg-white p-2.5 rounded-xl border border-slate-300 inline-block shadow-2xs">
+                                <img :src="setting.qris_image_url" alt="QRIS SD Namira Kota" class="w-44 h-44 object-contain" />
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else-if="setting?.contact_whatsapp" class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 text-[11px] text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span>Butuh nomor rekening / QRIS pembayaran inden baru SD Namira Kota ({{ formattedFee }})? Hubungi Panitia SPMB via WhatsApp.</span>
+                        <a
+                            :href="`https://wa.me/${String(setting.contact_whatsapp).replace(/[^0-9]/g, '').replace(/^0/, '62')}`"
+                            target="_blank"
+                            class="font-bold text-emerald-800 hover:underline shrink-0"
+                        >
+                            Chat WA {{ setting.contact_whatsapp }} &rarr;
+                        </a>
                     </div>
 
                     <!-- Upload Box (With Clean Thumbnail Preview) -->

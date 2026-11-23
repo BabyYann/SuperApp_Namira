@@ -48,20 +48,73 @@ class AdminSpmbController extends Controller
     }
 
     /**
-     * Check if a Unit is a valid SPMB school unit (SD, SD-02, SMP).
+     * Check if a Unit is a valid SPMB school unit (SD, SD-02, SMP, TK/KB).
      */
     protected function isSpmbUnit(?Unit $unit): bool
     {
-        if (!$unit) {
-            return false;
+        return app(SpmbService::class)->isSpmbUnit($unit);
+    }
+
+    /**
+     * Resolve direct public registration URL for a given SPMB unit.
+     */
+    protected function resolveUnitRegistrationUrl(Unit $unit): string
+    {
+        $spmbService = app(SpmbService::class);
+        if ($spmbService->isSmpUnit($unit)) {
+            return url('/spmb/daftar/smp');
+        }
+        if ($spmbService->isSdKotaUnit($unit)) {
+            return url('/spmb/daftar/sd-kota');
+        }
+        if ($spmbService->isTkOrKbUnit($unit)) {
+            $code = strtoupper((string) ($unit->code ?? ''));
+            return $code !== '' ? url('/spmb/daftar/tk?unit=' . urlencode($code)) : url('/spmb/daftar/tk');
         }
 
-        $code = strtoupper($unit->code ?? '');
-        $name = strtolower($unit->name ?? '');
+        return url('/spmb/daftar/sd');
+    }
 
-        return in_array($code, ['SD', 'SD-02', 'SMP'])
-            || str_contains($name, 'sd')
-            || str_contains($name, 'smp');
+    /**
+     * Build ordered list of SPMB school units with their live open/locked flag for Yayasan admins.
+     */
+    protected function getOrderedSpmbUnits($allUnits = null): array
+    {
+        $spmbService = app(SpmbService::class);
+        $units = $allUnits ?: Unit::orderBy('id')->get();
+        $filtered = $units->filter(fn ($u) => $spmbService->isSpmbUnit($u));
+        $settingsByUnit = SpmbSetting::whereIn('unit_id', $filtered->pluck('id'))
+            ->get(['unit_id', 'is_active', 'academic_year', 'allow_future_inden'])
+            ->keyBy('unit_id');
+
+        $orderMap = [
+            'SD' => 1,
+            'SD-02' => 2,
+            'SMP' => 3,
+            'TK-KRA' => 4,
+            'TK-DRI' => 5,
+            'KB-KRA' => 6,
+            'KB-DRI' => 7,
+            'TK' => 8,
+            'KB' => 9,
+        ];
+
+        return $filtered
+            ->sortBy(fn ($u) => $orderMap[strtoupper((string) ($u->code ?? ''))] ?? (100 + $u->id))
+            ->map(function ($u) use ($settingsByUnit, $spmbService) {
+                $st = $settingsByUnit->get($u->id);
+                $isTkKb = $spmbService->isTkOrKbUnit($u);
+
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'code' => $u->code,
+                    'is_tk_kb' => $isTkKb,
+                    'is_active' => $st ? (bool) $st->is_active : ! $isTkKb,
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     /**
@@ -105,10 +158,15 @@ class AdminSpmbController extends Controller
     }
 
     /**
-     * Apply shared search, category, and status filters to an applicant query.
+     * Apply shared search, academic_year, category, and status filters to an applicant query.
      */
     protected function applyApplicantFilters($query, Request $request): void
     {
+        if ($request->filled('academic_year') && $request->academic_year !== 'all') {
+            $normYear = SpmbSetting::normalizeAcademicYear((string) $request->academic_year);
+            $query->where('academic_year', $normYear ?: (string) $request->academic_year);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -128,8 +186,8 @@ class AdminSpmbController extends Controller
                 $query->where(function ($q) {
                     $q->where('is_inden', false)->orWhereNull('is_inden');
                 });
-            } elseif (in_array($request->category, ['internal', 'internal_tk', 'internal_sd'])) {
-                $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd']);
+            } elseif (in_array($request->category, ['internal', 'internal_tk', 'internal_sd', 'internal_kb'])) {
+                $query->whereIn('category', ['internal', 'internal_tk', 'internal_sd', 'internal_kb']);
             } elseif (in_array($request->category, ['eksternal_umum', 'external_umum', 'external'])) {
                 $query->whereIn('category', ['eksternal_umum', 'external_umum', 'external']);
             } else {
@@ -159,15 +217,21 @@ class AdminSpmbController extends Controller
 
         $unitCode = strtoupper($targetUnit->code ?? '');
         $unitNameLower = strtolower($targetUnit->name ?? '');
-        $isSdKota = $unitCode === 'SD-02' || (str_contains($unitNameLower, 'sd') && str_contains($unitNameLower, 'kota'));
-        $isSdKraksaan = !$isSdKota && ($unitCode === 'SD' || str_contains($unitNameLower, 'sd'));
+        $isSdKota = $spmbService->isSdKotaUnit($targetUnit);
+        $isTkKb = $spmbService->isTkOrKbUnit($targetUnit);
+        $isSdKraksaan = ! $isSdKota && ! $isTkKb && ($unitCode === 'SD' || str_contains($unitNameLower, 'sd'));
 
         $unitSetting = SpmbSetting::where('unit_id', $targetUnit->id)->first();
+        $primaryAcademicYear = $unitSetting?->academic_year ?: '2027/2028';
         $indenMasterStats = null;
         $indenMasterListResolver = fn () => [];
 
         if ($isSdKraksaan) {
             $allSdApplicants = SpmbApplicant::where('unit_id', $targetUnit->id)
+                ->where(function ($q) use ($primaryAcademicYear) {
+                    $q->where('academic_year', $primaryAcademicYear)
+                        ->orWhereNull('academic_year');
+                })
                 ->get(['id', 'registration_number', 'full_name', 'parent_phone', 'father_phone', 'mother_phone', 'status', 'is_inden']);
 
             // Run auto-sync once per 30m (avoids Schema::hasColumn information_schema hit + UPDATE loops on every GET)
@@ -265,12 +329,46 @@ class AdminSpmbController extends Controller
 
         $this->applyApplicantFilters($query, $request);
 
-        // Single aggregate SQL query instead of 8 separate COUNT(*) queries
-        $statRow = DB::table('spmb_applicants')
+        // Compute academic year breakdown counts for this unit
+        $yearCountsRaw = DB::table('spmb_applicants')
             ->where('unit_id', $targetUnit->id)
+            ->selectRaw("COALESCE(academic_year, ?) as ay, COUNT(*) as cnt", [$primaryAcademicYear])
+            ->groupBy('ay')
+            ->pluck('cnt', 'ay')
+            ->all();
+
+        $configuredYears = $unitSetting
+            ? $unitSetting->getAllowedAcademicYears()
+            : [$primaryAcademicYear, ...SpmbSetting::generateNextAcademicYears($primaryAcademicYear, 3)];
+
+        $allYearsMerged = array_values(array_unique(array_merge($configuredYears, array_keys($yearCountsRaw))));
+        usort($allYearsMerged, function ($a, $b) {
+            return (SpmbSetting::extractStartYear($a) ?? 0) <=> (SpmbSetting::extractStartYear($b) ?? 0);
+        });
+
+        $academicYearBreakdown = array_map(function ($yr) use ($yearCountsRaw, $unitSetting, $primaryAcademicYear) {
+            $isFuture = $unitSetting
+                ? $unitSetting->isFutureIndenYear($yr)
+                : ((SpmbSetting::extractStartYear($yr) ?? 0) > (SpmbSetting::extractStartYear($primaryAcademicYear) ?? 0));
+
+            return [
+                'year' => $yr,
+                'count' => (int) ($yearCountsRaw[$yr] ?? 0),
+                'is_future_inden' => $isFuture,
+            ];
+        }, $allYearsMerged);
+
+        // Single aggregate SQL query (scoped by active academic_year filter if selected)
+        $statsBase = DB::table('spmb_applicants')->where('unit_id', $targetUnit->id);
+        if ($request->filled('academic_year') && $request->academic_year !== 'all') {
+            $normYear = SpmbSetting::normalizeAcademicYear((string) $request->academic_year);
+            $statsBase->where('academic_year', $normYear ?: (string) $request->academic_year);
+        }
+
+        $statRow = $statsBase
             ->selectRaw("
                 COUNT(*) as total,
-                SUM(CASE WHEN category IN ('internal_tk', 'internal_sd', 'internal') THEN 1 ELSE 0 END) as internal_cnt,
+                SUM(CASE WHEN category IN ('internal_tk', 'internal_sd', 'internal_kb', 'internal') THEN 1 ELSE 0 END) as internal_cnt,
                 SUM(CASE WHEN category IN ('eksternal_umum', 'external_umum', 'external') THEN 1 ELSE 0 END) as external_cnt,
                 SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END) as submitted_cnt,
                 SUM(CASE WHEN status IN ('verified', 'scheduled') THEN 1 ELSE 0 END) as verified_cnt,
@@ -294,7 +392,7 @@ class AdminSpmbController extends Controller
 
         // Ensure SD-02 exists (cached check so GET never hits write/lookup queries repeatedly)
         $allUnits = $request->attributes->get('resolved_all_units');
-        if ($allUnits && !$allUnits->contains(fn ($u) => strtoupper((string) $u->code) === 'SD-02')) {
+        if ($allUnits && ! $allUnits->contains(fn ($u) => strtoupper((string) $u->code) === 'SD-02')) {
             Unit::firstOrCreate(
                 ['code' => 'SD-02'],
                 [
@@ -307,19 +405,25 @@ class AdminSpmbController extends Controller
         }
 
         $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])
-            ? ($allUnits ? $allUnits->map->only(['id', 'name', 'code'])->values() : Unit::select('id', 'name', 'code')->get())
+            ? $this->getOrderedSpmbUnits($allUnits)
             : [];
+
+        $registrationUrl = $this->resolveUnitRegistrationUrl($targetUnit);
 
         return Inertia::render('SPMB/Admin/Index', [
             'applicants' => $applicants,
             'stats' => $stats,
-            'filters' => $request->only(['search', 'category', 'status', 'unit_id']),
+            'filters' => $request->only(['search', 'academic_year', 'category', 'status', 'unit_id']),
             'unit' => $targetUnit,
             'setting' => $unitSetting,
             'availableUnits' => $availableUnits,
+            'academicYearBreakdown' => $academicYearBreakdown,
+            'academicYearOptions' => $allYearsMerged,
             'indenMasterList' => Inertia::optional($indenMasterListResolver),
             'indenMasterStats' => $indenMasterStats,
             'privateRegistrationUrl' => $isSdKota ? url('/spmb/daftar/sd-kota') : null,
+            'registrationUrl' => $registrationUrl,
+            'isTkKb' => $isTkKb,
         ]);
     }
 
@@ -347,10 +451,21 @@ class AdminSpmbController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'level']);
 
+        $primaryYear = $setting?->academic_year ?: '2027/2028';
+        $allowedYears = $setting
+            ? $setting->getAllowedAcademicYears()
+            : [$primaryYear, ...SpmbSetting::generateNextAcademicYears($primaryYear, 3)];
+        if ($applicant->academic_year && ! in_array($applicant->academic_year, $allowedYears, true)) {
+            $allowedYears[] = $applicant->academic_year;
+        }
+        usort($allowedYears, fn ($a, $b) => (SpmbSetting::extractStartYear($a) ?? 0) <=> (SpmbSetting::extractStartYear($b) ?? 0));
+
         return Inertia::render('SPMB/Admin/Show', [
             'applicant' => $applicant,
             'setting' => $setting,
             'classrooms' => $classrooms,
+            'academicYearOptions' => $allowedYears,
+            'isFutureInden' => $setting ? $setting->isFutureIndenYear($applicant->academic_year) : false,
         ]);
     }
 
@@ -683,22 +798,25 @@ class AdminSpmbController extends Controller
             $this->authorizeSpmb($targetUnit->id);
         }
 
-        $isSmpUnit = strtoupper($targetUnit->code ?? '') === 'SMP'
-            || str_contains(strtolower($targetUnit->name ?? ''), 'smp');
+        $spmbService = app(SpmbService::class);
+        $isSmpUnit = $spmbService->isSmpUnit($targetUnit);
+        $isTkKbUnit = $spmbService->isTkOrKbUnit($targetUnit);
 
         $setting = SpmbSetting::firstOrCreate(
             ['unit_id' => $targetUnit->id],
             [
                 'name' => 'Pendaftaran Murid Baru ' . $targetUnit->name,
                 'academic_year' => '2027/2028',
-                'quota' => 60,
+                'allow_future_inden' => true,
+                'inden_academic_years' => ['2028/2029', '2029/2030', '2030/2031'],
+                'quota' => $isTkKbUnit ? 40 : 60,
                 'registration_fee' => 250000,
                 'bank_name' => 'Bank Jatim',
                 'bank_account_number' => null,
-                'bank_account_holder' => 'NAMIRA SCHOOL KOTA PROBOLINGGO',
-                'admission_fee_total' => 8500000,
+                'bank_account_holder' => $isTkKbUnit ? strtoupper($targetUnit->name) : 'NAMIRA SCHOOL KOTA PROBOLINGGO',
+                'admission_fee_total' => $isTkKbUnit ? 4500000 : 8500000,
                 'min_down_payment_percentage' => $isSmpUnit ? 100 : 60,
-                'is_active' => true,
+                'is_active' => ! $isTkKbUnit,
                 'contact_whatsapp' => '082332922521',
             ]
         );
@@ -706,11 +824,11 @@ class AdminSpmbController extends Controller
         if ($setting->academic_year === '2026/2027') {
             $settingUpdates['academic_year'] = '2027/2028';
         }
-        $isSdTarget = ($targetUnit->code === 'SD') || str_contains(strtolower($targetUnit->name ?? ''), 'sd');
+        $isSdTarget = ($targetUnit->code === 'SD') || (str_contains(strtolower($targetUnit->name ?? ''), 'sd') && ! $spmbService->isSdKotaUnit($targetUnit));
         if ($isSdTarget && $setting->bank_account_number === '0291008899') {
             $settingUpdates['bank_account_number'] = null;
         }
-        if (!empty($settingUpdates)) {
+        if (! empty($settingUpdates)) {
             $setting->update($settingUpdates);
         }
 
@@ -729,17 +847,17 @@ class AdminSpmbController extends Controller
 
         // List assigned panitia specifically for this target unit
         Role::firstOrCreate(['name' => 'panitia_spmb', 'guard_name' => 'web', 'team_id' => null]);
-        
+
         $assignedPanitia = User::whereExists(function ($mq) use ($targetUnit) {
             $mq->select(DB::raw(1))
-               ->from('model_has_roles')
-               ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-               ->whereColumn('model_has_roles.model_id', 'users.id')
-               ->where('roles.name', 'panitia_spmb')
-               ->where(function ($tq) use ($targetUnit) {
-                   $tq->where('model_has_roles.team_id', $targetUnit->id)
-                      ->orWhereNull('model_has_roles.team_id');
-               });
+                ->from('model_has_roles')
+                ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                ->whereColumn('model_has_roles.model_id', 'users.id')
+                ->where('roles.name', 'panitia_spmb')
+                ->where(function ($tq) use ($targetUnit) {
+                    $tq->where('model_has_roles.team_id', $targetUnit->id)
+                        ->orWhereNull('model_has_roles.team_id');
+                });
         })->get(['id', 'name', 'email']);
 
         Unit::firstOrCreate(
@@ -751,8 +869,8 @@ class AdminSpmbController extends Controller
             ]
         );
 
-        $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) 
-            ? Unit::whereIn('code', ['SD', 'SD-02', 'SMP'])->orWhere('name', 'like', '%SD%')->orWhere('name', 'like', '%SMP%')->select('id', 'name', 'code')->get() 
+        $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])
+            ? $this->getOrderedSpmbUnits()
             : [];
 
         return Inertia::render('SPMB/Admin/Settings', [
@@ -761,6 +879,10 @@ class AdminSpmbController extends Controller
             'teachers' => $teachers,
             'assignedPanitia' => $assignedPanitia,
             'availableUnits' => $availableUnits,
+            'isTkKb' => $isTkKbUnit,
+            'registrationUrl' => $this->resolveUnitRegistrationUrl($targetUnit),
+            'resolvedFutureIndenYears' => $setting->getFutureIndenAcademicYears(),
+            'suggestedFutureYears' => SpmbSetting::generateNextAcademicYears($setting->academic_year ?: '2027/2028', 5),
         ]);
     }
 
@@ -783,6 +905,9 @@ class AdminSpmbController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'academic_year' => 'required|string|max:50',
+            'allow_future_inden' => 'nullable|boolean',
+            'inden_academic_years' => 'nullable|array',
+            'inden_academic_years.*' => 'string|max:20',
             'quota' => 'required|integer|min:1',
             'registration_fee' => 'required|numeric|min:0',
             'admission_fee_total' => 'nullable|numeric|min:0',
@@ -800,15 +925,38 @@ class AdminSpmbController extends Controller
             'qris_image' => 'nullable|file|image|max:10240',
         ]);
 
+        $primaryYearNormalized = SpmbSetting::normalizeAcademicYear($request->input('academic_year'))
+            ?? trim((string) $request->input('academic_year'));
+        $primaryStart = SpmbSetting::extractStartYear($primaryYearNormalized) ?? 2027;
+
+        $sanitizedFutureYears = [];
+        if ($request->has('inden_academic_years') && is_array($request->input('inden_academic_years'))) {
+            foreach ($request->input('inden_academic_years') as $yr) {
+                $norm = SpmbSetting::normalizeAcademicYear(is_string($yr) ? $yr : null);
+                $st = $norm ? SpmbSetting::extractStartYear($norm) : null;
+                if ($norm && $st !== null && $st > $primaryStart) {
+                    $sanitizedFutureYears[$st] = $norm;
+                }
+            }
+            ksort($sanitizedFutureYears);
+        }
+
         $data = $request->only([
-            'name', 'academic_year', 'quota', 'registration_fee',
+            'name', 'quota', 'registration_fee',
             'admission_fee_total', 'min_down_payment_percentage',
             'bank_name', 'bank_account_number', 'bank_account_holder',
             'contact_whatsapp', 'notes',
-            'selection_date', 'announcement_date'
+            'selection_date', 'announcement_date',
         ]);
+        $data['academic_year'] = $primaryYearNormalized;
         $data['is_active'] = $request->boolean('is_active');
         $data['announcement_released'] = $request->boolean('announcement_released');
+        $data['allow_future_inden'] = $request->has('allow_future_inden')
+            ? $request->boolean('allow_future_inden')
+            : (bool) ($setting->allow_future_inden ?? true);
+        if ($request->has('inden_academic_years')) {
+            $data['inden_academic_years'] = array_values($sanitizedFutureYears);
+        }
 
         if (Schema::hasColumn('spmb_settings', 'whatsapp_group_link')) {
             $data['whatsapp_group_link'] = $request->input('whatsapp_group_link');
@@ -946,7 +1094,8 @@ class AdminSpmbController extends Controller
             'religion' => 'nullable|string|max:50',
             'child_order' => 'nullable|integer',
             'total_siblings' => 'nullable|integer',
-            'category' => 'nullable|string|in:internal_sd,internal_tk,internal,eksternal_umum,external_umum,external',
+            'category' => 'nullable|string|in:internal_sd,internal_tk,internal_kb,internal,eksternal_umum,external_umum,external',
+            'academic_year' => 'nullable|string|max:20',
             'is_inden' => 'nullable|boolean',
             'previous_school' => 'nullable|string|max:255',
             'special_notes' => 'nullable|string|max:1000',
@@ -984,9 +1133,15 @@ class AdminSpmbController extends Controller
         $cleanPhone = $spmbService->normalizePhone($request->parent_phone);
         $normalizedInputName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $request->full_name)));
 
+        $targetAcademicYear = $request->filled('academic_year')
+            ? (SpmbSetting::normalizeAcademicYear((string) $request->academic_year) ?: trim((string) $request->academic_year))
+            : $applicant->academic_year;
+
         $duplicateApplicant = SpmbApplicant::where('unit_id', $applicant->unit_id)
             ->where('parent_phone', $cleanPhone)
             ->where('id', '!=', $applicant->id)
+            ->where('status', '!=', 'cancelled')
+            ->when($targetAcademicYear, fn ($q) => $q->where('academic_year', $targetAcademicYear))
             ->get()
             ->first(function ($app) use ($normalizedInputName) {
                 $existingName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $app->full_name)));
@@ -1037,6 +1192,10 @@ class AdminSpmbController extends Controller
             'city' => $request->has('city') ? $request->city : $applicant->city,
             'postal_code' => $request->has('postal_code') ? $request->postal_code : $applicant->postal_code,
         ];
+
+        if ($request->filled('academic_year')) {
+            $updateData['academic_year'] = $targetAcademicYear;
+        }
 
         if ($request->has('is_inden') && Schema::hasColumn('spmb_applicants', 'is_inden')) {
             $updateData['is_inden'] = $request->boolean('is_inden');
@@ -1131,7 +1290,9 @@ class AdminSpmbController extends Controller
                 'No',
                 'No. Registrasi',
                 'Unit Sekolah',
-                'Kategori / Jalur',
+                'Tahun Ajaran',
+                'Jalur Pendaftaran',
+                'Kategori Asal',
                 'Status Pendaftaran',
                 'Nama Lengkap Siswa',
                 'Nama Panggilan',
@@ -1170,6 +1331,8 @@ class AdminSpmbController extends Controller
                     $idx + 1,
                     $app->registration_number,
                     $app->unit?->name ?? '-',
+                    $app->academic_year ?? '-',
+                    $app->is_inden ? 'Jalur Inden' : 'Jalur Umum',
                     $app->category_label,
                     $app->status_label,
                     $app->full_name,
@@ -1218,7 +1381,7 @@ class AdminSpmbController extends Controller
 
         if ($request->boolean('only_accepted', true)) {
             $query->whereIn('status', ['accepted', 'partial_paid', 'fully_paid', 'enrolled']);
-            if ($request->filled('search') || ($request->filled('category') && $request->category !== 'all')) {
+            if ($request->filled('search') || ($request->filled('category') && $request->category !== 'all') || ($request->filled('academic_year') && $request->academic_year !== 'all')) {
                 $this->applyApplicantFilters($query, $request);
             }
         } else {

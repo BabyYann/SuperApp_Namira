@@ -34,13 +34,29 @@ const props = defineProps({
         type: Array,
         default: () => []
     },
+    academicYearOptions: {
+        type: Array,
+        default: () => []
+    },
+    isFutureInden: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const isSmp = computed(() => {
     const unitName = (props.applicant?.unit?.name || '').toLowerCase();
-    const unitCode = props.applicant?.unit?.code || '';
+    const unitCode = (props.applicant?.unit?.code || '').toUpperCase();
     return unitCode === 'SMP' || unitName.includes('smp');
 });
+
+const isTkKb = computed(() => {
+    const unitName = (props.applicant?.unit?.name || '').toLowerCase();
+    const unitCode = (props.applicant?.unit?.code || '').toUpperCase();
+    return ['TK-KRA', 'TK-DRI', 'KB-KRA', 'KB-DRI', 'TK', 'KB'].includes(unitCode) || unitName.includes('tk ') || unitName.includes('kb ');
+});
+
+const applicantAcademicYear = computed(() => props.applicant?.academic_year || props.setting?.academic_year || '2027/2028');
 
 // Modals / Sections state
 const showScheduleModal = ref(false);
@@ -74,6 +90,8 @@ const editBiodataForm = useForm({
     religion: props.applicant.religion || 'Islam',
     child_order: props.applicant.child_order || 1,
     total_siblings: props.applicant.total_siblings || 1,
+    academic_year: props.applicant.academic_year || props.setting?.academic_year || '2027/2028',
+    is_inden: Boolean(props.applicant.is_inden),
     category: normalizeCategoryValue(props.applicant.category),
     previous_school: props.applicant.previous_school || '',
     special_notes: props.applicant.special_notes || '',
@@ -109,6 +127,8 @@ const openEditBiodataModal = () => {
     editBiodataForm.religion = props.applicant.religion || 'Islam';
     editBiodataForm.child_order = props.applicant.child_order || 1;
     editBiodataForm.total_siblings = props.applicant.total_siblings || 1;
+    editBiodataForm.academic_year = props.applicant.academic_year || props.setting?.academic_year || '2027/2028';
+    editBiodataForm.is_inden = Boolean(props.applicant.is_inden);
     editBiodataForm.category = normalizeCategoryValue(props.applicant.category);
     editBiodataForm.previous_school = props.applicant.previous_school || '';
     editBiodataForm.special_notes = props.applicant.special_notes || '';
@@ -437,15 +457,29 @@ const formatRupiah = (amount) => {
                         <div v-else class="w-full h-full flex items-center justify-center text-xs text-slate-400">Foto</div>
                     </div>
                     <div>
-                        <div class="flex items-center gap-2 mb-1">
+                        <div class="flex flex-wrap items-center gap-1.5 mb-1">
                             <span class="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-400">
                                 {{ applicant.registration_number }}
                             </span>
+                            <span
+                                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono border"
+                                :class="isFutureInden
+                                    ? 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-700'
+                                    : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'"
+                            >
+                                TA {{ applicantAcademicYear }}
+                            </span>
+                            <span
+                                v-if="applicant.is_inden"
+                                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-700"
+                            >
+                                Jalur Inden
+                            </span>
                             <span 
                                 class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                                :class="['internal_tk', 'internal_sd', 'internal'].includes(applicant.category) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'"
+                                :class="['internal_tk', 'internal_sd', 'internal_kb', 'internal'].includes(applicant.category) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'"
                             >
-                                {{ applicant.category_label || (['internal_tk', 'internal_sd', 'internal'].includes(applicant.category) ? (isSmp ? 'Alumni SD Namira' : 'Alumni TK Namira') : 'Umum') }}
+                                {{ applicant.category_label || (['internal_tk', 'internal_sd', 'internal_kb', 'internal'].includes(applicant.category) ? (isSmp ? 'Alumni SD Namira' : (isTkKb ? 'Internal KB Namira' : 'Alumni TK Namira')) : 'Umum') }}
                             </span>
                         </div>
                         <h2 class="text-xl font-black text-slate-900 dark:text-white">
@@ -575,6 +609,17 @@ const formatRupiah = (amount) => {
                         </div>
 
                         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                            <div>
+                                <dt class="text-slate-400">Target Tahun Ajaran Masuk</dt>
+                                <dd class="font-mono font-bold text-slate-800 dark:text-slate-200">
+                                    TA {{ applicantAcademicYear }}
+                                    <span v-if="isFutureInden" class="ml-1 px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-sans text-[10px] font-extrabold">Inden Mendatang</span>
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-slate-400">Jalur Pendaftaran</dt>
+                                <dd class="font-bold text-slate-800 dark:text-slate-200">{{ applicant.is_inden ? 'Jalur Inden' : 'Jalur Umum (Reguler)' }}</dd>
+                            </div>
                             <div>
                                 <dt class="text-slate-400">Nama Lengkap</dt>
                                 <dd class="font-bold text-slate-800 dark:text-slate-200">{{ applicant.full_name }}</dd>
@@ -1216,9 +1261,22 @@ const formatRupiah = (amount) => {
                                 <input v-model="editBiodataForm.nisn" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white">
                             </div>
                             <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tahun Ajaran Masuk *</label>
+                                <select v-model="editBiodataForm.academic_year" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-white">
+                                    <option v-for="yr in academicYearOptions" :key="yr" :value="yr">TA {{ yr }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Jalur Pendaftaran *</label>
+                                <select v-model="editBiodataForm.is_inden" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                    <option :value="false">Jalur Umum (Reguler)</option>
+                                    <option :value="true">Jalur Inden</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori Pendaftar *</label>
                                 <select v-model="editBiodataForm.category" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
-                                    <option :value="isSmp ? 'internal_sd' : 'internal_tk'">{{ isSmp ? 'Alumni SD Namira (Internal)' : 'Alumni TK Namira (Internal)' }}</option>
+                                    <option :value="isSmp ? 'internal_sd' : (isTkKb ? 'internal_kb' : 'internal_tk')">{{ isSmp ? 'Alumni SD Namira (Internal)' : (isTkKb ? 'Internal KB / Daycare Namira' : 'Alumni TK Namira (Internal)') }}</option>
                                     <option value="eksternal_umum">Pendaftar Umum (Eksternal)</option>
                                 </select>
                                 <p v-if="editBiodataForm.errors.category" class="text-rose-600 text-[11px] mt-1">{{ editBiodataForm.errors.category }}</p>
@@ -1330,6 +1388,10 @@ const formatRupiah = (amount) => {
                         <button type="button" @click="showEnrollModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-700">
                             <XMarkIcon class="w-5 h-5" />
                         </button>
+                    </div>
+
+                    <div v-if="isFutureInden" class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
+                        <strong>Perhatian Inden Mendatang:</strong> Calon siswa ini mendaftar untuk <strong>TA {{ applicantAcademicYear }}</strong>. Pastikan Anda memang ingin meresmikannya sebagai Siswa Aktif sekarang.
                     </div>
 
                     <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">

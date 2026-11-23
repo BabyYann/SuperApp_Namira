@@ -11,13 +11,19 @@ export const SMP_FEE_CONSTANTS = {
     MAHAD_TOTAL: 1650000,
 };
 
-function shortAcademicYear(setting) {
-    const raw = setting?.academic_year || '2027/2028';
+function shortAcademicYear(applicant, setting) {
+    const raw = applicant?.academic_year || setting?.academic_year || '2027/2028';
     const match = String(raw).match(/(\d{4})\/(\d{4})/);
     if (match) {
         return `${match[1].slice(-2)}/${match[2].slice(-2)}`;
     }
     return raw;
+}
+
+function startAcademicYear(applicant, setting) {
+    const raw = applicant?.academic_year || setting?.academic_year || '2027/2028';
+    const match = String(raw).match(/(\d{4})\/(\d{4})/);
+    return match ? match[1] : '2027';
 }
 
 export function buildSmpBreakdownItems(applicant, setting, opts = {}) {
@@ -65,7 +71,7 @@ export function buildSmpBreakdownItems(applicant, setting, opts = {}) {
         {
             key: 'infaq_kegiatan',
             label: 'INFAQ KEGIATAN',
-            sublabel: `AWAL TA ${shortAcademicYear(setting)}`,
+            sublabel: `AWAL TA ${shortAcademicYear(applicant, setting)}`,
             amount: SMP_FEE_CONSTANTS.INFAQ_KEGIATAN,
         },
         {
@@ -77,7 +83,7 @@ export function buildSmpBreakdownItems(applicant, setting, opts = {}) {
         {
             key: 'buku_paket',
             label: 'BUKU PAKET PENDAMPING',
-            sublabel: 'DIINFORMASIKAN JUNI 2027',
+            sublabel: `DIINFORMASIKAN JUNI ${startAcademicYear(applicant, setting)}`,
             amount: 0,
         },
         {
