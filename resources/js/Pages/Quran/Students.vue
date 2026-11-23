@@ -1,9 +1,12 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, useMediaQuery } from '@vueuse/core';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import QuranNav from './Components/QuranNav.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import QuranDialog from './Components/QuranDialog.vue';
 import axios from 'axios';
 import {
@@ -33,6 +36,13 @@ const props = defineProps({
 
 const classroomFilter = ref(props.filters?.classroom_id ?? 'all');
 const levelFilter = ref(props.filters?.level_id ?? 'all');
+
+// Chunked DOM rendering (50 rows initially) so 356+ students mount instantaneously
+const displayLimit = ref(50);
+watch(() => props.students, () => {
+    displayLimit.value = 50;
+});
+const displayedStudents = computed(() => (props.students || []).slice(0, displayLimit.value));
 const groupFilter = ref(props.filters?.group_id ?? 'all');
 const searchQuery = ref(props.filters?.search ?? '');
 const isFiltering = ref(false);
@@ -201,9 +211,9 @@ const changeTypeMeta = (type) => {
 </script>
 
 <template>
-    <Head title="Tracking & Naik Jilid — Program Al-Qur'an" />
+    <div>
+        <Head title="Tracking & Naik Jilid — Program Al-Qur'an" />
 
-    <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-28 md:pb-2 space-y-4">
             <QuranNav
                 active-tab="students"
@@ -323,7 +333,7 @@ const changeTypeMeta = (type) => {
             </div>
 
             <!-- ==================== DESKTOP TABLE (100% PRESERVED) ==================== -->
-            <div class="hidden md:block bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+            <div v-if="isDesktop" class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
                 <div class="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between text-xs">
                     <span class="font-medium text-slate-600 tabular-nums">{{ students.length }} siswa</span>
                     <span class="text-slate-400">Riwayat kenaikan jilid tercatat otomatis setiap perpindahan</span>
@@ -347,7 +357,7 @@ const changeTypeMeta = (type) => {
                                     Tidak ada data siswa sesuai filter.
                                 </td>
                             </tr>
-                            <tr v-for="st in students" :key="st.id" class="hover:bg-slate-50/70 transition-colors">
+                            <tr v-for="st in displayedStudents" :key="st.id" class="hover:bg-slate-50/70 transition-colors">
                                 <td class="px-4 py-2.5">
                                     <div class="flex items-center gap-2.5">
                                         <div class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold flex items-center justify-center shrink-0">
@@ -408,16 +418,41 @@ const changeTypeMeta = (type) => {
                         </tbody>
                     </table>
                 </div>
+
+                <div
+                    v-if="students.length > displayedStudents.length"
+                    class="px-4 py-3 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between gap-2 text-xs"
+                >
+                    <span class="text-slate-500 tabular-nums">
+                        Menampilkan {{ displayedStudents.length }} dari {{ students.length }} siswa
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            @click="displayLimit += 50"
+                            class="h-7 px-3 rounded-lg font-medium text-[#00796B] bg-teal-50 border border-teal-200/80 hover:bg-teal-100/70 transition-colors"
+                        >
+                            Muat 50 Lagi
+                        </button>
+                        <button
+                            type="button"
+                            @click="displayLimit = students.length"
+                            class="h-7 px-2.5 rounded-lg font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                        >
+                            Tampilkan Semua
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- ==================== MOBILE NATIVE CARD LIST (< md) ==================== -->
-            <div class="md:hidden space-y-2.5">
+            <div v-else class="space-y-2.5">
                 <div v-if="students.length === 0" class="bg-white rounded-2xl border border-slate-200/80 px-4 py-10 text-center text-xs text-slate-400">
                     Tidak ada data siswa sesuai filter.
                 </div>
 
                 <div
-                    v-for="st in students"
+                    v-for="st in displayedStudents"
                     :key="'m-' + st.id"
                     class="bg-white rounded-2xl border border-slate-200/80 p-3.5 space-y-3 shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
                 >
@@ -471,6 +506,26 @@ const changeTypeMeta = (type) => {
                             <span>Lihat Riwayat</span>
                         </button>
                     </div>
+                </div>
+
+                <div
+                    v-if="students.length > displayedStudents.length"
+                    class="pt-1 flex items-center justify-center gap-2"
+                >
+                    <button
+                        type="button"
+                        @click="displayLimit += 50"
+                        class="h-9 px-4 rounded-xl text-xs font-semibold text-[#00796B] bg-teal-50 border border-teal-200/80 active:scale-95 transition-all"
+                    >
+                        Muat 50 Lagi ({{ displayedStudents.length }}/{{ students.length }})
+                    </button>
+                    <button
+                        type="button"
+                        @click="displayLimit = students.length"
+                        class="h-9 px-3 rounded-xl text-xs font-medium text-slate-600 bg-white border border-slate-200 active:scale-95 transition-all"
+                    >
+                        Semua
+                    </button>
                 </div>
             </div>
         </div>
@@ -673,5 +728,5 @@ const changeTypeMeta = (type) => {
                 </ol>
             </div>
         </QuranDialog>
-    </AuthenticatedLayout>
+    </div>
 </template>

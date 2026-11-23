@@ -6,6 +6,7 @@ use App\Modules\Quran\Models\QuranLevel;
 use App\Modules\Quran\Models\QuranRubricItem;
 use App\Modules\Quran\Models\QuranSetting;
 use App\Modules\Yayasan\Models\Unit;
+use Illuminate\Support\Facades\Cache;
 
 class QuranSetupService
 {
@@ -492,6 +493,11 @@ class QuranSetupService
             return;
         }
 
+        $cacheKey = 'quran_unit_defaults_ready_v1_' . $unit->id;
+        if (Cache::has($cacheKey)) {
+            return;
+        }
+
         $isSd = $this->isSdUnit($unit);
         $hasLevels = QuranLevel::where('unit_id', $unit->id)->exists();
 
@@ -559,6 +565,8 @@ class QuranSetupService
                 'allow_teacher_self_plotting' => true,
             ]
         );
+
+        Cache::put($cacheKey, true, now()->addHours(12));
     }
 
     /**

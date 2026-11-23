@@ -44,6 +44,11 @@ const loadFirebaseScripts = () => {
 };
 
 const setupPushNotifications = async () => {
+    if (window.__namiraFcmInitialized) {
+        return;
+    }
+    window.__namiraFcmInitialized = true;
+
     const config = page.props.firebase;
 
     // --- Verbose Debug Logs ---
@@ -147,6 +152,10 @@ const setupPushNotifications = async () => {
 };
 
 const setupEcho = () => {
+    if (window.__namiraEchoInitialized && window.Echo) {
+        return;
+    }
+
     // Use the live server's own hostname, not the VITE env value which gets
     // baked in at local build time (127.0.0.1 / localhost).
     const reverbHost = window.location.hostname;
@@ -156,6 +165,8 @@ const setupEcho = () => {
         console.warn('[Echo] VITE_REVERB_APP_KEY missing. Echo listening disabled.');
         return;
     }
+
+    window.__namiraEchoInitialized = true;
 
     try {
         window.Echo = new Echo({
@@ -325,10 +336,13 @@ const playChime = () => {
 };
 
 onMounted(() => {
-    if ('serviceWorker' in navigator && 'Notification' in window) {
-        setupPushNotifications();
+    const defer = window.requestIdleCallback || ((fn) => setTimeout(fn, 1200));
+    if ('serviceWorker' in navigator && 'Notification' in window && !window.__namiraFcmInitialized) {
+        defer(() => setupPushNotifications());
     }
-    setupEcho();
+    if (!window.__namiraEchoInitialized) {
+        defer(() => setupEcho());
+    }
 });
 </script>
 
@@ -381,13 +395,13 @@ onMounted(() => {
 
 <style scoped>
 .animate-fade-in-up {
-    animation: fadeInUp 0.5s ease-out forwards;
+    animation: fadeInUp 0.18s ease-out forwards;
 }
 
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(4px);
     }
     to {
         opacity: 1;

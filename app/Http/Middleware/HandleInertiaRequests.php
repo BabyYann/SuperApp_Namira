@@ -29,27 +29,49 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $authUserPayload = [];
+
+        // Load units once per request (7 rows) so User::getUnitsAttribute(), session, and services share it
+        $allUnits = \App\Modules\Yayasan\Models\Unit::orderBy('id')->get();
+        $request->attributes->set('resolved_all_units', $allUnits);
+
+        if ($user) {
+            // Fetch ALL roles once (ignoring Team Scope) and memoize on request for services
+            $allRoles = \DB::table('model_has_roles')
+                ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                ->where('model_has_roles.model_id', $user->id)
+                ->where('model_has_roles.model_type', get_class($user))
+                ->pluck('roles.name')
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $request->attributes->set('resolved_user_roles_' . $user->id, $allRoles);
+
+            // Eager-load teacher_profile once so is_teacher, profile_photo_url, and controllers reuse it
+            if (!$user->relationLoaded('teacher_profile')) {
+                $user->load(['teacher_profile:id,user_id,unit_id,photo']);
+            }
+
+            $authUserPayload = array_merge($user->toArray(), [
+                'role' => $allRoles[0] ?? null, // Deprecated
+                'roles' => $allRoles,
+                'is_teacher' => $user->teacher_profile !== null,
+                'units' => $user->getUnitsAttribute()->toArray(),
+            ]);
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => array_merge($request->user()?->toArray() ?? [], [
-                    'role' => $request->user()?->roles->first()?->name, // Deprecated
-                    // Fetch ALL roles ignoring Team Scope
-                    'roles' => $request->user() ? \DB::table('model_has_roles')
-                        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-                        ->where('model_has_roles.model_id', $request->user()->id)
-                        ->where('model_has_roles.model_type', get_class($request->user()))
-                        ->pluck('roles.name')
-                        ->toArray() : [],
-                    'is_teacher' => $request->user()?->teacher_profile()->exists(),
-                    'units' => $request->user() ? $request->user()->getUnitsAttribute()->toArray() : [],
-                ]),
+                'user' => $authUserPayload,
             ],
-            'session' => call_user_func(function () use ($request) {
-                $activeUnitId = session('active_unit_id') ?? $request->user()?->unit_id;
-                $activeUnit = $activeUnitId ? \App\Modules\Yayasan\Models\Unit::find($activeUnitId) : null;
+            'session' => call_user_func(function () use ($user, $allUnits) {
+                $activeUnitId = session('active_unit_id') ?? $user?->unit_id;
+                $activeUnit = $activeUnitId ? $allUnits->firstWhere('id', (int) $activeUnitId) : null;
                 if (!$activeUnit) {
-                    $activeUnit = \App\Modules\Yayasan\Models\Unit::first();
+                    $activeUnit = $allUnits->first();
                     $activeUnitId = $activeUnit?->id;
                 }
 
@@ -80,7 +102,7 @@ class HandleInertiaRequests extends Middleware
                         'counseling' => true,
                         'public_relations' => true,
                     ],
-                    'available_units' => \App\Modules\Yayasan\Models\Unit::select('id', 'name', 'logo', 'category', 'unit_type', 'features')->get()->map(function($u) {
+                    'available_units' => $allUnits->map(function($u) {
                         return [
                             'id' => $u->id,
                             'name' => $u->name,
@@ -90,7 +112,7 @@ class HandleInertiaRequests extends Middleware
                             'is_daycare' => $u->isDaycare(),
                             'is_formal_school' => $u->isFormalSchool(),
                         ];
-                    }),
+                    })->values(),
                 ];
             }),
             'app_settings' => \Illuminate\Support\Facades\Cache::rememberForever('system_settings', function () {

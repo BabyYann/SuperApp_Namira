@@ -1,9 +1,12 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, useMediaQuery } from '@vueuse/core';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import QuranNav from './Components/QuranNav.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import QuranDialog from './Components/QuranDialog.vue';
 import QuranConfirmDialog from './Components/QuranConfirmDialog.vue';
 import QuranCollapse from './Components/QuranCollapse.vue';
@@ -41,7 +44,10 @@ const props = defineProps({
     groups: Array,
     teachers: Array,
     classrooms: Array,
-    allUnitStudents: Array,
+    allUnitStudents: {
+        type: Array,
+        default: null,
+    },
     levelDistribution: Array,
     stats: Object,
     filters: Object,
@@ -319,6 +325,8 @@ const enrollSearch = ref('');
 const enrollClassroomFilter = ref('all');
 const enrollOnlyUnplotted = ref(true);
 const enrollSelectedIds = ref([]);
+const isLoadingEnrollStudents = ref(false);
+const enrollDisplayLimit = ref(60);
 
 const enrollForm = useForm({
     unit_id: props.unit.id,
@@ -332,9 +340,26 @@ const openEnrollDrawer = (group) => {
     enrollClassroomFilter.value = 'all';
     enrollOnlyUnplotted.value = true;
     enrollSelectedIds.value = [];
+    enrollDisplayLimit.value = 60;
     enrollForm.started_at = new Date().toISOString().slice(0, 10);
     showEnrollDrawer.value = true;
+
+    if (!Array.isArray(props.allUnitStudents)) {
+        isLoadingEnrollStudents.value = true;
+        router.reload({
+            only: ['allUnitStudents'],
+            preserveState: true,
+            preserveScroll: true,
+            onFinish: () => {
+                isLoadingEnrollStudents.value = false;
+            },
+        });
+    }
 };
+
+watch([enrollSearch, enrollClassroomFilter, enrollOnlyUnplotted], () => {
+    enrollDisplayLimit.value = 60;
+});
 
 const filteredEnrollCandidates = computed(() => {
     const q = enrollSearch.value.trim().toLowerCase();
@@ -348,6 +373,10 @@ const filteredEnrollCandidates = computed(() => {
         return true;
     });
 });
+
+const displayedEnrollCandidates = computed(() =>
+    filteredEnrollCandidates.value.slice(0, enrollDisplayLimit.value)
+);
 
 const selectableEnrollCandidates = computed(() =>
     filteredEnrollCandidates.value.filter(st => !st.locked_by_other)
@@ -389,9 +418,9 @@ const askRemoveMember = (member, groupName) => {
 </script>
 
 <template>
-    <Head title="Kelompok & Sesi — Program Al-Qur'an" />
+    <div>
+        <Head title="Kelompok & Sesi — Program Al-Qur'an" />
 
-    <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-28 md:pb-2 space-y-4">
             <QuranNav
                 active-tab="index"
@@ -698,7 +727,8 @@ const askRemoveMember = (member, groupName) => {
             </div>
 
             <!-- ==================== DESKTOP GROUPS GRID (100% PRESERVED) ==================== -->
-            <div v-if="groups.length > 0" class="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+            <template v-if="groups.length > 0">
+            <div v-if="isDesktop" class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
                 <div
                     v-for="group in groups"
                     :key="group.id"
@@ -862,7 +892,7 @@ const askRemoveMember = (member, groupName) => {
             </div>
 
             <!-- ==================== MOBILE NATIVE GROUP CARDS (< md) ==================== -->
-            <div v-if="groups.length > 0" class="md:hidden space-y-3">
+            <div v-else class="space-y-3">
                 <div
                     v-for="group in groups"
                     :key="'mg-' + group.id"
@@ -994,6 +1024,7 @@ const askRemoveMember = (member, groupName) => {
                     </QuranCollapse>
                 </div>
             </div>
+            </template>
 
             <!-- Calm Empty State -->
             <div v-else class="bg-white rounded-xl border border-slate-200/80 p-10 text-center">
@@ -1387,7 +1418,19 @@ const askRemoveMember = (member, groupName) => {
                 </div>
 
                 <div class="divide-y divide-slate-100 px-3 py-1">
-                    <div v-if="filteredEnrollCandidates.length === 0" class="py-12 px-4 text-center space-y-2">
+                    <div v-if="isLoadingEnrollStudents" class="py-4 px-2 space-y-2.5 animate-pulse">
+                        <div v-for="n in 6" :key="'sk-' + n" class="flex items-center justify-between gap-3 py-2">
+                            <div class="flex items-center gap-3 flex-1">
+                                <div class="w-4 h-4 rounded bg-slate-200 shrink-0" />
+                                <div class="space-y-1.5 flex-1">
+                                    <div class="h-3.5 w-40 bg-slate-200 rounded" />
+                                    <div class="h-2.5 w-24 bg-slate-100 rounded" />
+                                </div>
+                            </div>
+                            <div class="h-5 w-20 bg-slate-100 rounded-md" />
+                        </div>
+                    </div>
+                    <div v-else-if="filteredEnrollCandidates.length === 0" class="py-12 px-4 text-center space-y-2">
                         <p class="text-xs text-slate-400">Tidak ada kandidat siswa sesuai filter.</p>
                         <button
                             v-if="enrollOnlyUnplotted && enrollSearch.trim()"
@@ -1398,8 +1441,9 @@ const askRemoveMember = (member, groupName) => {
                             Cek juga siswa yang sudah diplot
                         </button>
                     </div>
+                    <template v-else>
                     <label
-                        v-for="st in filteredEnrollCandidates"
+                        v-for="st in displayedEnrollCandidates"
                         :key="st.id"
                         class="flex items-center justify-between gap-3 px-2.5 py-3 md:py-2.5 rounded-lg transition-colors"
                         :class="st.locked_by_other
@@ -1449,6 +1493,26 @@ const askRemoveMember = (member, groupName) => {
                             Pindah · {{ st.current_group_name || 'Akan dipindah' }}
                         </span>
                     </label>
+                    <div
+                        v-if="filteredEnrollCandidates.length > displayedEnrollCandidates.length"
+                        class="py-3 px-2 flex items-center justify-center gap-2"
+                    >
+                        <button
+                            type="button"
+                            @click="enrollDisplayLimit += 60"
+                            class="h-8 px-3 rounded-lg text-xs font-medium text-[#00796B] bg-teal-50 border border-teal-200/80 hover:bg-teal-100/70 transition-colors"
+                        >
+                            Muat 60 lagi ({{ displayedEnrollCandidates.length }}/{{ filteredEnrollCandidates.length }})
+                        </button>
+                        <button
+                            type="button"
+                            @click="enrollDisplayLimit = filteredEnrollCandidates.length"
+                            class="h-8 px-2.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                        >
+                            Semua
+                        </button>
+                    </div>
+                    </template>
                 </div>
             </div>
 
@@ -1485,5 +1549,5 @@ const askRemoveMember = (member, groupName) => {
             @close="confirmState.show = false"
             @confirm="runConfirm"
         />
-    </AuthenticatedLayout>
+    </div>
 </template>

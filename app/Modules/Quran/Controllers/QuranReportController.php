@@ -74,12 +74,17 @@ class QuranReportController extends Controller
             ->when(!$canManage, fn ($q) => $q->whereIn('group_id', $allowedGroupIds ?: [-1]))
             ->get();
 
-        $assessments = QuranAssessment::with(['level:id,name', 'teacher:id,name', 'group:id,name'])
-            ->where('unit_id', $unit->id)
-            ->where('academic_year_id', $activeYear->id)
-            ->where('semester', $semester)
-            ->get()
-            ->keyBy('student_id');
+        $enrolledStudentIds = $enrollments->pluck('student_id')->unique()->all();
+
+        $assessments = empty($enrolledStudentIds)
+            ? collect()
+            : QuranAssessment::with(['level:id,name', 'teacher:id,name', 'group:id,name'])
+                ->where('unit_id', $unit->id)
+                ->where('academic_year_id', $activeYear->id)
+                ->where('semester', $semester)
+                ->whereIn('student_id', $enrolledStudentIds)
+                ->get()
+                ->keyBy('student_id');
 
         $rows = $enrollments
             ->filter(fn ($e) => $e->student !== null)
@@ -160,7 +165,7 @@ class QuranReportController extends Controller
             ]),
             'levels' => $levels,
             'classrooms' => $classrooms,
-            'teachers' => $this->access->getEligibleTeachers($unit->id),
+            'teachers' => $canManage ? $this->access->getEligibleTeachers($unit->id) : [],
             'students' => $rows,
             'filters' => [
                 'group_id' => $request->input('group_id', 'all'),

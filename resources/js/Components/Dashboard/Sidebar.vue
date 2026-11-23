@@ -272,7 +272,11 @@ const toggleGroup = (key, group) => {
     expandedGroups.value[key] = !isExpanded;
 };
 
+const page = usePage();
+
 const isActive = (routeName) => {
+    // Track Inertia page.url reactively so persistent layouts update active states on navigation
+    void page.url;
     if (!routeName) return false;
     if (routeName === 'pulse') {
         return window.location.pathname.startsWith('/pulse');
@@ -297,10 +301,7 @@ const resolveRoute = (routeName) => {
     return '#';
 };
 
-// Role Check
 // Role Check Helper (Available in Template)
-const page = usePage();
-// Helper to check role
 // Use a computed getter or simple execution, but for template it needs to be reactive
 const userRoles = computed(() => page.props.auth.user.roles || []);
 const primaryRole = computed(() => page.props.auth.user.role);

@@ -129,6 +129,8 @@ const safeRoute = (name, params = {}, fallback = '#') => {
 
 // Check active routes safely
 const isRouteActive = (pattern) => {
+    // Track Inertia page.url reactively so persistent layouts update active states on navigation
+    void page.url;
     try {
         if (typeof route === 'function') {
             if (route().current(pattern)) return true;

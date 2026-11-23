@@ -1,9 +1,12 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, useMediaQuery } from '@vueuse/core';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import QuranNav from './Components/QuranNav.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import QuranDialog from './Components/QuranDialog.vue';
 import {
     PrinterIcon,
@@ -116,6 +119,12 @@ const visibleStudents = computed(() => {
     return (props.students || []).filter(s => s.is_ready);
 });
 
+const displayLimit = ref(50);
+watch(visibleStudents, () => {
+    displayLimit.value = 50;
+});
+const displayedStudents = computed(() => visibleStudents.value.slice(0, displayLimit.value));
+
 const readyCount = computed(() => (props.students || []).filter(s => s.is_ready).length);
 
 const toggleSelectAll = (e) => {
@@ -144,9 +153,9 @@ const openReportUrl = (routeName, ids) => {
 </script>
 
 <template>
-    <Head title="Cetak Rapor — Program Al-Qur'an" />
+    <div>
+        <Head title="Cetak Rapor — Program Al-Qur'an" />
 
-    <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-40 md:pb-24 space-y-4">
             <QuranNav
                 active-tab="reports"
@@ -328,7 +337,7 @@ const openReportUrl = (routeName, ids) => {
                 </div>
 
                 <!-- ==================== DESKTOP TABLE (100% PRESERVED) ==================== -->
-                <div class="hidden md:block bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
+                <div v-if="isDesktop" class="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
                     <div class="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between text-xs">
                         <span class="font-medium text-slate-600 tabular-nums">{{ visibleStudents.length }} siswa tampil</span>
                         <span class="text-slate-400">Centang beberapa siswa untuk cetak / unduh PDF massal F4</span>
@@ -360,7 +369,7 @@ const openReportUrl = (routeName, ids) => {
                                     </td>
                                 </tr>
                                 <tr
-                                    v-for="st in visibleStudents"
+                                    v-for="st in displayedStudents"
                                     :key="st.student_id"
                                     class="transition-colors"
                                     :class="selectedIds.includes(st.student_id) ? 'bg-teal-50/35' : 'hover:bg-slate-50/70'"
@@ -422,10 +431,35 @@ const openReportUrl = (routeName, ids) => {
                             </tbody>
                         </table>
                     </div>
+
+                    <div
+                        v-if="visibleStudents.length > displayedStudents.length"
+                        class="px-4 py-3 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between gap-2 text-xs"
+                    >
+                        <span class="text-slate-500 tabular-nums">
+                            Menampilkan {{ displayedStudents.length }} dari {{ visibleStudents.length }} siswa
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                @click="displayLimit += 50"
+                                class="h-7 px-3 rounded-lg font-medium text-[#00796B] bg-teal-50 border border-teal-200/80 hover:bg-teal-100/70 transition-colors"
+                            >
+                                Muat 50 Lagi
+                            </button>
+                            <button
+                                type="button"
+                                @click="displayLimit = visibleStudents.length"
+                                class="h-7 px-2.5 rounded-lg font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                            >
+                                Tampilkan Semua
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ==================== MOBILE NATIVE REPORT CARDS (< md) ==================== -->
-                <div class="md:hidden space-y-2.5">
+                <div v-else class="space-y-2.5">
                     <div class="flex items-center justify-between px-1 text-xs">
                         <label class="inline-flex items-center gap-2 font-medium text-slate-700 select-none">
                             <input
@@ -444,7 +478,7 @@ const openReportUrl = (routeName, ids) => {
                     </div>
 
                     <div
-                        v-for="st in visibleStudents"
+                        v-for="st in displayedStudents"
                         :key="'mr-' + st.student_id"
                         class="bg-white rounded-2xl border p-3.5 space-y-3 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
                         :class="selectedIds.includes(st.student_id) ? 'border-[#00796B]/50 bg-teal-50/20' : 'border-slate-200/80'"
@@ -492,6 +526,26 @@ const openReportUrl = (routeName, ids) => {
                                 <span>Unduh PDF</span>
                             </button>
                         </div>
+                    </div>
+
+                    <div
+                        v-if="visibleStudents.length > displayedStudents.length"
+                        class="pt-1 flex items-center justify-center gap-2"
+                    >
+                        <button
+                            type="button"
+                            @click="displayLimit += 50"
+                            class="h-9 px-4 rounded-xl text-xs font-semibold text-[#00796B] bg-teal-50 border border-teal-200/80 active:scale-95 transition-all"
+                        >
+                            Muat 50 Lagi ({{ displayedStudents.length }}/{{ visibleStudents.length }})
+                        </button>
+                        <button
+                            type="button"
+                            @click="displayLimit = visibleStudents.length"
+                            class="h-9 px-3 rounded-xl text-xs font-medium text-slate-600 bg-white border border-slate-200 active:scale-95 transition-all"
+                        >
+                            Semua
+                        </button>
                     </div>
                 </div>
             </template>
@@ -607,7 +661,7 @@ const openReportUrl = (routeName, ids) => {
                 </div>
             </Transition>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>

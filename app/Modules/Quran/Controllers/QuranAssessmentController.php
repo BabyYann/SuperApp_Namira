@@ -42,15 +42,10 @@ class QuranAssessmentController extends Controller
         $roleFilter = $request->input('role_filter', 'all');
 
         $groupsQuery = QuranGroup::with([
-                'level' => fn ($q) => $q->with([
-                    'activeRubricItems' => fn ($rq) => $rq->where('scope', QuranRubricItem::SCOPE_LEVEL),
-                ]),
-                'session:id,name,start_time,end_time',
+                'level:id,name,code,sort_order',
+                'session:id,name,start_time,end_time,sort_order',
                 'teacher:id,name',
                 'assistantTeacher:id,name',
-                'activeEnrollments' => fn ($q) => $q->with([
-                    'student' => fn ($sq) => $sq->select('id', 'nis', 'nisn', 'full_name', 'classroom_id')->with('classroom:id,name,level'),
-                ]),
             ])
             ->where('unit_id', $unit->id)
             ->where('academic_year_id', $activeYear->id)
@@ -80,11 +75,33 @@ class QuranAssessmentController extends Controller
         $selectedGroupId = $request->integer('group_id') ?: $groups->first()?->id;
         $selectedGroup = $groups->firstWhere('id', $selectedGroupId) ?? $groups->first();
 
-        $assessmentsByStudent = QuranAssessment::where('unit_id', $unit->id)
-            ->where('academic_year_id', $activeYear->id)
-            ->where('semester', $semester)
-            ->get()
-            ->keyBy('student_id');
+        // Lightweight aggregate counts per group (avoids eager-loading all 356 students & scores for unselected groups)
+        $groupIds = $groups->pluck('id')->all();
+        $memberCountsByGroup = empty($groupIds)
+            ? collect()
+            : DB::table('quran_enrollments')
+                ->whereIn('group_id', $groupIds)
+                ->where('status', 'active')
+                ->select('group_id', DB::raw('COUNT(*) as total'))
+                ->groupBy('group_id')
+                ->pluck('total', 'group_id');
+
+        $filledCountsByGroup = empty($groupIds)
+            ? collect()
+            : DB::table('quran_enrollments as qe')
+                ->join('quran_groups as qg', 'qg.id', '=', 'qe.group_id')
+                ->join('quran_assessments as qa', function ($join) use ($unit, $activeYear, $semester) {
+                    $join->on('qa.student_id', '=', 'qe.student_id')
+                        ->on('qa.level_id', '=', 'qg.level_id')
+                        ->where('qa.unit_id', '=', $unit->id)
+                        ->where('qa.academic_year_id', '=', $activeYear->id)
+                        ->where('qa.semester', '=', $semester);
+                })
+                ->whereIn('qe.group_id', $groupIds)
+                ->where('qe.status', 'active')
+                ->select('qe.group_id', DB::raw('COUNT(DISTINCT qe.student_id) as total'))
+                ->groupBy('qe.group_id')
+                ->pluck('total', 'qe.group_id');
 
         // Load all active grade-scoped rubrics for this unit
         $allGradeItems = QuranRubricItem::where('unit_id', $unit->id)
@@ -128,6 +145,14 @@ class QuranAssessmentController extends Controller
         $studentsPayload = [];
 
         if ($selectedGroup && $selectedGroup->level) {
+            // Load rubrics & enrollments ONLY for the currently selected group
+            $selectedGroup->load([
+                'level.activeRubricItems' => fn ($rq) => $rq->where('scope', QuranRubricItem::SCOPE_LEVEL),
+                'activeEnrollments' => fn ($q) => $q->with([
+                    'student' => fn ($sq) => $sq->select('id', 'nis', 'nisn', 'full_name', 'classroom_id')->with('classroom:id,name,level'),
+                ]),
+            ]);
+
             $activeLevelItems = $selectedGroup->level->activeRubricItems;
 
             foreach ($activeLevelItems as $item) {
@@ -149,6 +174,16 @@ class QuranAssessmentController extends Controller
                 ->filter(fn ($e) => $e->student !== null)
                 ->sortBy(fn ($e) => strtolower($e->student->full_name))
                 ->values();
+
+            $memberStudentIds = $members->pluck('student_id')->all();
+            $assessmentsByStudent = empty($memberStudentIds)
+                ? collect()
+                : QuranAssessment::where('unit_id', $unit->id)
+                    ->where('academic_year_id', $activeYear->id)
+                    ->where('semester', $semester)
+                    ->whereIn('student_id', $memberStudentIds)
+                    ->get()
+                    ->keyBy('student_id');
 
             foreach ($members as $enrollment) {
                 $st = $enrollment->student;
@@ -207,14 +242,7 @@ class QuranAssessmentController extends Controller
             'isLocked' => $isLocked,
             'roleFilter' => $roleFilter,
             'usesGradeRubrics' => $usesGradeRubrics,
-            'groups' => $groups->map(function ($g) use ($assessmentsByStudent, $user) {
-                $memberIds = $g->activeEnrollments->pluck('student_id');
-                $filled = $memberIds->filter(function ($sid) use ($assessmentsByStudent, $g) {
-                    $a = $assessmentsByStudent->get($sid);
-
-                    return $a && (int) $a->level_id === (int) $g->level_id;
-                })->count();
-
+            'groups' => $groups->map(function ($g) use ($memberCountsByGroup, $filledCountsByGroup, $user) {
                 return [
                     'id' => $g->id,
                     'name' => $g->name,
@@ -224,8 +252,8 @@ class QuranAssessmentController extends Controller
                     'teacher_name' => $g->teacher?->name ?? '-',
                     'assistant_name' => $g->assistantTeacher?->name,
                     'my_role' => $g->teacher_id === $user->id ? 'main' : ($g->assistant_teacher_id === $user->id ? 'assistant' : 'manager'),
-                    'members_count' => $memberIds->count(),
-                    'filled_count' => $filled,
+                    'members_count' => (int) ($memberCountsByGroup[$g->id] ?? 0),
+                    'filled_count' => (int) ($filledCountsByGroup[$g->id] ?? 0),
                 ];
             }),
             'selectedGroup' => $selectedGroup ? [

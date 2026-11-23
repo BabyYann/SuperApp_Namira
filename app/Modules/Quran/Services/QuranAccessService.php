@@ -27,9 +27,25 @@ class QuranAccessService
         'pembina_yayasan',
     ];
 
+    /** @var array<int, array<int, string>> */
+    private array $roleCache = [];
+
+    private ?Collection $allUnitsCache = null;
+
+    private ?Collection $eligibleUnitsCache = null;
+
     public function getUserRoleNames(User $user): array
     {
-        return DB::table('model_has_roles')
+        if (isset($this->roleCache[$user->id])) {
+            return $this->roleCache[$user->id];
+        }
+
+        $req = request();
+        if ($req && $req->attributes->has('resolved_user_roles_' . $user->id)) {
+            return $this->roleCache[$user->id] = $req->attributes->get('resolved_user_roles_' . $user->id);
+        }
+
+        return $this->roleCache[$user->id] = DB::table('model_has_roles')
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->where('model_has_roles.model_id', $user->id)
             ->where('model_has_roles.model_type', User::class)
@@ -59,12 +75,30 @@ class QuranAccessService
         return in_array('koordinator_alquran', $this->getUserRoleNames($user), true);
     }
 
+    private function getAllUnits(): Collection
+    {
+        if ($this->allUnitsCache !== null) {
+            return $this->allUnitsCache;
+        }
+
+        $req = request();
+        if ($req && $req->attributes->has('resolved_all_units')) {
+            return $this->allUnitsCache = $req->attributes->get('resolved_all_units');
+        }
+
+        return $this->allUnitsCache = Unit::orderBy('id')->get();
+    }
+
     /**
      * Return all units eligible for the Program Al-Qur'an (exclude Daycare, Pavlov, and Kantor Yayasan).
      */
     public function getEligibleUnits(): Collection
     {
-        return Unit::orderBy('id')->get()->filter(function (Unit $unit) {
+        if ($this->eligibleUnitsCache !== null) {
+            return $this->eligibleUnitsCache;
+        }
+
+        return $this->eligibleUnitsCache = $this->getAllUnits()->filter(function (Unit $unit) {
             if ($unit->isDaycare()) {
                 return false;
             }
@@ -83,18 +117,19 @@ class QuranAccessService
     public function resolveUnit(Request $request, User $user): Unit
     {
         $isGlobal = $this->isGlobalAdmin($user);
+        $allUnits = $this->getAllUnits();
         $eligibleUnits = $this->getEligibleUnits();
 
         $requestedUnitId = $request->input('unit_id');
         if ($requestedUnitId && $isGlobal) {
-            $unit = Unit::find($requestedUnitId);
+            $unit = $allUnits->firstWhere('id', (int) $requestedUnitId) ?? Unit::find($requestedUnitId);
             if ($unit && !$unit->isDaycare() && strtoupper((string) $unit->code) !== 'YAYASAN') {
                 return $unit;
             }
         }
 
         $activeUnitId = session('active_unit_id') ?? $user->teacher_profile?->unit_id;
-        $activeUnit = $activeUnitId ? Unit::find($activeUnitId) : null;
+        $activeUnit = $activeUnitId ? ($allUnits->firstWhere('id', (int) $activeUnitId) ?? Unit::find($activeUnitId)) : null;
 
         if ($activeUnit) {
             if ($activeUnit->isDaycare()) {

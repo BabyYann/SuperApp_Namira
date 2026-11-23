@@ -77,6 +77,7 @@ class QuranStudentController extends Controller
             ->pluck('total', 'student_id');
 
         $studentsQuery = Student::where('unit_id', $unit->id)
+            ->select('id', 'nis', 'nisn', 'full_name', 'gender', 'classroom_id')
             ->with('classroom:id,name');
 
         if (!$canManage) {

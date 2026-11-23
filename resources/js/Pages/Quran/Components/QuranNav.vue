@@ -128,7 +128,19 @@ const centerActiveMobileTab = async () => {
     }
 };
 
-onMounted(centerActiveMobileTab);
+onMounted(() => {
+    centerActiveMobileTab();
+
+    // Flush Quran prefetch cache automatically whenever any mutating request starts
+    if (!window.__namiraQuranCacheInvalidator) {
+        window.__namiraQuranCacheInvalidator = router.on('start', (event) => {
+            const method = (event?.detail?.visit?.method || 'get').toLowerCase();
+            if (method !== 'get' && typeof router.flushByCacheTags === 'function') {
+                router.flushByCacheTags('quran');
+            }
+        });
+    }
+});
 watch(() => props.activeTab, centerActiveMobileTab);
 </script>
 
@@ -225,6 +237,9 @@ watch(() => props.activeTab, centerActiveMobileTab);
                     v-for="tab in tabs"
                     :key="tab.key"
                     :href="route(tab.route, queryParams)"
+                    prefetch
+                    :cache-for="['15s', '45s']"
+                    cache-tags="quran"
                     class="group relative inline-flex items-center gap-1.5 px-3 py-2.5 text-[13px] font-medium whitespace-nowrap shrink-0 transition-colors"
                     :class="activeTab === tab.key
                         ? 'text-[#00796B]'
@@ -283,6 +298,9 @@ watch(() => props.activeTab, centerActiveMobileTab);
                     v-for="tab in tabs"
                     :key="'m-' + tab.key"
                     :href="route(tab.route, queryParams)"
+                    prefetch
+                    :cache-for="['15s', '45s']"
+                    cache-tags="quran"
                     :data-active="activeTab === tab.key ? 'true' : 'false'"
                     class="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all active:scale-95 border"
                     :class="activeTab === tab.key

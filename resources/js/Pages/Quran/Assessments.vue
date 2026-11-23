@@ -1,8 +1,12 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
+import { useMediaQuery } from '@vueuse/core';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import QuranNav from './Components/QuranNav.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import QuranDialog from './Components/QuranDialog.vue';
 import QuranConfirmDialog from './Components/QuranConfirmDialog.vue';
 import QuranCollapse from './Components/QuranCollapse.vue';
@@ -58,7 +62,7 @@ const hydrateLocal = () => {
     initialSnapshot.value = JSON.parse(JSON.stringify(localEntries.value));
 };
 
-watch(() => props.students, hydrateLocal, { immediate: true, deep: true });
+watch(() => props.students, hydrateLocal, { immediate: true });
 
 const dirtyStudentIds = computed(() => {
     const dirty = new Set();
@@ -337,9 +341,9 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
 </script>
 
 <template>
-    <Head title="Input Nilai — Program Al-Qur'an" />
+    <div>
+        <Head title="Input Nilai — Program Al-Qur'an" />
 
-    <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-40 md:pb-24 space-y-4">
             <QuranNav
                 active-tab="assessments"
@@ -401,7 +405,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
 
             <template v-else>
                 <!-- ==================== DESKTOP FILTER + GROUP STRIP (100% PRESERVED) ==================== -->
-                <div class="hidden md:block space-y-4">
+                <div v-if="isDesktop" class="space-y-4">
                     <div class="flex flex-wrap items-center justify-between gap-2.5">
                         <div class="inline-flex items-center p-1 rounded-lg bg-slate-200/60 gap-0.5">
                             <button
@@ -474,7 +478,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                 </div>
 
                 <!-- ==================== MOBILE COMPACT GROUP SWITCHER CARD (< md) ==================== -->
-                <div v-if="groups.length > 0 && selectedGroup" class="md:hidden">
+                <div v-else-if="groups.length > 0 && selectedGroup">
                     <button
                         type="button"
                         @click="showMobileGroupSheet = true"
@@ -533,7 +537,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                     </div>
 
                     <!-- ==================== DESKTOP MATRIX SUB-TABLES (100% PRESERVED) ==================== -->
-                    <div v-else class="hidden md:block space-y-4">
+                    <div v-else-if="isDesktop" class="space-y-4">
                         <div
                             v-for="sec in studentSections"
                             :key="sec.key"
@@ -728,7 +732,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                     </div>
 
                     <!-- ==================== MOBILE NATIVE STUDENT PROGRESS LIST (< md) ==================== -->
-                    <div v-if="students.length > 0" class="md:hidden space-y-2">
+                    <div v-else class="space-y-2">
                         <div class="flex items-center justify-between text-[11px] text-slate-500 px-0.5">
                             <span class="font-medium tabular-nums">{{ students.length }} siswa · Ketuk nama untuk input nilai</span>
                         </div>
@@ -1048,7 +1052,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
             @close="showLeaveConfirm = false"
             @confirm="confirmLeave"
         />
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>

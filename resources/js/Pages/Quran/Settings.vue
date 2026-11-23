@@ -3,6 +3,8 @@ import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import QuranNav from './Components/QuranNav.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import {
     CheckIcon,
     TrashIcon,
@@ -116,9 +118,9 @@ const accessToggles = [
 </script>
 
 <template>
-    <Head title="Pengaturan — Program Al-Qur'an" />
+    <div>
+        <Head title="Pengaturan — Program Al-Qur'an" />
 
-    <AuthenticatedLayout>
         <div class="max-w-4xl mx-auto py-1 sm:py-2 pb-36 md:pb-20 space-y-5">
             <QuranNav
                 active-tab="settings"
@@ -353,7 +355,7 @@ const accessToggles = [
                 </div>
             </Transition>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>

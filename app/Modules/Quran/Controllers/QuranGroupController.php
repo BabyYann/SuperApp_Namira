@@ -52,7 +52,7 @@ class QuranGroupController extends Controller
 
         $groupsQuery = QuranGroup::with([
                 'level:id,name,code,sort_order',
-                'session:id,name,start_time,end_time,days,target_note',
+                'session:id,name,start_time,end_time,days,target_note,sort_order',
                 'teacher:id,name,email,phone',
                 'assistantTeacher:id,name,email,phone',
                 'activeEnrollments' => function ($q) {
@@ -125,13 +125,36 @@ class QuranGroupController extends Controller
                 'id' => $group->id,
                 'name' => $group->name,
                 'level_id' => $group->level_id,
-                'level' => $group->level,
+                'level' => $group->level ? [
+                    'id' => $group->level->id,
+                    'name' => $group->level->name,
+                    'code' => $group->level->code,
+                    'sort_order' => $group->level->sort_order,
+                ] : null,
                 'session_id' => $group->session_id,
-                'session' => $group->session,
+                'session' => $group->session ? [
+                    'id' => $group->session->id,
+                    'name' => $group->session->name,
+                    'start_time' => $group->session->start_time,
+                    'end_time' => $group->session->end_time,
+                    'days' => $group->session->days,
+                    'target_note' => $group->session->target_note,
+                ] : null,
                 'teacher_id' => $group->teacher_id,
-                'teacher' => $group->teacher,
+                // Serialize teacher & assistant as plain arrays to prevent User::$appends (profile_photo_url) N+1
+                'teacher' => $group->teacher ? [
+                    'id' => $group->teacher->id,
+                    'name' => $group->teacher->name,
+                    'email' => $group->teacher->email,
+                    'phone' => $group->teacher->phone,
+                ] : null,
                 'assistant_teacher_id' => $group->assistant_teacher_id,
-                'assistant_teacher' => $group->assistantTeacher,
+                'assistant_teacher' => $group->assistantTeacher ? [
+                    'id' => $group->assistantTeacher->id,
+                    'name' => $group->assistantTeacher->name,
+                    'email' => $group->assistantTeacher->email,
+                    'phone' => $group->assistantTeacher->phone,
+                ] : null,
                 'room_name' => $group->room_name,
                 'max_quota' => $group->max_quota,
                 'is_my_group' => $isMyGroup,
@@ -153,24 +176,28 @@ class QuranGroupController extends Controller
             ];
         });
 
-        // Overall unit statistics
-        $totalActiveStudents = Student::where('unit_id', $unit->id)
-            ->count();
+        // Overall unit statistics (lightweight SQL aggregates instead of hydrating all enrollments on every tab click)
+        $totalActiveStudents = Student::where('unit_id', $unit->id)->count();
 
-        $activeEnrollments = QuranEnrollment::with('group:id,name,teacher_id,assistant_teacher_id')
-            ->where('unit_id', $unit->id)
+        $levelCounts = QuranEnrollment::where('unit_id', $unit->id)
             ->where('academic_year_id', $activeYear->id)
             ->where('status', QuranEnrollment::STATUS_ACTIVE)
-            ->get(['student_id', 'level_id', 'group_id']);
+            ->select('level_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('level_id')
+            ->pluck('total', 'level_id');
 
-        $activeEnrollmentsByStudent = $activeEnrollments->keyBy('student_id');
-        $plottedStudentIds = $activeEnrollments->pluck('student_id')->unique()->values();
-        $levelDistribution = $levels->map(function ($lvl) use ($activeEnrollments) {
+        $plottedStudentCount = (int) QuranEnrollment::where('unit_id', $unit->id)
+            ->where('academic_year_id', $activeYear->id)
+            ->where('status', QuranEnrollment::STATUS_ACTIVE)
+            ->distinct('student_id')
+            ->count('student_id');
+
+        $levelDistribution = $levels->map(function ($lvl) use ($levelCounts) {
             return [
                 'id' => $lvl->id,
                 'name' => $lvl->name,
                 'code' => $lvl->code,
-                'count' => $activeEnrollments->where('level_id', $lvl->id)->count(),
+                'count' => (int) ($levelCounts[$lvl->id] ?? 0),
             ];
         });
 
@@ -180,16 +207,29 @@ class QuranGroupController extends Controller
             ->where('change_type', QuranLevelHistory::TYPE_PROMOTED)
             ->count();
 
-        // Data for quick plotting drawer (loaded for managers AND pengampu when self-plotting is active)
+        // Data for quick plotting drawer — loaded on-demand via Inertia::optional() only when user opens Plotting
         $canPlotAny = $canManage || ($allowSelfPlotting && $groups->contains(fn ($g) => !empty($g['is_my_group'])));
 
-        $classrooms = Classroom::where('unit_id', $unit->id)
-            ->orderBy('level')
-            ->orderBy('name')
-            ->get(['id', 'name', 'level']);
+        $classrooms = $canPlotAny
+            ? Classroom::where('unit_id', $unit->id)
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get(['id', 'name', 'level'])
+            : collect();
 
-        $allUnitStudents = $canPlotAny
-            ? Student::where('unit_id', $unit->id)
+        $allUnitStudentsResolver = function () use ($canPlotAny, $unit, $activeYear, $canManage, $user) {
+            if (!$canPlotAny) {
+                return [];
+            }
+
+            $activeEnrollmentsByStudent = QuranEnrollment::with('group:id,name,teacher_id,assistant_teacher_id')
+                ->where('unit_id', $unit->id)
+                ->where('academic_year_id', $activeYear->id)
+                ->where('status', QuranEnrollment::STATUS_ACTIVE)
+                ->get(['student_id', 'level_id', 'group_id'])
+                ->keyBy('student_id');
+
+            return Student::where('unit_id', $unit->id)
                 ->with('classroom:id,name')
                 ->orderBy('full_name')
                 ->get(['id', 'nis', 'full_name', 'gender', 'classroom_id'])
@@ -213,7 +253,9 @@ class QuranGroupController extends Controller
                         'locked_by_other' => !$canManage && $enr !== null && !$isInMyGroup,
                     ];
                 })
-            : collect();
+                ->values()
+                ->all();
+        };
 
         return Inertia::render('Quran/Index', [
             'unit' => $unit->only(['id', 'name', 'code']),
@@ -226,14 +268,14 @@ class QuranGroupController extends Controller
             'levels' => $levels,
             'sessions' => $sessions,
             'groups' => $groups,
-            'teachers' => $this->access->getEligibleTeachers($unit->id),
+            'teachers' => $canManage ? $this->access->getEligibleTeachers($unit->id) : [],
             'classrooms' => $classrooms,
-            'allUnitStudents' => $allUnitStudents,
+            'allUnitStudents' => Inertia::optional($allUnitStudentsResolver),
             'levelDistribution' => $levelDistribution,
             'stats' => [
                 'total_students' => $totalActiveStudents,
-                'plotted_students' => $plottedStudentIds->count(),
-                'unplotted_students' => max(0, $totalActiveStudents - $plottedStudentIds->count()),
+                'plotted_students' => $plottedStudentCount,
+                'unplotted_students' => max(0, $totalActiveStudents - $plottedStudentCount),
                 'total_groups' => $groups->count(),
                 'assessed_students' => $assessedStudentIds->count(),
                 'promotions_semester' => $promotionsThisSemester,

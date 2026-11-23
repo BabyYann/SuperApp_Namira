@@ -3,6 +3,8 @@ import { ref, computed } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import QuranNav from './Components/QuranNav.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import QuranDialog from './Components/QuranDialog.vue';
 import QuranConfirmDialog from './Components/QuranConfirmDialog.vue';
 import QuranCollapse from './Components/QuranCollapse.vue';
@@ -186,9 +188,9 @@ const gradeSections = [
 </script>
 
 <template>
-    <Head title="Rubrik Materi — Program Al-Qur'an" />
+    <div>
+        <Head title="Rubrik Materi — Program Al-Qur'an" />
 
-    <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-1 sm:py-2 pb-28 md:pb-2 space-y-4">
             <QuranNav
                 active-tab="rubrics"
@@ -648,7 +650,7 @@ const gradeSections = [
             @close="deleteTarget = null"
             @confirm="confirmDeleteItem"
         />
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>
