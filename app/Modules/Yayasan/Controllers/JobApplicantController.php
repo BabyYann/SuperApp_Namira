@@ -17,11 +17,33 @@ class JobApplicantController extends Controller
 {
     public function index(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan'])) {
-            abort(403, 'Akses Ditolak: Hanya Yayasan yang dapat melihat daftar pelamar karir.');
+        $user = auth()->user();
+        $isGlobal = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'pengawas_yayasan', 'humas_yayasan']);
+        $isUnitScoped = !$isGlobal && $user->hasAnyRole(['humas_unit', 'admin_unit']);
+
+        if (!$isGlobal && !$isUnitScoped) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki izin untuk melihat daftar pelamar karir.');
         }
 
-        $query = JobApplicant::with(['vacancy.unit', 'user']);
+        $activeUnitId = session('active_unit_id');
+        if (!$activeUnitId && $isUnitScoped) {
+            $activeUnitId = \Illuminate\Support\Facades\DB::table('model_has_roles as mhr')
+                ->join('roles as r', 'r.id', '=', 'mhr.role_id')
+                ->where('mhr.model_id', $user->id)
+                ->whereIn('r.name', ['humas_unit', 'admin_unit'])
+                ->whereNotNull('mhr.team_id')
+                ->value('mhr.team_id');
+        }
+
+        $baseQuery = JobApplicant::query();
+        if ($isUnitScoped) {
+            if (!$activeUnitId) {
+                abort(403, 'Akses Ditolak: Unit aktif tidak ditemukan.');
+            }
+            $baseQuery->whereHas('vacancy', fn ($q) => $q->where('unit_id', (int) $activeUnitId));
+        }
+
+        $query = (clone $baseQuery)->with(['vacancy.unit', 'user']);
 
         if ($request->filled('vacancy_id') && $request->vacancy_id !== 'all') {
             $query->where('job_vacancy_id', $request->vacancy_id);
@@ -42,21 +64,29 @@ class JobApplicantController extends Controller
         }
 
         $applicants = $query->latest()->paginate(20)->withQueryString();
-        $vacancies = JobVacancy::select('id', 'title', 'status')->get();
+        $vacancies = $isUnitScoped
+            ? JobVacancy::where('unit_id', (int) $activeUnitId)->select('id', 'title', 'status')->get()
+            : JobVacancy::select('id', 'title', 'status')->get();
 
         $stats = [
-            'total' => JobApplicant::count(),
-            'pending' => JobApplicant::where('selection_status', 'pending')->count(),
-            'shortlisted' => JobApplicant::where('selection_status', 'shortlisted')->count(),
-            'interview' => JobApplicant::where('selection_status', 'interview')->count(),
-            'accepted' => JobApplicant::where('selection_status', 'accepted')->count(),
-            'rejected' => JobApplicant::where('selection_status', 'rejected')->count(),
+            'total' => (clone $baseQuery)->count(),
+            'pending' => (clone $baseQuery)->where('selection_status', 'pending')->count(),
+            'shortlisted' => (clone $baseQuery)->where('selection_status', 'shortlisted')->count(),
+            'interview' => (clone $baseQuery)->where('selection_status', 'interview')->count(),
+            'accepted' => (clone $baseQuery)->where('selection_status', 'accepted')->count(),
+            'rejected' => (clone $baseQuery)->where('selection_status', 'rejected')->count(),
         ];
+
+        $canManageApplicants = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);
+        $activeUnit = $activeUnitId ? \App\Modules\Yayasan\Models\Unit::find($activeUnitId) : null;
 
         return Inertia::render('Yayasan/Recruitment/Applicants', [
             'applicants' => $applicants,
             'vacancies' => $vacancies,
             'stats' => $stats,
+            'canManageApplicants' => $canManageApplicants,
+            'isUnitScoped' => $isUnitScoped,
+            'activeUnitName' => $activeUnit?->name,
             'filters' => $request->only(['vacancy_id', 'status', 'search']),
             'statuses' => [
                 'pending' => 'Menunggu Seleksi',

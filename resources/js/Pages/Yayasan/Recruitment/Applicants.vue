@@ -17,6 +17,18 @@ const props = defineProps({
     applicants: Object,
     vacancies: Array,
     stats: Object,
+    canManageApplicants: {
+        type: Boolean,
+        default: true,
+    },
+    isUnitScoped: {
+        type: Boolean,
+        default: false,
+    },
+    activeUnitName: {
+        type: String,
+        default: null,
+    },
     filters: Object,
     statuses: Object,
 });
@@ -285,6 +297,7 @@ const getWaLink = (phone, name, title) => {
 
                                             <!-- Delete -->
                                             <button 
+                                                v-if="canManageApplicants"
                                                 @click="deleteApplicant(a)"
                                                 class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors cursor-pointer"
                                                 title="Hapus Pelamar"
@@ -339,7 +352,7 @@ const getWaLink = (phone, name, title) => {
                         </div>
 
                         <!-- Status Selector Buttons -->
-                        <div class="bg-white p-4 rounded-2xl border border-gray-200 space-y-3">
+                        <div v-if="canManageApplicants" class="bg-white p-4 rounded-2xl border border-gray-200 space-y-3">
                             <h4 class="text-xs font-bold text-gray-700 uppercase">Ubah Status Seleksi:</h4>
                             
                             <div class="grid grid-cols-2 gap-2">
@@ -371,7 +384,7 @@ const getWaLink = (phone, name, title) => {
                         </div>
 
                         <!-- Convert to Employee Button -->
-                        <div v-if="activeApplicant.selection_status === 'accepted'" class="pt-2">
+                        <div v-if="canManageApplicants && activeApplicant.selection_status === 'accepted'" class="pt-2">
                             <button 
                                 v-if="!activeApplicant.converted_to_user_id"
                                 @click="convertToEmployee(activeApplicant)"

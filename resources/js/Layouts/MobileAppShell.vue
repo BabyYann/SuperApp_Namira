@@ -37,7 +37,8 @@ import {
     CalendarDaysIcon,
     PencilSquareIcon,
     TableCellsIcon,
-    Cog6ToothIcon
+    Cog6ToothIcon,
+    BriefcaseIcon
 } from '@heroicons/vue/24/outline';
 import { 
     HomeIcon as HomeIconSolid, 
@@ -869,6 +870,30 @@ const isRouteActive = (pattern) => {
                                         <MegaphoneIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 stroke-[2.3]" />
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Hero Banner</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="hasRole('humas_unit') && !isGlobalAdmin && !hasRole(['staff_yayasan', 'admin_unit'])"
+                                    :href="safeRoute('yayasan.job-vacancies.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/70 border border-white ring-1 ring-blue-400/25 shadow-[0_8px_18px_-3px_rgba(37,99,235,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BriefcaseIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Lowongan</span>
+                                </Link>
+
+                                <Link 
+                                    v-if="hasRole('humas_unit') && !isGlobalAdmin && !hasRole(['staff_yayasan', 'admin_unit'])"
+                                    :href="safeRoute('yayasan.applicants.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-violet-50/70 border border-white ring-1 ring-violet-400/25 shadow-[0_8px_18px_-3px_rgba(139,92,246,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-violet-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Pelamar</span>
                                 </Link>
                             </div>
                         </div>

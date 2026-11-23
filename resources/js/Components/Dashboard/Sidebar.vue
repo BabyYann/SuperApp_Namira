@@ -803,7 +803,24 @@ const filteredMenuGroups = computed(() => {
 
     // D. HUMAS (Public Relations Staff)
     if (hasAnyRole(['humas_unit', 'humas_yayasan'])) {
-        groups.push(humasMenu);
+        groups.push({
+            ...humasMenu,
+            items: [
+                ...humasMenu.items,
+                {
+                    label: 'Kelola Lowongan Karir',
+                    route: 'yayasan.job-vacancies.index',
+                    active: 'yayasan.job-vacancies.*',
+                    icon: BriefcaseIcon,
+                },
+                {
+                    label: 'Daftar Pelamar Kerja',
+                    route: 'yayasan.applicants.index',
+                    active: 'yayasan.applicants.*',
+                    icon: UserGroupIcon,
+                },
+            ],
+        });
     }
 
     // E. KEUANGAN (Finance Staff)
