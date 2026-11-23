@@ -31,6 +31,7 @@ const form = useForm({
     lock_input_nilai: Boolean(props.setting?.lock_input_nilai),
     lock_cetak_rapor: Boolean(props.setting?.lock_cetak_rapor),
     allow_teacher_promote: props.setting?.allow_teacher_promote !== false,
+    allow_teacher_self_plotting: props.setting?.allow_teacher_self_plotting !== false,
     report_date: props.setting?.report_date ? String(props.setting.report_date).slice(0, 10) : '',
     ttd_kepala_tpq_file: null,
     ttd_kepala_sekolah_file: null,
@@ -102,6 +103,13 @@ const accessToggles = [
         title: 'Izinkan Guru Menaikkan Jilid',
         onDesc: 'Aktif — Guru pengampu dapat mencatat kenaikan jilid muridnya.',
         offDesc: 'Nonaktif — Hanya Koordinator & Admin yang dapat menaikkan jilid.',
+        dangerOn: false,
+    },
+    {
+        field: 'allow_teacher_self_plotting',
+        title: 'Izinkan Pengampu Plotting Mandiri',
+        onDesc: 'Aktif — Pengampu dapat mencari & memplot siswa belum diplot ke kelompoknya sendiri (siswa kelompok lain tetap terlindungi).',
+        offDesc: 'Terkunci — Hanya Koordinator & Admin yang dapat menambah atau mengeluarkan siswa dari kelompok.',
         dangerOn: false,
     },
 ];

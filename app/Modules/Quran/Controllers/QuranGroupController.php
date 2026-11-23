@@ -11,6 +11,7 @@ use App\Modules\Quran\Models\QuranGroup;
 use App\Modules\Quran\Models\QuranLevel;
 use App\Modules\Quran\Models\QuranLevelHistory;
 use App\Modules\Quran\Models\QuranSession;
+use App\Modules\Quran\Models\QuranSetting;
 use App\Modules\Quran\Services\QuranAccessService;
 use App\Modules\Quran\Services\QuranSetupService;
 use App\Modules\Yayasan\Models\AcademicYear;
@@ -35,6 +36,8 @@ class QuranGroupController extends Controller
         $activeYear = $this->access->resolveAcademicYear($request->integer('academic_year_id') ?: null);
         $canManage = $this->access->canManage($user);
         $isGlobalAdmin = $this->access->isGlobalAdmin($user);
+        $unitSetting = QuranSetting::where('unit_id', $unit->id)->first();
+        $allowSelfPlotting = $unitSetting ? (bool) ($unitSetting->allow_teacher_self_plotting ?? true) : true;
 
         $levels = QuranLevel::where('unit_id', $unit->id)
             ->where('is_active', true)
@@ -109,13 +112,14 @@ class QuranGroupController extends Controller
             ->pluck('student_id')
             ->flip();
 
-        $groups->transform(function ($group) use ($assessedStudentIds, $user) {
+        $groups->transform(function ($group) use ($assessedStudentIds, $user, $canManage, $allowSelfPlotting) {
             $members = $group->activeEnrollments
                 ->filter(fn ($e) => $e->student !== null)
                 ->sortBy(fn ($e) => strtolower($e->student->full_name))
                 ->values();
 
             $assessedCount = $members->filter(fn ($e) => $assessedStudentIds->has($e->student_id))->count();
+            $isMyGroup = $group->teacher_id === $user->id || $group->assistant_teacher_id === $user->id;
 
             return [
                 'id' => $group->id,
@@ -130,7 +134,8 @@ class QuranGroupController extends Controller
                 'assistant_teacher' => $group->assistantTeacher,
                 'room_name' => $group->room_name,
                 'max_quota' => $group->max_quota,
-                'is_my_group' => $group->teacher_id === $user->id || $group->assistant_teacher_id === $user->id,
+                'is_my_group' => $isMyGroup,
+                'can_plot' => $canManage || ($allowSelfPlotting && $isMyGroup),
                 'my_role' => $group->teacher_id === $user->id ? 'main' : ($group->assistant_teacher_id === $user->id ? 'assistant' : null),
                 'members_count' => $members->count(),
                 'assessed_count' => $assessedCount,
@@ -152,11 +157,13 @@ class QuranGroupController extends Controller
         $totalActiveStudents = Student::where('unit_id', $unit->id)
             ->count();
 
-        $activeEnrollments = QuranEnrollment::where('unit_id', $unit->id)
+        $activeEnrollments = QuranEnrollment::with('group:id,name,teacher_id,assistant_teacher_id')
+            ->where('unit_id', $unit->id)
             ->where('academic_year_id', $activeYear->id)
             ->where('status', QuranEnrollment::STATUS_ACTIVE)
-            ->get(['student_id', 'level_id']);
+            ->get(['student_id', 'level_id', 'group_id']);
 
+        $activeEnrollmentsByStudent = $activeEnrollments->keyBy('student_id');
         $plottedStudentIds = $activeEnrollments->pluck('student_id')->unique()->values();
         $levelDistribution = $levels->map(function ($lvl) use ($activeEnrollments) {
             return [
@@ -173,19 +180,24 @@ class QuranGroupController extends Controller
             ->where('change_type', QuranLevelHistory::TYPE_PROMOTED)
             ->count();
 
-        // Data for quick plotting modal (only loaded for managers)
+        // Data for quick plotting drawer (loaded for managers AND pengampu when self-plotting is active)
+        $canPlotAny = $canManage || ($allowSelfPlotting && $groups->contains(fn ($g) => !empty($g['is_my_group'])));
+
         $classrooms = Classroom::where('unit_id', $unit->id)
             ->orderBy('level')
             ->orderBy('name')
             ->get(['id', 'name', 'level']);
 
-        $allUnitStudents = $canManage
+        $allUnitStudents = $canPlotAny
             ? Student::where('unit_id', $unit->id)
                 ->with('classroom:id,name')
                 ->orderBy('full_name')
                 ->get(['id', 'nis', 'full_name', 'gender', 'classroom_id'])
-                ->map(function ($st) use ($activeEnrollments) {
-                    $enr = $activeEnrollments->firstWhere('student_id', $st->id);
+                ->map(function ($st) use ($activeEnrollmentsByStudent, $canManage, $user) {
+                    $enr = $activeEnrollmentsByStudent->get($st->id);
+                    $currentGroup = $enr?->group;
+                    $isInMyGroup = $currentGroup !== null
+                        && ($currentGroup->teacher_id === $user->id || $currentGroup->assistant_teacher_id === $user->id);
 
                     return [
                         'id' => $st->id,
@@ -195,6 +207,10 @@ class QuranGroupController extends Controller
                         'classroom_id' => $st->classroom_id,
                         'classroom_name' => $st->classroom?->name ?? 'Tanpa Kelas',
                         'is_plotted' => $enr !== null,
+                        'current_group_id' => $enr?->group_id,
+                        'current_group_name' => $currentGroup?->name,
+                        'is_in_my_group' => $isInMyGroup,
+                        'locked_by_other' => !$canManage && $enr !== null && !$isInMyGroup,
                     ];
                 })
             : collect();
@@ -205,6 +221,7 @@ class QuranGroupController extends Controller
             'academicYears' => AcademicYear::orderByDesc('is_active')->orderByDesc('id')->get(['id', 'name', 'semester', 'is_active']),
             'activeYear' => $activeYear->only(['id', 'name', 'semester', 'is_active']),
             'canManage' => $canManage,
+            'allowSelfPlotting' => $allowSelfPlotting,
             'isGlobalAdmin' => $isGlobalAdmin,
             'levels' => $levels,
             'sessions' => $sessions,
@@ -439,12 +456,24 @@ class QuranGroupController extends Controller
 
     /**
      * Bulk enroll students into a Quran group (initial plotting or direct move).
+     * Managers have full access; pengampu can self-plot unplotted students (or move between their own groups)
+     * into their assigned group when unit setting `allow_teacher_self_plotting` is enabled.
      */
     public function enrollStudents(Request $request, QuranGroup $group)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
-            abort(403, 'Hanya Koordinator Al-Qur\'an / Admin yang dapat melakukan plotting siswa.');
+        $canManage = $this->access->canManage($user);
+        $isMyGroup = $group->teacher_id === $user->id || $group->assistant_teacher_id === $user->id;
+        $unitSetting = QuranSetting::where('unit_id', $group->unit_id)->first();
+        $allowSelfPlotting = $unitSetting ? (bool) ($unitSetting->allow_teacher_self_plotting ?? true) : true;
+
+        if (!$canManage) {
+            if (!$allowSelfPlotting) {
+                abort(403, 'Plotting mandiri pengampu sedang dikunci oleh Koordinator Al-Qur\'an.');
+            }
+            if (!$isMyGroup) {
+                abort(403, 'Anda hanya dapat melakukan plotting siswa pada kelompok yang Anda ampu.');
+            }
         }
 
         $unit = $this->access->resolveUnit($request, $user);
@@ -462,14 +491,16 @@ class QuranGroupController extends Controller
         $activeYear = $group->academicYear ?: $this->access->resolveAcademicYear();
         $startedAt = $validated['started_at'] ?? now()->toDateString();
         $addedCount = 0;
+        $skippedLocked = [];
 
-        DB::transaction(function () use ($group, $validated, $activeYear, $startedAt, $user, &$addedCount) {
+        DB::transaction(function () use ($group, $validated, $activeYear, $startedAt, $user, $canManage, &$addedCount, &$skippedLocked) {
             $students = Student::where('unit_id', $group->unit_id)
                 ->whereIn('id', $validated['student_ids'])
                 ->get();
 
             foreach ($students as $student) {
-                $existingActive = QuranEnrollment::where('unit_id', $group->unit_id)
+                $existingActive = QuranEnrollment::with('group:id,name,teacher_id,assistant_teacher_id')
+                    ->where('unit_id', $group->unit_id)
                     ->where('academic_year_id', $activeYear->id)
                     ->where('student_id', $student->id)
                     ->where('status', QuranEnrollment::STATUS_ACTIVE)
@@ -477,6 +508,18 @@ class QuranGroupController extends Controller
 
                 if ($existingActive && $existingActive->group_id === $group->id) {
                     continue;
+                }
+
+                // Anti-steal guardrail: pengampu cannot pull students already enrolled in another teacher's group
+                if ($existingActive && !$canManage) {
+                    $existingGroup = $existingActive->group;
+                    $ownsExisting = $existingGroup !== null
+                        && ($existingGroup->teacher_id === $user->id || $existingGroup->assistant_teacher_id === $user->id);
+
+                    if (!$ownsExisting) {
+                        $skippedLocked[] = $student->full_name . ($existingGroup ? " ({$existingGroup->name})" : '');
+                        continue;
+                    }
                 }
 
                 $fromLevelId = null;
@@ -533,15 +576,38 @@ class QuranGroupController extends Controller
             }
         });
 
+        if ($addedCount === 0 && !empty($skippedLocked)) {
+            $preview = implode(', ', array_slice($skippedLocked, 0, 3));
+            $more = count($skippedLocked) > 3 ? ' (+' . (count($skippedLocked) - 3) . ' lainnya)' : '';
+
+            return back()->with('error', "Siswa sudah terdaftar di kelompok pengampu lain dan tidak dapat ditarik langsung: {$preview}{$more}.");
+        }
+
+        if (!empty($skippedLocked)) {
+            return back()->with('success', "{$addedCount} siswa berhasil dimasukkan ke {$group->name}. " . count($skippedLocked) . ' siswa dilewati karena sudah di kelompok pengampu lain.');
+        }
+
         return back()->with('success', "{$addedCount} siswa berhasil dimasukkan ke kelompok {$group->name}.");
     }
 
     public function removeEnrollment(Request $request, QuranEnrollment $enrollment)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
-            abort(403);
+        $canManage = $this->access->canManage($user);
+        $group = $enrollment->group;
+        $isMyGroup = $group && ($group->teacher_id === $user->id || $group->assistant_teacher_id === $user->id);
+        $unitSetting = QuranSetting::where('unit_id', $enrollment->unit_id)->first();
+        $allowSelfPlotting = $unitSetting ? (bool) ($unitSetting->allow_teacher_self_plotting ?? true) : true;
+
+        if (!$canManage) {
+            if (!$allowSelfPlotting) {
+                abort(403, 'Plotting mandiri pengampu sedang dikunci oleh Koordinator Al-Qur\'an.');
+            }
+            if (!$isMyGroup) {
+                abort(403, 'Anda hanya dapat mengeluarkan siswa dari kelompok yang Anda ampu.');
+            }
         }
+
         $unit = $this->access->resolveUnit($request, $user);
         if ($enrollment->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
             abort(403);

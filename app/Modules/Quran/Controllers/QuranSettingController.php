@@ -62,6 +62,7 @@ class QuranSettingController extends Controller
             'lock_input_nilai' => 'boolean',
             'lock_cetak_rapor' => 'boolean',
             'allow_teacher_promote' => 'boolean',
+            'allow_teacher_self_plotting' => 'boolean',
             'report_date' => 'nullable|date',
             'ttd_kepala_tpq_file' => 'nullable|image|max:2048',
             'ttd_kepala_sekolah_file' => 'nullable|image|max:2048',
@@ -123,6 +124,7 @@ class QuranSettingController extends Controller
             'lock_input_nilai' => (bool) ($validated['lock_input_nilai'] ?? false),
             'lock_cetak_rapor' => (bool) ($validated['lock_cetak_rapor'] ?? false),
             'allow_teacher_promote' => (bool) ($validated['allow_teacher_promote'] ?? true),
+            'allow_teacher_self_plotting' => (bool) ($validated['allow_teacher_self_plotting'] ?? true),
             'report_date' => $validated['report_date'] ?? null,
         ]);
 

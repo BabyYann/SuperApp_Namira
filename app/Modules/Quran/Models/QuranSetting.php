@@ -24,6 +24,7 @@ class QuranSetting extends Model
         'lock_input_nilai',
         'lock_cetak_rapor',
         'allow_teacher_promote',
+        'allow_teacher_self_plotting',
         'report_date',
     ];
 
@@ -32,6 +33,7 @@ class QuranSetting extends Model
         'lock_input_nilai' => 'boolean',
         'lock_cetak_rapor' => 'boolean',
         'allow_teacher_promote' => 'boolean',
+        'allow_teacher_self_plotting' => 'boolean',
         'report_date' => 'date',
     ];
 

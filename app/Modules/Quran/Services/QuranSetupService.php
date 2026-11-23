@@ -556,6 +556,7 @@ class QuranSetupService
                 'lock_input_nilai' => false,
                 'lock_cetak_rapor' => false,
                 'allow_teacher_promote' => true,
+                'allow_teacher_self_plotting' => true,
             ]
         );
     }
