@@ -126,6 +126,11 @@ class User extends Authenticatable implements CanResetPassword
         return $this->cachedUnits = \App\Modules\Yayasan\Models\Unit::whereIn('id', $uniqueTeamIds)->get();
     }
 
+    public function student()
+    {
+        return $this->hasOne(\App\Modules\Academic\Models\Student::class);
+    }
+
     public function teacher_profile()
     {
         return $this->hasOne(\App\Modules\Academic\Models\Teacher::class);
@@ -136,7 +141,7 @@ class User extends Authenticatable implements CanResetPassword
         return $this->hasOne(\App\Modules\Employee\Models\Staff::class);
     }
     
-    // Dynamic Profile Photo URL
+    // Dynamic Profile Photo URL (zero lazy SQL during JSON serialization; uses eager-loaded relations)
     public function getProfilePhotoUrlAttribute()
     {
         if ($this->cachedProfilePhotoUrl !== null) {
@@ -155,10 +160,9 @@ class User extends Authenticatable implements CanResetPassword
             return $this->cachedProfilePhotoUrl = asset('storage/' . $path);
         }
 
-        // 1. Check Student Profile
-        $student = $this->relationLoaded('student') ? $this->student : $this->hasOne(\App\Modules\Academic\Models\Student::class)->select('id', 'user_id', 'photo')->first();
-        if ($student && !empty($student->photo)) {
-            $path = $student->photo;
+        // 1. Check Student Profile (only if eager-loaded to prevent global N+1 explosions)
+        if ($this->relationLoaded('student') && $this->student && !empty($this->student->photo)) {
+            $path = $this->student->photo;
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
                 return $this->cachedProfilePhotoUrl = $path;
             }
@@ -168,10 +172,9 @@ class User extends Authenticatable implements CanResetPassword
             return $this->cachedProfilePhotoUrl = asset('storage/' . $path);
         }
 
-        // 2. Check Teacher Profile
-        $teacher = $this->relationLoaded('teacher_profile') ? $this->teacher_profile : $this->teacher_profile()->select('id', 'user_id', 'photo')->first();
-        if ($teacher && !empty($teacher->photo)) {
-            $path = $teacher->photo;
+        // 2. Check Teacher Profile (only if eager-loaded)
+        if ($this->relationLoaded('teacher_profile') && $this->teacher_profile && !empty($this->teacher_profile->photo)) {
+            $path = $this->teacher_profile->photo;
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
                 return $this->cachedProfilePhotoUrl = $path;
             }
@@ -181,10 +184,9 @@ class User extends Authenticatable implements CanResetPassword
             return $this->cachedProfilePhotoUrl = asset('storage/' . $path);
         }
 
-        // 3. Check Staff Profile
-        $staff = $this->relationLoaded('staff') ? $this->staff : $this->staff()->select('id', 'user_id', 'photo')->first();
-        if ($staff && !empty($staff->photo)) {
-            $path = $staff->photo;
+        // 3. Check Staff Profile (only if eager-loaded)
+        if ($this->relationLoaded('staff') && $this->staff && !empty($this->staff->photo)) {
+            $path = $this->staff->photo;
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
                 return $this->cachedProfilePhotoUrl = $path;
             }
@@ -195,7 +197,7 @@ class User extends Authenticatable implements CanResetPassword
         }
 
         // 4. Fallback to UI Avatars
-        $name = trim($this->name);
+        $name = trim((string) $this->name);
         return $this->cachedProfilePhotoUrl = 'https://ui-avatars.com/api/?name='.urlencode($name).'&color=7F9CF5&background=EBF4FF';
     }
 

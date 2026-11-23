@@ -68,13 +68,18 @@ class JobApplicantController extends Controller
             ? JobVacancy::where('unit_id', (int) $activeUnitId)->select('id', 'title', 'status')->get()
             : JobVacancy::select('id', 'title', 'status')->get();
 
+        $statusCounts = (clone $baseQuery)
+            ->select('selection_status', \Illuminate\Support\Facades\DB::raw('COUNT(*) as total'))
+            ->groupBy('selection_status')
+            ->pluck('total', 'selection_status');
+
         $stats = [
-            'total' => (clone $baseQuery)->count(),
-            'pending' => (clone $baseQuery)->where('selection_status', 'pending')->count(),
-            'shortlisted' => (clone $baseQuery)->where('selection_status', 'shortlisted')->count(),
-            'interview' => (clone $baseQuery)->where('selection_status', 'interview')->count(),
-            'accepted' => (clone $baseQuery)->where('selection_status', 'accepted')->count(),
-            'rejected' => (clone $baseQuery)->where('selection_status', 'rejected')->count(),
+            'total' => (int) $statusCounts->sum(),
+            'pending' => (int) ($statusCounts['pending'] ?? 0),
+            'shortlisted' => (int) ($statusCounts['shortlisted'] ?? 0),
+            'interview' => (int) ($statusCounts['interview'] ?? 0),
+            'accepted' => (int) ($statusCounts['accepted'] ?? 0),
+            'rejected' => (int) ($statusCounts['rejected'] ?? 0),
         ];
 
         $canManageApplicants = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']);

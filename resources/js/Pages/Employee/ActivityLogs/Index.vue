@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import MobileAppShell from '@/Layouts/MobileAppShell.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, usePage, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import {
@@ -214,10 +215,10 @@ const categoryBadgeClass = (catKey) => {
 <template>
     <Head title="Giat - Aktivitas & Logbook Harian" />
 
-    <component :is="isMobile ? MobileAppShell : AuthenticatedLayout">
+    <div>
         
         <!-- HEADER DESKTOP ONLY -->
-        <template #header v-if="!isMobile">
+        <header v-if="!isMobile" class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between w-full max-w-7xl mx-auto">
                 <div>
                     <h2 class="font-black text-2xl text-slate-900 tracking-tight leading-tight">
@@ -235,7 +236,7 @@ const categoryBadgeClass = (catKey) => {
                     <span>Tambah Giat</span>
                 </button>
             </div>
-        </template>
+        </div></header>
 
         <div class="max-w-7xl mx-auto space-y-3.5 sm:space-y-4 md:space-y-5 px-1 sm:px-4 py-1 sm:py-2 md:py-3 w-full min-w-0 box-border">
 
@@ -845,5 +846,5 @@ const categoryBadgeClass = (catKey) => {
             </div>
         </Teleport>
 
-    </component>
+    </div>
 </template>

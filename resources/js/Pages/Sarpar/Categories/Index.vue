@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -81,8 +83,8 @@ const deleteItem = () => {
 <template>
     <Head title="Kategori Inventaris" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div>
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                     Kategori Inventaris
@@ -91,7 +93,7 @@ const deleteItem = () => {
                     Data kategori untuk pengelompokan barang inventaris
                 </p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 space-y-5 md:space-y-6">
 
@@ -301,5 +303,5 @@ const deleteItem = () => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

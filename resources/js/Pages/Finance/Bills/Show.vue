@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
@@ -68,8 +70,8 @@ const updateBill = () => {
 <template>
     <Head title="Detail Tagihan" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 class="font-bold text-2xl text-gray-800 leading-tight flex items-center gap-2">
@@ -80,7 +82,7 @@ const updateBill = () => {
                     </h2>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-12 max-w-5xl mx-auto space-y-4 md:space-y-6">
             <!-- Bill Info -->
@@ -231,5 +233,5 @@ const updateBill = () => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { 
@@ -560,8 +562,8 @@ onUnmounted(() => {
 
 <template>
     <Head title="QR Scanner Absensi Gerbang" />
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="hidden md:flex items-center justify-between">
                 <div>
                     <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -582,7 +584,7 @@ onUnmounted(() => {
                     </span>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!-- 📱 MOBILE PWA VIEW (block md:hidden) — Premium Dark Scanner -->
@@ -1101,7 +1103,7 @@ onUnmounted(() => {
                 </div>
             </Transition>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { PencilSquareIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
@@ -47,8 +49,8 @@ const getStatusLabel = (status) => {
 <template>
     <Head title="Detail Jurnal Mengajar" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <h2 class="font-bold text-2xl text-gray-800 leading-tight">Detail Jurnal</h2>
                 <div class="flex gap-2">
@@ -65,7 +67,7 @@ const getStatusLabel = (status) => {
                     </Link>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
@@ -165,5 +167,5 @@ const getStatusLabel = (status) => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

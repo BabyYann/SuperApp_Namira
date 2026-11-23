@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head } from '@inertiajs/vue3';
 import { BanknotesIcon } from '@heroicons/vue/24/outline';
 import {
@@ -101,13 +103,13 @@ const chartOptions = {
 <template>
     <Head title="Keuangan Dashboard" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <h2 class="font-bold text-2xl bg-gradient-to-r from-teal-800 to-teal-500 bg-clip-text text-transparent leading-tight">
                 Ringkasan Keuangan
             </h2>
             <p class="text-sm text-gray-500 mt-1">Pantau arus kas dan kesehatan finansial sekolah.</p>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-7xl mx-auto space-y-6">
             
@@ -283,5 +285,5 @@ const chartOptions = {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

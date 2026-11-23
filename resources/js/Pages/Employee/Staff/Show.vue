@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
@@ -23,7 +25,7 @@ const tabs = [
 <template>
     <Head :title="`Detail Staf - ${staff.full_name}`" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="space-y-6 pb-12">
             <!-- Header / Breadcrumb -->
             <div class="flex items-center justify-between">
@@ -208,7 +210,7 @@ const tabs = [
 
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>

@@ -1,7 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
+
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import { 
     CalendarIcon, 
     CheckCircleIcon, 
@@ -211,8 +216,8 @@ const sendReminder = (schedule) => {
 <template>
     <Head title="Jurnal Mengajar" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h2 class="font-extrabold text-2xl bg-gradient-to-r from-slate-900 via-teal-900 to-slate-800 bg-clip-text text-transparent leading-tight">
@@ -245,7 +250,7 @@ const sendReminder = (schedule) => {
                     </button>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-2 md:py-6 max-w-7xl mx-auto space-y-3 md:space-y-6">
             
@@ -521,7 +526,7 @@ const sendReminder = (schedule) => {
                 </div>
 
                 <!-- 📱 D1. MOBILE ULTRA-COMPACT MONITORING LIST (block md:hidden) -->
-                <div v-else class="block md:hidden space-y-2">
+                <div v-else-if="!isDesktop" class="space-y-2">
                     <div 
                         v-for="item in filteredSchedules" 
                         :key="'mon-mob-'+item.id"
@@ -612,7 +617,7 @@ const sendReminder = (schedule) => {
                 </div>
 
                 <!-- 🖥️ D2. DESKTOP LIVE KBM MONITORING CARDS GRID (hidden md:grid) -->
-                <div v-if="filteredSchedules.length > 0" class="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div 
                         v-for="item in filteredSchedules" 
                         :key="'mon-'+item.id"
@@ -793,7 +798,7 @@ const sendReminder = (schedule) => {
                 </div>
 
                 <!-- 📱 Teacher Schedule Micro-Cards Mobile (block md:hidden) -->
-                <div v-else class="block md:hidden space-y-2">
+                <div v-else-if="!isDesktop" class="space-y-2">
                     <div 
                         v-for="item in schedules" 
                         :key="'teach-mob-'+item.id"
@@ -844,7 +849,7 @@ const sendReminder = (schedule) => {
                 </div>
 
                 <!-- 🖥️ Teacher Schedule Cards Desktop (hidden md:grid) -->
-                <div v-if="schedules.length > 0" class="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div 
                         v-for="item in schedules" 
                         :key="'teach-'+item.id"
@@ -979,6 +984,6 @@ const sendReminder = (schedule) => {
             </div>
         </div>
 
-    </AuthenticatedLayout>
+    </div>
 </template>
 

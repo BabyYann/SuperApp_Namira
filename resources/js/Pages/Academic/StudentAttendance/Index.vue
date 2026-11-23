@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { 
@@ -217,7 +219,7 @@ const getStatusBadge = (status) => {
 <template>
     <Head title="Presensi Kelas" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="py-3 sm:py-6 max-w-7xl mx-auto space-y-4">
             
             <!-- MAIN TOP NAVIGATION TABS: Presensi Harian vs Rekap Bulanan -->
@@ -748,5 +750,5 @@ const getStatusBadge = (status) => {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

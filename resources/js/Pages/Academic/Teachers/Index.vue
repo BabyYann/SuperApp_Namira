@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, Link, router } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -21,7 +23,7 @@ const props = defineProps({
     teachers: Object,
     availableUsers: {
         type: Array,
-        default: () => []
+        default: null
     },
     stats: Object,
     filters: Object,
@@ -121,6 +123,8 @@ const setTeacherTypeFilter = (type) => {
     );
 };
 
+const isLoadingAvailableUsers = ref(false);
+
 const openCreateModal = () => {
     isEditing.value = false;
     form.reset();
@@ -130,6 +134,17 @@ const openCreateModal = () => {
     form.is_quran_coordinator = false;
     photoPreview.value = null;
     showModal.value = true;
+
+    // Fetch availableUsers (~97KB) on-demand via Inertia::optional() only when Add Teacher modal opens
+    if (!Array.isArray(props.availableUsers)) {
+        isLoadingAvailableUsers.value = true;
+        router.reload({
+            only: ['availableUsers'],
+            preserveState: true,
+            preserveScroll: true,
+            onFinish: () => { isLoadingAvailableUsers.value = false; },
+        });
+    }
 };
 
 const openEditModal = (teacher) => {
@@ -214,8 +229,8 @@ const deleteItem = () => {
 <template>
     <Head title="Manajemen Guru" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
                 <!-- Top Row: Title & Description -->
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
@@ -225,12 +240,12 @@ const deleteItem = () => {
                         Total Data: <span class="font-bold text-namira-teal">{{ teachers.total }} Guru</span>
                     </p>
                 </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
             <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
-            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+            <div v-if="isMobile" class="-mx-4 -mt-4 space-y-4">
                 <!-- Header Card Gradient -->
                 <div class="bg-gradient-to-br from-[#009688] to-[#0f172a] px-4 pt-5 pb-6 text-white">
                     <div class="flex items-center justify-between mb-3">
@@ -392,7 +407,7 @@ const deleteItem = () => {
             <!-- END MOBILE VIEW -->
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
-            <div class="hidden md:block space-y-6">
+            <div v-else class="space-y-6">
                 <!-- Toolbar -->
                 <div class="flex flex-col md:flex-row items-center gap-4">
                     <!-- Search Bar -->
@@ -618,9 +633,9 @@ const deleteItem = () => {
                             <!-- Option 1: Pick from Existing User -->
                             <div v-if="!isEditing" class="md:col-span-2 p-4 bg-teal-50/70 border border-teal-100/80 rounded-2xl shadow-sm">
                                 <InputLabel value="Pilih Akun User Terdaftar (Opsional)" class="text-xs font-bold text-teal-800 uppercase tracking-wider mb-2" />
-                                <select v-model="form.user_id" @change="onSelectUser" class="w-full h-11 px-3 text-sm border-teal-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-white font-medium text-gray-800 shadow-sm transition-all">
-                                    <option value="">-- Buat Akun Baru dari Awal --</option>
-                                    <option v-for="u in availableUsers" :key="u.id" :value="u.id">
+                                <select v-model="form.user_id" @change="onSelectUser" :disabled="isLoadingAvailableUsers" class="w-full h-11 px-3 text-sm border-teal-200 rounded-xl focus:ring-namira-teal focus:border-namira-teal bg-white font-medium text-gray-800 shadow-sm transition-all">
+                                    <option value="">{{ isLoadingAvailableUsers ? 'Memuat daftar akun user...' : '-- Buat Akun Baru dari Awal --' }}</option>
+                                    <option v-for="u in (availableUsers || [])" :key="u.id" :value="u.id">
                                         {{ u.name }} ({{ u.email }})
                                     </option>
                                 </select>
@@ -762,5 +777,5 @@ const deleteItem = () => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

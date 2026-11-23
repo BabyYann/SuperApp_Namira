@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -75,8 +77,8 @@ const submit = () => {
 <template>
     <Head title="Import Mutasi Bank" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <div>
                      <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
@@ -85,7 +87,7 @@ const submit = () => {
                     <p class="text-sm text-gray-500 mt-1">Upload file CSV mutasi bank untuk pelunasan otomatis.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-2xl mx-auto space-y-6">
             <!-- Toolbar -->
@@ -157,5 +159,5 @@ const submit = () => {
                 </form>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

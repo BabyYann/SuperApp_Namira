@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 
@@ -466,13 +468,13 @@ const eventTypeLabels = {
 <template>
     <Head title="Beranda Utama" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <h2 class="font-extrabold text-2xl text-slate-800 leading-tight">
                 Dashboard
             </h2>
             <p class="text-sm text-slate-500 mt-1">Selamat datang kembali, {{ user?.name }}</p>
-        </template>
+        </div></header>
 
         <!-- ============================================================ -->
         <!-- 📱 NATIVE MOBILE HOME VIEW (Role-Aware for Teacher & Non-Teacher) -->
@@ -1385,6 +1387,6 @@ const eventTypeLabels = {
             </div>
         </div>
 
-    </AuthenticatedLayout>
+    </div>
 </template>
 

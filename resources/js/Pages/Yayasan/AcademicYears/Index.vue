@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { 
@@ -116,8 +118,8 @@ const deleteItem = () => {
 <template>
     <Head title="Tahun Akademik" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col gap-4">
                 <!-- Top Row: Title & Description -->
                 <div>
@@ -127,7 +129,7 @@ const deleteItem = () => {
                     <p class="text-sm text-gray-500 mt-1">Atur periode tahun ajaran dan semester aktif.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
@@ -379,5 +381,5 @@ const deleteItem = () => {
             </div>
         </Teleport>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

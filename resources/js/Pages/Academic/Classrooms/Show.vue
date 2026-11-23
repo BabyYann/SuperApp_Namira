@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -111,8 +113,8 @@ const removeStudent = (student) => {
 <template>
     <Head :title="`Kelas ${classroom.name}`" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <Link :href="route('yayasan.classrooms.index')" class="p-2 rounded-xl hover:bg-white/50 text-gray-500 transition-colors">
                     <ArrowLeftIcon class="w-5 h-5" />
@@ -126,7 +128,7 @@ const removeStudent = (student) => {
                     </p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 px-4 sm:px-6 lg:px-8 pb-12">
             
@@ -307,5 +309,5 @@ const removeStudent = (student) => {
             </div>
         </Teleport>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link } from '@inertiajs/vue3';
 import { 
     BuildingLibraryIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, 
@@ -15,8 +17,8 @@ defineProps({
 <template>
     <Head :title="unit.name" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <Link :href="route('yayasan.units.index')" class="p-2 hover:bg-gray-100 rounded-xl transition-colors">
                     <ArrowLeftIcon class="w-5 h-5 text-gray-500" />
@@ -28,7 +30,7 @@ defineProps({
                     <p class="text-sm text-gray-500 mt-1">Detail informasi satuan pendidikan.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-7xl mx-auto space-y-6">
             <!-- Profile Card -->
@@ -201,5 +203,5 @@ defineProps({
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

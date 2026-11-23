@@ -1,6 +1,8 @@
 <script setup>
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
+
+defineOptions({ layout: StudentLayout });
 import { onMounted, ref, computed, watch } from 'vue';
 import { 
     ClockIcon, 
@@ -212,7 +214,8 @@ onMounted(() => {
 </script>
 
 <template>
-    <StudentLayout title="Portal Siswa">
+    <div>
+        <Head title="Portal Siswa" />
         <div class="max-w-5xl mx-auto space-y-4 pb-20">
             
             <!-- 0. SIBLING SWITCHER (Jika 1 Akun Orang Tua memiliki >1 Anak) -->
@@ -697,5 +700,5 @@ onMounted(() => {
             </div>
 
         </div>
-    </StudentLayout>
+    </div>
 </template>

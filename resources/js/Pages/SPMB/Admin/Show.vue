@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { toDateInputValue, formatIndonesianDate } from '@/Utils/dateHelper';
 import { resolveInitialSmpBreakdownState } from '@/Utils/spmbSmpBreakdown';
 import SmpBreakdownEditor from '@/Components/SPMB/SmpBreakdownEditor.vue';
@@ -383,7 +385,7 @@ const formatRupiah = (amount) => {
 <template>
     <Head :title="`Detail Pendaftar - ${applicant.full_name}`" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="space-y-6 max-w-6xl mx-auto">
             
             <!-- Breadcrumbs & Back -->
@@ -1361,5 +1363,5 @@ const formatRupiah = (amount) => {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

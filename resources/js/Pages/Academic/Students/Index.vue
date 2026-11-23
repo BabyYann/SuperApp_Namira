@@ -1,7 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
+
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -353,8 +358,8 @@ const submitExcelImport = () => {
 <template>
     <Head title="Manajemen Siswa" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
                 <!-- Top Row: Title & Description -->
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
@@ -364,12 +369,12 @@ const submitExcelImport = () => {
                         Total Data: <span class="font-bold text-namira-teal">{{ students.total }} Siswa</span>
                     </p>
                 </div>
-        </template>
+        </div></header>
 
         <div class="py-3 md:py-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
 
             <!-- 📱 NATIVE MOBILE VIEW (block md:hidden) -->
-            <div class="block md:hidden -mx-4 -mt-3 space-y-3.5 pb-8">
+            <div v-if="!isDesktop" class="-mx-4 -mt-3 space-y-3.5 pb-8">
                 <!-- 1. Top Bar & Header Navigation -->
                 <div class="bg-white px-4 pt-3 pb-3 border-b border-slate-100 flex items-center justify-between shadow-2xs">
                     <div class="flex items-center gap-2.5 min-w-0">
@@ -772,7 +777,7 @@ const submitExcelImport = () => {
             <!-- END MOBILE VIEW -->
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
-            <div class="hidden md:block space-y-6">
+            <div v-else class="space-y-6">
                 <!-- Walas Scope Switcher (Desktop) -->
                 <div v-if="isHomeroom && homeroomClass" class="bg-white/80 backdrop-blur-xl p-1.5 rounded-2xl border border-white/60 shadow-xs flex items-center gap-2 max-w-md">
                     <button
@@ -1263,7 +1268,7 @@ const submitExcelImport = () => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>

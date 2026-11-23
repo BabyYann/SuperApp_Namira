@@ -1,6 +1,8 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { ref, watch } from 'vue';
 import { 
     MagnifyingGlassIcon, 
@@ -102,8 +104,8 @@ const closeLightbox = () => {
 <template>
     <Head title="Rekap Pelanggaran" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
              <div class="flex flex-col gap-1">
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                     Rekapitulasi Pelanggaran
@@ -112,7 +114,7 @@ const closeLightbox = () => {
                     Total Kasus: <span class="font-bold text-red-600">{{ violations.total }} Laporan</span>
                 </p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
@@ -446,5 +448,5 @@ const closeLightbox = () => {
             </div>
         </Transition>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

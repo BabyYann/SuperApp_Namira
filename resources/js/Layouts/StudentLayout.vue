@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import { 
     HomeIcon, 
@@ -33,7 +33,8 @@ const props = defineProps({
     title: String,
 });
 
-const user = usePage().props.auth.user;
+const page = usePage();
+const user = computed(() => page.props.auth.user);
 
 // Navigation Items
 const navItems = [
@@ -44,7 +45,21 @@ const navItems = [
     { name: 'Produktif', route: 'student.productivity.index', icon: RocketLaunchIcon, activeIcon: RocketLaunchIconSolid },
 ];
 
-const isActive = (routeName) => route().current(routeName);
+const isActive = (routeName) => {
+    void page.url;
+    return route().current(routeName);
+};
+
+onMounted(() => {
+    if (!window.__namiraPrefetchInvalidator) {
+        window.__namiraPrefetchInvalidator = router.on('start', (event) => {
+            const method = (event?.detail?.visit?.method || 'get').toLowerCase();
+            if (method !== 'get' && typeof router.flushAll === 'function') {
+                router.flushAll();
+            }
+        });
+    }
+});
 
 const logout = () => {
     router.post(route('logout'));
@@ -54,7 +69,7 @@ const logout = () => {
 <template>
     <OfflineStatusBanner />
     <div class="min-h-screen bg-gray-50 flex flex-col">
-        <Head :title="title" />
+        <Head v-if="title" :title="title" />
 
         <!-- DESKTOP TOP NAVIGATION -->
         <!-- Visible only on md screens and up -->
@@ -83,6 +98,8 @@ const logout = () => {
                                 v-for="item in navItems" 
                                 :key="item.name" 
                                 :href="route(item.route)"
+                                prefetch
+                                :cache-for="['15s', '45s']"
                                 class="px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 flex items-center gap-2"
                                 :class="isActive(item.route) 
                                     ? 'bg-white text-teal-800 shadow-lg shadow-white/10 scale-105' 
@@ -172,7 +189,9 @@ const logout = () => {
             <ul class="flex justify-around items-center h-[72px]">
                 <li v-for="item in navItems.slice(0, 4)" :key="item.name" class="flex-1">
                     <Link 
-                        :href="route(item.route)" 
+                        :href="route(item.route)"
+                        prefetch
+                        :cache-for="['15s', '45s']"
                         class="flex flex-col items-center justify-center h-full w-full gap-1 transition-all active:scale-90"
                         :class="isActive(item.route) ? 'text-namira-teal' : 'text-gray-300 hover:text-gray-500'"
                     >
@@ -187,7 +206,9 @@ const logout = () => {
                 </li>
                  <li class="flex-1">
                     <Link 
-                        :href="route('student.menu')" 
+                        :href="route('student.menu')"
+                        prefetch
+                        :cache-for="['15s', '45s']"
                         class="flex flex-col items-center justify-center h-full w-full gap-1 transition-all active:scale-90"
                          :class="isActive('student.menu') ? 'text-namira-teal' : 'text-gray-300 hover:text-gray-500'"
                     >

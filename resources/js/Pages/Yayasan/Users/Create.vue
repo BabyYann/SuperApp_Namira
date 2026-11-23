@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { UserIcon, ShieldCheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline';
@@ -37,8 +39,8 @@ const submit = () => {
 <template>
     <Head title="Tambah User Baru" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
@@ -47,7 +49,7 @@ const submit = () => {
                     <p class="text-sm text-gray-500 mt-1">Tambahkan pengguna baru ke dalam sistem.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="grid grid-cols-1 gap-6 max-w-4xl mx-auto pb-12">
             <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden">
@@ -155,5 +157,5 @@ const submit = () => {
                 </form>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

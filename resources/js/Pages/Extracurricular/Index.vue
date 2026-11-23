@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import {
     PlusIcon,
     MagnifyingGlassIcon,
@@ -489,7 +491,7 @@ const getLinkDestination = (item) => {
 </script>
 
 <template>
-    <AuthenticatedLayout>
+    <div>
         <Head title="Ekstrakurikuler" />
 
         <div class="space-y-4 max-w-5xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-5">
@@ -1372,5 +1374,5 @@ const getLinkDestination = (item) => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

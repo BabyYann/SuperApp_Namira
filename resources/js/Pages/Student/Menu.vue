@@ -1,6 +1,8 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
+
+defineOptions({ layout: StudentLayout });
 import { 
     UserCircleIcon,
     ArrowRightOnRectangleIcon,
@@ -19,7 +21,8 @@ const logout = () => {
 </script>
 
 <template>
-    <StudentLayout title="Menu">
+    <div>
+        <Head title="Menu" />
         <div class="space-y-6">
             <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center gap-4">
                 <div class="w-16 h-16 rounded-full bg-gray-100 overflow-hidden">
@@ -92,5 +95,5 @@ const logout = () => {
                 Namira Portal v1.2.0
             </p>
         </div>
-    </StudentLayout>
+    </div>
 </template>

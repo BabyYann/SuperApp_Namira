@@ -28,6 +28,10 @@ class UserController extends Controller
 
     private function syncSpmbParentRoles(): void
     {
+        if (\Illuminate\Support\Facades\Cache::has('spmb_parent_roles_synced_v1')) {
+            return;
+        }
+
         if (!\Illuminate\Support\Facades\Schema::hasTable('spmb_applicants')) {
             return;
         }
@@ -75,6 +79,8 @@ class UserController extends Controller
                 ->whereNull('team_id')
                 ->update(['team_id' => $row->unit_id]);
         }
+
+        \Illuminate\Support\Facades\Cache::put('spmb_parent_roles_synced_v1', true, now()->addMinutes(30));
     }
 
     public function index(Request $request)
@@ -233,20 +239,61 @@ class UserController extends Controller
             });
         });
         
-        $users = $query->latest('users.id')->paginate(10)->withQueryString()->through(function ($user) {
-            // Manual fetch of roles for display
-            $roles = \DB::table('model_has_roles')
+        $users = $query
+            ->with(['teacher_profile:id,user_id,unit_id,photo', 'staff:id,user_id,unit_id,photo', 'student:id,user_id,unit_id,photo'])
+            ->latest('users.id')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Batch-fetch roles & unit mappings for the 10 paginated users (replaces ~70 per-row N+1 queries)
+        $pageUserIds = $users->getCollection()->pluck('id')->all();
+        $rolesByUser = [];
+        $unitIdsByUser = [];
+
+        if (!empty($pageUserIds)) {
+            $roleRows = \DB::table('model_has_roles')
                 ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-                ->where('model_has_roles.model_id', $user->id)
-                ->pluck('roles.name');
+                ->whereIn('model_has_roles.model_id', $pageUserIds)
+                ->select('model_has_roles.model_id', 'model_has_roles.team_id', 'roles.name')
+                ->get();
+
+            foreach ($roleRows as $row) {
+                $rolesByUser[$row->model_id][] = $row->name;
+                if ($row->team_id) {
+                    $unitIdsByUser[$row->model_id][] = (int) $row->team_id;
+                }
+            }
+
+            $spmbRows = \DB::table('spmb_applicants')
+                ->whereIn('user_id', $pageUserIds)
+                ->whereNotNull('unit_id')
+                ->select('user_id', 'unit_id')
+                ->get();
+
+            foreach ($spmbRows as $row) {
+                $unitIdsByUser[$row->user_id][] = (int) $row->unit_id;
+            }
+        }
+
+        $allUnitsMap = (request()->attributes->get('resolved_all_units') ?? Unit::orderBy('id')->get())->keyBy('id');
+
+        $users->through(function ($user) use ($rolesByUser, $unitIdsByUser, $allUnitsMap) {
+            $uIds = $unitIdsByUser[$user->id] ?? [];
+            if ($user->teacher_profile?->unit_id) $uIds[] = (int) $user->teacher_profile->unit_id;
+            if ($user->staff?->unit_id) $uIds[] = (int) $user->staff->unit_id;
+            if ($user->student?->unit_id) $uIds[] = (int) $user->student->unit_id;
+            $unitNames = collect(array_unique($uIds))
+                ->map(fn ($id) => $allUnitsMap->get($id)?->name)
+                ->filter()
+                ->values();
 
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_photo_url' => $user->profile_photo_url,
-                'roles' => $roles,
-                'units' => $user->getUnitsAttribute()->pluck('name'),
+                'roles' => array_values(array_unique($rolesByUser[$user->id] ?? [])),
+                'units' => $unitNames,
                 'is_active' => !is_null($user->email_verified_at),
                 'created_at' => $user->created_at ? $user->created_at->format('d M Y') : '-',
             ];
@@ -254,7 +301,7 @@ class UserController extends Controller
 
         return Inertia::render('Yayasan/Users/Index', [
             'users' => $users,
-            'units' => $isGlobalAdmin ? Unit::all() : Unit::where('id', session('active_unit_id'))->get(),
+            'units' => $isGlobalAdmin ? $allUnitsMap->values() : $allUnitsMap->where('id', (int) session('active_unit_id'))->values(),
             'roles' => Role::where('name', '!=', 'super_admin_yayasan')->pluck('name'),
             'filters' => [
                 'search' => $request->input('search', ''),
@@ -377,6 +424,8 @@ class UserController extends Controller
         } else {
             $rolesQuery->where('name', '!=', 'super_admin_yayasan');
         }
+
+        $user->load(['teacher_profile:id,user_id,photo', 'staff:id,user_id,photo', 'student:id,user_id,photo']);
 
         return Inertia::render('Yayasan/Users/Edit', [
             'user' => array_merge($user->toArray(), [

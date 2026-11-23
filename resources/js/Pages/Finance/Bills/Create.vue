@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -48,8 +50,8 @@ const submit = () => {
 <template>
     <Head title="Generate Tagihan Massal" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
@@ -61,7 +63,7 @@ const submit = () => {
                     Kembali
                 </Link>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-2xl mx-auto">
              <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 md:p-8">
@@ -145,5 +147,5 @@ const submit = () => {
                 </form>
              </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

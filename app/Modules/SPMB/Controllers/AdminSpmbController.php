@@ -162,80 +162,102 @@ class AdminSpmbController extends Controller
         $isSdKota = $unitCode === 'SD-02' || (str_contains($unitNameLower, 'sd') && str_contains($unitNameLower, 'kota'));
         $isSdKraksaan = !$isSdKota && ($unitCode === 'SD' || str_contains($unitNameLower, 'sd'));
 
-        $indenMasterList = [];
+        $unitSetting = SpmbSetting::where('unit_id', $targetUnit->id)->first();
         $indenMasterStats = null;
+        $indenMasterListResolver = fn () => [];
 
         if ($isSdKraksaan) {
-            $unitSetting = SpmbSetting::where('unit_id', $targetUnit->id)->first();
-            $groupInviteSuffix = !empty($unitSetting?->whatsapp_group_link)
-                ? "\n\nSilakan juga bergabung ke Grup WhatsApp Resmi Orang Tua Calon Murid SD Namira Kraksaan melalui tautan berikut:\n" . $unitSetting->whatsapp_group_link
-                : '';
-
             $allSdApplicants = SpmbApplicant::where('unit_id', $targetUnit->id)
                 ->get(['id', 'registration_number', 'full_name', 'parent_phone', 'father_phone', 'mother_phone', 'status', 'is_inden']);
 
-            // Auto-sync is_inden flag on existing SD applicants if their phone or name matches the 72 Inden master list
-            if (Schema::hasColumn('spmb_applicants', 'is_inden')) {
-                foreach ($allSdApplicants as $sdApp) {
-                    if (!$sdApp->is_inden) {
-                        $matched = $spmbService->matchSdIndenApplicant($sdApp->parent_phone, $sdApp->full_name)
-                            ?? $spmbService->matchSdIndenApplicant($sdApp->father_phone, null)
-                            ?? $spmbService->matchSdIndenApplicant($sdApp->mother_phone, null);
-                        if ($matched) {
-                            $sdApp->update(['is_inden' => true]);
-                            $sdApp->is_inden = true;
+            // Run auto-sync once per 30m (avoids Schema::hasColumn information_schema hit + UPDATE loops on every GET)
+            $syncCacheKey = 'spmb_sd_inden_synced_' . $targetUnit->id;
+            if (!\Illuminate\Support\Facades\Cache::has($syncCacheKey)) {
+                if (Schema::hasColumn('spmb_applicants', 'is_inden')) {
+                    foreach ($allSdApplicants as $sdApp) {
+                        if (!$sdApp->is_inden) {
+                            $matched = $spmbService->matchSdIndenApplicant($sdApp->parent_phone, $sdApp->full_name)
+                                ?? $spmbService->matchSdIndenApplicant($sdApp->father_phone, null)
+                                ?? $spmbService->matchSdIndenApplicant($sdApp->mother_phone, null);
+                            if ($matched) {
+                                $sdApp->update(['is_inden' => true]);
+                                $sdApp->is_inden = true;
+                            }
                         }
                     }
                 }
+                \Illuminate\Support\Facades\Cache::put($syncCacheKey, true, now()->addMinutes(30));
             }
 
+            // O(N) hash maps instead of O(N*M) nested scans
+            $byPhone = [];
+            $byName = [];
+            foreach ($allSdApplicants as $app) {
+                foreach ([$app->parent_phone, $app->father_phone, $app->mother_phone] as $ph) {
+                    $np = $spmbService->normalizePhone($ph);
+                    if ($np !== '' && !isset($byPhone[$np])) {
+                        $byPhone[$np] = $app;
+                    }
+                }
+                $nn = strtolower(trim(preg_replace('/\s+/', ' ', (string) $app->full_name)));
+                if ($nn !== '' && !isset($byName[$nn])) {
+                    $byName[$nn] = $app;
+                }
+            }
+
+            $masterItems = $spmbService->getSdIndenMasterList();
             $registeredCount = 0;
-            foreach ($spmbService->getSdIndenMasterList() as $item) {
+            foreach ($masterItems as $item) {
                 $normPhone = $spmbService->normalizePhone($item['phone']);
                 $normName = strtolower(trim(preg_replace('/\s+/', ' ', $item['full_name'])));
-
-                $matchedApplicant = $allSdApplicants->first(function ($app) use ($spmbService, $normPhone, $normName) {
-                    if ($normPhone !== '') {
-                        if (
-                            $spmbService->normalizePhone($app->parent_phone) === $normPhone ||
-                            $spmbService->normalizePhone($app->father_phone) === $normPhone ||
-                            $spmbService->normalizePhone($app->mother_phone) === $normPhone
-                        ) {
-                            return true;
-                        }
-                    }
-                    $appName = strtolower(trim(preg_replace('/\s+/', ' ', (string) $app->full_name)));
-                    return $normName !== '' && $appName === $normName;
-                });
-
-                if ($matchedApplicant) {
+                $matched = ($normPhone !== '' && isset($byPhone[$normPhone]))
+                    ? $byPhone[$normPhone]
+                    : ($byName[$normName] ?? null);
+                if ($matched) {
                     $registeredCount++;
                 }
-
-                $waPhone = str_starts_with($normPhone, '0') ? '62' . substr($normPhone, 1) : $normPhone;
-                $waText = rawurlencode("Assalamu'alaikum Bapak/Ibu Orang Tua dari ananda {$item['full_name']}, menginformasikan bahwa pendaftaran online SPMB SD Namira Kraksaan Tahun Ajaran 2027/2028 telah dibuka. Silakan melengkapi formulir pendaftaran melalui tautan: " . url('/spmb/daftar/sd') . $groupInviteSuffix);
-
-                $indenMasterList[] = [
-                    'no' => $item['no'],
-                    'full_name' => $item['full_name'],
-                    'phone' => $normPhone,
-                    'previous_school' => $item['previous_school'],
-                    'source_label' => $item['source_label'],
-                    'is_registered' => $matchedApplicant !== null,
-                    'applicant_id' => $matchedApplicant?->id,
-                    'registration_number' => $matchedApplicant?->registration_number,
-                    'status' => $matchedApplicant?->status,
-                    'status_label' => $matchedApplicant?->status_label,
-                    'wa_followup_link' => "https://wa.me/{$waPhone}?text={$waText}",
-                ];
             }
 
-            $totalInden = count($indenMasterList);
+            $totalInden = count($masterItems);
             $indenMasterStats = [
                 'total' => $totalInden,
                 'registered' => $registeredCount,
                 'unregistered' => $totalInden - $registeredCount,
             ];
+
+            // Build heavy 62KB WhatsApp follow-up master list ONLY when user opens the Inden Master modal
+            $indenMasterListResolver = function () use ($masterItems, $spmbService, $byPhone, $byName, $unitSetting) {
+                $groupInviteSuffix = !empty($unitSetting?->whatsapp_group_link)
+                    ? "\n\nSilakan juga bergabung ke Grup WhatsApp Resmi Orang Tua Calon Murid SD Namira Kraksaan melalui tautan berikut:\n" . $unitSetting->whatsapp_group_link
+                    : '';
+
+                $list = [];
+                foreach ($masterItems as $item) {
+                    $normPhone = $spmbService->normalizePhone($item['phone']);
+                    $normName = strtolower(trim(preg_replace('/\s+/', ' ', $item['full_name'])));
+                    $matchedApplicant = ($normPhone !== '' && isset($byPhone[$normPhone]))
+                        ? $byPhone[$normPhone]
+                        : ($byName[$normName] ?? null);
+
+                    $waPhone = str_starts_with($normPhone, '0') ? '62' . substr($normPhone, 1) : $normPhone;
+                    $waText = rawurlencode("Assalamu'alaikum Bapak/Ibu Orang Tua dari ananda {$item['full_name']}, menginformasikan bahwa pendaftaran online SPMB SD Namira Kraksaan Tahun Ajaran 2027/2028 telah dibuka. Silakan melengkapi formulir pendaftaran melalui tautan: " . url('/spmb/daftar/sd') . $groupInviteSuffix);
+
+                    $list[] = [
+                        'no' => $item['no'],
+                        'full_name' => $item['full_name'],
+                        'phone' => $normPhone,
+                        'previous_school' => $item['previous_school'],
+                        'source_label' => $item['source_label'],
+                        'is_registered' => $matchedApplicant !== null,
+                        'applicant_id' => $matchedApplicant?->id,
+                        'registration_number' => $matchedApplicant?->registration_number,
+                        'status' => $matchedApplicant?->status,
+                        'status_label' => $matchedApplicant?->status_label,
+                        'wa_followup_link' => "https://wa.me/{$waPhone}?text={$waText}",
+                    ];
+                }
+                return $list;
+            };
         }
 
         $query = SpmbApplicant::with(['unit', 'user'])
@@ -243,32 +265,49 @@ class AdminSpmbController extends Controller
 
         $this->applyApplicantFilters($query, $request);
 
-        // Statistics
+        // Single aggregate SQL query instead of 8 separate COUNT(*) queries
+        $statRow = DB::table('spmb_applicants')
+            ->where('unit_id', $targetUnit->id)
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN category IN ('internal_tk', 'internal_sd', 'internal') THEN 1 ELSE 0 END) as internal_cnt,
+                SUM(CASE WHEN category IN ('eksternal_umum', 'external_umum', 'external') THEN 1 ELSE 0 END) as external_cnt,
+                SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END) as submitted_cnt,
+                SUM(CASE WHEN status IN ('verified', 'scheduled') THEN 1 ELSE 0 END) as verified_cnt,
+                SUM(CASE WHEN status IN ('accepted', 'partial_paid', 'fully_paid', 'enrolled') THEN 1 ELSE 0 END) as accepted_cnt,
+                SUM(CASE WHEN status = 'enrolled' THEN 1 ELSE 0 END) as enrolled_cnt
+            ")
+            ->first();
+
         $stats = [
-            'total' => SpmbApplicant::where('unit_id', $targetUnit->id)->count(),
-            'internal' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('category', ['internal_tk', 'internal_sd', 'internal'])->count(),
-            'internal_tk' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('category', ['internal_tk', 'internal_sd', 'internal'])->count(),
-            'external_umum' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('category', ['eksternal_umum', 'external_umum', 'external'])->count(),
-            'submitted' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('status', 'submitted')->count(),
-            'verified' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('status', ['verified', 'scheduled'])->count(),
-            'accepted' => SpmbApplicant::where('unit_id', $targetUnit->id)->whereIn('status', ['accepted', 'partial_paid', 'fully_paid', 'enrolled'])->count(),
-            'enrolled' => SpmbApplicant::where('unit_id', $targetUnit->id)->where('status', 'enrolled')->count(),
+            'total' => (int) ($statRow->total ?? 0),
+            'internal' => (int) ($statRow->internal_cnt ?? 0),
+            'internal_tk' => (int) ($statRow->internal_cnt ?? 0),
+            'external_umum' => (int) ($statRow->external_cnt ?? 0),
+            'submitted' => (int) ($statRow->submitted_cnt ?? 0),
+            'verified' => (int) ($statRow->verified_cnt ?? 0),
+            'accepted' => (int) ($statRow->accepted_cnt ?? 0),
+            'enrolled' => (int) ($statRow->enrolled_cnt ?? 0),
         ];
 
         $applicants = $query->latest()->paginate(15)->withQueryString();
 
-        // Ensure SD-02 exists so it always appears in availableUnits
-        Unit::firstOrCreate(
-            ['code' => 'SD-02'],
-            [
-                'name' => 'SD NAMIRA KOTA PROBOLINGGO',
-                'category' => 'formal',
-                'level' => 'SD',
-            ]
-        );
+        // Ensure SD-02 exists (cached check so GET never hits write/lookup queries repeatedly)
+        $allUnits = $request->attributes->get('resolved_all_units');
+        if ($allUnits && !$allUnits->contains(fn ($u) => strtoupper((string) $u->code) === 'SD-02')) {
+            Unit::firstOrCreate(
+                ['code' => 'SD-02'],
+                [
+                    'name' => 'SD NAMIRA KOTA PROBOLINGGO',
+                    'category' => 'formal',
+                    'level' => 'SD',
+                ]
+            );
+            $allUnits = Unit::orderBy('id')->get();
+        }
 
-        $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan']) 
-            ? Unit::select('id', 'name', 'code')->get() 
+        $availableUnits = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])
+            ? ($allUnits ? $allUnits->map->only(['id', 'name', 'code'])->values() : Unit::select('id', 'name', 'code')->get())
             : [];
 
         return Inertia::render('SPMB/Admin/Index', [
@@ -276,9 +315,9 @@ class AdminSpmbController extends Controller
             'stats' => $stats,
             'filters' => $request->only(['search', 'category', 'status', 'unit_id']),
             'unit' => $targetUnit,
-            'setting' => SpmbSetting::where('unit_id', $targetUnit->id)->first(),
+            'setting' => $unitSetting,
             'availableUnits' => $availableUnits,
-            'indenMasterList' => $indenMasterList,
+            'indenMasterList' => Inertia::optional($indenMasterListResolver),
             'indenMasterStats' => $indenMasterStats,
             'privateRegistrationUrl' => $isSdKota ? url('/spmb/daftar/sd-kota') : null,
         ]);

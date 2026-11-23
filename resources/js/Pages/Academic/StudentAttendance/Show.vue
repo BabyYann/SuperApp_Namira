@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, onMounted, watch, computed } from 'vue';
 import Swal from 'sweetalert2';
@@ -196,8 +198,8 @@ const getHistoryWarning = (studentId) => {
 <template>
     <Head :title="`Absensi ${classroom.name}`" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <!-- Title & Date -->
                 <div class="flex flex-col gap-1">
@@ -247,7 +249,7 @@ const getHistoryWarning = (studentId) => {
                     </div>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Mobile Header: Class Title, Date Navigation, & Live Stats -->
@@ -500,5 +502,5 @@ const getHistoryWarning = (studentId) => {
                 </button>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

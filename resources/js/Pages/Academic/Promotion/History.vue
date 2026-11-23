@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
 import { ClockIcon, FunnelIcon, DocumentArrowDownIcon, ArrowUturnLeftIcon } from '@heroicons/vue/24/outline';
@@ -75,8 +77,8 @@ const rollback = (promotion) => {
 <template>
     <Head title="Riwayat Kenaikan Kelas" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-2xl text-gray-800 leading-tight flex items-center gap-3">
@@ -89,7 +91,7 @@ const rollback = (promotion) => {
                     + Proses Baru
                 </a>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Filters -->
@@ -205,5 +207,5 @@ const rollback = (promotion) => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

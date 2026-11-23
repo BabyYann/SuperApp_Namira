@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { 
     HomeIcon, 
@@ -60,6 +60,12 @@ const isGlobalAdmin = computed(() => userRoles.value.some(r => ['super_admin_yay
 
 const showDrawer = ref(false);
 const showUnitModal = ref(false);
+
+// Auto-close mobile drawer & unit sheet when persistent layout navigates to a new page
+watch(() => page.url, () => {
+    showDrawer.value = false;
+    showUnitModal.value = false;
+});
 
 const canSwitchUnit = computed(() => {
     return userRoles.value.some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'humas_yayasan', 'staff_yayasan'].includes(r));
@@ -150,7 +156,7 @@ const isRouteActive = (pattern) => {
         <!-- Top Bar (Header HP Guru & Staff - White Clean Theme) -->
         <header class="bg-white/95 text-slate-900 sticky top-0 z-40 px-4 py-3 shadow-sm flex items-center justify-between border-b border-slate-200/80 backdrop-blur-xl">
             <div class="flex items-center gap-3">
-                <Link :href="safeRoute('profile.edit')" class="relative group">
+                <Link prefetch :cache-for="['15s', '45s']" :href="safeRoute('profile.edit')" class="relative group">
                     <div class="w-10 h-10 rounded-full bg-teal-600 p-0.5 ring-2 ring-teal-500/30 overflow-hidden shadow-sm">
                         <img 
                             v-if="user?.profile_photo_url" 
@@ -187,7 +193,7 @@ const isRouteActive = (pattern) => {
 
             <!-- Profile & Quick Action -->
             <div class="flex items-center gap-2">
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     :href="safeRoute('profile.edit')" 
                     class="p-2 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors border border-slate-200/80"
                     title="Profil Saya"
@@ -207,7 +213,7 @@ const isRouteActive = (pattern) => {
             <div class="flex justify-around items-center max-w-md mx-auto relative">
                 
                 <!-- 1. Beranda (Selalu Ada) -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     :href="safeRoute('dashboard')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('dashboard') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
@@ -221,7 +227,7 @@ const isRouteActive = (pattern) => {
 
                 <!-- 2. Dynamic Primary Action -->
                 <!-- Daycare: Data Ananda -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-if="isDaycare"
                     :href="safeRoute('daycare.children.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -232,7 +238,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Pengawas: Monitoring -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="isPengawas"
                     :href="safeRoute('yayasan.monitoring.index', {}, '#')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -243,7 +249,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Guru: Jurnal -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="isTeacher || hasRole('teacher')"
                     :href="safeRoute('yayasan.teaching-journal.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -257,7 +263,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Pelatih Ekskul: Kegiatan Ekskul -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="hasRole('pelatih_ekskul')"
                     :href="safeRoute('extracurricular.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -268,7 +274,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Humas: Berita -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="hasRole('humas_unit')"
                     :href="safeRoute('public-relations.news.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -282,7 +288,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Staff biasa: Presensi -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else
                     :href="safeRoute('attendance.index', { tab: 'personal' })"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -298,7 +304,7 @@ const isRouteActive = (pattern) => {
                 <!-- 3. CENTER FAB: Daycare -> Absensi Saya / Pengawas -> Monitoring / Other -> QR Scanner -->
                 <div class="flex-1 flex justify-center -mt-6">
                     <!-- Daycare: Absensi Saya (Presensi Pegawai) -->
-                    <Link 
+                    <Link prefetch :cache-for="['15s', '45s']" 
                         v-if="isDaycare"
                         :href="safeRoute('employee.attendance.index')"
                         class="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
@@ -307,7 +313,7 @@ const isRouteActive = (pattern) => {
                         <FingerPrintIcon class="w-7 h-7 stroke-[2.2]" />
                     </Link>
                     <!-- Pengawas: Statistik & Monitoring -->
-                    <Link 
+                    <Link prefetch :cache-for="['15s', '45s']" 
                         v-else-if="isPengawas"
                         :href="safeRoute('yayasan.monitoring.index')"
                         class="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-700 to-blue-500 text-white flex items-center justify-center shadow-lg shadow-indigo-700/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
@@ -316,7 +322,7 @@ const isRouteActive = (pattern) => {
                         <component :is="PresentationChartBarIconSolid" class="w-7 h-7" />
                     </Link>
                     <!-- Semua user lain: QR Scanner -->
-                    <Link 
+                    <Link prefetch :cache-for="['15s', '45s']" 
                         v-else
                         :href="safeRoute('yayasan.student-checkin.index')"
                         class="w-14 h-14 rounded-full bg-gradient-to-tr from-teal-700 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-teal-700/40 ring-4 ring-white active:scale-90 transition-all transform hover:scale-105"
@@ -328,7 +334,7 @@ const isRouteActive = (pattern) => {
 
                 <!-- 4. Dynamic Secondary Action -->
                 <!-- Daycare: Handover -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-if="isDaycare"
                     :href="safeRoute('daycare.attendance.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -339,7 +345,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Pengawas: Monitoring -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="isPengawas"
                     :href="safeRoute('yayasan.monitoring.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -350,7 +356,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Wali Kelas: Absensi Siswa -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="hasRole('wali_kelas')"
                     :href="safeRoute('yayasan.student-attendance.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -364,7 +370,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Guru Al-Qur'an / Koordinator Al-Qur'an: Input Nilai Ummi -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="!isDaycare && page.props.session?.features?.quran !== false && hasRole(['guru_alquran', 'koordinator_alquran'])"
                     :href="safeRoute('quran.assessments.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -378,7 +384,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Humas: Kampus -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="hasRole('humas_unit')"
                     :href="safeRoute('public-relations.university-destinations.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -389,7 +395,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- BK / Kesiswaan: Konseling -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="hasRole(['bk', 'counseling', 'koordinator_kesiswaan'])"
                     :href="safeRoute('counseling.sessions.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -400,7 +406,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Staff biasa (Non-guru): Giat Tugas / Logbook Harian -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else-if="!isTeacher"
                     :href="safeRoute('employee.activity-logs.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -414,7 +420,7 @@ const isRouteActive = (pattern) => {
                 </Link>
 
                 <!-- Guru / Lainnya: Presensi Pegawai -->
-                <Link 
+                <Link prefetch :cache-for="['15s', '45s']" 
                     v-else
                     :href="safeRoute('employee.attendance.index', { tab: 'personal' })"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
@@ -481,7 +487,7 @@ const isRouteActive = (pattern) => {
                                 <span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-black uppercase tracking-wider">Inden</span>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('spmb.admin.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -492,7 +498,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-700 transition-colors">Data SPMB</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('spmb.admin.settings')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -514,7 +520,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan', 'wali_kelas', 'teacher'])"
                                     :href="safeRoute('yayasan.students.index')" 
                                     @click="showDrawer = false"
@@ -526,7 +532,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Data Siswa</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan', 'wali_kelas'])"
                                     :href="safeRoute('yayasan.classrooms.index')" 
                                     @click="showDrawer = false"
@@ -538,7 +544,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Data Kelas</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan'])"
                                     :href="safeRoute('yayasan.teachers.index')" 
                                     @click="showDrawer = false"
@@ -550,7 +556,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-indigo-600 transition-colors">Data Guru</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.schedules.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -561,7 +567,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Jadwal</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.teaching-journal.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -572,7 +578,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Jurnal Mapel</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.subjects.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -583,7 +589,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Mata Pelajaran</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.learning-objectives.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -594,7 +600,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Tujuan Belajar</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.student-attendance.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -605,7 +611,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Presensi Siswa</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="hasRole(['admin_unit', 'admin_yayasan', 'super_admin_yayasan'])"
                                     :href="safeRoute('yayasan.promotion.index')" 
                                     @click="showDrawer = false"
@@ -617,7 +623,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Kenaikan Kelas</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.holidays.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -628,7 +634,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-rose-600 transition-colors">Kalender</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.student-checkin.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -639,7 +645,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Absen Gerbang</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['koordinator_kurikulum', 'admin_unit', 'kepala_sekolah'])"
                                     :href="safeRoute('yayasan.academic-years.index')" 
                                     @click="showDrawer = false"
@@ -662,7 +668,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('quran.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -673,7 +679,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-700 transition-colors">Kelompok</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('quran.students.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -684,7 +690,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Naik Jilid</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('quran.assessments.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -695,7 +701,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-700 transition-colors">Input Nilai</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('quran.reports.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -706,7 +712,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-700 transition-colors">Rapor Ummi</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran'])"
                                     :href="safeRoute('quran.rubrics.index')" 
                                     @click="showDrawer = false"
@@ -718,7 +724,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-700 transition-colors">Rubrik</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran'])"
                                     :href="safeRoute('quran.settings.index')" 
                                     @click="showDrawer = false"
@@ -741,7 +747,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('extracurricular.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -752,7 +758,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Ekskul</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('counseling.sessions.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -763,7 +769,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-pink-600 transition-colors">Konseling</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('counseling.violations.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -774,7 +780,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-rose-600 transition-colors">Pelanggaran</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('counseling.achievements.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -785,7 +791,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Prestasi</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['bk', 'koordinator_kesiswaan', 'admin_unit'])"
                                     :href="safeRoute('counseling.categories.index')" 
                                     @click="showDrawer = false"
@@ -808,7 +814,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('public-relations.news.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -819,7 +825,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-slate-700 transition-colors">Berita</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('public-relations.university-destinations.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -830,7 +836,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Kampus</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('public-relations.events.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -841,7 +847,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Event</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('public-relations.testimonials.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -852,7 +858,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-pink-600 transition-colors">Testimoni</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('public-relations.partners.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -863,7 +869,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-indigo-600 transition-colors">Mitra</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('public-relations.banners.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -874,7 +880,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Hero Banner</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="hasRole('humas_unit') && !isGlobalAdmin && !hasRole(['staff_yayasan', 'admin_unit'])"
                                     :href="safeRoute('yayasan.job-vacancies.index')" 
                                     @click="showDrawer = false"
@@ -886,7 +892,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Lowongan</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="hasRole('humas_unit') && !isGlobalAdmin && !hasRole(['staff_yayasan', 'admin_unit'])"
                                     :href="safeRoute('yayasan.applicants.index')" 
                                     @click="showDrawer = false"
@@ -909,7 +915,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('daycare.children.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -920,7 +926,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Data Ananda</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('daycare.attendance.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -931,7 +937,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Handover</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.holidays.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -954,7 +960,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.dashboard')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -965,7 +971,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-slate-700 transition-colors">Dashboard</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.inventories.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -976,7 +982,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Inventaris</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.loans.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -987,7 +993,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Peminjaman</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.maintenance.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -998,7 +1004,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Pemeliharaan</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.rooms.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1009,7 +1015,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Ruangan</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.categories.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1031,7 +1037,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.inventories.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1042,7 +1048,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Katalog Aset</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.rooms.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1053,7 +1059,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Daftar Ruang</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.loans.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1064,7 +1070,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Pinjam Alat</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('sarpar.maintenance.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1086,7 +1092,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.finance.dashboard')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1097,7 +1103,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Keuangan</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.finance.bills.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1108,7 +1114,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Tagihan</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.finance.transactions.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1119,7 +1125,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Pembayaran</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.finance.reports.arrears')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1130,7 +1136,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-rose-600 transition-colors">Tunggakan</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.finance.types.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1141,7 +1147,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Pos Bayar</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('yayasan.finance.accounts.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1163,7 +1169,7 @@ const isRouteActive = (pattern) => {
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan', 'admin_unit', 'kepala_sekolah', 'staff_yayasan'])"
                                     :href="safeRoute('yayasan.users.index')" 
                                     @click="showDrawer = false"
@@ -1175,7 +1181,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-indigo-600 transition-colors">Manajemen User</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="hasRole(['admin_unit', 'super_admin_yayasan', 'admin_yayasan'])"
                                     :href="safeRoute('yayasan.staff.index')" 
                                     @click="showDrawer = false"
@@ -1187,7 +1193,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Data Staf</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'pembina_yayasan', 'pengawas_yayasan', 'staff_yayasan'])"
                                     :href="safeRoute('attendance-approvals.index', {}, safeRoute('yayasan.attendance-approvals.index'))" 
                                     @click="showDrawer = false"
@@ -1199,7 +1205,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">ACC Izin</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('attendance.index', { tab: 'personal' })" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1210,7 +1216,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Presensi Saya</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('employee.activity-logs.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -1221,7 +1227,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Giat Tugas</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'staff_yayasan'])"
                                     :href="safeRoute('yayasan.activity-logs.feed')" 
                                     @click="showDrawer = false"
@@ -1233,7 +1239,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-purple-600 transition-colors">Linimasa SDM</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit', 'staff_yayasan'])"
                                     :href="safeRoute('yayasan.attendance-data.index')" 
                                     @click="showDrawer = false"
@@ -1245,7 +1251,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-cyan-600 transition-colors">Rekap Absen</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['staff_yayasan', 'admin_unit'])"
                                     :href="safeRoute('yayasan.job-vacancies.index')" 
                                     @click="showDrawer = false"
@@ -1257,7 +1263,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Lowongan</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['staff_yayasan', 'admin_unit'])"
                                     :href="safeRoute('yayasan.applicants.index')" 
                                     @click="showDrawer = false"
@@ -1269,7 +1275,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Pelamar Kerja</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['kepala_sekolah', 'admin_unit'])"
                                     :href="safeRoute('yayasan.monitoring.index')" 
                                     @click="showDrawer = false"
@@ -1281,7 +1287,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-sky-600 transition-colors">Monitoring</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin"
                                     :href="safeRoute('yayasan.units.index')" 
                                     @click="showDrawer = false"
@@ -1293,7 +1299,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-emerald-600 transition-colors">Master Unit</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="isGlobalAdmin || hasRole(['admin_unit'])"
                                     :href="safeRoute('yayasan.attendance-locations.index')" 
                                     @click="showDrawer = false"
@@ -1305,7 +1311,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-orange-600 transition-colors">Titik Absen</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     v-if="hasRole(['super_admin_yayasan'])"
                                     :href="safeRoute('yayasan.settings.index')" 
                                     @click="showDrawer = false"
@@ -1317,7 +1323,7 @@ const isRouteActive = (pattern) => {
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-slate-700 transition-colors">Pengaturan</span>
                                 </Link>
 
-                                <Link 
+                                <Link prefetch :cache-for="['15s', '45s']" 
                                     :href="safeRoute('profile.edit')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -278,8 +280,8 @@ watch(qStatusFilter, () => {
 <template>
     <Head title="Pusat Kontrol & Pengaturan" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div>
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight flex items-center gap-2">
                     <Cog6ToothIcon class="w-7 h-7 text-teal-600" />
@@ -287,7 +289,7 @@ watch(qStatusFilter, () => {
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">Identitas sistem, kontrol fitur & modul, dan manajemen hak akses.</p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-7xl mx-auto pb-24 space-y-6">
 
@@ -889,5 +891,5 @@ watch(qStatusFilter, () => {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

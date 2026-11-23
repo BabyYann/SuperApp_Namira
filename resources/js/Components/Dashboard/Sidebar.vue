@@ -1,7 +1,7 @@
 <script setup>
 import { Link, usePage, router } from '@inertiajs/vue3';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { 
     ComputerDesktopIcon, UserGroupIcon, BuildingOffice2Icon, CalendarDaysIcon, 
     MapPinIcon, SunIcon, ChartBarSquareIcon, ChartBarIcon, BanknotesIcon, CreditCardIcon, 
@@ -273,6 +273,10 @@ const toggleGroup = (key, group) => {
 };
 
 const page = usePage();
+
+watch(() => page.url, () => {
+    showUnitMenu.value = false;
+});
 
 const isActive = (routeName) => {
     // Track Inertia page.url reactively so persistent layouts update active states on navigation
@@ -1112,6 +1116,8 @@ const filteredMenuGroups = computed(() => {
                 <!-- Dashboard -->
                  <Link
                     :href="hasRole('siswa') || hasRole('student') ? route('student.dashboard') : route('yayasan.dashboard')"
+                    prefetch
+                    :cache-for="['15s', '45s']"
                     :title="!isSidebarOpen ? 'Dashboard' : undefined"
                     class="flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 group relative"
                     :class="[
@@ -1150,6 +1156,8 @@ const filteredMenuGroups = computed(() => {
                             v-for="item in group.items" 
                             :key="item.route"
                             :href="resolveRoute(item.route)"
+                            :prefetch="item.route !== '/pulse'"
+                            :cache-for="['15s', '45s']"
                             :title="!isSidebarOpen ? item.label : undefined"
                             class="flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 group relative"
                             :class="[
@@ -1186,6 +1194,8 @@ const filteredMenuGroups = computed(() => {
                 <Link
                     v-if="hasRole('super_admin_yayasan')"
                     :href="route('yayasan.settings.index')"
+                    prefetch
+                    :cache-for="['15s', '45s']"
                     title="Pengaturan Sistem"
                     class="p-2 rounded-xl text-slate-400 hover:text-teal-700 hover:bg-white shadow-xs border border-transparent hover:border-slate-200/80 transition-all duration-200 group flex items-center justify-center shrink-0"
                     :class="[

@@ -1,7 +1,11 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { useMediaQuery } from '@vueuse/core';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import Pagination from '@/Components/Pagination.vue';
 import { toDateInputValue, formatIndonesianDate } from '@/Utils/dateHelper';
 import { resolveInitialSmpBreakdownState } from '@/Utils/spmbSmpBreakdown';
@@ -46,7 +50,7 @@ const props = defineProps({
     },
     indenMasterList: {
         type: Array,
-        default: () => [],
+        default: null,
     },
     indenMasterStats: {
         type: Object,
@@ -76,8 +80,22 @@ const copyPrivateLink = () => {
 };
 
 const showIndenModal = ref(false);
+const isLoadingIndenList = ref(false);
 const indenFilter = ref('all'); // all, unregistered, registered
 const indenSearch = ref('');
+
+// Load heavy 62KB Inden Master list on-demand via Inertia::optional() only when modal opens
+watch(showIndenModal, (open) => {
+    if (open && !Array.isArray(props.indenMasterList)) {
+        isLoadingIndenList.value = true;
+        router.reload({
+            only: ['indenMasterList'],
+            preserveState: true,
+            preserveScroll: true,
+            onFinish: () => { isLoadingIndenList.value = false; },
+        });
+    }
+});
 
 const filteredIndenMaster = computed(() => {
     let list = props.indenMasterList || [];
@@ -476,7 +494,7 @@ const getStatusBadgeClass = (s) => {
 <template>
     <Head :title="`Data Pendaftar SPMB Inden ${unit?.name || 'Namira'}`" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="space-y-3 md:space-y-6">
             
             <!-- 📱 MOBILE COMPACT TOP BAR (md:hidden) -->
@@ -807,7 +825,7 @@ const getStatusBadgeClass = (s) => {
             </div>
 
             <!-- 📱 MOBILE PWA ULTRA-COMPACT LIST (block md:hidden) -->
-            <div class="block md:hidden space-y-2">
+            <div v-if="!isDesktop" class="space-y-2">
                 <div 
                     v-for="app in applicants.data" 
                     :key="`mobile-${app.id}`"
@@ -955,7 +973,7 @@ const getStatusBadgeClass = (s) => {
             </div>
 
             <!-- 🖥️ DESKTOP APPLICANTS TABLE (hidden md:block) -->
-            <div class="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div v-else class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
@@ -1544,7 +1562,11 @@ const getStatusBadgeClass = (s) => {
 
                     <!-- Scrollable List -->
                     <div class="overflow-y-auto flex-1 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-100 dark:divide-slate-800">
+                        <div v-if="isLoadingIndenList" class="p-8 text-center text-xs text-slate-400 animate-pulse">
+                            Memuat daftar master inden...
+                        </div>
                         <div
+                            v-else
                             v-for="item in filteredIndenMaster"
                             :key="`inden-${item.no}`"
                             class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs"
@@ -1843,5 +1865,5 @@ const getStatusBadgeClass = (s) => {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

@@ -69,17 +69,21 @@ class StudentController extends Controller
             $activeScope = 'all';
         }
 
-        // Self-heal: ensure active students in this unit have academic_year_id assigned to active year
+        // Self-heal once per hour per unit+year (avoids running write UPDATE on every GET visit)
         if ($activeYear && $unitId) {
-            Student::where('unit_id', $unitId)
-                ->where(function ($q) use ($activeYear) {
-                    $q->whereNull('academic_year_id')
-                      ->orWhere(function ($sub) use ($activeYear) {
-                          $sub->whereNotNull('classroom_id')
-                              ->where('academic_year_id', '!=', $activeYear->id);
-                      });
-                })
-                ->update(['academic_year_id' => $activeYear->id]);
+            $healKey = "students_year_healed_{$unitId}_{$activeYear->id}";
+            if (!\Illuminate\Support\Facades\Cache::has($healKey)) {
+                Student::where('unit_id', $unitId)
+                    ->where(function ($q) use ($activeYear) {
+                        $q->whereNull('academic_year_id')
+                          ->orWhere(function ($sub) use ($activeYear) {
+                              $sub->whereNotNull('classroom_id')
+                                  ->where('academic_year_id', '!=', $activeYear->id);
+                          });
+                    })
+                    ->update(['academic_year_id' => $activeYear->id]);
+                \Illuminate\Support\Facades\Cache::put($healKey, true, now()->addHour());
+            }
         }
 
         $studentsQuery = Student::with(['user', 'classroom.homeroomTeacher', 'academicYear'])

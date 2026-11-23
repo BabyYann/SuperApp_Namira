@@ -20,29 +20,41 @@ class PembinaDashboardController extends Controller
     public function index(Request $request)
     {
         $selectedUnitId = $request->query('unit_id', session('active_unit_id'));
-        $activeUnits = Unit::all();
+        $activeUnits = $request->attributes->get('resolved_all_units') ?? Unit::orderBy('id')->get();
 
-        // 1. Student Statistics
-        $studentQuery = Student::query();
-        if ($selectedUnitId) {
-            $studentQuery->where('unit_id', $selectedUnitId);
-        }
-        $totalStudents = $studentQuery->count();
+        // 1. Student Statistics (single GROUP BY instead of extra Unit::withCount + Student::count)
+        $studentCountsByUnit = DB::table('students')
+            ->select('unit_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('unit_id')
+            ->pluck('total', 'unit_id');
 
-        $studentsPerUnit = Unit::withCount('students')->get()->map(function ($unit) {
+        $totalStudents = $selectedUnitId
+            ? (int) ($studentCountsByUnit[(int) $selectedUnitId] ?? 0)
+            : (int) $studentCountsByUnit->sum();
+
+        $studentsPerUnit = $activeUnits->map(function ($unit) use ($studentCountsByUnit) {
             return [
                 'unit_id' => $unit->id,
                 'unit_name' => $unit->name,
-                'count' => $unit->students_count,
+                'count' => (int) ($studentCountsByUnit[$unit->id] ?? 0),
             ];
-        });
+        })->values();
 
-        // 2. Staff & Educator Statistics
-        $totalTeachers = User::role(['teacher', 'wali_kelas'])->count();
-        $totalStaff = User::role(['staff_yayasan', 'staff_unit', 'admin_unit', 'staff_admin_keuangan', 'finance'])->count();
+        // 2. Staff & Educator Statistics (single aggregate query instead of 7x Spatie role lookups)
+        $roleStats = DB::table('model_has_roles as mhr')
+            ->join('roles as r', 'r.id', '=', 'mhr.role_id')
+            ->where('mhr.model_type', User::class)
+            ->selectRaw("
+                COUNT(DISTINCT CASE WHEN r.name IN ('teacher', 'wali_kelas') THEN mhr.model_id END) as teachers_cnt,
+                COUNT(DISTINCT CASE WHEN r.name IN ('staff_yayasan', 'staff_unit', 'admin_unit', 'staff_admin_keuangan', 'finance') THEN mhr.model_id END) as staff_cnt
+            ")
+            ->first();
+
+        $totalTeachers = (int) ($roleStats->teachers_cnt ?? 0);
+        $totalStaff = (int) ($roleStats->staff_cnt ?? 0);
         $totalUsers = User::count();
 
-        // 3. Finance Executive Overview (SPP Collection & Arrears using Eloquent)
+        // 3. Finance Executive Overview (1 aggregate query instead of 2 cloned SUM queries)
         $totalPaidBills = 0;
         $totalUnpaidBills = 0;
         $paymentPercentage = 100;
@@ -53,8 +65,9 @@ class PembinaDashboardController extends Controller
                 $billQuery->whereHas('student', fn($q) => $q->where('unit_id', $selectedUnitId));
             }
 
-            $totalPaidBills = (clone $billQuery)->sum('paid_amount') ?? 0;
-            $totalBillsAmount = (clone $billQuery)->sum('final_amount') ?? 0;
+            $billAgg = $billQuery->selectRaw('COALESCE(SUM(paid_amount), 0) as paid_sum, COALESCE(SUM(final_amount), 0) as final_sum')->first();
+            $totalPaidBills = (float) ($billAgg->paid_sum ?? 0);
+            $totalBillsAmount = (float) ($billAgg->final_sum ?? 0);
             $totalUnpaidBills = max(0, $totalBillsAmount - $totalPaidBills);
             $paymentPercentage = $totalBillsAmount > 0 ? round(($totalPaidBills / $totalBillsAmount) * 100, 1) : 100;
         } catch (\Throwable $e) {

@@ -1,6 +1,8 @@
 <script setup>
 import { watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { BuildingLibraryIcon, ClockIcon, ChevronDownIcon, AdjustmentsHorizontalIcon, CheckCircleIcon } from '@heroicons/vue/24/outline';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -64,8 +66,8 @@ const submit = () => {
 <template>
     <Head title="Tambah Unit Baru" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
@@ -74,7 +76,7 @@ const submit = () => {
                     <p class="text-sm text-gray-500 mt-1">Daftarkan sekolah atau unit baru ke sistem yayasan.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="grid grid-cols-1 gap-6 max-w-4xl mx-auto py-6">
             <div class="bg-white/80 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden relative">
@@ -295,5 +297,5 @@ const submit = () => {
                 </form>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

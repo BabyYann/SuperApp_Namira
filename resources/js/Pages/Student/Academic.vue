@@ -1,6 +1,8 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
+
+defineOptions({ layout: StudentLayout });
 import { ref, computed } from 'vue';
 import { 
     ClockIcon, 
@@ -47,7 +49,8 @@ const sortedDays = computed(() => {
 </script>
 
 <template>
-    <StudentLayout title="Akademik">
+    <div>
+        <Head title="Akademik" />
         <div class="space-y-6">
             
             <!-- Header Compact -->
@@ -244,5 +247,5 @@ const sortedDays = computed(() => {
             </div>
 
         </div>
-    </StudentLayout>
+    </div>
 </template>

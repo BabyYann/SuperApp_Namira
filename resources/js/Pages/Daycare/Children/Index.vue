@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { 
@@ -28,8 +30,8 @@ watch(search, (value) => {
 <template>
     <Head title="Data Ananda Daycare" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h2 class="font-extrabold text-2xl bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent leading-tight flex items-center gap-2">
@@ -47,7 +49,7 @@ watch(search, (value) => {
                     <span>Daftarkan Ananda Baru</span>
                 </Link>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
@@ -175,5 +177,5 @@ watch(search, (value) => {
 
             <Pagination :links="children.links" />
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

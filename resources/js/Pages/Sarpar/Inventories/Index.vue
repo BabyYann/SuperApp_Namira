@@ -1,7 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
+
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
@@ -330,20 +335,20 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
 <template>
     <Head title="Data Inventaris" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div>
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                     Data Inventaris
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">Daftar barang inventaris sekolah</p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto pb-20 space-y-5 md:space-y-6">
 
             <!-- 📱 MOBILE PWA VIEW (block md:hidden) -->
-            <div class="block md:hidden -mx-4 -mt-4 space-y-4">
+            <div v-if="!isDesktop" class="-mx-4 -mt-4 space-y-4">
                 <!-- Header Card with Warehouse Banner Background -->
                 <div class="relative overflow-hidden px-4 pt-5 pb-6 text-white rounded-b-3xl shadow-md border-b border-teal-500/20">
                     <picture class="absolute inset-0 w-full h-full pointer-events-none">
@@ -552,7 +557,7 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
             <!-- END MOBILE VIEW -->
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
-            <div class="hidden md:block space-y-6">
+            <div v-else class="space-y-6">
                 <!-- Executive Hero Banner -->
                 <SarparBanner 
                     title="Data Inventaris & Aset" 
@@ -1174,5 +1179,5 @@ const getTypeBadge = (type) => type === 'consumable' ? 'bg-orange-100 text-orang
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

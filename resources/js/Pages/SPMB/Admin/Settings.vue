@@ -2,6 +2,8 @@
 import { ref, watch } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { 
     ArrowLeftIcon, 
     Cog6ToothIcon, 
@@ -131,7 +133,7 @@ const removePanitia = (panitia) => {
 <template>
     <Head title="Pengaturan & Penugasan Panitia SPMB" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="space-y-6 max-w-5xl mx-auto">
             
             <!-- Breadcrumbs -->
@@ -391,5 +393,5 @@ const removePanitia = (panitia) => {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import L from 'leaflet';
@@ -459,8 +461,8 @@ onUnmounted(() => {
 <template>
     <Head title="Lokasi Absensi" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <div class="flex items-center gap-2">
@@ -485,7 +487,7 @@ onUnmounted(() => {
                     </button>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 max-w-[1600px] mx-auto px-2 md:px-4 flex flex-col lg:flex-row gap-5 h-[calc(100vh-155px)] min-h-[650px]">
             
@@ -721,7 +723,7 @@ onUnmounted(() => {
             </div>
         </Teleport>
 
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style>

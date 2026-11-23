@@ -30,26 +30,28 @@ class AttendanceApprovalController extends Controller
 
         $tab = $request->input('status', 'pending'); // 'pending' or 'history'
 
-        // Reusable unit scope closure
-        $applyUnitScope = function($q) use ($unitId) {
-            if ($unitId) {
-                $roleUserIds = \DB::table('model_has_roles')->where('team_id', $unitId)->pluck('model_id');
-                $teacherUserIds = \App\Modules\Academic\Models\Teacher::where('unit_id', $unitId)->pluck('user_id');
-                $staffUserIds = \App\Modules\Employee\Models\Staff::where('unit_id', $unitId)->pluck('user_id');
-                
-                $unitUserIds = $roleUserIds->concat($teacherUserIds)->concat($staffUserIds)->unique()->filter();
-                
-                $q->whereIn('user_id', $unitUserIds);
-            }
-        };
+        // Compute scoped user IDs once (previously queried twice for pendingCount + table)
+        $unitUserIds = null;
+        if ($unitId) {
+            $roleUserIds = \DB::table('model_has_roles')->where('team_id', $unitId)->pluck('model_id');
+            $teacherUserIds = \App\Modules\Academic\Models\Teacher::where('unit_id', $unitId)->pluck('user_id');
+            $staffUserIds = \App\Modules\Employee\Models\Staff::where('unit_id', $unitId)->pluck('user_id');
+            $unitUserIds = $roleUserIds->concat($teacherUserIds)->concat($staffUserIds)->unique()->filter()->values();
+        }
 
         // Count pending for badge
         $pendingQuery = EmployeeAttendance::where('approval_status', 'pending');
-        $applyUnitScope($pendingQuery);
+        if ($unitUserIds !== null) {
+            $pendingQuery->whereIn('user_id', $unitUserIds);
+        }
         $pendingCount = $pendingQuery->count();
 
-        // Base approvals query for table
-        $query = EmployeeAttendance::with(['user', 'approver', 'location']);
+        // Base approvals query for table (eager-load photo relations in batch to avoid N+1)
+        $query = EmployeeAttendance::with([
+            'user' => fn ($q) => $q->with(['teacher_profile:id,user_id,photo', 'staff:id,user_id,photo']),
+            'approver:id,name,email,profile_photo',
+            'location',
+        ]);
 
         if ($tab === 'history') {
             $query->whereIn('approval_status', ['approved', 'rejected']);
@@ -57,7 +59,9 @@ class AttendanceApprovalController extends Controller
             $query->where('approval_status', 'pending');
         }
 
-        $applyUnitScope($query);
+        if ($unitUserIds !== null) {
+            $query->whereIn('user_id', $unitUserIds);
+        }
 
         if ($request->filled('search')) {
             $search = $request->input('search');

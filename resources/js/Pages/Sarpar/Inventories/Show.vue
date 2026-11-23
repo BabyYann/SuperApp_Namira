@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -61,8 +63,8 @@ const getSourceBadge = (source) => source === 'BOS' ? 'bg-purple-100 text-purple
 <template>
     <Head :title="`Inventaris: ${inventory.name}`" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <Link :href="route('sarpar.inventories.index')" class="p-2 rounded-xl hover:bg-white/50 text-gray-500 transition-colors">
                     <ArrowLeftIcon class="w-5 h-5" />
@@ -72,7 +74,7 @@ const getSourceBadge = (source) => source === 'BOS' ? 'bg-purple-100 text-purple
                     <p class="text-sm font-mono text-gray-500">{{ inventory.code }}</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="max-w-7xl mx-auto px-4 pt-4 md:pt-6 space-y-5 md:space-y-6 pb-12">
             <!-- Hero Banner -->
@@ -313,5 +315,5 @@ const getSourceBadge = (source) => source === 'BOS' ? 'bg-purple-100 text-purple
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

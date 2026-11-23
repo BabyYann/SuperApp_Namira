@@ -53,6 +53,19 @@ class HandleInertiaRequests extends Middleware
             if (!$user->relationLoaded('teacher_profile')) {
                 $user->load(['teacher_profile:id,user_id,unit_id,photo']);
             }
+            // Only load fallback staff/student photo relations when auth user has no direct/teacher photo
+            if (empty($user->profile_photo) && empty($user->teacher_profile?->photo)) {
+                $toLoad = [];
+                if (!$user->relationLoaded('staff')) {
+                    $toLoad[] = 'staff:id,user_id,photo';
+                }
+                if (!$user->relationLoaded('student')) {
+                    $toLoad[] = 'student:id,user_id,photo';
+                }
+                if (!empty($toLoad)) {
+                    $user->load($toLoad);
+                }
+            }
 
             $authUserPayload = array_merge($user->toArray(), [
                 'role' => $allRoles[0] ?? null, // Deprecated

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import NamiraLoader from '@/Components/NamiraLoader.vue';
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
@@ -41,14 +43,14 @@ const triggerButton = () => {
 <template>
     <Head title="Dashboard" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <h2
                 class="text-xl font-bold leading-tight text-gray-800 dark:text-gray-200"
             >
                 Dashboard
             </h2>
-        </template>
+        </div></header>
 
         <!-- Fullscreen Loader Preview -->
         <NamiraLoader 
@@ -153,5 +155,5 @@ const triggerButton = () => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

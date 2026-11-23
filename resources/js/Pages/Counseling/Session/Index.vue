@@ -1,6 +1,8 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { ref, watch, computed } from 'vue';
 import { 
     MagnifyingGlassIcon, 
@@ -79,8 +81,8 @@ const methodIcon = (method) => {
 <template>
     <Head title="Sesi Konseling" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col gap-1">
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                     Sesi Konseling & Coaching
@@ -89,7 +91,7 @@ const methodIcon = (method) => {
                     Jadwal dan riwayat bimbingan individual siswa.
                 </p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
@@ -382,5 +384,5 @@ const methodIcon = (method) => {
             <!-- END DESKTOP VIEW -->
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

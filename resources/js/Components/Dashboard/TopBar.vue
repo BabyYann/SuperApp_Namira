@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import {
@@ -115,6 +116,11 @@ const quickApprove = async (item, status) => {
 };
 
 
+
+const page = usePage();
+watch(() => page.url, () => {
+    isOpen.value = false;
+});
 
 onMounted(() => {
     fetchNotifications();

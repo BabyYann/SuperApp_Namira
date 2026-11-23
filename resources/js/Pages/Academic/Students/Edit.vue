@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -54,12 +56,12 @@ const submit = () => {
 <template>
     <Head title="Edit Siswa" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <h2 class="font-bold text-2xl text-gray-800 dark:text-gray-200 leading-tight">
                 Edit Siswa
             </h2>
-        </template>
+        </div></header>
 
         <div class="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
             <form @submit.prevent="submit" class="space-y-6">
@@ -150,5 +152,5 @@ const submit = () => {
                 </div>
             </form>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -76,8 +78,8 @@ const submitForm = () => {
 <template>
     <Head :title="isEdit ? 'Edit Mitra Kemitraan' : 'Tambah Mitra Baru'" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <Link :href="route('public-relations.partners.index')" class="p-2 bg-white dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition shadow-sm border border-gray-100 dark:border-gray-700">
                     <ArrowLeftIcon class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -91,7 +93,7 @@ const submitForm = () => {
                     </p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-3xl mx-auto space-y-6">
 
@@ -241,5 +243,5 @@ const submitForm = () => {
                 </form>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

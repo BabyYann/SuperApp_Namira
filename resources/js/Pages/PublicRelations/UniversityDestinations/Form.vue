@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { InformationCircleIcon, ExclamationCircleIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/vue/24/outline';
@@ -213,15 +215,15 @@ const submitForm = () => {
 
 <template>
     <Head :title="isEdit ? 'Edit Destinasi' : 'Tambah Destinasi'" />
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col gap-1">
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                     {{ isEdit ? 'Edit Destinasi Universitas' : 'Tambah Destinasi Universitas Baru' }}
                 </h2>
                 <p class="text-sm text-gray-500">Kelola data kunjungan dan destinasi universitas unit sekolah Anda.</p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-5xl mx-auto space-y-6">
 
@@ -469,7 +471,7 @@ const submitForm = () => {
 
             </form>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style>

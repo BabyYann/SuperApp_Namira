@@ -1,6 +1,8 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { ref } from 'vue';
 import { 
     MagnifyingGlassIcon, 
@@ -107,8 +109,8 @@ const getTypeColor = (type) => {
 <template>
     <Head title="Kategori Pelanggaran" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col gap-1">
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                     Master Kategori Pelanggaran
@@ -117,7 +119,7 @@ const getTypeColor = (type) => {
                     Total Kategori: <span class="font-bold text-namira-teal">{{ categories.total }} Jenis</span>
                 </p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
             
@@ -252,5 +254,5 @@ const getTypeColor = (type) => {
             </div>
         </Modal>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

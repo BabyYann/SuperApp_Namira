@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -64,8 +66,8 @@ const printRecap = () => {
 <template>
     <Head title="Laporan Tunggakan" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <div>
                      <h2 class="font-extrabold text-3xl bg-gradient-to-r from-rose-700 to-pink-600 bg-clip-text text-transparent leading-tight tracking-tight">
@@ -74,7 +76,7 @@ const printRecap = () => {
                     <p class="text-sm text-gray-500 mt-1 font-medium">Monitoring kewajiban administrasi siswa.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-8 max-w-7xl mx-auto space-y-5 md:space-y-6">
             
@@ -313,5 +315,5 @@ const printRecap = () => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

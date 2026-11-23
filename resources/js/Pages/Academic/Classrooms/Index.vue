@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router, Link, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -137,8 +139,8 @@ const canManageClass = (classroom) => {
 <template>
     <Head title="Manajemen Kelas" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
                         Manajemen Kelas
@@ -147,7 +149,7 @@ const canManageClass = (classroom) => {
                         Kelas bersifat permanen dan dapat digunakan untuk semua tahun ajaran
                     </p>
                 </div>
-        </template>
+        </div></header>
 
         <!-- Main Content -->
         <div class="py-6 max-w-7xl mx-auto pb-20 space-y-6">
@@ -335,5 +337,5 @@ const canManageClass = (classroom) => {
             </div>
         </Teleport>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

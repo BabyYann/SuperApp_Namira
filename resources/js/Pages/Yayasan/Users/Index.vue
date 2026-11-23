@@ -1,7 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
+
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import { 
     MagnifyingGlassIcon, ChevronDownIcon, ArrowPathIcon, PlusIcon,
     ExclamationTriangleIcon, UserIcon, EnvelopeIcon, PencilSquareIcon, TrashIcon,
@@ -52,7 +57,7 @@ watch(() => props.filters, (newFilters) => {
         if (roleFilter.value !== r) roleFilter.value = r;
         if (unitFilter.value !== u) unitFilter.value = u;
     }
-}, { deep: true });
+});
 
 // Reset Filters
 const resetFilters = () => {
@@ -206,8 +211,8 @@ const submitResetPassword = () => {
 <template>
     <Head title="Manajemen Pengguna" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col gap-4">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
@@ -216,12 +221,12 @@ const submitResetPassword = () => {
                     <p class="text-sm text-gray-500 mt-1">Sistem kontrol akun & hak akses terpusat Sekolah Namira.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-2 md:py-6 max-w-7xl mx-auto space-y-3 md:space-y-6 pb-20">
 
             <!-- 📱 MOBILE PWA ULTRA-COMPACT VIEW (block md:hidden) -->
-            <div class="block md:hidden space-y-2.5">
+            <div v-if="!isDesktop" class="space-y-2.5">
                 <!-- 1. Compact Header + Inline Stats + Button Tambah -->
                 <div class="flex items-center justify-between gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 shadow-2xs">
                     <div class="flex items-center gap-2 min-w-0">
@@ -373,7 +378,7 @@ const submitResetPassword = () => {
             <!-- END MOBILE VIEW -->
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
-            <div class="hidden md:block space-y-6">
+            <div v-else class="space-y-6">
                 <!-- Toolbar: Filters & Actions -->
                 <div class="flex flex-col md:flex-row items-center gap-4">
                     <!-- Search Bar -->
@@ -655,5 +660,5 @@ const submitResetPassword = () => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

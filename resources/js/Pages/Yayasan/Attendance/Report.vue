@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -41,10 +43,10 @@ const downloadReport = () => {
 <template>
     <Head title="Laporan Absensi" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Laporan Absensi Bulanan</h2>
-        </template>
+        </div></header>
 
         <div class="py-12">
             <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
@@ -100,5 +102,5 @@ const downloadReport = () => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

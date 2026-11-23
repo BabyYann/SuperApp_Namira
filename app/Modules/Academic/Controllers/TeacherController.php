@@ -155,33 +155,39 @@ class TeacherController extends Controller
             return $t;
         });
 
-        // Fetch registered users who don't have a teacher profile in this unit yet
-        $existingTeacherUserIds = Teacher::where('unit_id', $unitId)->pluck('user_id')->filter()->toArray();
-        $availableUsersQuery = User::whereNotIn('id', $existingTeacherUserIds);
-        
-        if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
-            $availableUsersQuery->where(function ($q) use ($unitId) {
-                $q->whereHas('roles', function ($sub) use ($unitId) {
-                    $sub->whereRaw("model_has_roles.model_id = users.id AND (model_has_roles.team_id = ? OR model_has_roles.team_id IS NULL)", [$unitId]);
-                })->orDoesntHave('roles');
-            });
-        }
+        // On-demand resolver for Add Teacher modal (saves ~97KB JSON & 2 queries on initial page load)
+        $availableUsersResolver = function () use ($unitId) {
+            $existingTeacherUserIds = Teacher::where('unit_id', $unitId)->pluck('user_id')->filter()->toArray();
+            $availableUsersQuery = User::whereNotIn('id', $existingTeacherUserIds);
 
-        // Return lightweight plain arrays to avoid N+1 on User::$appends['profile_photo_url']
-        $availableUsers = $availableUsersQuery
-            ->latest()
-            ->get(['id', 'name', 'email'])
-            ->map(fn ($u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'email' => $u->email,
-            ])
-            ->values();
+            if (!auth()->user()->hasAnyRole(['super_admin_yayasan', 'admin_yayasan'])) {
+                $availableUsersQuery->where(function ($q) use ($unitId) {
+                    $q->whereHas('roles', function ($sub) use ($unitId) {
+                        $sub->whereRaw("model_has_roles.model_id = users.id AND (model_has_roles.team_id = ? OR model_has_roles.team_id IS NULL)", [$unitId]);
+                    })->orDoesntHave('roles');
+                });
+            }
 
-        // Statistics
-        $totalTeachers = Teacher::where('unit_id', $unitId)->count();
-        $countL = Teacher::where('unit_id', $unitId)->where('gender', 'L')->count();
-        $countP = Teacher::where('unit_id', $unitId)->where('gender', 'P')->count();
+            return $availableUsersQuery
+                ->latest()
+                ->get(['id', 'name', 'email'])
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                ])
+                ->values();
+        };
+
+        // Combined gender + total stats in 1 query (instead of 3 separate COUNT queries)
+        $genderRow = \DB::table('teachers')
+            ->where('unit_id', $unitId)
+            ->selectRaw("COUNT(*) as total, SUM(CASE WHEN gender = 'L' THEN 1 ELSE 0 END) as male, SUM(CASE WHEN gender = 'P' THEN 1 ELSE 0 END) as female")
+            ->first();
+
+        $totalTeachers = (int) ($genderRow->total ?? 0);
+        $countL = (int) ($genderRow->male ?? 0);
+        $countP = (int) ($genderRow->female ?? 0);
         $countQuran = Teacher::where('unit_id', $unitId)
             ->whereExists(function ($sub) use ($unitId) {
                 $sub->select(\DB::raw(1))
@@ -198,7 +204,7 @@ class TeacherController extends Controller
 
         return Inertia::render('Academic/Teachers/Index', [
             'teachers' => $teachers,
-            'availableUsers' => $availableUsers,
+            'availableUsers' => Inertia::optional($availableUsersResolver),
             'filters' => request()->only(['search', 'gender', 'teacher_type']),
             'stats' => [
                 'total' => $totalTeachers,

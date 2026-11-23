@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
@@ -58,8 +60,8 @@ const submit = () => {
 <template>
     <Head title="Pendaftaran Ananda Daycare Baru" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <Link :href="route('daycare.children.index')" class="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
                     <ArrowLeftIcon class="w-5 h-5" />
@@ -69,7 +71,7 @@ const submit = () => {
                     <p class="text-xs text-slate-500">Input informasi anak, foto, kontak ortu, dan catatan medis.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <form @submit.prevent="submit" class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-8 space-y-8">
@@ -207,5 +209,5 @@ const submit = () => {
 
             </form>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

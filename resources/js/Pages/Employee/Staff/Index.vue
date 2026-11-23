@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { 
@@ -146,8 +148,8 @@ const deleteItem = () => {
 <template>
     <Head title="Manajemen Staf" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div>
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                     Tenaga Kependidikan
@@ -156,7 +158,7 @@ const deleteItem = () => {
                     Total Data: <span class="font-bold text-namira-teal">{{ stats.total }} Staf</span>
                 </p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
@@ -482,5 +484,5 @@ const deleteItem = () => {
             </div>
         </Teleport>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

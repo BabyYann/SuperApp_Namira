@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import { 
     AcademicCapIcon, UserGroupIcon, BanknotesIcon, BuildingOffice2Icon,
@@ -33,8 +35,8 @@ const printExecutiveReport = () => {
 <template>
     <Head title="Executive Dashboard - Pembina Yayasan" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold rounded-full tracking-wider uppercase mb-1">
@@ -70,7 +72,7 @@ const printExecutiveReport = () => {
                     </button>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-7xl mx-auto space-y-8 print:py-0 print:max-w-none">
             <!-- Welcome Hero Banner for Pembina -->
@@ -273,5 +275,5 @@ const printExecutiveReport = () => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

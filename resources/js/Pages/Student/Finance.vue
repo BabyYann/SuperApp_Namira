@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import StudentLayout from '@/Layouts/StudentLayout.vue';
+
+defineOptions({ layout: StudentLayout });
 import Modal from '@/Components/Modal.vue';
 import { compressImageFile } from '@/Utils/imageCompressor';
 import { 
@@ -107,7 +109,8 @@ const getStatusLabel = (status) => {
 </script>
 
 <template>
-    <StudentLayout title="Keuangan">
+    <div>
+        <Head title="Keuangan" />
         <div class="space-y-8">
             
             <!-- Header & Stats -->
@@ -330,5 +333,5 @@ const getStatusLabel = (status) => {
             </Modal>
 
         </div>
-    </StudentLayout>
+    </div>
 </template>

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import { 
@@ -181,7 +183,7 @@ const getEventTypeBadge = (type) => {
 <template>
     <Head title="Kalender Akademik" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="py-6 max-w-7xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
             
             <!-- Header -->
@@ -392,5 +394,5 @@ const getEventTypeBadge = (type) => {
                 </div>
             </div>
         </Modal>
-    </AuthenticatedLayout>
+    </div>
 </template>

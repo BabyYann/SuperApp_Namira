@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
@@ -122,7 +124,7 @@ const getWaLink = (phone, name, title) => {
 <template>
     <Head title="Daftar Pelamar Kerja" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="py-6 max-w-7xl mx-auto space-y-6 px-4 sm:px-6">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -459,5 +461,5 @@ const getWaLink = (phone, name, title) => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

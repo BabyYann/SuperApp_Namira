@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ArrowUpTrayIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 import { ref, watch } from 'vue';
@@ -46,8 +48,8 @@ const formatDate = (date) => new Date(date).toLocaleDateString('id-ID', { day: '
 <template>
     <Head title="Riwayat Transaksi" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <div>
                      <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
@@ -56,7 +58,7 @@ const formatDate = (date) => new Date(date).toLocaleDateString('id-ID', { day: '
                     <p class="text-sm text-gray-500 mt-1">Daftar pembayaran masuk & alokasi dana.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
             
@@ -226,5 +228,5 @@ const formatDate = (date) => new Date(date).toLocaleDateString('id-ID', { day: '
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

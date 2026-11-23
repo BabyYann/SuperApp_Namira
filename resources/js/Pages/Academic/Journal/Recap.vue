@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { 
@@ -72,7 +74,7 @@ const fetchRecap = () => {
 <template>
     <Head :title="`Rekap Jurnal - ${monthName}`" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="py-2 md:py-6 max-w-4xl mx-auto space-y-2.5 md:space-y-6">
 
             <!-- Top Header & Navigation -->
@@ -245,5 +247,5 @@ const fetchRecap = () => {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

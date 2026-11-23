@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
@@ -120,7 +122,7 @@ const formatDate = (dateStr) => {
 <template>
     <Head title="Kelola Lowongan Karir" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="py-6 max-w-7xl mx-auto space-y-6 px-4 sm:px-6">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -370,5 +372,5 @@ const formatDate = (dateStr) => {
                 </form>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

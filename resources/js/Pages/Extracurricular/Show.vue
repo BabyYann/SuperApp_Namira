@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import {
     ArrowLeftIcon,
     CalendarDaysIcon,
@@ -618,7 +620,7 @@ const zoomPhoto = (url) => {
 </script>
 
 <template>
-    <AuthenticatedLayout>
+    <div>
         <Head :title="`${activity.name} - Kelola Ekstrakurikuler`" />
 
         <div class="space-y-3.5 pb-24 sm:pb-16 max-w-5xl mx-auto px-1 sm:px-3">
@@ -2285,5 +2287,5 @@ const zoomPhoto = (url) => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import MobileAppShell from '@/Layouts/MobileAppShell.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import Pagination from '@/Components/Pagination.vue';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
@@ -350,7 +351,7 @@ const getAvatarColor = (name) => {
 <template>
     <Head title="Persetujuan Absensi & Izin" />
 
-    <component :is="isMobile ? MobileAppShell : AuthenticatedLayout">
+    <div>
         
         <div class="max-w-4xl mx-auto px-4 py-3 pb-28 sm:py-6 w-full min-w-0 box-border">
             
@@ -999,5 +1000,5 @@ const getAvatarColor = (name) => {
             </div>
         </div>
 
-    </component>
+    </div>
 </template>

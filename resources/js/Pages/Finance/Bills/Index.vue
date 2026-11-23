@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch, computed } from 'vue';
 import { 
@@ -64,8 +66,8 @@ const statusLabel = (status) => {
 <template>
     <Head title="Daftar Tagihan Siswa" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                         Daftar Tagihan Siswa
@@ -74,7 +76,7 @@ const statusLabel = (status) => {
                         Total: <span class="font-bold text-namira-teal">{{ bills.total }} Tagihan</span>
                     </p>
                 </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
             
@@ -285,5 +287,5 @@ const statusLabel = (status) => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

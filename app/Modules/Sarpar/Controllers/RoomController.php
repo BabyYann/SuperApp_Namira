@@ -33,25 +33,32 @@ class RoomController extends Controller
                 return $room;
             });
 
-        // Get classrooms with inventory count
-        $classrooms = Classroom::where('unit_id', $unitId)
+        // Batch count inventories per classroom in 1 GROUP BY query (replaces N+1 loop)
+        $classroomRows = Classroom::where('unit_id', $unitId)
             ->orderBy('name')
-            ->get()
-            ->map(function ($classroom) {
-                // Count inventories in this classroom
-                $inventoryCount = Inventory::where('classroom_id', $classroom->id)->count();
-                return [
-                    'id' => $classroom->id,
-                    'name' => $classroom->name,
-                    'building' => null,
-                    'floor' => null,
-                    'capacity' => $classroom->capacity ?? null,
-                    'description' => 'Kelas dari modul Akademik',
-                    'inventories_count' => $inventoryCount,
-                    'type' => 'classroom',
-                    'editable' => false,
-                ];
-            });
+            ->get();
+
+        $classroomIds = $classroomRows->pluck('id')->all();
+        $invCountsByClassroom = empty($classroomIds)
+            ? collect()
+            : Inventory::whereIn('classroom_id', $classroomIds)
+                ->select('classroom_id', \DB::raw('COUNT(*) as total'))
+                ->groupBy('classroom_id')
+                ->pluck('total', 'classroom_id');
+
+        $classrooms = $classroomRows->map(function ($classroom) use ($invCountsByClassroom) {
+            return [
+                'id' => $classroom->id,
+                'name' => $classroom->name,
+                'building' => null,
+                'floor' => null,
+                'capacity' => $classroom->capacity ?? null,
+                'description' => 'Kelas dari modul Akademik',
+                'inventories_count' => (int) ($invCountsByClassroom[$classroom->id] ?? 0),
+                'type' => 'classroom',
+                'editable' => false,
+            ];
+        });
 
         return Inertia::render('Sarpar/Rooms/Index', [
             'rooms' => $rooms,

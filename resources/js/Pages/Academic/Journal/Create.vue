@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, Link, router } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { 
@@ -461,7 +463,7 @@ const formatIndonesianDate = (dateString) => {
 <template>
     <Head :title="isEditing ? 'Edit Jurnal Mengajar' : 'Jurnal Mengajar'" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-28 space-y-5">
             
             <!-- TOP HEADER ROW: Back Button + Title + Subtitle -->
@@ -1288,5 +1290,5 @@ const formatIndonesianDate = (dateString) => {
             </div>
         </Teleport>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

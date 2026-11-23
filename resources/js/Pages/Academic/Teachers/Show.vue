@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
@@ -32,7 +34,7 @@ const translateDay = (day) => daysMap[day] || day;
 <template>
     <Head :title="`Detail Guru - ${teacher.full_name}`" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="space-y-6 pb-12">
             <!-- Header / Breadcrumb -->
             <div class="flex items-center justify-between">
@@ -225,7 +227,7 @@ const translateDay = (day) => daysMap[day] || day;
 
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>

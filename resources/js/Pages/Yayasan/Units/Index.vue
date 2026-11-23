@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { 
@@ -53,8 +55,8 @@ const deleteUnit = () => {
 <template>
     <Head title="Satuan Pendidikan" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col gap-4">
                 <!-- Top Row: Title & Description -->
                 <div>
@@ -64,7 +66,7 @@ const deleteUnit = () => {
                     <p class="text-sm text-gray-500 mt-1">Daftar unit sekolah dibawah naungan yayasan.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto space-y-5 md:space-y-6">
 
@@ -333,5 +335,5 @@ const deleteUnit = () => {
                 </div>
             </Transition>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

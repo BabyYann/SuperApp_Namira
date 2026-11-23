@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { 
@@ -81,8 +83,8 @@ const submitCheckOut = () => {
 <template>
     <Head title="Presensi & Handover Daycare" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h2 class="font-extrabold text-2xl bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent leading-tight flex items-center gap-2">
@@ -97,7 +99,7 @@ const submitCheckOut = () => {
                     <input type="date" v-model="currentDate" @change="changeDate" class="border-none text-xs font-extrabold p-0 focus:ring-0 text-slate-800" />
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             
@@ -257,5 +259,5 @@ const submitCheckOut = () => {
             </div>
         </Modal>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

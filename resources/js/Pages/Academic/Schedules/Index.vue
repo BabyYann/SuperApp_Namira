@@ -1,6 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import MobileAppShell from '@/Layouts/MobileAppShell.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { 
@@ -450,10 +451,10 @@ const getMateriText = (item) => {
 <template>
     <Head title="Jadwal Pelajaran" />
 
-    <component :is="isMobile ? MobileAppShell : AuthenticatedLayout">
+    <div>
         
         <!-- HEADER DESKTOP ONLY -->
-        <template #header v-if="!isMobile">
+        <header v-if="!isMobile" class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between w-full max-w-7xl mx-auto print:hidden">
                 <div>
                     <div class="flex items-center gap-2.5">
@@ -499,12 +500,12 @@ const getMateriText = (item) => {
                     </button>
                 </div>
             </div>
-        </template>
+        </div></header>
         
         <div class="max-w-7xl mx-auto px-4 py-2 sm:py-6 pb-28 sm:pb-8 w-full min-w-0 box-border space-y-3.5">
 
             <!-- 📱 MOBILE VIEW (PIXEL-PERFECT REFINEMENT) -->
-            <div class="block md:hidden space-y-3">
+            <div v-if="isMobile" class="space-y-3">
                 
                 <!-- 1. COMPACT HERO BANNER CARD -->
                 <div class="bg-gradient-to-br from-[#0B7068] via-[#085a53] to-[#0f172a] rounded-3xl p-4 sm:p-5 text-white shadow-xl relative overflow-hidden">
@@ -846,7 +847,7 @@ const getMateriText = (item) => {
             <!-- END MOBILE VIEW -->
 
             <!-- 🖥️ DESKTOP VIEW (hidden md:block) -->
-            <div class="hidden md:block space-y-5">
+            <div v-else class="space-y-5">
                 <!-- Toolbar Card -->
                 <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-2xs flex flex-wrap items-center justify-between gap-3 print:hidden">
                     <div class="flex flex-wrap items-center gap-3">
@@ -1364,5 +1365,5 @@ const getMateriText = (item) => {
             </div>
         </Modal>
 
-    </component>
+    </div>
 </template>

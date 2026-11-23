@@ -1,12 +1,12 @@
 <template>
     <Head title="Presensi Pegawai" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
                 Presensi Pegawai
             </h2>
-        </template>
+        </div></header>
 
         <div class="py-4 md:py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4 md:space-y-5">
             
@@ -823,11 +823,13 @@
             </div>
         </div>
 
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import LiveAttendanceRadar from './Partials/LiveAttendanceRadar.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref, onMounted, computed, watch } from 'vue';

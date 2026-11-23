@@ -1,7 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, router, useForm, Link, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
+
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import { 
     ClipboardDocumentListIcon, EyeIcon, PaperClipIcon, ArrowDownTrayIcon,
     CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, UserGroupIcon,
@@ -289,7 +294,7 @@ const getPercentageClass = (pct) => {
 <template>
     <Head title="Rekap Kehadiran" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="space-y-8 pb-12">
             
             <!-- Breadcrumbs & Header Section -->
@@ -555,7 +560,7 @@ const getPercentageClass = (pct) => {
                 </div>
 
                 <!-- Table Content (Desktop View) -->
-                <div v-else class="hidden md:block overflow-x-auto">
+                <div v-else-if="isDesktop" class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-100 text-sm text-left">
                         <thead class="bg-slate-50 text-gray-700 uppercase text-xs font-bold border-b border-gray-150">
                             <tr>
@@ -651,7 +656,7 @@ const getPercentageClass = (pct) => {
                 </div>
 
                 <!-- Mobile Card List View (Android / Mobile Native View) -->
-                <div v-if="recapData.length > 0" class="block md:hidden divide-y divide-gray-150">
+                <div v-else class="divide-y divide-gray-150">
                     <div 
                         v-for="(row, idx) in paginatedRecapData" 
                         :key="'mobile-' + row.id" 
@@ -1495,5 +1500,5 @@ const getPercentageClass = (pct) => {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

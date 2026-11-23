@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import QuranCollapse from '@/Pages/Quran/Components/QuranCollapse.vue';
 import {
     ArrowLeftIcon,
@@ -149,7 +151,7 @@ const openQuranReport = (routeName, assessment) => {
 <template>
     <Head :title="`Profil Siswa — ${student.full_name}`" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="max-w-6xl mx-auto py-1 sm:py-2 pb-28 md:pb-8 space-y-4">
             <!-- Compact Top Breadcrumb Bar -->
             <div class="flex items-center justify-between gap-3">
@@ -875,7 +877,7 @@ const openQuranReport = (routeName, assessment) => {
                 </div>
             </Transition>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>
 
 <style scoped>

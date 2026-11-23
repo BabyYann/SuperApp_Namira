@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { 
@@ -188,8 +190,8 @@ const deleteItem = () => {
 <template>
     <Head title="Tujuan Pembelajaran (TP)" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex flex-col gap-4">
                 <!-- Top Row: Title & Description -->
                 <div>
@@ -201,7 +203,7 @@ const deleteItem = () => {
                     </p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-2 md:py-6 max-w-7xl mx-auto pb-20 md:pb-6 space-y-3 md:space-y-6">
 
@@ -623,5 +625,5 @@ const deleteItem = () => {
             </div>
         </Teleport>
 
-    </AuthenticatedLayout>
+    </div>
 </template>

@@ -75,7 +75,10 @@ class EmployeeActivityLogController extends Controller
             $unitId = session('active_unit_id');
         }
 
-        $query = EmployeeActivityLog::with(['user', 'unit'])->latest('activity_date')->latest();
+        $query = EmployeeActivityLog::with([
+            'user' => fn ($q) => $q->with(['teacher_profile:id,user_id,photo', 'staff:id,user_id,photo', 'student:id,user_id,photo']),
+            'unit',
+        ])->latest('activity_date')->latest();
 
         if ($unitId) {
             $query->where('unit_id', $unitId);

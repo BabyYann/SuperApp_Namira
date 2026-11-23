@@ -1,8 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 import { ref, watch, computed } from 'vue';
+import { useMediaQuery } from '@vueuse/core';
+
+const isDesktop = useMediaQuery('(min-width: 768px)');
 import {
     SparklesIcon, FunnelIcon, MagnifyingGlassIcon, PhotoIcon,
     CalendarIcon, UserIcon, ClockIcon, BuildingOfficeIcon,
@@ -101,7 +106,7 @@ const formatTime = (timeStr) => {
 <template>
     <Head title="Executive Feed - Giat Tugas Pegawai" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="py-4 sm:py-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 px-3 sm:px-6">
             
             <!-- Page Header -->
@@ -280,7 +285,7 @@ const formatTime = (timeStr) => {
             <!-- VIEW MODE 1: COMPACT MODE (Desktop Table & Mobile Ultra-Sleek Cards) -->
             <div v-else-if="viewMode === 'compact'">
                 <!-- Desktop Table (md and larger) -->
-                <div class="hidden md:block bg-white rounded-3xl border border-gray-150 overflow-hidden shadow-xs">
+                <div v-if="isDesktop" class="bg-white rounded-3xl border border-gray-150 overflow-hidden shadow-xs">
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs text-left text-gray-600">
                             <thead class="text-xs text-gray-700 uppercase bg-slate-50 border-b border-gray-150 font-bold">
@@ -358,7 +363,7 @@ const formatTime = (timeStr) => {
                 </div>
 
                 <!-- Mobile PWA Ultra-Sleek Compact Cards (md:hidden) -->
-                <div class="md:hidden space-y-3">
+                <div v-else class="space-y-3">
                     <div 
                         v-for="item in feedItems.data" 
                         :key="item.id" 
@@ -569,5 +574,5 @@ const formatTime = (timeStr) => {
                 </div>
             </div>
         </Teleport>
-    </AuthenticatedLayout>
+    </div>
 </template>

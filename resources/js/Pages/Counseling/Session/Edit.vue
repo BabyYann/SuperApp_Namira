@@ -1,6 +1,8 @@
 <script setup>
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { ref } from 'vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
@@ -78,8 +80,8 @@ const statuses = [
 <template>
     <Head title="Kelola Sesi" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <Link :href="route('counseling.sessions.index')" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors">
                     <ArrowLeftIcon class="w-5 h-5" />
@@ -89,7 +91,7 @@ const statuses = [
                     <p class="text-sm text-slate-500">Update status dan hasil konseling.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 min-h-screen pb-20">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -187,5 +189,5 @@ const statuses = [
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

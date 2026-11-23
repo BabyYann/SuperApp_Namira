@@ -5,7 +5,7 @@ import TopBar from '@/Components/Dashboard/TopBar.vue';
 import OfflineStatusBanner from '@/Components/OfflineStatusBanner.vue';
 import { useMediaQuery } from '@vueuse/core';
 import MobileAppShell from '@/Layouts/MobileAppShell.vue';
-import { usePage } from '@inertiajs/vue3';
+import { usePage, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
@@ -342,6 +342,15 @@ onMounted(() => {
     }
     if (!window.__namiraEchoInitialized) {
         defer(() => setupEcho());
+    }
+    // Automatically flush Inertia prefetch caches whenever any mutating request (POST/PUT/PATCH/DELETE) runs
+    if (!window.__namiraPrefetchInvalidator) {
+        window.__namiraPrefetchInvalidator = router.on('start', (event) => {
+            const method = (event?.detail?.visit?.method || 'get').toLowerCase();
+            if (method !== 'get' && typeof router.flushAll === 'function') {
+                router.flushAll();
+            }
+        });
     }
 });
 </script>

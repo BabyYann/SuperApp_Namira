@@ -31,16 +31,13 @@ class AttendanceController extends Controller
         $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endOfMonth = $startOfMonth->copy()->endOfMonth();
 
-        $calendarRecords = EmployeeAttendance::where('user_id', $user->id)
-            ->whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
-            ->get()
-            ->keyBy('date'); // Key by YYYY-MM-DD string
-
-        // Get history records for the selected month
-        $history = EmployeeAttendance::where('user_id', $user->id)
+        $monthRows = EmployeeAttendance::where('user_id', $user->id)
             ->whereBetween('date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->latest('date')
             ->get();
+
+        $calendarRecords = $monthRows->keyBy('date'); // Key by YYYY-MM-DD string
+        $history = $monthRows;
 
         // Monthly summary statistics
         $monthStats = [

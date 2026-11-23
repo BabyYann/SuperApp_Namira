@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { UserIcon, LockClosedIcon, ChevronUpDownIcon, KeyIcon, CameraIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
@@ -146,8 +148,8 @@ const submitResetPassword = () => {
 <template>
     <Head title="Edit User" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-400 leading-tight">
@@ -156,7 +158,7 @@ const submitResetPassword = () => {
                     <p class="text-sm text-gray-500 mt-1">Perbarui data profil dan hak akses pengguna.</p>
                 </div>
             </div>
-        </template>
+        </div></header>
 
         <div class="grid grid-cols-1 gap-6 max-w-4xl mx-auto pb-12">
             <!-- Main Form Card -->
@@ -442,5 +444,5 @@ const submitResetPassword = () => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

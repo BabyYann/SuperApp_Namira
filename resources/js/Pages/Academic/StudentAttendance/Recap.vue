@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { 
@@ -78,15 +80,15 @@ const getStatusLabel = (status) => {
 <template>
     <Head title="Rekap Kehadiran Bulanan" />
 
-    <AuthenticatedLayout>
-        <template #header>
+    <div>
+        <header class="hidden md:block mb-8"><div class="flex items-center justify-between">
             <div>
                 <h2 class="font-bold text-2xl bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent leading-tight">
                     Rekap Kehadiran Bulanan
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">Ringkasan kehadiran siswa per bulan dengan detail harian</p>
             </div>
-        </template>
+        </div></header>
 
         <div class="py-6 max-w-full mx-auto pb-20 space-y-6 px-4">
             <!-- Filter -->
@@ -189,5 +191,5 @@ const getStatusLabel = (status) => {
                 <p class="text-gray-500 font-bold">Belum ada data kehadiran untuk periode ini</p>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>

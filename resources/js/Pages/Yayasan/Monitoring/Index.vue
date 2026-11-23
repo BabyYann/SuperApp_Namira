@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineOptions({ layout: AuthenticatedLayout });
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import dayjs from 'dayjs';
@@ -65,7 +67,7 @@ const calcPercentage = (val, total) => {
 <template>
     <Head title="Monitoring Center" />
 
-    <AuthenticatedLayout>
+    <div>
         <div class="pb-12">
 
             <!-- ============================================================ -->
@@ -684,5 +686,5 @@ const calcPercentage = (val, total) => {
             </div>
 
         </div>
-    </AuthenticatedLayout>
+    </div>
 </template>
