@@ -1,20 +1,24 @@
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { 
-    AcademicCapIcon, 
-    ArrowRightIcon, 
-    PhoneIcon, 
-    BuildingLibraryIcon,
-    CalendarDaysIcon,
-    CheckCircleIcon,
-    ArrowTopRightOnSquareIcon,
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
+import { Motion, AnimatePresence } from 'motion-v';
+import {
+    ArrowRightIcon,
+    ArrowUpRightIcon,
+    ArrowUpIcon,
+    PhoneIcon,
     UserCircleIcon,
-    DocumentCheckIcon,
-    CreditCardIcon,
-    SunIcon,
-    ChatBubbleLeftRightIcon,
-    LockClosedIcon
+    LockClosedIcon,
+    MapPinIcon,
+    ClockIcon,
+    PlusIcon,
 } from '@heroicons/vue/24/outline';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const props = defineProps({
     units: Array,
@@ -25,291 +29,1125 @@ const props = defineProps({
     isLockedForPublic: Boolean,
 });
 
-const steps = [
-    { num: '01', title: 'Isi Biodata & QRIS', desc: 'Lengkapi biodata calon murid, buat kata sandi akun, dan unggah bukti pembayaran QRIS.' },
-    { num: '02', title: 'Lengkapi Berkas di Portal', desc: 'Unggah Pas Foto, KK, Akta Lahir, dan KTP orang tua secara fleksibel di Portal Calon Siswa.' },
-    { num: '03', title: 'Observasi & Psikotes', desc: 'Hadir ke sekolah sesuai jadwal tatap muka untuk observasi dasar dan psikotes anak.' },
-    { num: '04', title: 'Pengumuman Hasil', desc: 'Cek status kelulusan di portal dan unduh Surat Keterangan Penerimaan resmi.' },
-    { num: '05', title: 'Daftar Ulang (VA)', desc: 'Lakukan pembayaran biaya masuk bertahap (Termin 60%) melalui VA Bank Jatim.' },
+const academicYearLabel = computed(() => props.sdSetting?.academic_year || '2027/2028');
+const sdQuota = computed(() => props.sdSetting?.quota || 60);
+const waNumber = computed(() => {
+    const raw = String(props.sdSetting?.contact_whatsapp || '082332922521').replace(/[^0-9]/g, '');
+    return raw.startsWith('0') ? '62' + raw.slice(1) : raw;
+});
+
+const waGeneralHref = computed(
+    () => `https://wa.me/${waNumber.value}?text=${encodeURIComponent("Assalamu'alaikum Panitia SPMB Namira, saya ingin bertanya informasi pendaftaran.")}`
+);
+const waTkHref = computed(
+    () => `https://wa.me/${waNumber.value}?text=${encodeURIComponent("Assalamu'alaikum Admin TK/KB Namira, saya ingin berkonsultasi pendaftaran anak.")}`
+);
+
+// Interactive flow tabs powered by Motion spring layoutId
+const activeFlow = ref('sd');
+const flowTabs = [
+    { key: 'sd', label: 'Alur SD Namira', badge: 'Kraksaan' },
+    { key: 'smp', label: 'Alur SMP Namira', badge: 'Jalur Inden' },
 ];
+
+const stepsByUnit = {
+    sd: [
+        {
+            num: '01',
+            tag: 'Online · 5 Menit',
+            title: 'Isi Biodata & QRIS',
+            desc: 'Lengkapi data calon murid, buat kata sandi akun portal, lalu unggah bukti pembayaran formulir via QRIS.',
+        },
+        {
+            num: '02',
+            tag: 'Fleksibel di Portal',
+            title: 'Lengkapi Berkas Digital',
+            desc: 'Unggah Pas Foto, Kartu Keluarga, Akta Lahir, dan KTP orang tua langsung dari Portal Calon Siswa.',
+        },
+        {
+            num: '03',
+            tag: 'Tatap Muka',
+            title: 'Observasi & Psikotes',
+            desc: 'Hadir ke kampus SD Namira Kraksaan sesuai jadwal untuk observasi kesiapan belajar & psikotes ananda.',
+        },
+        {
+            num: '04',
+            tag: 'Transparan',
+            title: 'Pengumuman Kelulusan',
+            desc: 'Pantau hasil seleksi secara real-time di portal dan unduh Surat Keterangan Penerimaan resmi.',
+        },
+        {
+            num: '05',
+            tag: 'Termin 60% VA',
+            title: 'Daftar Ulang Bank Jatim',
+            desc: 'Selesaikan biaya masuk secara bertahap (minimal termin 60%) melalui Virtual Account Bank Jatim.',
+        },
+    ],
+    smp: [
+        {
+            num: '01',
+            tag: 'Jalur Inden',
+            title: 'Registrasi Calon Santri',
+            desc: 'Daftarkan biodata calon santri SMP Namira dan pilih preferensi program Full Day atau Asrama.',
+        },
+        {
+            num: '02',
+            tag: 'Verifikasi Berkas',
+            title: 'Unggah Dokumen Rapor',
+            desc: 'Lengkapi berkas identitas dan rekam jejak akademik di Portal Calon Siswa secara daring.',
+        },
+        {
+            num: '03',
+            tag: 'Seleksi Terpadu',
+            title: 'Tes Akademik & Mengaji',
+            desc: 'Ikuti asesmen akademik dasar, observasi baca Al-Qur’an, serta wawancara singkat bersama orang tua.',
+        },
+        {
+            num: '04',
+            tag: 'Surat Resmi',
+            title: 'Hasil & Rincian Biaya',
+            desc: 'Akses pengumuman kelulusan beserta rincian daftar ulang transparan di akun portal Anda.',
+        },
+        {
+            num: '05',
+            tag: 'Konfirmasi Kursi',
+            title: 'Daftar Ulang & Orientasi',
+            desc: 'Amankan kursi Jalur Inden melalui transfer resmi Bank Jatim dan terima jadwal pra-orientasi santri.',
+        },
+    ],
+};
+
+const currentSteps = computed(() => stepsByUnit[activeFlow.value]);
+
+// Subtle interactive FAQ accordion powered by Motion AnimatePresence
+const openFaq = ref(0);
+const faqs = [
+    {
+        q: 'Apakah pendaftaran bisa dilakukan sepenuhnya dari rumah?',
+        a: 'Ya. Pengisian formulir, pembayaran QRIS, unggah dokumen, hingga pantauan pengumuman seluruhnya berjalan melalui Portal Calon Siswa. Kehadiran ke sekolah hanya dibutuhkan pada jadwal observasi & psikotes tatap muka.',
+    },
+    {
+        q: 'Bagaimana skema pembayaran biaya daftar ulang?',
+        a: 'Yayasan Namira menyediakan skema pembayaran daftar ulang yang fleksibel melalui Virtual Account Bank Jatim dengan pembayaran awal minimal 60% dan pelunasan bertahap sesuai ketentuan unit.',
+    },
+    {
+        q: 'Apakah lulusan TK Namira mendapat prioritas ke SD Namira?',
+        a: 'Benar. Alumni TK Namira mendapatkan jalur prioritas / konfirmasi inden khusus saat melanjutkan ke jenjang SD Namira sesuai kuota gelombang berjalan.',
+    },
+];
+
+// Marquee items
+const marqueeItems = [
+    'Akreditasi Unggul',
+    'Metode Ummi & Tahfidz',
+    'SD Namira Kraksaan',
+    'TK & KB Namira',
+    'SMP Namira Bilingual',
+    'Pendidikan Berbasis Fitrah',
+    `Tahun Ajaran ${props.sdSetting?.academic_year || '2027/2028'}`,
+];
+
+// Spotlight cursor state on dark flagship SD card
+const flagshipRef = ref(null);
+const spotlight = ref({ x: 50, y: 50, active: false });
+const onFlagshipMove = (e) => {
+    const el = flagshipRef.value;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    spotlight.value = {
+        x: ((e.clientX - rect.left) / rect.width) * 100,
+        y: ((e.clientY - rect.top) / rect.height) * 100,
+        active: true,
+    };
+};
+const onFlagshipLeave = () => {
+    spotlight.value.active = false;
+};
+
+// Magnetic CTA button helper (GSAP quickTo)
+const attachMagnetic = (el) => {
+    if (!el || window.matchMedia('(pointer: coarse)').matches) return () => {};
+    const xTo = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3.out' });
+    const yTo = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3.out' });
+    const onMove = (e) => {
+        const r = el.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width / 2)) * 0.22;
+        const dy = (e.clientY - (r.top + r.height / 2)) * 0.28;
+        xTo(dx);
+        yTo(dy);
+    };
+    const onLeave = () => {
+        xTo(0);
+        yTo(0);
+    };
+    el.addEventListener('mousemove', onMove);
+    el.addEventListener('mouseleave', onLeave);
+    return () => {
+        el.removeEventListener('mousemove', onMove);
+        el.removeEventListener('mouseleave', onLeave);
+    };
+};
+
+// DOM refs & lifecycle instances
+const pageRoot = ref(null);
+const progressBarRef = ref(null);
+const marqueeTrackRef = ref(null);
+let lenisInstance = null;
+let lenisRaf = null;
+let gsapCtx = null;
+let marqueeTween = null;
+let cleanups = [];
+
+const smoothScrollTo = (target) => {
+    if (lenisInstance) {
+        lenisInstance.scrollTo(target, { offset: -76, duration: 1.25 });
+    } else if (typeof target === 'number') {
+        window.scrollTo({ top: target, behavior: 'smooth' });
+    } else {
+        document.querySelector(target)?.scrollIntoView({ behavior: 'smooth' });
+    }
+};
+
+const pauseMarquee = () => marqueeTween && gsap.to(marqueeTween, { timeScale: 0.15, duration: 0.5, ease: 'power2.out' });
+const resumeMarquee = () => marqueeTween && gsap.to(marqueeTween, { timeScale: 1, duration: 0.6, ease: 'power2.out' });
+
+onMounted(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // 1. Lenis Smooth Scroll synced 1:1 with GSAP ticker + ScrollTrigger
+    if (!prefersReduced) {
+        lenisInstance = new Lenis({
+            duration: 1.15,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 0.95,
+            touchMultiplier: 1.4,
+        });
+
+        lenisInstance.on('scroll', ScrollTrigger.update);
+        lenisRaf = (time) => {
+            lenisInstance?.raf(time * 1000);
+        };
+        gsap.ticker.add(lenisRaf);
+        gsap.ticker.lagSmoothing(0);
+    }
+
+    // 2. GSAP Master Choreography scoped to pageRoot
+    gsapCtx = gsap.context(() => {
+        if (prefersReduced) return;
+
+        // Top scroll progress hairline
+        if (progressBarRef.value) {
+            gsap.to(progressBarRef.value, {
+                scaleX: 1,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: pageRoot.value,
+                    start: 'top top',
+                    end: 'bottom bottom',
+                    scrub: 0.15,
+                },
+            });
+        }
+
+        // Hero above-the-fold editorial entrance timeline
+        const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+        heroTl
+            .from('.js-hero-eyebrow', { y: 18, opacity: 0, duration: 0.7 }, 0.05)
+            .from('.js-hero-line', {
+                yPercent: 115,
+                rotate: 1.4,
+                duration: 1.05,
+                stagger: 0.11,
+            }, 0.12)
+            .from('.js-hero-copy', { y: 22, opacity: 0, duration: 0.8 }, 0.48)
+            .from('.js-hero-cta', { y: 20, opacity: 0, duration: 0.75, stagger: 0.08 }, 0.58)
+            .from('.js-hero-stat', { y: 18, opacity: 0, duration: 0.7, stagger: 0.07 }, 0.68)
+            .fromTo(
+                '.js-hero-frame',
+                { clipPath: 'inset(14% 0% 0% 0% round 28px)', opacity: 0.4 },
+                { clipPath: 'inset(0% 0% 0% 0% round 28px)', opacity: 1, duration: 1.25, ease: 'expo.out' },
+                0.18
+            )
+            .from('.js-hero-photo', { scale: 1.16, duration: 1.45, ease: 'expo.out' }, 0.18)
+            .from('.js-hero-float', { y: 26, opacity: 0, duration: 0.85, ease: 'power3.out' }, 0.68);
+
+        // Hero photo scroll-scrubbed parallax
+        gsap.to('.js-hero-photo', {
+            yPercent: 10,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: '.js-hero-section',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true,
+            },
+        });
+
+        // Slow rotating architectural seal
+        gsap.to('.js-seal-spin', {
+            rotation: 360,
+            duration: 30,
+            repeat: -1,
+            ease: 'none',
+        });
+
+        // Seamless GSAP marquee ticker
+        if (marqueeTrackRef.value) {
+            marqueeTween = gsap.to(marqueeTrackRef.value, {
+                xPercent: -50,
+                duration: 34,
+                repeat: -1,
+                ease: 'none',
+            });
+        }
+
+        // Editorial section headings reveal
+        gsap.utils.toArray('.js-reveal-heading').forEach((el) => {
+            gsap.from(el, {
+                y: 34,
+                opacity: 0,
+                duration: 0.9,
+                ease: 'power3.out',
+                scrollTrigger: {
+                    trigger: el,
+                    start: 'top 86%',
+                    once: true,
+                },
+            });
+        });
+
+        // Asymmetric unit cards staggered entrance
+        gsap.utils.toArray('.js-unit-card').forEach((card, i) => {
+            gsap.from(card, {
+                y: 48,
+                opacity: 0,
+                duration: 0.95,
+                delay: i === 0 ? 0 : (i - 1) * 0.12,
+                ease: 'power3.out',
+                scrollTrigger: {
+                    trigger: card,
+                    start: 'top 85%',
+                    once: true,
+                },
+            });
+
+            const img = card.querySelector('.js-unit-photo');
+            if (img) {
+                gsap.fromTo(
+                    img,
+                    { scale: 1.12 },
+                    {
+                        scale: 1.0,
+                        ease: 'none',
+                        scrollTrigger: {
+                            trigger: card,
+                            start: 'top bottom',
+                            end: 'bottom top',
+                            scrub: true,
+                        },
+                    }
+                );
+            }
+        });
+
+        // Scroll-drawn golden progress spine along the 5-step Alur section
+        gsap.fromTo(
+            '.js-timeline-spine',
+            { scaleX: 0 },
+            {
+                scaleX: 1,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: '.js-timeline-section',
+                    start: 'top 72%',
+                    end: 'bottom 68%',
+                    scrub: 0.4,
+                },
+            }
+        );
+
+        // Concierge CTA band entrance
+        gsap.from('.js-concierge-band', {
+            y: 36,
+            opacity: 0,
+            duration: 0.9,
+            ease: 'power3.out',
+            scrollTrigger: {
+                trigger: '.js-concierge-band',
+                start: 'top 86%',
+                once: true,
+            },
+        });
+
+        // Magnetic pull on key CTA buttons
+        pageRoot.value?.querySelectorAll('.js-magnetic').forEach((btn) => {
+            cleanups.push(attachMagnetic(btn));
+        });
+    }, pageRoot.value);
+});
+
+onUnmounted(() => {
+    cleanups.forEach((fn) => fn());
+    cleanups = [];
+    if (gsapCtx) gsapCtx.revert();
+    if (lenisRaf) gsap.ticker.remove(lenisRaf);
+    if (lenisInstance) {
+        lenisInstance.destroy();
+        lenisInstance = null;
+    }
+});
 </script>
 
 <template>
-    <Head title="Penerimaan Siswa Baru (SPMB) - Yayasan Namira" />
+    <Head title="Penerimaan Siswa Baru (SPMB) — Sekolah Islam Namira" />
 
-    <div class="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col justify-between selection:bg-emerald-100 selection:text-emerald-900">
-        
+    <div
+        id="top"
+        ref="pageRoot"
+        class="spmb-editorial min-h-screen bg-[#F6F2E9] text-[#0B2820] relative selection:bg-[#0B2820] selection:text-[#F6F2E9] overflow-x-clip"
+    >
+        <!-- Subtle architectural film grain texture -->
+        <div class="pointer-events-none fixed inset-0 z-50 opacity-[0.03] spmb-grain" aria-hidden="true" />
+
         <!-- Admin Notice Banner (When locked for public) -->
-        <div v-if="isLockedForPublic" class="bg-amber-500 text-slate-950 font-extrabold px-4 py-2 text-center text-xs border-b border-amber-600 flex items-center justify-center gap-2">
-            <LockClosedIcon class="w-4 h-4 text-slate-950 shrink-0" />
-            <span>MODE PRATINJAU ADMINISTRATOR: Halaman pendaftaran ini saat ini sedang DIKUNCI untuk akses publik/umum.</span>
+        <div
+            v-if="isLockedForPublic"
+            class="relative z-40 bg-[#C4933F] text-[#0B2820] font-bold px-4 py-2 text-center text-xs border-b border-[#0B2820]/15 flex items-center justify-center gap-2"
+        >
+            <LockClosedIcon class="w-4 h-4 shrink-0" />
+            <span>MODE PRATINJAU ADMINISTRATOR: Halaman pendaftaran ini sedang DIKUNCI untuk akses publik.</span>
         </div>
 
-        <!-- Top Institutional Header -->
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+        <!-- Sticky Editorial Masthead -->
+        <header class="sticky top-0 z-40 bg-[#F6F2E9]/88 backdrop-blur-xl border-b border-[#0B2820]/10">
+            <!-- GSAP Scroll-Scrubbed Progress Hairline -->
+            <div
+                ref="progressBarRef"
+                class="h-[2px] w-full bg-gradient-to-r from-[#0B2820] via-[#C4933F] to-[#DFB86B] origin-left scale-x-0"
+            />
+
+            <div class="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-10 h-[68px] flex items-center justify-between gap-4">
+                <!-- Brand Crest -->
                 <Link href="/" class="flex items-center gap-3 group">
-                    <img 
-                        src="/images/landing/logo-yayasan.webp" 
-                        alt="Logo Yayasan Namira" 
-                        class="w-10 h-10 object-contain drop-shadow-xs"
+                    <img
+                        src="/images/landing/logo-yayasan.webp"
+                        alt="Logo Yayasan Namira"
+                        class="w-9 h-9 object-contain transition-transform duration-300 group-hover:scale-105"
                         onerror="this.style.display='none'"
                     />
-                    <div class="border-l border-slate-200 pl-3">
-                        <span class="text-xs font-extrabold tracking-wider uppercase text-emerald-900 block leading-tight">YAYASAN NAMIRA</span>
-                        <span class="text-[11px] font-medium text-slate-500 block">Sistem Penerimaan Murid Baru (SPMB)</span>
+                    <div class="border-l border-[#0B2820]/15 pl-3">
+                        <span class="block text-[11px] font-extrabold tracking-[0.18em] uppercase text-[#0B2820] leading-tight">
+                            Yayasan Namira
+                        </span>
+                        <span class="block text-[11px] text-[#0B2820]/60 font-medium leading-tight mt-0.5">
+                            SPMB {{ academicYearLabel }}
+                        </span>
                     </div>
                 </Link>
 
-                <div class="flex items-center gap-3">
-                    <Link 
-                        :href="route('login')"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition border border-slate-200"
+                <!-- Editorial Anchor Nav (Lenis smooth jump) -->
+                <nav class="hidden md:flex items-center gap-8 text-xs font-semibold tracking-wide text-[#0B2820]/70">
+                    <button
+                        type="button"
+                        @click="smoothScrollTo('#jenjang')"
+                        class="hover:text-[#0B2820] transition-colors cursor-pointer"
                     >
-                        <UserCircleIcon class="w-4 h-4 text-emerald-700" />
-                        <span>Login Calon Siswa / Ortu</span>
-                    </Link>
-                </div>
+                        Pilih Jenjang
+                    </button>
+                    <button
+                        type="button"
+                        @click="smoothScrollTo('#alur')"
+                        class="hover:text-[#0B2820] transition-colors cursor-pointer"
+                    >
+                        Alur Pendaftaran
+                    </button>
+                    <button
+                        type="button"
+                        @click="smoothScrollTo('#faq')"
+                        class="hover:text-[#0B2820] transition-colors cursor-pointer"
+                    >
+                        Informasi
+                    </button>
+                    <button
+                        type="button"
+                        @click="smoothScrollTo('#concierge')"
+                        class="hover:text-[#0B2820] transition-colors cursor-pointer"
+                    >
+                        Bantuan
+                    </button>
+                </nav>
+
+                <!-- Portal Login -->
+                <Link
+                    :href="route('login')"
+                    class="js-magnetic inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B2820] hover:bg-[#123D31] text-[#F6F2E9] text-xs font-semibold tracking-wide transition-colors"
+                >
+                    <UserCircleIcon class="w-4 h-4 text-[#DFB86B]" />
+                    <span class="hidden sm:inline">Portal Calon Siswa</span>
+                    <span class="sm:hidden">Portal</span>
+                </Link>
             </div>
         </header>
 
-        <!-- Hero Section -->
-        <section class="bg-gradient-to-b from-emerald-900 to-[#064e3b] text-white py-14 sm:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-            <div class="max-w-4xl mx-auto text-center relative z-10">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-800/80 border border-emerald-400/30 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-5">
-                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                    <span>Tahun Ajaran {{ sdSetting?.academic_year || '2027 / 2028' }}</span>
-                </div>
-
-                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight mb-4 text-white">
-                    Penerimaan Peserta Didik Baru <br class="hidden sm:inline"/>
-                    <span class="text-amber-300">Sekolah Islam Namira</span>
-                </h1>
-
-                <p class="text-sm sm:text-base text-emerald-100/90 max-w-2xl mx-auto leading-relaxed mb-8">
-                    Menumbuhkan potensi fitrah, adab islami, dan keunggulan akademik putra-putri Anda dalam lingkungan belajar yang aman, nyaman, dan berkarakter Qur'ani.
-                </p>
-
-                <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-emerald-100">
-                    <div class="flex items-center gap-1.5 bg-emerald-800/60 px-3 py-1.5 rounded-lg border border-emerald-700/50">
-                        <CheckCircleIcon class="w-4 h-4 text-amber-300" />
-                        <span>Akreditasi Unggul</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 bg-emerald-800/60 px-3 py-1.5 rounded-lg border border-emerald-700/50">
-                        <CheckCircleIcon class="w-4 h-4 text-amber-300" />
-                        <span>Tahfidz & Pembiasaan Sunnah</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 bg-emerald-800/60 px-3 py-1.5 rounded-lg border border-emerald-700/50">
-                        <CheckCircleIcon class="w-4 h-4 text-amber-300" />
-                        <span>Pendidikan Berbasis Fitrah</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Flash Messages if any -->
-        <div v-if="$page.props.flash?.error || $page.props.flash?.info" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-            <div class="p-4 rounded-2xl bg-amber-600 text-white font-bold text-xs flex items-center justify-between shadow-lg">
+        <!-- Flash Messages -->
+        <div v-if="$page.props.flash?.error || $page.props.flash?.info" class="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-10 pt-5">
+            <div class="p-4 rounded-2xl bg-[#C4933F] text-[#0B2820] font-bold text-xs flex items-center justify-between">
                 <span>{{ $page.props.flash?.error || $page.props.flash?.info }}</span>
             </div>
         </div>
 
-        <!-- Unit Selection Section -->
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20 pb-16 flex-1">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
-                <!-- 1. SD NAMIRA (PRIMARY FEATURED UNIT) -->
-                <div class="bg-white rounded-2xl border-2 border-emerald-600/80 shadow-lg p-6 sm:p-7 flex flex-col justify-between hover:shadow-xl transition relative">
-                    <div class="absolute -top-3 right-6 px-3 py-0.5 bg-emerald-700 text-white text-[11px] font-bold rounded-full uppercase tracking-wider shadow-sm">
-                        Pendaftaran Dibuka
-                    </div>
-
-                    <div>
-                        <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200/80 p-2 flex items-center justify-center mb-4 shadow-xs">
-                            <img 
-                                src="/images/landing/logo-sd.webp" 
-                                alt="Logo SD Namira" 
-                                class="w-full h-full object-contain" 
-                                onerror="this.onerror=null; this.src='/images/landing/logo-sd.png';" 
-                            />
+        <!-- ==================== SECTION 1: ASYMMETRIC ARCHITECTURAL HERO ==================== -->
+        <section class="js-hero-section relative pt-10 sm:pt-14 lg:pt-20 pb-14 sm:pb-20 lg:pb-24">
+            <div class="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+                    <!-- Left 7 Cols: Editorial Typography & Actions -->
+                    <div class="lg:col-span-7 space-y-7">
+                        <!-- Eyebrow -->
+                        <div class="js-hero-eyebrow inline-flex items-center gap-3 text-[11px] font-mono-code uppercase tracking-[0.2em] text-[#0B2820]/75">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C4933F] opacity-75" />
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-[#C4933F]" />
+                            </span>
+                            <span>Penerimaan Murid Baru · TA {{ academicYearLabel }}</span>
                         </div>
 
-                        <span class="text-xs font-bold text-emerald-700 uppercase tracking-wide">Jenjang Dasar (Kraksaan)</span>
-                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">SD Namira Kraksaan</h2>
-                        <p class="text-xs text-slate-600 mt-2 leading-relaxed">
-                            Sekolah Dasar Islam berstandar keunggulan akademik, tahfidz Al-Qur'an, dan pembentukan adab islami mandiri.
+                        <!-- Monumental Masked-Line Editorial Headline -->
+                        <h1 class="text-[clamp(2.55rem,5.9vw,5.15rem)] leading-[0.98] tracking-[-0.035em] text-[#0B2820]">
+                            <span class="block overflow-hidden pb-1">
+                                <span class="js-hero-line block font-extrabold">
+                                    Menempa <em class="font-editorial font-normal italic text-[#9C7026] tracking-normal">fitrah,</em>
+                                </span>
+                            </span>
+                            <span class="block overflow-hidden pb-1">
+                                <span class="js-hero-line block font-extrabold">
+                                    menumbuhkan
+                                </span>
+                            </span>
+                            <span class="block overflow-hidden pb-2">
+                                <span class="js-hero-line block font-editorial italic font-normal text-[#0B2820] tracking-[-0.015em]">
+                                    generasi Qur’ani.
+                                </span>
+                            </span>
+                        </h1>
+
+                        <!-- Grounded Editorial Copy -->
+                        <p class="js-hero-copy text-sm sm:text-base text-[#0B2820]/70 max-w-xl leading-[1.75]">
+                            Sekolah Islam Terpadu Namira menghadirkan pendidikan berjenjang dari
+                            <strong class="font-semibold text-[#0B2820]">TK/KB, SD Kraksaan, hingga SMP</strong>
+                            — memadukan adab islami, tahfidz Metode Ummi, dan keunggulan akademik dalam lingkungan yang hangat.
                         </p>
 
-                        <div class="mt-5 space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Gelombang Umum &amp; Konfirmasi Inden (Kuota: <strong>60 Kursi</strong>)</span>
+                        <!-- Magnetic Primary + Hairline Secondary Actions -->
+                        <div class="flex flex-wrap items-center gap-3.5 pt-1">
+                            <button
+                                type="button"
+                                @click="smoothScrollTo('#jenjang')"
+                                class="js-hero-cta js-magnetic group inline-flex items-center gap-3 px-6 sm:px-7 py-3.5 rounded-full bg-[#0B2820] hover:bg-[#133E32] text-[#F6F2E9] text-xs sm:text-sm font-semibold tracking-wide transition-colors cursor-pointer shadow-[0_14px_30px_-12px_rgba(11,40,32,0.45)]"
+                            >
+                                <span>Pilih Jenjang &amp; Daftar</span>
+                                <span class="w-6 h-6 rounded-full bg-[#DFB86B]/20 text-[#DFB86B] flex items-center justify-center transition-transform duration-300 group-hover:translate-x-0.5">
+                                    <ArrowRightIcon class="w-3.5 h-3.5" />
+                                </span>
+                            </button>
+
+                            <button
+                                type="button"
+                                @click="smoothScrollTo('#alur')"
+                                class="js-hero-cta inline-flex items-center gap-2 px-5 py-3.5 rounded-full border border-[#0B2820]/20 hover:border-[#0B2820] text-[#0B2820] text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                            >
+                                <span>Lihat 5 Tahapan</span>
+                            </button>
+                        </div>
+
+                        <!-- Architectural Hairline Metrics Strip -->
+                        <div class="pt-6 mt-2 border-t border-[#0B2820]/12 grid grid-cols-3 gap-4 sm:gap-8 max-w-xl">
+                            <div class="js-hero-stat">
+                                <span class="block font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#9C7026] font-semibold">01 / Mutu</span>
+                                <span class="block text-sm sm:text-base font-extrabold text-[#0B2820] mt-1">Akreditasi Unggul</span>
                             </div>
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Observasi Dasar &amp; Psikotes Tatap Muka</span>
+                            <div class="js-hero-stat border-l border-[#0B2820]/12 pl-4 sm:pl-6">
+                                <span class="block font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#9C7026] font-semibold">02 / Qur’an</span>
+                                <span class="block text-sm sm:text-base font-extrabold text-[#0B2820] mt-1">Metode Ummi</span>
                             </div>
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Daftar Ulang Fleksibel (Termin 60% VA Bank Jatim)</span>
+                            <div class="js-hero-stat border-l border-[#0B2820]/12 pl-4 sm:pl-6">
+                                <span class="block font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#9C7026] font-semibold">03 / Kuota SD</span>
+                                <span class="block text-sm sm:text-base font-extrabold text-[#0B2820] mt-1">{{ sdQuota }} Kursi</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mt-6 pt-3">
-                        <Link 
-                            href="/spmb/daftar/sd"
-                            class="w-full inline-flex items-center justify-center gap-2 bg-[#064e3b] hover:bg-emerald-800 text-white font-bold py-3 px-4 rounded-xl text-xs transition shadow-sm"
-                        >
-                            <span>Daftar SD Namira Sekarang</span>
-                            <ArrowRightIcon class="w-4 h-4 text-amber-300" />
-                        </Link>
-                    </div>
-                </div>
-
-                <!-- 2. TK & KB NAMIRA -->
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition">
-                    <div>
-                        <div class="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200/80 p-2 flex items-center justify-center mb-4 shadow-xs">
-                            <img 
-                                src="/images/landing/logo-tk.webp" 
-                                alt="Logo TK & KB Namira" 
-                                class="w-full h-full object-contain" 
-                                onerror="this.onerror=null; this.src='/images/landing/logo-tk.png';" 
+                    <!-- Right 5 Cols: Framed Campus Photography with Scrub Parallax & Editorial Seal -->
+                    <div class="lg:col-span-5 relative">
+                        <div class="js-hero-frame relative rounded-[28px] overflow-hidden aspect-[4/4.6] bg-[#0B2820] shadow-[0_30px_70px_-24px_rgba(11,40,32,0.35)] border border-[#0B2820]/10">
+                            <img
+                                src="/images/landing/banner-2.webp"
+                                alt="Lingkungan Kampus Sekolah Islam Namira"
+                                class="js-hero-photo w-full h-[116%] -mt-[8%] object-cover"
+                                onerror="this.onerror=null; this.src='/images/landing/banner-2.jpg';"
                             />
-                        </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0B2820]/80 via-[#0B2820]/15 to-transparent" />
 
-                        <span class="text-xs font-bold text-amber-700 uppercase tracking-wide">Pendidikan Usia Dini</span>
-                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">TK & KB Namira</h2>
-                        <p class="text-xs text-slate-600 mt-2 leading-relaxed">
-                            Pendidikan anak usia dini berbasis pembiasaan karakter karimah, stimulasi motorik kreatif, dan fondasi awal Al-Qur'an.
-                        </p>
-
-                        <div class="mt-5 space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Tersedia Unit Kraksaan & Dringu</span>
+                            <!-- Top-left coordinate tag -->
+                            <div class="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-[#F6F2E9]/90 backdrop-blur-md text-[10px] font-mono-code font-semibold tracking-[0.14em] uppercase text-[#0B2820]">
+                                Probolinggo · Jawa Timur
                             </div>
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Prioritas Khusus Lanjut ke SD Namira</span>
-                            </div>
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Fasilitas Bermain Aman & Edukatif</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="mt-6 pt-3">
-                        <a 
-                            href="https://wa.me/6282332922521?text=Assalamu'alaikum%20Admin%20TK/KB%20Namira,%20saya%20ingin%20berkonsultasi%20pendaftaran%20anak"
-                            target="_blank"
-                            class="w-full inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 px-4 rounded-xl text-xs transition border border-slate-200"
-                        >
-                            <PhoneIcon class="w-4 h-4 text-emerald-700" />
-                            <span>Konsultasi & Pendaftaran TK/KB</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- 3. SMP NAMIRA -->
-                <div class="bg-white rounded-2xl border-2 border-blue-600/80 shadow-lg p-6 sm:p-7 flex flex-col justify-between hover:shadow-xl transition relative">
-                    <div v-if="smpSetting?.is_active" class="absolute -top-3 right-6 px-3 py-0.5 bg-blue-700 text-white text-[11px] font-bold rounded-full uppercase tracking-wider shadow-sm">
-                        Jalur Inden Dibuka
-                    </div>
-
-                    <div>
-                        <div class="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200/80 p-2 flex items-center justify-center mb-4 shadow-xs">
-                            <img 
-                                src="/images/landing/logo-smp.webp" 
-                                alt="Logo SMP Namira" 
-                                class="w-full h-full object-contain" 
-                                onerror="this.onerror=null; this.src='/images/landing/logo-smp.png';" 
-                            />
-                        </div>
-
-                        <span class="text-xs font-bold text-blue-700 uppercase tracking-wide">Sekolah Menengah</span>
-                        <h2 class="text-xl font-extrabold text-slate-900 mt-1">SMP Namira</h2>
-                        <p class="text-xs text-slate-600 mt-2 leading-relaxed">
-                            Sekolah Menengah Pertama Islam berwawasan global, penguasaan bilingual, budaya riset, dan program tahfidz intensif.
-                        </p>
-
-                        <div class="mt-5 space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-600">
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Pendaftaran Calon Santri Jalur Inden</span>
-                            </div>
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Seleksi Akademik & Observasi Mengaji</span>
-                            </div>
-                            <div class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>Asrama & Full Day School</span>
+                            <!-- Bottom Editorial Caption Overlay -->
+                            <div class="js-hero-float absolute inset-x-4 bottom-4 rounded-2xl bg-[#F6F2E9]/92 backdrop-blur-md border border-white/60 p-4 flex items-center justify-between gap-3">
+                                <div>
+                                    <span class="block font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#9C7026] font-semibold">
+                                        Gelombang Aktif
+                                    </span>
+                                    <p class="text-xs sm:text-sm font-extrabold text-[#0B2820] mt-0.5">
+                                        SD Kraksaan, SMP Inden &amp; TK/KB
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    @click="smoothScrollTo('#jenjang')"
+                                    class="w-9 h-9 rounded-full bg-[#0B2820] text-[#DFB86B] flex items-center justify-center shrink-0 hover:scale-105 transition-transform cursor-pointer"
+                                    aria-label="Lanjut ke pilihan jenjang"
+                                >
+                                    <ArrowUpRightIcon class="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="mt-6 pt-3">
-                        <Link 
-                            href="/spmb/daftar/smp"
-                            class="w-full inline-flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl text-xs transition shadow-sm"
-                        >
-                            <span>Daftar SMP Jalur Inden</span>
-                            <ArrowRightIcon class="w-4 h-4 text-amber-300" />
-                        </Link>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Workflow 5 Langkah -->
-            <div class="mt-16 bg-white border border-slate-200 rounded-2xl p-6 sm:p-10 shadow-xs">
-                <div class="text-center max-w-xl mx-auto mb-10">
-                    <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider block">Alur Pendaftaran</span>
-                    <h3 class="text-xl sm:text-2xl font-black text-slate-900 mt-1">5 Tahapan Mudah Mendaftar di SD Namira</h3>
-                    <p class="text-xs text-slate-500 mt-1.5">Seluruh proses transparan dan dapat dipantau langsung melalui portal calon siswa.</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                    <div v-for="s in steps" :key="s.num" class="relative">
-                        <div class="text-2xl font-black text-emerald-100 mb-1 font-mono">{{ s.num }}</div>
-                        <h4 class="text-xs font-extrabold text-slate-900 uppercase tracking-wide mb-1">{{ s.title }}</h4>
-                        <p class="text-[11px] text-slate-500 leading-relaxed">{{ s.desc }}</p>
+                        <!-- Rotating Circular Editorial Seal (Desktop accent) -->
+                        <div class="hidden sm:flex items-center justify-center w-24 h-24 rounded-full bg-[#F6F2E9] border border-[#0B2820]/15 shadow-lg absolute -top-5 -right-4 z-10 pointer-events-none">
+                            <svg class="js-seal-spin w-20 h-20" viewBox="0 0 100 100">
+                                <defs>
+                                    <path id="namiraSealCircle" d="M 50, 50 m -36, 0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" />
+                                </defs>
+                                <text class="fill-[#0B2820] text-[8.4px] font-mono-code uppercase tracking-[0.22em] font-semibold">
+                                    <textPath href="#namiraSealCircle">
+                                        SEKOLAH ISLAM NAMIRA • SPMB {{ academicYearLabel }} •
+                                    </textPath>
+                                </text>
+                            </svg>
+                            <span class="absolute w-2.5 h-2.5 rounded-full bg-[#C4933F]" />
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Help Contact Box -->
-            <div class="mt-8 bg-emerald-50 border border-emerald-200/80 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-emerald-900">
-                <div class="flex items-center gap-3 text-center sm:text-left">
-                    <div class="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0">
-                        <ChatBubbleLeftRightIcon class="w-5 h-5" />
-                    </div>
-                    <div>
-                        <strong class="font-bold block text-emerald-950 text-sm">Pusat Layanan Informasi SPMB</strong>
-                        <span class="text-emerald-800">Senin - Sabtu pukul 07.30 - 15.00 WIB | Kantor Yayasan Namira Kota Probolinggo</span>
-                    </div>
-                </div>
-
-                <a 
-                    href="https://wa.me/6282332922521?text=Assalamu'alaikum%20Panitia%20SPMB%20Namira,%20saya%20ingin%20bertanya%20informasi%20pendaftaran" 
-                    target="_blank"
-                    class="inline-flex items-center gap-2 bg-[#064e3b] hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl font-bold transition shrink-0"
-                >
-                    <PhoneIcon class="w-4 h-4 text-amber-300" />
-                    <span>Chat Panitia (WhatsApp)</span>
-                </a>
             </div>
         </section>
 
-        <!-- Institutional Footer -->
-        <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-            <div class="max-w-7xl mx-auto px-4">
+        <!-- ==================== SECTION 2: KINETIC EDITORIAL TICKER ==================== -->
+        <div
+            class="bg-[#0B2820] text-[#F6F2E9] py-3.5 border-y border-[#DFB86B]/20 overflow-hidden select-none"
+            @mouseenter="pauseMarquee"
+            @mouseleave="resumeMarquee"
+        >
+            <div ref="marqueeTrackRef" class="flex w-max items-center will-change-transform">
+                <div v-for="copy in 2" :key="copy" class="flex items-center shrink-0">
+                    <span
+                        v-for="(item, idx) in marqueeItems"
+                        :key="`${copy}-${idx}`"
+                        class="inline-flex items-center gap-6 px-6 text-[11px] font-mono-code uppercase tracking-[0.22em] text-[#F6F2E9]/85 whitespace-nowrap"
+                    >
+                        <span>{{ item }}</span>
+                        <span class="text-[#DFB86B] text-xs" aria-hidden="true">✦</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SECTION 3: ASYMMETRIC EDITORIAL JENJANG SHOWCASE ==================== -->
+        <section id="jenjang" class="py-20 sm:py-28">
+            <div class="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-10">
+                <!-- Editorial Section Header (Asymmetric Split) -->
+                <div class="js-reveal-heading flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-10 mb-10 border-b border-[#0B2820]/12">
+                    <div>
+                        <span class="block font-mono-code text-[11px] uppercase tracking-[0.22em] text-[#9C7026] font-semibold">
+                            01 / Pilihan Jenjang Pendidikan
+                        </span>
+                        <h2 class="text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#0B2820] mt-2 leading-[1.05]">
+                            Pilih satuan pendidikan <br class="hidden sm:inline" />
+                            <em class="font-editorial font-normal italic text-[#9C7026] tracking-normal">sesuai tahap ananda.</em>
+                        </h2>
+                    </div>
+                    <p class="text-xs sm:text-sm text-[#0B2820]/65 max-w-sm leading-relaxed">
+                        Setiap unit memiliki kurikulum terintegrasi dengan jalur pendaftaran transparan serta pendampingan langsung panitia.
+                    </p>
+                </div>
+
+                <!-- ROW 1: FULL-WIDTH FLAGSHIP CARD — SD NAMIRA KRAKSAAN -->
+                <Motion
+                    :while-hover="{ y: -4 }"
+                    :transition="{ type: 'spring', stiffness: 320, damping: 28 }"
+                    class="js-unit-card"
+                >
+                    <article
+                        ref="flagshipRef"
+                        @mousemove="onFlagshipMove"
+                        @mouseleave="onFlagshipLeave"
+                        class="relative rounded-[28px] bg-[#0B2820] text-[#F6F2E9] overflow-hidden border border-[#DFB86B]/20 shadow-[0_28px_70px_-28px_rgba(11,40,32,0.55)]"
+                    >
+                        <!-- Interactive Cursor Spotlight Glow -->
+                        <div
+                            class="pointer-events-none absolute inset-0 transition-opacity duration-500"
+                            :style="{
+                                opacity: spotlight.active ? 1 : 0,
+                                background: `radial-gradient(520px circle at ${spotlight.x}% ${spotlight.y}%, rgba(223, 184, 107, 0.14), transparent 65%)`,
+                            }"
+                        />
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 relative z-10">
+                            <!-- Photo Wing (5 cols) -->
+                            <div class="lg:col-span-5 relative min-h-[250px] sm:min-h-[320px] lg:min-h-full overflow-hidden bg-[#071D17]">
+                                <img
+                                    src="/images/landing/banner-1.webp"
+                                    alt="Kampus SD Namira Kraksaan"
+                                    class="js-unit-photo w-full h-full object-cover"
+                                    onerror="this.onerror=null; this.src='/images/landing/banner-1.jpg';"
+                                />
+                                <div class="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#0B2820] via-[#0B2820]/25 to-transparent" />
+
+                                <div class="absolute top-5 left-5 flex items-center gap-2.5">
+                                    <div class="w-11 h-11 rounded-2xl bg-[#F6F2E9] p-1.5 shadow-md flex items-center justify-center">
+                                        <img
+                                            src="/images/landing/logo-sd.webp"
+                                            alt="Logo SD Namira"
+                                            class="w-full h-full object-contain"
+                                            onerror="this.onerror=null; this.src='/images/landing/logo-sd.png';"
+                                        />
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full bg-[#DFB86B] text-[#0B2820] text-[10px] font-mono-code font-bold uppercase tracking-[0.14em]">
+                                        Pendaftaran Dibuka
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Editorial Content Wing (7 cols) -->
+                            <div class="lg:col-span-7 p-6 sm:p-9 lg:p-11 flex flex-col justify-between gap-7">
+                                <div>
+                                    <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono-code uppercase tracking-[0.18em] text-[#DFB86B]">
+                                        <span>Jenjang Dasar · Kraksaan</span>
+                                        <span>Kuota {{ sdQuota }} Kursi</span>
+                                    </div>
+
+                                    <h3 class="text-2xl sm:text-4xl font-extrabold tracking-[-0.025em] text-white mt-3">
+                                        SD Namira Kraksaan
+                                    </h3>
+
+                                    <p class="text-xs sm:text-sm text-[#F6F2E9]/75 mt-3 leading-relaxed max-w-xl">
+                                        Sekolah Dasar Islam berstandar keunggulan akademik, pembelajaran Al-Qur’an Metode Ummi, serta pembiasaan adab islami mandiri dalam keseharian siswa.
+                                    </p>
+
+                                    <!-- 3-Column Hairline Spec Grid (Anti-Bullet-List) -->
+                                    <div class="mt-7 pt-6 border-t border-white/12 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                                        <div>
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#DFB86B]">Gelombang</span>
+                                            <p class="text-xs font-semibold text-white/95 mt-1 leading-snug">
+                                                Jalur Umum &amp; Konfirmasi Inden
+                                            </p>
+                                        </div>
+                                        <div class="sm:border-l sm:border-white/12 sm:pl-5">
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#DFB86B]">Asesmen</span>
+                                            <p class="text-xs font-semibold text-white/95 mt-1 leading-snug">
+                                                Observasi Dasar &amp; Psikotes Tatap Muka
+                                            </p>
+                                        </div>
+                                        <div class="sm:border-l sm:border-white/12 sm:pl-5">
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.16em] text-[#DFB86B]">Daftar Ulang</span>
+                                            <p class="text-xs font-semibold text-white/95 mt-1 leading-snug">
+                                                Termin Fleksibel 60% VA Bank Jatim
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+                                    <Link
+                                        href="/spmb/daftar/sd"
+                                        class="js-magnetic group inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-[#DFB86B] hover:bg-[#E7C782] text-[#0B2820] text-xs sm:text-sm font-extrabold tracking-wide transition-colors"
+                                    >
+                                        <span>Daftar SD Namira Sekarang</span>
+                                        <ArrowRightIcon class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                    </Link>
+
+                                    <span class="text-[11px] font-mono-code text-[#F6F2E9]/50">
+                                        /spmb/daftar/sd
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </Motion>
+
+                <!-- ROW 2: ASYMMETRIC 7/5 SPLIT — SMP NAMIRA + TK & KB NAMIRA -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+                    <!-- SMP NAMIRA (Left 7 Cols) -->
+                    <Motion
+                        :while-hover="{ y: -5 }"
+                        :transition="{ type: 'spring', stiffness: 320, damping: 28 }"
+                        class="js-unit-card lg:col-span-7 flex"
+                    >
+                        <article class="w-full rounded-[28px] bg-white border border-[#0B2820]/10 overflow-hidden shadow-[0_18px_45px_-28px_rgba(11,40,32,0.22)] flex flex-col justify-between">
+                            <div>
+                                <!-- Editorial Media Strip -->
+                                <div class="relative h-52 sm:h-60 overflow-hidden bg-[#162C46]">
+                                    <img
+                                        src="/images/landing/photo-smp.webp"
+                                        alt="Gedung SMP Namira"
+                                        class="js-unit-photo w-full h-full object-cover"
+                                        onerror="this.onerror=null; this.src='/images/landing/photo-smp.jpg';"
+                                    />
+                                    <div class="absolute inset-0 bg-gradient-to-t from-[#162C46]/85 via-[#162C46]/20 to-transparent" />
+                                    <div class="absolute top-4 left-4 right-4 flex items-center justify-between gap-2">
+                                        <div class="w-11 h-11 rounded-2xl bg-white p-1.5 shadow-sm flex items-center justify-center">
+                                            <img
+                                                src="/images/landing/logo-smp.webp"
+                                                alt="Logo SMP Namira"
+                                                class="w-full h-full object-contain"
+                                                onerror="this.onerror=null; this.src='/images/landing/logo-smp.png';"
+                                            />
+                                        </div>
+                                        <span
+                                            v-if="smpSetting?.is_active"
+                                            class="px-3 py-1 rounded-full bg-[#162C46] border border-white/25 text-white text-[10px] font-mono-code font-semibold uppercase tracking-[0.14em]"
+                                        >
+                                            Jalur Inden Dibuka
+                                        </span>
+                                    </div>
+                                    <div class="absolute bottom-4 left-5 right-5 flex items-end justify-between text-white">
+                                        <div>
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.18em] text-[#DFB86B]">
+                                                Sekolah Menengah Pertama
+                                            </span>
+                                            <h3 class="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] mt-0.5">
+                                                SMP Namira
+                                            </h3>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-6 sm:p-8">
+                                    <p class="text-xs sm:text-sm text-[#0B2820]/70 leading-relaxed">
+                                        Sekolah Menengah Pertama Islam berwawasan global dengan penguasaan bilingual, budaya riset, dan program tahfidz intensif.
+                                    </p>
+
+                                    <div class="mt-6 pt-5 border-t border-[#0B2820]/10 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                                        <div>
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#162C46]/70 font-semibold">Jalur</span>
+                                            <span class="block font-bold text-[#0B2820] mt-0.5">Calon Santri Inden</span>
+                                        </div>
+                                        <div class="sm:border-l sm:border-[#0B2820]/10 sm:pl-4">
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#162C46]/70 font-semibold">Seleksi</span>
+                                            <span class="block font-bold text-[#0B2820] mt-0.5">Akademik &amp; Mengaji</span>
+                                        </div>
+                                        <div class="sm:border-l sm:border-[#0B2820]/10 sm:pl-4">
+                                            <span class="block font-mono-code text-[10px] uppercase tracking-[0.14em] text-[#162C46]/70 font-semibold">Program</span>
+                                            <span class="block font-bold text-[#0B2820] mt-0.5">Asrama &amp; Full Day</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px-6 sm:px-8 pb-6 sm:pb-8">
+                                <Link
+                                    href="/spmb/daftar/smp"
+                                    class="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-full bg-[#162C46] hover:bg-[#1E3B5E] text-white text-xs sm:text-sm font-bold tracking-wide transition-colors"
+                                >
+                                    <span>Daftar SMP Jalur Inden</span>
+                                    <ArrowRightIcon class="w-4 h-4 text-[#DFB86B] transition-transform duration-300 group-hover:translate-x-1" />
+                                </Link>
+                            </div>
+                        </article>
+                    </Motion>
+
+                    <!-- TK & KB NAMIRA (Right 5 Cols — Warm Parchment Edition) -->
+                    <Motion
+                        :while-hover="{ y: -5 }"
+                        :transition="{ type: 'spring', stiffness: 320, damping: 28 }"
+                        class="js-unit-card lg:col-span-5 flex"
+                    >
+                        <article class="w-full rounded-[28px] bg-[#ECE5D6] border border-[#0B2820]/12 overflow-hidden flex flex-col justify-between">
+                            <div>
+                                <div class="relative h-52 sm:h-60 overflow-hidden bg-[#2C2418]">
+                                    <img
+                                        src="/images/landing/banner-3.webp"
+                                        alt="Lingkungan TK & KB Namira"
+                                        class="js-unit-photo w-full h-full object-cover"
+                                        onerror="this.onerror=null; this.src='/images/landing/banner-3.jpg';"
+                                    />
+                                    <div class="absolute inset-0 bg-gradient-to-t from-[#241D13]/85 via-[#241D13]/20 to-transparent" />
+                                    <div class="absolute top-4 left-4 right-4 flex items-center justify-between">
+                                        <div class="w-11 h-11 rounded-2xl bg-[#F6F2E9] p-1.5 shadow-sm flex items-center justify-center">
+                                            <img
+                                                src="/images/landing/logo-tk.webp"
+                                                alt="Logo TK & KB Namira"
+                                                class="w-full h-full object-contain"
+                                                onerror="this.onerror=null; this.src='/images/landing/logo-tk.png';"
+                                            />
+                                        </div>
+                                        <span class="px-3 py-1 rounded-full bg-[#F6F2E9]/90 text-[#0B2820] text-[10px] font-mono-code font-semibold uppercase tracking-[0.14em]">
+                                            Kraksaan &amp; Dringu
+                                        </span>
+                                    </div>
+                                    <div class="absolute bottom-4 left-5 right-5 text-white">
+                                        <span class="block font-mono-code text-[10px] uppercase tracking-[0.18em] text-[#DFB86B]">
+                                            Pendidikan Usia Dini
+                                        </span>
+                                        <h3 class="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] mt-0.5">
+                                            TK &amp; KB Namira
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                <div class="p-6 sm:p-8">
+                                    <p class="text-xs sm:text-sm text-[#0B2820]/75 leading-relaxed">
+                                        Fondasi karakter karimah, stimulasi motorik kreatif, dan kecintaan awal terhadap Al-Qur’an dalam ruang bermain yang aman.
+                                    </p>
+
+                                    <ul class="mt-5 pt-5 border-t border-[#0B2820]/12 space-y-2.5 text-xs font-semibold text-[#0B2820]/85">
+                                        <li class="flex items-center justify-between gap-2">
+                                            <span>Tersedia Unit Kraksaan &amp; Dringu</span>
+                                            <span class="font-mono-code text-[10px] text-[#9C7026]">01</span>
+                                        </li>
+                                        <li class="flex items-center justify-between gap-2">
+                                            <span>Prioritas Khusus Lanjut ke SD Namira</span>
+                                            <span class="font-mono-code text-[10px] text-[#9C7026]">02</span>
+                                        </li>
+                                        <li class="flex items-center justify-between gap-2">
+                                            <span>Fasilitas Bermain Aman &amp; Edukatif</span>
+                                            <span class="font-mono-code text-[10px] text-[#9C7026]">03</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="px-6 sm:px-8 pb-6 sm:pb-8">
+                                <a
+                                    :href="waTkHref"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="group w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-[#0B2820] hover:bg-[#133E32] text-[#F6F2E9] text-xs sm:text-sm font-bold tracking-wide transition-colors"
+                                >
+                                    <PhoneIcon class="w-4 h-4 text-[#DFB86B]" />
+                                    <span>Konsultasi &amp; Daftar TK/KB</span>
+                                    <ArrowUpRightIcon class="w-4 h-4 opacity-70 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                                </a>
+                            </div>
+                        </article>
+                    </Motion>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 4: SCROLL-DRIVEN 5-STEP ALUR + MOTION SPRING TABS ==================== -->
+        <section id="alur" class="js-timeline-section py-20 sm:py-28 border-t border-[#0B2820]/10 bg-white/60">
+            <div class="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="js-reveal-heading flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+                    <div>
+                        <span class="block font-mono-code text-[11px] uppercase tracking-[0.22em] text-[#9C7026] font-semibold">
+                            02 / Alur Pendaftaran Transparan
+                        </span>
+                        <h2 class="text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#0B2820] mt-2 leading-[1.06]">
+                            Lima tahapan <em class="font-editorial font-normal italic text-[#9C7026] tracking-normal">terarah.</em>
+                        </h2>
+                    </div>
+
+                    <!-- Motion Spring Pill Unit Switcher -->
+                    <div class="inline-flex p-1.5 rounded-full bg-[#ECE5D6] border border-[#0B2820]/10 self-start md:self-auto">
+                        <button
+                            v-for="tab in flowTabs"
+                            :key="tab.key"
+                            type="button"
+                            @click="activeFlow = tab.key"
+                            class="relative px-4 sm:px-5 py-2 rounded-full text-xs font-bold transition-colors cursor-pointer"
+                            :class="activeFlow === tab.key ? 'text-[#F6F2E9]' : 'text-[#0B2820]/70 hover:text-[#0B2820]'"
+                        >
+                            <Motion
+                                v-if="activeFlow === tab.key"
+                                layout-id="active-flow-pill"
+                                :transition="{ type: 'spring', stiffness: 420, damping: 32 }"
+                                class="absolute inset-0 rounded-full bg-[#0B2820]"
+                            />
+                            <span class="relative z-10 flex items-center gap-1.5">
+                                <span>{{ tab.label }}</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scroll-Scrubbed Progress Spine (Desktop) -->
+                <div class="hidden lg:block relative h-[2px] w-full bg-[#0B2820]/10 mb-10 overflow-hidden rounded-full">
+                    <div class="js-timeline-spine h-full w-full bg-gradient-to-r from-[#0B2820] via-[#C4933F] to-[#DFB86B] origin-left" />
+                </div>
+
+                <!-- Animated 5-Step Grid with Motion AnimatePresence -->
+                <AnimatePresence mode="wait">
+                    <Motion
+                        :key="activeFlow"
+                        :initial="{ opacity: 0, y: 18 }"
+                        :animate="{ opacity: 1, y: 0 }"
+                        :exit="{ opacity: 0, y: -12 }"
+                        :transition="{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5"
+                    >
+                        <Motion
+                            v-for="(step, idx) in currentSteps"
+                            :key="step.num"
+                            :initial="{ opacity: 0, y: 20 }"
+                            :animate="{ opacity: 1, y: 0 }"
+                            :while-hover="{ y: -5 }"
+                            :transition="{ delay: idx * 0.055, type: 'spring', stiffness: 320, damping: 26 }"
+                            class="group rounded-2xl bg-[#F6F2E9] hover:bg-white border border-[#0B2820]/10 hover:border-[#C4933F]/50 p-5 sm:p-6 flex flex-col justify-between transition-colors shadow-[0_10px_28px_-22px_rgba(11,40,32,0.28)]"
+                        >
+                            <div>
+                                <div class="flex items-center justify-between gap-2 mb-5">
+                                    <span class="font-editorial italic text-4xl leading-none text-[#0B2820]/25 group-hover:text-[#C4933F] transition-colors">
+                                        {{ step.num }}
+                                    </span>
+                                    <span class="font-mono-code text-[9.5px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-white border border-[#0B2820]/10 text-[#0B2820]/70">
+                                        {{ step.tag }}
+                                    </span>
+                                </div>
+                                <h3 class="text-sm font-extrabold text-[#0B2820] tracking-tight leading-snug">
+                                    {{ step.title }}
+                                </h3>
+                                <p class="text-xs text-[#0B2820]/65 leading-relaxed mt-2">
+                                    {{ step.desc }}
+                                </p>
+                            </div>
+
+                            <div class="mt-6 pt-3 border-t border-[#0B2820]/8 flex items-center justify-between text-[10px] font-mono-code text-[#9C7026] uppercase tracking-[0.15em]">
+                                <span>Tahap {{ step.num }}</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#C4933F]/60 group-hover:bg-[#C4933F]" />
+                            </div>
+                        </Motion>
+                    </Motion>
+                </AnimatePresence>
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 5: EDITORIAL FAQ + CONCIERGE ==================== -->
+        <section id="faq" class="py-20 sm:py-24 border-t border-[#0B2820]/10">
+            <div class="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+                    <!-- Left 5 Cols -->
+                    <div class="js-reveal-heading lg:col-span-5">
+                        <span class="block font-mono-code text-[11px] uppercase tracking-[0.22em] text-[#9C7026] font-semibold">
+                            03 / Pertanyaan Umum
+                        </span>
+                        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-[-0.03em] text-[#0B2820] mt-2 leading-[1.08]">
+                            Hal yang sering ditanyakan <em class="font-editorial font-normal italic text-[#9C7026] tracking-normal">orang tua.</em>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-[#0B2820]/65 mt-3 leading-relaxed">
+                            Masih ada pertanyaan mengenai kuota, jadwal observasi, atau berkas? Tim panitia kami siap mendampingi Anda.
+                        </p>
+                    </div>
+
+                    <!-- Right 7 Cols: Motion Accordion -->
+                    <div class="lg:col-span-7 divide-y divide-[#0B2820]/12 border-y border-[#0B2820]/12">
+                        <div v-for="(item, idx) in faqs" :key="idx" class="py-5">
+                            <button
+                                type="button"
+                                @click="openFaq = openFaq === idx ? -1 : idx"
+                                class="w-full flex items-center justify-between gap-4 text-left cursor-pointer group"
+                            >
+                                <span class="text-sm sm:text-base font-bold text-[#0B2820] group-hover:text-[#9C7026] transition-colors">
+                                    {{ item.q }}
+                                </span>
+                                <span
+                                    class="w-7 h-7 rounded-full border border-[#0B2820]/20 flex items-center justify-center shrink-0 transition-transform duration-300"
+                                    :class="openFaq === idx ? 'rotate-45 bg-[#0B2820] text-[#DFB86B] border-[#0B2820]' : 'text-[#0B2820]'"
+                                >
+                                    <PlusIcon class="w-3.5 h-3.5" />
+                                </span>
+                            </button>
+
+                            <AnimatePresence :initial="false">
+                                <Motion
+                                    v-if="openFaq === idx"
+                                    :initial="{ height: 0, opacity: 0 }"
+                                    :animate="{ height: 'auto', opacity: 1 }"
+                                    :exit="{ height: 0, opacity: 0 }"
+                                    :transition="{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }"
+                                    class="overflow-hidden"
+                                >
+                                    <p class="pt-3 pr-10 text-xs sm:text-sm text-[#0B2820]/70 leading-relaxed">
+                                        {{ item.a }}
+                                    </p>
+                                </Motion>
+                            </AnimatePresence>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Architectural Concierge Band -->
+                <div
+                    id="concierge"
+                    class="js-concierge-band mt-16 sm:mt-20 rounded-[28px] bg-[#0B2820] text-[#F6F2E9] p-7 sm:p-11 lg:p-14 relative overflow-hidden border border-[#DFB86B]/20"
+                >
+                    <div class="pointer-events-none absolute -right-24 -top-24 w-72 h-72 rounded-full bg-[#DFB86B]/10 blur-3xl" />
+
+                    <div class="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+                        <div class="max-w-xl">
+                            <span class="block font-mono-code text-[11px] uppercase tracking-[0.2em] text-[#DFB86B] font-semibold">
+                                Pusat Layanan Informasi SPMB
+                            </span>
+                            <h3 class="text-2xl sm:text-4xl font-extrabold tracking-[-0.025em] text-white mt-2 leading-tight">
+                                Siap mendampingi langkah awal <em class="font-editorial font-normal italic text-[#DFB86B] tracking-normal">putra-putri Anda.</em>
+                            </h3>
+                            <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[#F6F2E9]/70">
+                                <span class="inline-flex items-center gap-2">
+                                    <ClockIcon class="w-4 h-4 text-[#DFB86B]" />
+                                    Senin – Sabtu, 07.30 – 15.00 WIB
+                                </span>
+                                <span class="inline-flex items-center gap-2">
+                                    <MapPinIcon class="w-4 h-4 text-[#DFB86B]" />
+                                    Kantor Yayasan Namira, Probolinggo
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3 shrink-0">
+                            <a
+                                :href="waGeneralHref"
+                                target="_blank"
+                                rel="noopener"
+                                class="js-magnetic inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-[#DFB86B] hover:bg-[#E7C782] text-[#0B2820] text-xs sm:text-sm font-extrabold tracking-wide transition-colors"
+                            >
+                                <PhoneIcon class="w-4 h-4" />
+                                <span>Chat Panitia (WhatsApp)</span>
+                            </a>
+                            <Link
+                                :href="route('login')"
+                                class="inline-flex items-center gap-2 px-5 py-3.5 rounded-full border border-white/20 hover:border-white/50 text-white text-xs sm:text-sm font-semibold transition-colors"
+                            >
+                                <span>Login Portal</span>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Minimal Editorial Footer -->
+        <footer class="border-t border-[#0B2820]/10 py-8">
+            <div class="max-w-[1320px] mx-auto px-5 sm:px-8 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#0B2820]/60">
                 <p>&copy; {{ new Date().getFullYear() }} Yayasan Namira Kota Probolinggo. Seluruh hak cipta dilindungi.</p>
+                <button
+                    type="button"
+                    @click="smoothScrollTo(0)"
+                    class="inline-flex items-center gap-1.5 font-mono-code text-[11px] uppercase tracking-[0.16em] text-[#0B2820] hover:text-[#9C7026] transition-colors cursor-pointer"
+                >
+                    <span>Kembali ke Atas</span>
+                    <ArrowUpIcon class="w-3.5 h-3.5" />
+                </button>
             </div>
         </footer>
-
     </div>
 </template>
+
+<style scoped>
+.spmb-grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 180px 180px;
+}
+</style>

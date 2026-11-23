@@ -1,0 +1,1 @@
+import{Ft as e,S as t,W as n,q as r}from"./vendor-charts-BquNJ23X.js";var i={class:`block text-sm font-medium text-gray-700 dark:text-gray-300`},a={key:0},o={key:1},s={__name:`InputLabel`,props:{value:{type:String}},setup(s){return(c,l)=>(n(),t(`label`,i,[s.value?(n(),t(`span`,a,e(s.value),1)):(n(),t(`span`,o,[r(c.$slots,`default`)]))]))}};export{s as t};
