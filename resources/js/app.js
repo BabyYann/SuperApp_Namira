@@ -6,17 +6,18 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Yayasan Namira';
+const rawAppName = import.meta.env.VITE_APP_NAME;
+const appName = !rawAppName || rawAppName.toLowerCase() === 'laravel' ? 'Namira School' : rawAppName;
 
 createInertiaApp({
     title: (title) => {
         if (!title || title === appName || title === 'Namira App') {
             return 'Yayasan Namira - Sekolah Islam Terpadu (SD, SMP, TK, KB, Daycare)';
         }
-        if (title.includes('Yayasan Namira')) {
+        if (title.includes('Namira')) {
             return title;
         }
-        return `${title} - ${appName}`;
+        return `${title} — ${appName}`;
     },
     resolve: (name) =>
         resolvePageComponent(

@@ -1,9 +1,9 @@
 <template>
     <div class="min-h-screen w-full flex flex-col items-center justify-center bg-slate-950 relative font-body selection:bg-teal-500 selection:text-white p-4 py-8">
-        <!-- Vibrant Background Image (Preserved from original design) -->
+        <!-- Authentic Real Campus Photo Background (Replaces AI-generated cartoon background) -->
         <div class="absolute inset-0 z-0 overflow-hidden">
-            <img src="/images/login_branding.webp" alt="Background" class="w-full h-full object-cover opacity-60 scale-105" loading="lazy" />
-            <div class="absolute inset-0 bg-gradient-to-br from-slate-950/70 via-slate-900/50 to-teal-950/70"></div>
+            <img src="/images/landing/banner-1.webp" alt="Kampus Sekolah Islam Namira" class="w-full h-full object-cover opacity-45 scale-105" loading="lazy" />
+            <div class="absolute inset-0 bg-gradient-to-br from-[#07262E]/90 via-[#0A2F38]/82 to-[#063833]/88"></div>
         </div>
 
         <!-- Top-Right Back to Home Button -->

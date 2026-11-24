@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Namira School') }}</title>
+        <title inertia>{{ config('app.name') && strtolower(config('app.name')) !== 'laravel' ? config('app.name') : 'Namira School' }}</title>
 
         <!-- SEO & Meta Tags -->
         <meta name="description" content="Namira School (Yayasan Namira Probolinggo) adalah Sekolah Islam Terpadu unggulan multi-unit (Daycare, PAUD, TK, SD, SMP). Membentuk generasi Muslim berakhlak mulia & berprestasi.">

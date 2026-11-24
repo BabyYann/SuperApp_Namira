@@ -18,9 +18,23 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
+        $campusSlides = \App\Models\Banner::where('is_active', true)
+            ->orderBy('order_weight')
+            ->take(4)
+            ->get(['title', 'image_path'])
+            ->map(function ($b) {
+                $path = ltrim((string) $b->image_path, '/');
+                return [
+                    'title' => $b->title,
+                    'url' => str_starts_with($path, 'http') ? $path : '/' . $path,
+                ];
+            })
+            ->values();
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'campusSlides' => $campusSlides,
         ]);
     }
 
