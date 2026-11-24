@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banner;
 use App\Models\JobApplicant;
 use App\Models\JobVacancy;
+use App\Models\Testimonial;
+use App\Modules\Academic\Models\Student;
+use App\Modules\Academic\Models\Teacher;
+use App\Modules\Employee\Models\Staff;
 use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -34,6 +39,50 @@ class PublicCareerController extends Controller
         $vacancies = $query->latest()->paginate(9)->withQueryString();
         $units = Unit::select('id', 'name')->orderBy('name')->get();
 
+        $educationUnitsCount = Unit::where('code', '!=', 'YAYASAN')->count();
+        if ($educationUnitsCount === 0) {
+            $educationUnitsCount = Unit::count();
+        }
+
+        $stats = [
+            'units_count' => $educationUnitsCount,
+            'educators_count' => Teacher::count() + Staff::count(),
+            'students_count' => Student::count(),
+            'open_vacancies_count' => JobVacancy::where('status', 'open')->count(),
+        ];
+
+        $campusMedia = Banner::where('is_active', true)
+            ->orderBy('order_weight')
+            ->get(['id', 'title', 'image_path'])
+            ->map(function ($banner) {
+                $path = ltrim((string) $banner->image_path, '/');
+                return [
+                    'id' => $banner->id,
+                    'title' => $banner->title,
+                    'url' => str_starts_with($path, 'http') ? $path : '/' . $path,
+                ];
+            })
+            ->values();
+
+        $testimonials = Testimonial::with('unit:id,name')
+            ->where('is_active', true)
+            ->where('approval_status', 'approved')
+            ->latest()
+            ->take(6)
+            ->get(['id', 'unit_id', 'name', 'role_or_title', 'quote', 'photo_path'])
+            ->map(function ($item) {
+                $photo = $item->photo_path ? ltrim((string) $item->photo_path, '/') : null;
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'role_or_title' => $item->role_or_title,
+                    'quote' => $item->quote,
+                    'unit_name' => $item->unit?->name,
+                    'photo_url' => $photo ? (str_starts_with($photo, 'http') ? $photo : '/' . $photo) : null,
+                ];
+            })
+            ->values();
+
         return Inertia::render('Public/CareerIndex', [
             'vacancies' => $vacancies,
             'units' => $units,
@@ -44,6 +93,9 @@ class PublicCareerController extends Controller
                 'operational' => 'Operasional & Sarpras',
                 'other' => 'Lainnya',
             ],
+            'stats' => $stats,
+            'campusMedia' => $campusMedia,
+            'testimonials' => $testimonials,
         ]);
     }
 

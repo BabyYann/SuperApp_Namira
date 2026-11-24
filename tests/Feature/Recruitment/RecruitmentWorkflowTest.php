@@ -222,7 +222,7 @@ it('renders public career portal with poster & appended labels, accepts full app
         'status' => 'open',
     ]);
 
-    // 1. Public catalog renders appended category_label, type_label, and poster_url
+    // 1. Public catalog renders appended category_label, type_label, poster_url, and institutional stats/media
     $this->get(route('careers.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
@@ -230,6 +230,12 @@ it('renders public career portal with poster & appended labels, accepts full app
             ->where('vacancies.data.0.category_label', 'Tenaga Pendidik (Guru)')
             ->where('vacancies.data.0.type_label', 'Penuh Waktu (Full Time)')
             ->where('vacancies.data.0.poster_url', Storage::url($posterPath))
+            ->has('stats.units_count')
+            ->has('stats.educators_count')
+            ->has('stats.students_count')
+            ->where('stats.open_vacancies_count', 1)
+            ->has('campusMedia')
+            ->has('testimonials')
         );
 
     // 2. Public detail renders poster + unit contact
