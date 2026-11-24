@@ -136,112 +136,131 @@ const findBannerPhoto = (keywords, fallback) => {
     return match?.url || fallback;
 };
 
-// Complete Units Catalog (Includes SD Namira Kota Probolinggo!)
-const activeUnitTab = ref('semua');
-const unitTabs = [
-    { key: 'semua', label: 'Semua Unit' },
-    { key: 'formal', label: 'SD & SMP' },
-    { key: 'paud', label: 'PAUD, TK & Daycare' },
-    { key: 'khusus', label: 'Tahfidz & Terapi' },
-];
+// 6 Symmetrical Flagship Units — Expanding Architectural Strip (Desktop) + Clean Tap Accordion (Mobile)
+const hoveredCampus = ref(null);
+const mobileExpandedCampus = ref(null);
+
+const toggleMobileCampus = (idx) => {
+    mobileExpandedCampus.value = mobileExpandedCampus.value === idx ? null : idx;
+};
+
+const jumpToCampus = (idx) => {
+    showUnitsDropdown.value = false;
+    mobileExpandedCampus.value = idx;
+    hoveredCampus.value = idx;
+    smoothScrollTo('#campuses');
+};
 
 const campuses = computed(() => [
     {
-        id: 'sd-kraksaan',
-        group: 'formal',
-        name: 'SD Namira Kraksaan',
-        level: 'Sekolah Dasar',
-        logo: '/images/landing/logo-sd.webp',
-        photo: findBannerPhoto(['sd ', 'sd namira', 'gedung'], '/images/landing/banner-1.webp'),
-        address: 'Kraksaan, Kabupaten Probolinggo',
-        summary: 'Pendidikan dasar Islam modern berbasis fitrah, Metode Ummi, dan literasi aktif.',
-        tags: ['Akreditasi Unggul', 'Metode Ummi'],
-        spmbUrl: route('spmb.register.sd'),
-        spmbLabel: 'Daftar SPMB SD',
-    },
-    {
-        id: 'sd-kota',
-        group: 'formal',
-        name: 'SD Namira Kota Probolinggo',
-        level: 'Sekolah Dasar',
-        logo: '/images/landing/logo-sd.webp',
-        photo: findBannerPhoto(['sd namira', 'gedung'], '/images/landing/banner-2.webp'),
-        address: 'Kota Probolinggo, Jawa Timur',
-        summary: 'Kampus SD Namira wilayah Kota Probolinggo dengan jalur Inden multi-tahun ajaran.',
-        tags: ['Jalur Inden Tersedia', 'Karakter Qur’ani'],
-        spmbUrl: route('spmb.register.sd-kota'),
-        spmbLabel: 'Daftar Inden SD Kota',
-    },
-    {
-        id: 'smp-namira',
-        group: 'formal',
-        name: 'SMP Namira Kota Probolinggo',
-        level: 'Sekolah Menengah Pertama',
-        logo: '/images/landing/logo-smp.webp',
-        photo: findBannerPhoto(['smp'], '/images/landing/photo-smp.webp'),
-        address: 'Jl. KH. Ahmad Dahlan, Kota Probolinggo',
-        summary: 'Sekolah menengah Islam berwawasan global dengan budaya riset, bilingual, dan tahfidz.',
-        tags: ['Bilingual & Riset', 'Full Day School'],
-        spmbUrl: route('spmb.register.smp'),
-        spmbLabel: 'Daftar SPMB SMP',
-        website: 'https://www.smpnamiraprob.sch.id/',
-        wa: 'https://wa.me/6285336778880',
-        instagram: 'https://www.instagram.com/namirajuniorhighschool',
-    },
-    {
-        id: 'tk-kb',
-        group: 'paud',
-        name: 'TK & KB Namira',
-        level: 'PAUD & Taman Kanak-Kanak',
-        logo: '/images/landing/logo-tk.webp',
-        logo2: '/images/landing/logo-kb.webp',
-        photo: findBannerPhoto(['kb', 'tk'], '/images/landing/banner-3.webp'),
-        address: 'Kampus Kraksaan & Dringu',
-        summary: 'Stimulasi motorik kreatif, pembiasaan adab Islami, dan kecintaan Al-Qur’an sejak dini.',
-        tags: ['Kraksaan & Dringu', 'Prioritas Lanjut SD'],
-        wa: 'https://wa.me/6282332922521',
-    },
-    {
         id: 'daycare',
-        group: 'paud',
         name: 'Daycare Namira',
+        shortName: 'Daycare',
         level: 'Pengasuhan Anak',
         logo: '/images/landing/logo-daycare.webp',
         photo: findBannerPhoto(['day care', 'daycare'], '/images/landing/banner-3.webp'),
         address: 'Kampus Kraksaan & Dringu',
-        summary: 'Layanan pengasuhan aman dan hangat bagi keluarga aktif dengan laporan harian digital.',
+        summary: 'Layanan pengasuhan aman, hangat, dan edukatif bagi keluarga aktif dengan laporan tumbuh kembang harian digital.',
         tags: ['Laporan Digital', 'Pengasuh Terlatih'],
-        wa: 'https://wa.me/6282332922521',
+        primaryCta: {
+            label: 'Konsultasi WhatsApp',
+            href: 'https://wa.me/6282332922521?text=' + encodeURIComponent("Assalamu'alaikum Admin Daycare Namira, saya ingin bertanya informasi layanan Daycare."),
+            external: true,
+        },
     },
     {
         id: 'pavlov',
-        group: 'khusus',
-        name: 'Pavlov Center Namira',
-        level: 'Pusat Tumbuh Kembang',
+        name: 'Pavlov Center',
+        shortName: 'Pavlov',
+        level: 'Tumbuh Kembang',
         logo: '/images/landing/logo-pavlov.webp',
-        photo: findBannerPhoto(['day care', 'kb'], '/images/landing/banner-2.webp'),
+        photo: findBannerPhoto(['kb', 'day care'], '/images/landing/banner-2.webp'),
         address: 'Gedung Pavlov Center, Probolinggo',
-        summary: 'Pendampingan khusus tumbuh kembang dan layanan terapi ramah anak bersama praktisi.',
+        summary: 'Pusat layanan pendampingan dan terapi tumbuh kembang ramah anak bersama praktisi berpengalaman.',
         tags: ['Pendampingan Khusus', 'Ramah Anak'],
-        wa: 'https://wa.me/6282332922521',
+        primaryCta: {
+            label: 'Konsultasi Pavlov',
+            href: 'https://wa.me/6282332922521?text=' + encodeURIComponent("Assalamu'alaikum Admin Pavlov Center Namira, saya ingin berkonsultasi."),
+            external: true,
+        },
+    },
+    {
+        id: 'tk-kb',
+        name: 'TK & KB Namira',
+        shortName: 'TK & KB',
+        level: 'PAUD & TK',
+        logo: '/images/landing/logo-tk.webp',
+        logo2: '/images/landing/logo-kb.webp',
+        photo: findBannerPhoto(['kb - tk', 'kb', 'tk'], '/images/landing/banner-3.webp'),
+        address: 'Kampus Kraksaan & Dringu',
+        summary: 'Pendidikan anak usia dini berbasis fitrah dengan stimulasi motorik kreatif, pembiasaan adab, dan fondasi Al-Qur’an.',
+        tags: ['Kraksaan & Dringu', 'Prioritas Lanjut SD'],
+        primaryCta: {
+            label: 'Konsultasi TK & KB',
+            href: 'https://wa.me/6282332922521?text=' + encodeURIComponent("Assalamu'alaikum Admin TK & KB Namira, saya ingin bertanya informasi pendaftaran."),
+            external: true,
+        },
+    },
+    {
+        id: 'sd-namira',
+        name: 'SD Namira',
+        shortName: 'SD Namira',
+        level: 'Sekolah Dasar · 2 Kampus',
+        spmbBadge: 'SPMB Buka',
+        logo: '/images/landing/logo-sd.webp',
+        photo: findBannerPhoto(['sd ', 'sd namira', 'gedung'], '/images/landing/banner-1.webp'),
+        address: 'Kraksaan & Kota Probolinggo',
+        summary: 'Sekolah Dasar Islam modern berakreditasi unggul berbasis karakter Qur’ani, Metode Ummi, dan literasi aktif. Tersedia jalur reguler & Inden multi-tahun.',
+        tags: ['Kraksaan & Kota', 'Metode Ummi'],
+        primaryCta: {
+            label: 'SPMB SD Kraksaan',
+            href: route('spmb.register.sd'),
+            external: false,
+        },
+        secondaryCta: {
+            label: 'Inden SD Kota',
+            href: route('spmb.register.sd-kota'),
+            external: false,
+        },
+    },
+    {
+        id: 'smp-namira',
+        name: 'SMP Namira',
+        shortName: 'SMP Namira',
+        level: 'Sekolah Menengah',
+        spmbBadge: 'SPMB Buka',
+        logo: '/images/landing/logo-smp.webp',
+        photo: findBannerPhoto(['smp'], '/images/landing/photo-smp.webp'),
+        address: 'Jl. KH. Ahmad Dahlan, Kota Probolinggo',
+        summary: 'Sekolah menengah Islam berwawasan global yang memadukan penguasaan bilingual, budaya riset, dan program tahfidz intensif.',
+        tags: ['Bilingual & Riset', 'Full Day School'],
+        primaryCta: {
+            label: 'Daftar SPMB SMP',
+            href: route('spmb.register.smp'),
+            external: false,
+        },
+        website: 'https://www.smpnamiraprob.sch.id/',
+        wa: 'https://wa.me/6285336778880',
+        instagram: 'https://www.instagram.com/namirajuniorhighschool',
+        youtube: 'https://www.youtube.com/@smpnamiraprobolinggo9462',
     },
     {
         id: 'tahfidz',
-        group: 'khusus',
-        name: 'Rumah Tahfidz Namira',
+        name: 'Rumah Tahfidz',
+        shortName: 'Rumah Tahfidz',
         level: 'Program Al-Qur’an',
         logo: '/images/landing/logo-tahfidz.webp',
-        photo: findBannerPhoto(['sd ', 'smp'], '/images/landing/banner-1.webp'),
+        photo: findBannerPhoto(['sd namira', 'smp'], '/images/landing/banner-2.webp'),
         address: 'Lingkungan Yayasan Namira',
-        summary: 'Pembinaan hafalan dan tahsin Al-Qur’an terstruktur bersama asatidz bersertifikat.',
+        summary: 'Pembinaan tahsin dan hafalan Al-Qur’an terstruktur bersama asatidz bersertifikat Metode Ummi dalam suasana kondusif.',
         tags: ['Tahsin & Tahfidz', 'Metode Ummi'],
+        primaryCta: {
+            label: 'Info Rumah Tahfidz',
+            href: 'https://wa.me/6282332922521?text=' + encodeURIComponent("Assalamu'alaikum Admin Yayasan Namira, saya ingin bertanya tentang Rumah Tahfidz."),
+            external: true,
+        },
     },
 ]);
-
-const filteredCampuses = computed(() => {
-    if (activeUnitTab.value === 'semua') return campuses.value;
-    return campuses.value.filter((c) => c.group === activeUnitTab.value);
-});
 
 // Genuine Live Metrics from DB (Replaces hardcoded 3D yellow flip-cards!)
 const impactMetrics = computed(() => {
@@ -719,10 +738,10 @@ onUnmounted(() => {
                             >
                                 <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 space-y-0.5">
                                     <button
-                                        v-for="unit in campuses"
+                                        v-for="(unit, idx) in campuses"
                                         :key="unit.id"
                                         type="button"
-                                        @click="showUnitsDropdown = false; activeUnitTab = 'semua'; smoothScrollTo('#campuses')"
+                                        @click="jumpToCampus(idx)"
                                         class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#F2FAF7] text-left transition-colors cursor-pointer"
                                     >
                                         <div class="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 p-1 shrink-0 flex items-center justify-center">
@@ -1003,144 +1022,293 @@ onUnmounted(() => {
             </section>
 
             <!-- =========================================================
-                 UNIT PENDIDIKAN NAMIRA (Complete w/ SD Kota + Motion Tabs)
+                 UNIT PENDIDIKAN NAMIRA — Expanding Architectural Strip (Opsi 1)
+                 Desktop: 6-Col Full-Width Expanding Panel Strip (Iconic Logo-First!)
+                 Mobile: Compact Logo List w/ Smooth Inline Photo & CTA Reveal
             ========================================================== -->
-            <section id="campuses" class="py-14 sm:py-22">
-                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-7 sm:space-y-10">
-                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 reveal-up">
+            <section id="campuses" class="py-14 sm:py-20 space-y-7 sm:space-y-9">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-3 reveal-up">
                         <div class="space-y-1.5">
                             <h2 class="text-2xl sm:text-[2rem] tracking-tight text-slate-900">
                                 <span class="font-normal">Unit Pendidikan </span>
                                 <span class="font-extrabold">Sekolah Islam Namira</span>
                             </h2>
                             <p class="text-xs sm:text-sm text-slate-500 max-w-xl">
-                                Jenjang pendidikan berkesinambungan dari usia dini hingga menengah pertama di Kabupaten &amp; Kota Probolinggo.
+                                Ekosistem pendidikan berkesinambungan dari usia dini hingga menengah pertama di Kabupaten &amp; Kota Probolinggo.
                             </p>
                         </div>
 
-                        <!-- Single-Line Swipeable Category Tabs -->
-                        <div class="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">
-                            <div class="inline-flex flex-nowrap items-center gap-1 p-1 rounded-xl bg-slate-100/85 border border-slate-200/60">
-                                <button
-                                    v-for="tab in unitTabs"
-                                    :key="tab.key"
-                                    type="button"
-                                    @click="activeUnitTab = tab.key"
-                                    class="relative px-3.5 py-2 sm:py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
-                                    :class="activeUnitTab === tab.key ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'"
-                                >
-                                    <Motion
-                                        v-if="activeUnitTab === tab.key"
-                                        layout-id="home-unit-pill"
-                                        :transition="{ type: 'spring', stiffness: 420, damping: 32 }"
-                                        class="absolute inset-0 bg-white rounded-lg shadow-2xs ring-1 ring-slate-200/60"
-                                    />
-                                    <span class="relative z-10">{{ tab.label }}</span>
-                                </button>
-                            </div>
-                        </div>
+                        <p class="hidden lg:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#009688]"></span>
+                            <span>Arahkan kursor pada unit untuk melihat detail</span>
+                        </p>
+                        <p class="lg:hidden text-[11px] font-semibold text-[#008C7E]">
+                            Ketuk unit untuk melihat foto &amp; pendaftaran
+                        </p>
                     </div>
+                </div>
 
-                    <!-- Swipeable Horizontal Strip on Mobile, Clean Responsive Grid on Tablet/Desktop -->
-                    <div class="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-x-auto sm:overflow-visible snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 sm:pb-0 no-scrollbar">
-                        <article
-                            v-for="unit in filteredCampuses"
-                            :key="unit.id"
-                            class="w-[82vw] sm:w-auto shrink-0 snap-start bg-white rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.08)] hover:shadow-[0_16px_38px_-16px_rgba(0,150,136,0.16)] hover:border-[#009688]/40 transition-all flex flex-col justify-between overflow-hidden group"
+                <!-- DESKTOP: Iconic Full-Width 6-Column Expanding Architectural Strip -->
+                <div
+                    class="hidden lg:flex w-full h-[380px] xl:h-[415px] border-y border-slate-200/80 bg-[#F7FAF9] overflow-hidden"
+                    @mouseleave="hoveredCampus = null"
+                >
+                    <div
+                        v-for="(unit, idx) in campuses"
+                        :key="unit.id"
+                        @mouseenter="hoveredCampus = idx"
+                        @focusin="hoveredCampus = idx"
+                        tabindex="0"
+                        class="relative min-w-0 h-full overflow-hidden border-r border-slate-200/80 last:border-r-0 cursor-pointer outline-none transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                        :style="{
+                            flexGrow: hoveredCampus === null ? 1 : hoveredCampus === idx ? 2.6 : 0.72,
+                            flexBasis: '0%',
+                        }"
+                    >
+                        <!-- RESTING STATE: Clean Proud Unit Logo Showcase -->
+                        <div
+                            class="absolute inset-0 z-10 flex flex-col items-center justify-center p-5 text-center transition-all duration-300"
+                            :class="
+                                hoveredCampus === idx
+                                    ? 'opacity-0 scale-95 pointer-events-none'
+                                    : hoveredCampus !== null
+                                      ? 'opacity-70 scale-95 bg-[#F4F8F7]'
+                                      : 'opacity-100 scale-100 bg-[#F7FAF9]'
+                            "
                         >
-                            <div>
-                                <!-- Campus Photo -->
-                                <div class="relative h-44 bg-slate-100 overflow-hidden">
-                                    <img
-                                        :src="unit.photo"
-                                        :alt="unit.name"
-                                        loading="lazy"
-                                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    />
-                                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/45 via-transparent to-transparent"></div>
-                                    <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-xs text-[10px] font-bold text-slate-700 shadow-2xs">
-                                        {{ unit.level }}
-                                    </span>
-                                    <!-- Logo Badge -->
-                                    <div class="absolute bottom-3 left-3 flex items-center gap-1.5">
-                                        <div class="w-10 h-10 rounded-xl bg-white p-1.5 shadow-md flex items-center justify-center">
-                                            <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" loading="lazy" />
+                            <!-- Subtle SPMB Live Dot on SD & SMP -->
+                            <span
+                                v-if="unit.spmbBadge"
+                                class="absolute top-5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E6F7F1] text-[#007468] text-[10px] font-bold tracking-wide transition-opacity duration-300"
+                                :class="hoveredCampus !== null ? 'opacity-0' : 'opacity-100'"
+                            >
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#009688]"></span>
+                                <span>{{ unit.spmbBadge }}</span>
+                            </span>
+
+                            <!-- Single or Dual Unit Logo -->
+                            <div v-if="!unit.logo2" class="h-16 xl:h-20 flex items-center justify-center mb-4">
+                                <img :src="unit.logo" :alt="unit.name" class="max-h-full w-auto object-contain drop-shadow-xs" loading="lazy" />
+                            </div>
+                            <div v-else class="h-16 xl:h-20 flex items-center justify-center gap-2 mb-4">
+                                <img :src="unit.logo" :alt="unit.name" class="h-12 xl:h-14 w-auto object-contain drop-shadow-xs" loading="lazy" />
+                                <span class="w-px h-9 bg-slate-200"></span>
+                                <img :src="unit.logo2" :alt="unit.name" class="h-12 xl:h-14 w-auto object-contain drop-shadow-xs" loading="lazy" />
+                            </div>
+
+                            <h3 class="text-xs xl:text-[13px] font-extrabold text-slate-900 tracking-wide uppercase px-1">
+                                {{ unit.name }}
+                            </h3>
+                            <p
+                                class="text-[11px] font-medium text-slate-500 mt-1 px-2 line-clamp-1 transition-opacity duration-300"
+                                :class="hoveredCampus !== null ? 'opacity-0' : 'opacity-100'"
+                            >
+                                {{ unit.level }}
+                            </p>
+                            <span class="w-6 h-[2px] rounded-full bg-[#009688]/60 mt-3.5"></span>
+                        </div>
+
+                        <!-- EXPANDED HOVER STATE: Real Campus Photography + Editorial Scrim + Actions -->
+                        <div
+                            class="absolute inset-0 z-20 transition-opacity duration-300"
+                            :class="hoveredCampus === idx ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+                        >
+                            <img
+                                :src="unit.photo"
+                                :alt="unit.name"
+                                loading="lazy"
+                                class="w-full h-full object-cover transition-transform duration-700 ease-out"
+                                :class="hoveredCampus === idx ? 'scale-100' : 'scale-[1.06]'"
+                            />
+                            <div
+                                class="absolute inset-0"
+                                style="background: linear-gradient(180deg, rgba(7,38,46,0.22) 0%, rgba(7,38,46,0.52) 48%, rgba(7,38,46,0.94) 100%);"
+                            ></div>
+
+                            <!-- Fixed-width Inner Stage prevents text reflow jitter while panel expands! -->
+                            <div class="absolute inset-0 p-7 xl:p-8 flex flex-col justify-between min-w-[340px]">
+                                <!-- Top Bar: Unit Logo Chip + Location -->
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-10 h-10 rounded-xl bg-white/95 p-1.5 shadow-md flex items-center justify-center">
+                                            <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" />
                                         </div>
-                                        <div v-if="unit.logo2" class="w-10 h-10 rounded-xl bg-white p-1.5 shadow-md flex items-center justify-center">
-                                            <img :src="unit.logo2" :alt="unit.name" class="w-full h-full object-contain" loading="lazy" />
+                                        <div v-if="unit.logo2" class="w-10 h-10 rounded-xl bg-white/95 p-1.5 shadow-md flex items-center justify-center">
+                                            <img :src="unit.logo2" :alt="unit.name" class="w-full h-full object-contain" />
+                                        </div>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-xs border border-white/20 text-[11px] font-semibold text-white">
+                                        <MapPinIcon class="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                                        <span class="truncate max-w-[200px]">{{ unit.address }}</span>
+                                    </span>
+                                </div>
+
+                                <!-- Bottom Content & Direct CTAs -->
+                                <div
+                                    class="space-y-3.5 transition-all duration-500 delay-75"
+                                    :class="hoveredCampus === idx ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'"
+                                >
+                                    <div>
+                                        <div class="text-[11px] font-bold uppercase tracking-widest text-emerald-300">
+                                            {{ unit.level }}
+                                        </div>
+                                        <h3 class="text-2xl font-extrabold text-white tracking-tight mt-0.5">
+                                            {{ unit.name }}
+                                        </h3>
+                                    </div>
+
+                                    <p class="text-xs xl:text-[13px] text-white/85 leading-relaxed max-w-md line-clamp-3">
+                                        {{ unit.summary }}
+                                    </p>
+
+                                    <div class="flex flex-wrap items-center gap-2.5 pt-1">
+                                        <component
+                                            :is="unit.primaryCta.external ? 'a' : Link"
+                                            :href="unit.primaryCta.href"
+                                            :target="unit.primaryCta.external ? '_blank' : undefined"
+                                            :rel="unit.primaryCta.external ? 'noopener noreferrer' : undefined"
+                                            class="px-4 py-2.5 rounded-xl bg-[#009688] hover:bg-[#007D71] text-white text-xs font-bold shadow-md transition-colors inline-flex items-center gap-1.5"
+                                        >
+                                            <span>{{ unit.primaryCta.label }}</span>
+                                            <ArrowRightIcon class="w-3.5 h-3.5" />
+                                        </component>
+
+                                        <component
+                                            v-if="unit.secondaryCta"
+                                            :is="unit.secondaryCta.external ? 'a' : Link"
+                                            :href="unit.secondaryCta.href"
+                                            class="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-xs text-xs font-bold transition-colors inline-flex items-center gap-1.5"
+                                        >
+                                            <span>{{ unit.secondaryCta.label }}</span>
+                                            <ArrowRightIcon class="w-3.5 h-3.5" />
+                                        </component>
+
+                                        <!-- Quick External Icons (SMP Website / WA / IG / YT) -->
+                                        <div v-if="unit.website || unit.wa || unit.instagram || unit.youtube" class="flex items-center gap-1.5 ml-auto">
+                                            <a
+                                                v-if="unit.website"
+                                                :href="unit.website"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title="Website Unit"
+                                                class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white hover:text-slate-900 text-white flex items-center justify-center transition-colors"
+                                            >
+                                                <GlobeAltIcon class="w-4 h-4" />
+                                            </a>
+                                            <a
+                                                v-if="unit.wa"
+                                                :href="unit.wa"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title="WhatsApp Unit"
+                                                class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white hover:text-slate-900 text-white flex items-center justify-center transition-colors"
+                                            >
+                                                <PhoneIcon class="w-4 h-4" />
+                                            </a>
+                                            <a
+                                                v-if="unit.instagram"
+                                                :href="unit.instagram"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title="Instagram"
+                                                class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white hover:text-slate-900 text-white flex items-center justify-center transition-colors"
+                                            >
+                                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                                <div class="p-5 space-y-3">
-                                    <div>
-                                        <h3 class="text-base font-extrabold text-slate-950 tracking-tight">{{ unit.name }}</h3>
-                                        <div class="flex items-center gap-1 text-[11px] font-medium text-slate-500 mt-1">
-                                            <MapPinIcon class="w-3.5 h-3.5 text-[#008C7E] shrink-0" />
-                                            <span class="truncate">{{ unit.address }}</span>
+                <!-- MOBILE & TABLET: Clean Logo List with Smooth Inline Photo & CTA Expand -->
+                <div class="lg:hidden max-w-6xl mx-auto px-4 sm:px-6 space-y-2.5">
+                    <div
+                        v-for="(unit, idx) in campuses"
+                        :key="unit.id"
+                        class="rounded-2xl border overflow-hidden transition-all"
+                        :class="
+                            mobileExpandedCampus === idx
+                                ? 'bg-white border-[#009688]/40 shadow-[0_10px_28px_-14px_rgba(0,150,136,0.2)]'
+                                : 'bg-[#F8FBFA] border-slate-200/75'
+                        "
+                    >
+                        <button
+                            type="button"
+                            @click="toggleMobileCampus(idx)"
+                            class="w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left cursor-pointer"
+                        >
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-11 h-11 rounded-xl bg-white border border-slate-100 p-1.5 shadow-2xs shrink-0 flex items-center justify-center">
+                                    <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" loading="lazy" />
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-extrabold text-slate-900 truncate">{{ unit.name }}</span>
+                                        <span
+                                            v-if="unit.spmbBadge"
+                                            class="px-2 py-0.5 rounded-full bg-[#E6F7F1] text-[#007468] text-[9px] font-extrabold uppercase shrink-0"
+                                        >
+                                            {{ unit.spmbBadge }}
+                                        </span>
+                                    </div>
+                                    <div class="text-[11px] font-medium text-slate-500 truncate mt-0.5">{{ unit.level }} · {{ unit.address }}</div>
+                                </div>
+                            </div>
+                            <ChevronDownIcon
+                                class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300"
+                                :class="mobileExpandedCampus === idx ? 'rotate-180 text-[#008C7E]' : ''"
+                            />
+                        </button>
+
+                        <AnimatePresence initial="false">
+                            <Motion
+                                v-if="mobileExpandedCampus === idx"
+                                :initial="{ opacity: 0, height: 0 }"
+                                :animate="{ opacity: 1, height: 'auto' }"
+                                :exit="{ opacity: 0, height: 0 }"
+                                :transition="{ duration: 0.24, ease: 'easeOut' }"
+                                class="overflow-hidden"
+                            >
+                                <div class="px-4 pb-4 space-y-3.5 border-t border-slate-100 pt-3.5">
+                                    <div class="relative h-44 rounded-xl overflow-hidden bg-slate-100">
+                                        <img :src="unit.photo" :alt="unit.name" class="w-full h-full object-cover" />
+                                        <div class="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 text-[10px] font-bold text-slate-800 shadow-xs">
+                                            <MapPinIcon class="w-3 h-3 text-[#008C7E]" />
+                                            <span>{{ unit.address }}</span>
                                         </div>
                                     </div>
 
                                     <p class="text-xs text-slate-600 leading-relaxed">{{ unit.summary }}</p>
 
-                                    <div class="flex flex-wrap gap-1.5 pt-0.5">
-                                        <span
-                                            v-for="tag in unit.tags"
-                                            :key="tag"
-                                            class="px-2.5 py-0.5 rounded-md bg-[#F2FAF7] text-[#007468] text-[10px] font-bold"
+                                    <div class="flex flex-wrap gap-2">
+                                        <component
+                                            :is="unit.primaryCta.external ? 'a' : Link"
+                                            :href="unit.primaryCta.href"
+                                            :target="unit.primaryCta.external ? '_blank' : undefined"
+                                            :rel="unit.primaryCta.external ? 'noopener noreferrer' : undefined"
+                                            class="flex-1 min-w-[140px] py-2.5 px-4 min-h-[44px] rounded-xl bg-[#009688] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5"
                                         >
-                                            {{ tag }}
-                                        </span>
+                                            <span>{{ unit.primaryCta.label }}</span>
+                                            <ArrowRightIcon class="w-3.5 h-3.5" />
+                                        </component>
+
+                                        <component
+                                            v-if="unit.secondaryCta"
+                                            :is="unit.secondaryCta.external ? 'a' : Link"
+                                            :href="unit.secondaryCta.href"
+                                            class="flex-1 min-w-[130px] py-2.5 px-4 min-h-[44px] rounded-xl border border-[#009688]/30 bg-[#ECF9F4] text-[#007468] text-xs font-bold inline-flex items-center justify-center gap-1.5"
+                                        >
+                                            <span>{{ unit.secondaryCta.label }}</span>
+                                            <ArrowRightIcon class="w-3.5 h-3.5" />
+                                        </component>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Card Footer Actions -->
-                            <div class="px-5 pb-5 pt-2 flex items-center justify-between gap-2 border-t border-slate-50">
-                                <Link
-                                    v-if="unit.spmbUrl"
-                                    :href="unit.spmbUrl"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-[#008C7E] hover:text-[#006B60] transition-colors"
-                                >
-                                    <span>{{ unit.spmbLabel }}</span>
-                                    <ArrowRightIcon class="w-3.5 h-3.5" />
-                                </Link>
-                                <a
-                                    v-else-if="unit.wa"
-                                    :href="unit.wa"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-[#008C7E] hover:text-[#006B60] transition-colors"
-                                >
-                                    <span>Konsultasi WhatsApp</span>
-                                    <ArrowRightIcon class="w-3.5 h-3.5" />
-                                </a>
-                                <span v-else class="text-[11px] font-semibold text-slate-400">Program Yayasan Namira</span>
-
-                                <div class="flex items-center gap-1.5">
-                                    <a
-                                        v-if="unit.website"
-                                        :href="unit.website"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title="Website Unit"
-                                        class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#E6F7F1] text-slate-600 hover:text-[#007468] flex items-center justify-center transition-colors"
-                                    >
-                                        <GlobeAltIcon class="w-3.5 h-3.5" />
-                                    </a>
-                                    <a
-                                        v-if="unit.wa && unit.spmbUrl"
-                                        :href="unit.wa"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title="WhatsApp Unit"
-                                        class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#E6F7F1] text-slate-600 hover:text-[#007468] flex items-center justify-center transition-colors"
-                                    >
-                                        <PhoneIcon class="w-3.5 h-3.5" />
-                                    </a>
-                                </div>
-                            </div>
-                        </article>
+                            </Motion>
+                        </AnimatePresence>
                     </div>
                 </div>
             </section>
