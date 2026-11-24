@@ -66,7 +66,10 @@ class PublicCareerController extends Controller
 
         $testimonials = Testimonial::with('unit:id,name')
             ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->where(function ($q) {
+                $q->whereIn('approval_status', ['published', 'approved'])
+                    ->orWhereNull('approval_status');
+            })
             ->latest()
             ->take(6)
             ->get(['id', 'unit_id', 'name', 'role_or_title', 'quote', 'photo_path'])

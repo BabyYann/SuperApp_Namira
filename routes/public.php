@@ -34,6 +34,25 @@ Route::get('/', function () {
     $testimonials = \App\Models\Testimonial::with('unit')->where('is_active', true)->latest()->get();
     $banners = \App\Models\Banner::where('is_active', true)->orderBy('order_weight', 'asc')->latest()->get();
 
+    $educationUnitsCount = \App\Modules\Yayasan\Models\Unit::where('code', '!=', 'YAYASAN')->count();
+    if ($educationUnitsCount === 0) {
+        $educationUnitsCount = \App\Modules\Yayasan\Models\Unit::count();
+    }
+
+    $uniquePartnerCount = $partners
+        ->map(fn ($p) => strtolower(trim((string) $p->name)))
+        ->filter()
+        ->unique()
+        ->count();
+
+    $homeStats = [
+        'units_count' => $educationUnitsCount,
+        'educators_count' => \App\Modules\Academic\Models\Teacher::count() + \App\Modules\Employee\Models\Staff::count(),
+        'students_count' => \App\Modules\Academic\Models\Student::count(),
+        'partners_count' => $uniquePartnerCount,
+        'open_vacancies_count' => \App\Models\JobVacancy::where('status', 'open')->count(),
+    ];
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
@@ -45,6 +64,7 @@ Route::get('/', function () {
         'destinations' => $destinations,
         'testimonials' => $testimonials,
         'bannersList' => $banners,
+        'homeStats' => $homeStats,
     ]);
 });
 

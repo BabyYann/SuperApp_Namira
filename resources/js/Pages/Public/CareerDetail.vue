@@ -42,6 +42,8 @@ const props = defineProps({
 const lightboxOpen = ref(false);
 const isCompressingPhoto = ref(false);
 const photoPreview = ref(null);
+const formSectionRef = ref(null);
+const showStickyApplyBar = ref(true);
 
 const form = useForm({
     name: '',
@@ -134,9 +136,13 @@ const scrollToTopSmooth = () => {
 
 const scrollToForm = () => {
     if (lenisInstance) {
-        lenisInstance.scrollTo('#form-lamaran', { offset: -88, duration: 1.0 });
+        lenisInstance.scrollTo('#form-lamaran', { offset: -84, duration: 0.95 });
     } else {
-        document.querySelector('#form-lamaran')?.scrollIntoView({ behavior: 'smooth' });
+        const el = document.querySelector('#form-lamaran');
+        if (el) {
+            const y = el.getBoundingClientRect().top + window.scrollY - 76;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
     }
 };
 
@@ -164,27 +170,31 @@ const submitApplication = () => {
 
 const formatDate = (dateStr) => {
     if (!dateStr) return 'Tanpa Batas Waktu';
-    return dayjs(dateStr).format('DD MMMM YYYY');
+    return dayjs(dateStr).format('DD MMM YYYY');
 };
 
-// Restrained Lenis + GSAP choreography
+// Restrained Lenis (desktop fine pointer only) + GSAP
 const pageRoot = ref(null);
 const progressBarRef = ref(null);
 let lenisInstance = null;
 let lenisRaf = null;
 let gsapCtx = null;
 let keydownHandler = null;
+let formObserver = null;
 
 watch(lightboxOpen, (val) => {
     if (val) {
         lenisInstance?.stop();
+        document.body.style.overflow = 'hidden';
     } else {
         lenisInstance?.start();
+        document.body.style.overflow = '';
     }
 });
 
 onMounted(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isFinePointer = window.matchMedia('(pointer: fine)').matches;
 
     keydownHandler = (e) => {
         if (e.key === 'Escape' && lightboxOpen.value) {
@@ -193,13 +203,23 @@ onMounted(() => {
     };
     window.addEventListener('keydown', keydownHandler);
 
-    if (!prefersReduced) {
+    // Hide mobile sticky bottom CTA once user reaches the application form
+    if (formSectionRef.value && 'IntersectionObserver' in window) {
+        formObserver = new IntersectionObserver(
+            (entries) => {
+                showStickyApplyBar.value = !entries[0].isIntersecting;
+            },
+            { threshold: 0.1 }
+        );
+        formObserver.observe(formSectionRef.value);
+    }
+
+    if (!prefersReduced && isFinePointer) {
         lenisInstance = new Lenis({
             duration: 1.0,
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             smoothWheel: true,
             wheelMultiplier: 0.95,
-            touchMultiplier: 1.35,
         });
 
         lenisInstance.on('scroll', ScrollTrigger.update);
@@ -227,10 +247,10 @@ onMounted(() => {
         }
 
         gsap.from('.detail-enter', {
-            y: 16,
+            y: 14,
             opacity: 0,
-            duration: 0.65,
-            stagger: 0.08,
+            duration: 0.6,
+            stagger: 0.07,
             ease: 'power3.out',
             clearProps: 'transform,opacity',
         });
@@ -238,7 +258,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    document.body.style.overflow = '';
     if (keydownHandler) window.removeEventListener('keydown', keydownHandler);
+    if (formObserver) formObserver.disconnect();
     if (gsapCtx) gsapCtx.revert();
     if (lenisRaf) gsap.ticker.remove(lenisRaf);
     if (lenisInstance) lenisInstance.destroy();
@@ -250,7 +272,7 @@ onUnmounted(() => {
 
     <div
         ref="pageRoot"
-        class="min-h-screen bg-[#FAFDFC] text-slate-900 font-sans antialiased selection:bg-[#009688]/15 selection:text-[#006B60] flex flex-col"
+        class="min-h-screen bg-[#FAFDFC] text-slate-900 font-sans antialiased selection:bg-[#009688]/15 selection:text-[#006B60] flex flex-col pb-20 lg:pb-0"
     >
         <!-- Subtle Top Scroll Progress Hairline -->
         <div
@@ -260,11 +282,11 @@ onUnmounted(() => {
         ></div>
 
         <!-- Matching Minimal White Top Navbar -->
-        <header class="sticky top-0 z-40 bg-white/92 backdrop-blur-md border-b border-slate-100">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-4">
-                <div class="flex items-center gap-3 shrink-0">
-                    <Link href="/" class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-white border border-slate-100 shadow-2xs p-1 flex items-center justify-center shrink-0 overflow-hidden">
+        <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[72px] flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+                    <Link href="/" class="flex items-center gap-2 sm:gap-2.5">
+                        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-100 shadow-2xs p-1 flex items-center justify-center shrink-0 overflow-hidden">
                             <img
                                 :src="$page.props.app_settings?.app_logo || '/images/landing/logo-yayasan.webp'"
                                 alt="Logo Namira"
@@ -272,18 +294,18 @@ onUnmounted(() => {
                             />
                         </div>
                         <div class="flex items-baseline gap-1 select-none whitespace-nowrap">
-                            <span class="font-namira text-xl text-[#1a4373] tracking-tight lowercase leading-none">namira</span>
-                            <span class="font-school text-xs text-slate-500 tracking-wider uppercase font-extrabold leading-none">SCHOOL</span>
+                            <span class="font-namira text-lg sm:text-xl text-[#1a4373] tracking-tight lowercase leading-none">namira</span>
+                            <span class="font-school text-[11px] sm:text-xs text-slate-500 tracking-wider uppercase font-extrabold leading-none">SCHOOL</span>
                         </div>
                     </Link>
 
-                    <span class="h-5 w-px bg-slate-200 hidden sm:inline-block"></span>
+                    <span class="h-4 sm:h-5 w-px bg-slate-200 hidden sm:inline-block"></span>
                     <Link :href="route('careers.index')" class="hidden sm:inline-block text-[13px] font-semibold text-slate-500 hover:text-[#008C7E] transition-colors">
                         Karir
                     </Link>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3">
                     <button
                         type="button"
                         @click="scrollToForm"
@@ -293,11 +315,11 @@ onUnmounted(() => {
                     </button>
                     <Link
                         :href="route('careers.index')"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 hover:border-[#009688] hover:text-[#008C7E] text-slate-700 text-xs font-bold transition-colors"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl border border-slate-200 hover:border-[#009688] hover:text-[#008C7E] text-slate-700 text-xs font-bold transition-colors"
                     >
                         <ArrowLeftIcon class="w-3.5 h-3.5" />
                         <span class="hidden sm:inline">Semua Lowongan</span>
-                        <span class="sm:hidden">Lowongan</span>
+                        <span class="sm:hidden">Kembali</span>
                     </Link>
                 </div>
             </div>
@@ -305,27 +327,25 @@ onUnmounted(() => {
 
         <!-- Soft Pastel Mint Editorial Header Wash -->
         <section class="relative bg-[#EDF9F4] border-b border-[#DDF3EA] overflow-hidden">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-11 space-y-6">
-                <!-- Breadcrumb -->
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-11 space-y-5 sm:space-y-6">
                 <div class="detail-enter flex items-center gap-2 text-xs font-semibold text-slate-500">
-                    <Link :href="route('careers.index')" class="hover:text-[#008C7E] transition-colors">Portal Karir</Link>
+                    <Link :href="route('careers.index')" class="hover:text-[#008C7E] transition-colors shrink-0">Portal Karir</Link>
                     <span>/</span>
                     <span class="text-slate-800 truncate">{{ vacancy.title }}</span>
                 </div>
 
-                <!-- Main Header Row -->
-                <div class="detail-enter flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-                    <div class="space-y-3 max-w-3xl">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-3 py-1 rounded-full bg-white text-[#007468] border border-[#009688]/20 text-[11px] font-extrabold uppercase tracking-wide shadow-2xs">
+                <div class="detail-enter flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6">
+                    <div class="space-y-2.5 max-w-3xl">
+                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            <span class="px-2.5 sm:px-3 py-1 rounded-full bg-white text-[#007468] border border-[#009688]/20 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide shadow-2xs">
                                 {{ vacancy.unit?.name || 'Yayasan Namira' }}
                             </span>
-                            <span class="px-3 py-1 rounded-full bg-white/80 text-slate-700 border border-slate-200/70 text-[11px] font-bold">
+                            <span class="px-2.5 sm:px-3 py-1 rounded-full bg-white/80 text-slate-700 border border-slate-200/70 text-[10px] sm:text-[11px] font-bold">
                                 {{ vacancy.type_label }}
                             </span>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[11px] font-semibold">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[10px] sm:text-[11px] font-semibold">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                Lowongan Terbuka
+                                Terbuka
                             </span>
                         </div>
 
@@ -334,20 +354,20 @@ onUnmounted(() => {
                         </h1>
                     </div>
 
-                    <div class="bg-white/95 rounded-2xl border border-[#009688]/15 px-4 py-3 shadow-2xs shrink-0 flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <ClockIcon class="w-5 h-5" />
+                    <div class="bg-white/95 rounded-2xl border border-[#009688]/15 px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-2xs shrink-0 flex items-center gap-3 self-start lg:self-auto">
+                        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <ClockIcon class="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div>
                             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Batas Pengumpulan</div>
-                            <div class="text-sm font-extrabold text-slate-900">{{ formatDate(vacancy.deadline) }}</div>
+                            <div class="text-xs sm:text-sm font-extrabold text-slate-900">{{ formatDate(vacancy.deadline) }}</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 4 Clean Inline Stat Tiles -->
-                <div class="detail-enter grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                    <div class="bg-white/90 rounded-2xl border border-white p-3.5 shadow-2xs flex items-start gap-2.5">
+                <!-- 4 Clean Inline Stat Tiles (2x2 Compact Mobile) -->
+                <div class="detail-enter grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-0.5">
+                    <div class="bg-white/90 rounded-2xl border border-white p-3 sm:p-3.5 shadow-2xs flex items-start gap-2">
                         <BuildingOffice2Icon class="w-4 h-4 text-[#008C7E] shrink-0 mt-0.5" />
                         <div class="min-w-0">
                             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Kategori</div>
@@ -355,7 +375,7 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <div class="bg-white/90 rounded-2xl border border-white p-3.5 shadow-2xs flex items-start gap-2.5">
+                    <div class="bg-white/90 rounded-2xl border border-white p-3 sm:p-3.5 shadow-2xs flex items-start gap-2">
                         <UserGroupIcon class="w-4 h-4 text-[#008C7E] shrink-0 mt-0.5" />
                         <div class="min-w-0">
                             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Kuota</div>
@@ -363,7 +383,7 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <div class="bg-white/90 rounded-2xl border border-white p-3.5 shadow-2xs flex items-start gap-2.5">
+                    <div class="bg-white/90 rounded-2xl border border-white p-3 sm:p-3.5 shadow-2xs flex items-start gap-2">
                         <ShieldCheckIcon class="w-4 h-4 text-[#008C7E] shrink-0 mt-0.5" />
                         <div class="min-w-0">
                             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Kerja</div>
@@ -371,7 +391,7 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <div class="bg-white/90 rounded-2xl border border-white p-3.5 shadow-2xs flex items-start gap-2.5">
+                    <div class="bg-white/90 rounded-2xl border border-white p-3 sm:p-3.5 shadow-2xs flex items-start gap-2">
                         <EyeIcon class="w-4 h-4 text-[#008C7E] shrink-0 mt-0.5" />
                         <div class="min-w-0">
                             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Dilihat</div>
@@ -383,7 +403,7 @@ onUnmounted(() => {
         </section>
 
         <!-- Main Split Workspace -->
-        <main class="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
+        <main class="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-10 sm:space-y-12">
             <!-- Success Flash Banner -->
             <AnimatePresence>
                 <Motion
@@ -391,7 +411,7 @@ onUnmounted(() => {
                     :initial="{ opacity: 0, y: -10 }"
                     :animate="{ opacity: 1, y: 0 }"
                     :transition="{ duration: 0.3 }"
-                    class="p-5 rounded-3xl bg-[#E6F7F1] border border-[#009688]/30 text-[#005B52] flex items-start gap-3.5 shadow-xs"
+                    class="p-4 sm:p-5 rounded-3xl bg-[#E6F7F1] border border-[#009688]/30 text-[#005B52] flex items-start gap-3 shadow-xs"
                 >
                     <CheckCircleIcon class="w-6 h-6 text-[#008C7E] shrink-0 mt-0.5" />
                     <div class="space-y-1">
@@ -401,27 +421,26 @@ onUnmounted(() => {
                 </Motion>
             </AnimatePresence>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
                 <!-- LEFT COLUMN: Poster Showcase, Unit Info, Deskripsi & Kualifikasi -->
                 <div class="lg:col-span-5 space-y-5 lg:sticky lg:top-[92px]">
-                    <!-- Clean Bright Studio Poster Showcase (Zero Dark Clutter) -->
                     <div
                         v-if="vacancy.poster_url"
-                        class="detail-enter bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-[0_12px_34px_-18px_rgba(15,23,42,0.10)] space-y-3.5"
+                        class="detail-enter bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-[0_12px_34px_-18px_rgba(15,23,42,0.10)] space-y-3"
                     >
-                        <div class="relative rounded-2xl overflow-hidden bg-[#F2FAF7] border border-slate-100 p-3 flex items-center justify-center group">
+                        <div class="relative rounded-2xl overflow-hidden bg-[#F2FAF7] border border-slate-100 p-2.5 sm:p-3 flex items-center justify-center group">
                             <img
                                 :src="vacancy.poster_url"
                                 :alt="`Poster ${vacancy.title}`"
                                 @click="lightboxOpen = true"
-                                class="w-full h-auto max-h-[600px] object-contain rounded-xl shadow-md ring-1 ring-slate-900/5 transition-transform duration-300 group-hover:scale-[1.01] cursor-zoom-in"
+                                class="w-full h-auto max-h-[420px] sm:max-h-[600px] object-contain rounded-xl shadow-md ring-1 ring-slate-900/5 transition-transform duration-300 group-hover:scale-[1.01] cursor-zoom-in"
                             />
                         </div>
-                        <div class="flex items-center gap-2.5">
+                        <div class="flex items-center gap-2">
                             <button
                                 type="button"
                                 @click="lightboxOpen = true"
-                                class="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
+                                class="flex-1 py-2.5 min-h-[42px] px-3 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
                             >
                                 <MagnifyingGlassPlusIcon class="w-4 h-4 text-[#008C7E]" />
                                 <span>Perbesar Poster</span>
@@ -431,7 +450,7 @@ onUnmounted(() => {
                                 download
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="py-2.5 px-4 rounded-xl bg-[#E6F7F1] hover:bg-[#D5F2E8] text-[#007468] border border-[#009688]/20 text-xs font-bold inline-flex items-center gap-1.5 transition"
+                                class="py-2.5 min-h-[42px] px-4 rounded-xl bg-[#E6F7F1] hover:bg-[#D5F2E8] text-[#007468] border border-[#009688]/20 text-xs font-bold inline-flex items-center gap-1.5 transition"
                             >
                                 <ArrowDownTrayIcon class="w-4 h-4" />
                                 <span>Unduh</span>
@@ -442,7 +461,7 @@ onUnmounted(() => {
                     <!-- Location & WhatsApp Contact Card -->
                     <div
                         v-if="vacancy.placement_address || unitWhatsappHref"
-                        class="detail-enter bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4"
+                        class="detail-enter bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4"
                     >
                         <div v-if="vacancy.placement_address" class="flex items-start gap-3">
                             <div class="w-9 h-9 rounded-xl bg-[#E6F7F1] text-[#008C7E] flex items-center justify-center shrink-0">
@@ -461,7 +480,7 @@ onUnmounted(() => {
                             :href="unitWhatsappHref"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="w-full py-3 px-4 rounded-xl bg-[#009688] hover:bg-[#007D71] text-white text-xs font-bold inline-flex items-center justify-center gap-2 transition shadow-2xs"
+                            class="w-full py-3 min-h-[46px] px-4 rounded-xl bg-[#009688] hover:bg-[#007D71] text-white text-xs font-bold inline-flex items-center justify-center gap-2 transition shadow-2xs"
                         >
                             <ChatBubbleLeftRightIcon class="w-4 h-4" />
                             <span>Hubungi Admin Unit ({{ vacancy.contact_whatsapp }})</span>
@@ -493,10 +512,10 @@ onUnmounted(() => {
                     </div>
                 </div>
 
-                <!-- RIGHT COLUMN: High-Craft Online Application Form -->
-                <div id="form-lamaran" class="lg:col-span-7 detail-enter">
+                <!-- RIGHT COLUMN: High-Craft Online Application Form (16px/15px mobile inputs to avoid iOS zoom!) -->
+                <div id="form-lamaran" ref="formSectionRef" class="lg:col-span-7 detail-enter">
                     <div class="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200/80 shadow-[0_14px_40px_-18px_rgba(15,23,42,0.08)] space-y-6">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-4 sm:pb-5">
                             <div>
                                 <h2 class="text-lg sm:text-xl font-extrabold text-slate-950 tracking-tight">
                                     Formulir Lamaran Online
@@ -510,7 +529,6 @@ onUnmounted(() => {
                             </span>
                         </div>
 
-                        <!-- Validation Error Summary -->
                         <div
                             v-if="Object.keys(form.errors).length > 0"
                             class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1.5"
@@ -521,7 +539,7 @@ onUnmounted(() => {
                             </ul>
                         </div>
 
-                        <form @submit.prevent="submitApplication" class="space-y-7">
+                        <form @submit.prevent="submitApplication" class="space-y-6 sm:space-y-7">
                             <!-- 1. Data Diri -->
                             <div class="space-y-4">
                                 <div class="flex items-center gap-2.5">
@@ -529,7 +547,7 @@ onUnmounted(() => {
                                     <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Data Diri Pelamar</h3>
                                 </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Lengkap <span class="text-rose-500">*</span></label>
                                         <input
@@ -537,7 +555,7 @@ onUnmounted(() => {
                                             type="text"
                                             required
                                             placeholder="Sesuai KTP & Ijazah"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         />
                                     </div>
 
@@ -545,7 +563,7 @@ onUnmounted(() => {
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">Jenis Kelamin <span class="text-rose-500">*</span></label>
                                         <select
                                             v-model="form.gender"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         >
                                             <option value="L">Laki-Laki</option>
                                             <option value="P">Perempuan</option>
@@ -559,7 +577,7 @@ onUnmounted(() => {
                                             type="email"
                                             required
                                             placeholder="contoh@gmail.com"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         />
                                     </div>
 
@@ -570,7 +588,7 @@ onUnmounted(() => {
                                             type="tel"
                                             required
                                             placeholder="081234567890"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-mono font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-mono font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         />
                                     </div>
 
@@ -581,7 +599,7 @@ onUnmounted(() => {
                                             type="text"
                                             required
                                             placeholder="Kota Kelahiran"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         />
                                     </div>
 
@@ -591,7 +609,7 @@ onUnmounted(() => {
                                             v-model="form.birth_date"
                                             type="date"
                                             required
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         />
                                     </div>
                                 </div>
@@ -603,7 +621,7 @@ onUnmounted(() => {
                                         rows="2"
                                         required
                                         placeholder="Alamat domisili lengkap..."
-                                        class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                        class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                     ></textarea>
                                 </div>
                             </div>
@@ -615,12 +633,12 @@ onUnmounted(() => {
                                     <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Pendidikan Terakhir</h3>
                                 </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">Jenjang Pendidikan <span class="text-rose-500">*</span></label>
                                         <select
                                             v-model="form.last_education"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         >
                                             <option value="SMA">SMA / SMK / MA</option>
                                             <option value="D3">Diploma (D3)</option>
@@ -637,7 +655,7 @@ onUnmounted(() => {
                                             type="text"
                                             required
                                             placeholder="Contoh: Pendidikan Jasmani / PGSD"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         />
                                     </div>
 
@@ -648,7 +666,7 @@ onUnmounted(() => {
                                             type="text"
                                             required
                                             placeholder="Nama Kampus / Sekolah"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         />
                                     </div>
 
@@ -658,20 +676,20 @@ onUnmounted(() => {
                                             v-model="form.gpa"
                                             type="text"
                                             placeholder="Contoh: 3.75"
-                                            class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                            class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 3. Unggah Berkas Persyaratan (All 7 Documents Intact!) -->
+                            <!-- 3. Unggah Berkas Persyaratan -->
                             <div class="space-y-4 pt-3 border-t border-slate-100">
                                 <div class="flex items-center gap-2.5">
                                     <span class="w-6 h-6 rounded-lg bg-[#E6F7F1] text-[#007468] text-xs font-extrabold flex items-center justify-center">3</span>
                                     <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Unggah Berkas Persyaratan</h3>
                                 </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <!-- CV -->
                                     <div
                                         class="p-3.5 rounded-2xl border transition-colors space-y-2"
@@ -683,7 +701,7 @@ onUnmounted(() => {
                                         <input type="file" @change="(e) => handleFileField(e, 'cv', cvFileName)" accept=".pdf,image/*" class="hidden" id="cv-upload" />
                                         <label
                                             for="cv-upload"
-                                            class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
+                                            class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
                                         >
                                             <CheckCircleIcon v-if="cvFileName" class="w-4 h-4 text-[#008C7E] shrink-0" />
                                             <PaperClipIcon v-else class="w-4 h-4 text-[#008C7E] shrink-0" />
@@ -700,7 +718,7 @@ onUnmounted(() => {
                                         <input type="file" @change="(e) => handleFileField(e, 'cover_letter', coverLetterFileName)" accept=".pdf,image/*" class="hidden" id="cover-upload" />
                                         <label
                                             for="cover-upload"
-                                            class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
+                                            class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
                                         >
                                             <CheckCircleIcon v-if="coverLetterFileName" class="w-4 h-4 text-[#008C7E] shrink-0" />
                                             <PaperClipIcon v-else class="w-4 h-4 text-[#008C7E] shrink-0" />
@@ -717,7 +735,7 @@ onUnmounted(() => {
                                         <input type="file" @change="(e) => handleFileField(e, 'certificate', certificateFileName)" accept=".pdf,image/*" class="hidden" id="cert-upload" />
                                         <label
                                             for="cert-upload"
-                                            class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
+                                            class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
                                         >
                                             <CheckCircleIcon v-if="certificateFileName" class="w-4 h-4 text-[#008C7E] shrink-0" />
                                             <PaperClipIcon v-else class="w-4 h-4 text-[#008C7E] shrink-0" />
@@ -734,7 +752,7 @@ onUnmounted(() => {
                                         <input type="file" @change="(e) => handleFileField(e, 'health_cert', healthCertFileName)" accept=".pdf,image/*" class="hidden" id="health-upload" />
                                         <label
                                             for="health-upload"
-                                            class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
+                                            class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
                                         >
                                             <CheckCircleIcon v-if="healthCertFileName" class="w-4 h-4 text-[#008C7E] shrink-0" />
                                             <PaperClipIcon v-else class="w-4 h-4 text-[#008C7E] shrink-0" />
@@ -751,7 +769,7 @@ onUnmounted(() => {
                                         <input type="file" @change="(e) => handleFileField(e, 'family_card', familyCardFileName, true)" accept=".pdf,image/*" class="hidden" id="kk-upload" />
                                         <label
                                             for="kk-upload"
-                                            class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
+                                            class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
                                         >
                                             <CheckCircleIcon v-if="familyCardFileName" class="w-4 h-4 text-[#008C7E] shrink-0" />
                                             <PaperClipIcon v-else class="w-4 h-4 text-[#008C7E] shrink-0" />
@@ -768,7 +786,7 @@ onUnmounted(() => {
                                         <input type="file" @change="(e) => handleFileField(e, 'ktp', ktpFileName, true)" accept=".pdf,image/*" class="hidden" id="ktp-upload" />
                                         <label
                                             for="ktp-upload"
-                                            class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
+                                            class="flex items-center gap-2 px-3 py-2.5 min-h-[44px] bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer w-full justify-center truncate"
                                         >
                                             <CheckCircleIcon v-if="ktpFileName" class="w-4 h-4 text-[#008C7E] shrink-0" />
                                             <PaperClipIcon v-else class="w-4 h-4 text-[#008C7E] shrink-0" />
@@ -778,7 +796,7 @@ onUnmounted(() => {
 
                                     <!-- Pas Foto 3x4 -->
                                     <div
-                                        class="sm:col-span-2 p-4 rounded-2xl border transition-colors flex items-center gap-4"
+                                        class="sm:col-span-2 p-3.5 sm:p-4 rounded-2xl border transition-colors flex items-center gap-3.5"
                                         :class="photoFileName ? 'bg-[#F2FAF7] border-[#009688]/35' : 'bg-[#FAFCFB] border-slate-200/80'"
                                     >
                                         <div class="w-14 h-16 rounded-xl border border-slate-200 bg-white overflow-hidden flex items-center justify-center shrink-0">
@@ -790,7 +808,7 @@ onUnmounted(() => {
                                             <input type="file" @change="(e) => handleFileField(e, 'photo', photoFileName, true)" accept="image/*" class="hidden" id="photo-upload" />
                                             <label
                                                 for="photo-upload"
-                                                class="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer max-w-full"
+                                                class="inline-flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] bg-white border border-slate-200 hover:border-[#009688] rounded-xl text-xs font-semibold text-slate-700 transition cursor-pointer max-w-full"
                                             >
                                                 <PhotoIcon class="w-4 h-4 text-[#008C7E] shrink-0" />
                                                 <span class="truncate">{{ isCompressingPhoto ? 'Mengompres...' : (photoFileName || 'Pilih Pas Foto 3x4') }}</span>
@@ -807,7 +825,7 @@ onUnmounted(() => {
                                     v-model="form.notes"
                                     rows="3"
                                     placeholder="Tuliskan pengalaman mengajar/kerja relevan atau tautan portofolio Anda..."
-                                    class="w-full rounded-xl border-slate-200 text-xs sm:text-[13px] font-medium focus:border-[#009688] focus:ring-[#009688]/20"
+                                    class="w-full rounded-xl border-slate-200 text-[15px] sm:text-[13px] py-2.5 font-medium focus:border-[#009688] focus:ring-[#009688]/20"
                                 ></textarea>
                             </div>
 
@@ -817,7 +835,7 @@ onUnmounted(() => {
                                     <button
                                         type="submit"
                                         :disabled="form.processing || isCompressingPhoto"
-                                        class="w-full py-3.5 px-6 rounded-xl bg-[#009688] hover:bg-[#007D71] text-white font-bold text-sm shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                                        class="w-full py-3.5 min-h-[50px] px-6 rounded-xl bg-[#009688] hover:bg-[#007D71] text-white font-bold text-sm shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                                     >
                                         <CheckIcon class="w-5 h-5" />
                                         <span>{{ form.processing ? 'Mengirim Lamaran...' : 'Kirim Pendaftaran Lamaran Kerja' }}</span>
@@ -829,8 +847,8 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- Other Open Vacancies Strip (When available) -->
-            <section v-if="otherVacancies && otherVacancies.length > 0" class="pt-8 border-t border-slate-200/70 space-y-6">
+            <!-- Other Open Vacancies Strip -->
+            <section v-if="otherVacancies && otherVacancies.length > 0" class="pt-8 border-t border-slate-200/70 space-y-5">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="text-lg sm:text-xl tracking-tight text-slate-900">
                         <span class="font-normal">Lowongan </span>
@@ -842,14 +860,14 @@ onUnmounted(() => {
                     </Link>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                     <Link
                         v-for="item in otherVacancies"
                         :key="item.id"
                         :href="route('careers.show', item.slug)"
                         class="bg-white rounded-2xl border border-slate-200/80 hover:border-[#009688]/50 hover:shadow-md transition-all p-5 flex flex-col justify-between gap-4 group"
                     >
-                        <div class="space-y-2.5">
+                        <div class="space-y-2">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="px-2.5 py-0.5 rounded-full bg-[#E6F7F1] text-[#007468] text-[10px] font-extrabold uppercase">
                                     {{ item.unit?.name || 'Yayasan Namira' }}
@@ -871,9 +889,42 @@ onUnmounted(() => {
             </section>
         </main>
 
+        <!-- Mobile Sticky Bottom Quick Apply Bar (Auto-hides once user reaches the Form!) -->
+        <AnimatePresence>
+            <Motion
+                v-if="showStickyApplyBar"
+                :initial="{ y: 80, opacity: 0 }"
+                :animate="{ y: 0, opacity: 1 }"
+                :exit="{ y: 80, opacity: 0 }"
+                :transition="{ duration: 0.2 }"
+                class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-4 py-3 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.12)]"
+            >
+                <div class="flex items-center gap-2.5">
+                    <a
+                        v-if="unitWhatsappHref"
+                        :href="unitWhatsappHref"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="WhatsApp Admin Unit"
+                        class="w-12 h-12 rounded-xl border border-slate-200 bg-white text-[#008C7E] flex items-center justify-center shrink-0"
+                    >
+                        <ChatBubbleLeftRightIcon class="w-5 h-5" />
+                    </a>
+                    <button
+                        type="button"
+                        @click="scrollToForm"
+                        class="flex-1 h-12 rounded-xl bg-[#009688] active:bg-[#007D71] text-white text-sm font-bold inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                    >
+                        <span>Isi Formulir Lamaran Online</span>
+                        <ArrowRightIcon class="w-4 h-4" />
+                    </button>
+                </div>
+            </Motion>
+        </AnimatePresence>
+
         <!-- Matching Minimal White Footer -->
-        <footer class="bg-white border-t border-slate-100 py-10 mt-8">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+        <footer class="bg-white border-t border-slate-100 py-8 sm:py-10 mt-6">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-[11px] sm:text-xs text-slate-500 text-center sm:text-left">
                 <div class="flex items-center gap-2">
                     <span class="font-namira text-base text-[#1a4373] lowercase">namira</span>
                     <span class="font-school text-[10px] text-slate-500 uppercase font-extrabold">SCHOOL</span>
@@ -893,25 +944,25 @@ onUnmounted(() => {
                     :animate="{ opacity: 1 }"
                     :exit="{ opacity: 0 }"
                     :transition="{ duration: 0.2 }"
-                    class="fixed inset-0 z-[120] bg-slate-950/88 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+                    class="fixed inset-0 z-[120] bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-3 sm:p-4"
                     @click.self="lightboxOpen = false"
                 >
                     <Motion
                         :initial="{ opacity: 0, scale: 0.94, y: 12 }"
                         :animate="{ opacity: 1, scale: 1, y: 0 }"
                         :exit="{ opacity: 0, scale: 0.95 }"
-                        :transition="{ duration: 0.24, ease: 'easeOut' }"
+                        :transition="{ duration: 0.22, ease: 'easeOut' }"
                         class="w-full max-w-2xl flex flex-col items-center"
                     >
                         <div class="w-full flex items-center justify-between text-white mb-3 gap-3">
-                            <h4 class="font-bold text-sm truncate">{{ vacancy.title }}</h4>
+                            <h4 class="font-bold text-xs sm:text-sm truncate">{{ vacancy.title }}</h4>
                             <div class="flex items-center gap-2 shrink-0">
                                 <a
                                     :href="vacancy.poster_url"
                                     download
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold inline-flex items-center gap-1.5 transition"
+                                    class="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold inline-flex items-center gap-1.5 transition"
                                 >
                                     <ArrowDownTrayIcon class="w-4 h-4" />
                                     <span>Unduh</span>

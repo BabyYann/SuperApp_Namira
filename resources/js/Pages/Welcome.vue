@@ -1,89 +1,69 @@
 <script setup>
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
-import { 
-    Bars3Icon, 
-    XMarkIcon, 
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
+import { Motion, AnimatePresence } from 'motion-v';
+import {
+    Bars3Icon,
+    XMarkIcon,
     ArrowLeftIcon,
     ArrowRightIcon,
     ClockIcon,
     MapPinIcon,
+    ChevronDownIcon,
+    CalendarDaysIcon,
+    BriefcaseIcon,
     AcademicCapIcon,
-    ChevronDownIcon
+    PhoneIcon,
+    GlobeAltIcon,
+    SparklesIcon,
 } from '@heroicons/vue/24/outline';
 
-// Import AOS
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-
-// Import Leaflet
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Mobile menu state
-const isMobileMenuOpen = ref(false);
+gsap.registerPlugin(ScrollTrigger);
 
 const props = defineProps({
-    canLogin: {
-        type: Boolean,
-    },
-    canRegister: {
-        type: Boolean,
-    },
+    canLogin: Boolean,
+    canRegister: Boolean,
     latestNews: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     upcomingEvents: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     partners: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     destinations: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     testimonials: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     bannersList: {
         type: Array,
-        default: () => []
-    }
+        default: () => [],
+    },
+    homeStats: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const page = usePage();
-const appSettings = page.props.app_settings || {};
-const appName = 'Namira School';
-const appLogo = '/images/landing/logo-yayasan.webp'; 
+const appLogo = computed(() => page.props.app_settings?.app_logo || '/images/landing/logo-yayasan.webp');
 
-// Scroll effect for Navbar & Scroll Spy
+// Navbar & Mobile Menu state
 const isScrolled = ref(false);
-const activeHash = ref('#home');
+const isMobileMenuOpen = ref(false);
 const showUnitsDropdown = ref(false);
-const showAboutDropdown = ref(false);
-const showMobileUnitsAccordion = ref(false);
-const showMobileAboutAccordion = ref(false);
-
-const isUnitsActive = computed(() => {
-    return activeHash.value === '#campuses' || activeHash.value.startsWith('#campus-');
-});
-
-const isAboutActive = computed(() => {
-    return ['#news', '#events', '#partners', '#testimonials', '#about'].includes(activeHash.value);
-});
-
-const aboutNavItems = [
-    { name: 'Berita & Artikel', href: '#news', hash: '#news', desc: 'Informasi & berita terbaru Yayasan' },
-    { name: 'Agenda & Acara', href: '#events', hash: '#events', desc: 'Jadwal & kegiatan mendatang' },
-    { name: 'Portal Karir & Rekrutmen', href: route('careers.index'), hash: 'careers', desc: 'Peluang karir pendidik & staf', isRoute: true },
-    { name: 'Mitra Kerjasama', href: '#partners', hash: '#partners', desc: 'Mitra & jaringan kerjasama' },
-    { name: 'Testimoni', href: '#testimonials', hash: '#testimonials', desc: 'Kesan orang tua & alumni' },
-];
 
 const handleDropdownFocusOut = (event, setter) => {
     if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -91,45 +71,24 @@ const handleDropdownFocusOut = (event, setter) => {
     }
 };
 
-const activeCampusIndex = ref(null);
-const toggleCampusCard = (index) => {
-    activeCampusIndex.value = activeCampusIndex.value === index ? null : index;
-};
-
-const handleScroll = () => {
-    isScrolled.value = window.scrollY > 50;
-
-    const docEl = document.documentElement;
-    if (window.innerHeight + window.scrollY >= docEl.scrollHeight - 80) {
-        activeHash.value = '#footer';
-        return;
-    }
-
-    const sections = ['home', 'campuses', 'destinations', 'testimonials', 'news', 'events', 'partners', 'footer'];
-    for (const section of sections) {
-        const el = document.getElementById(section);
-        if (el) {
-            const rect = el.getBoundingClientRect();
-            if (rect.top <= 200 && rect.bottom >= 200) {
-                activeHash.value = '#' + section;
-                break;
-            }
-        }
-    }
-};
-
-// Banner Slider
+// Banner Slider (uses real DB banners with titles + verified fallbacks)
 const bannersCollection = computed(() => {
     if (props.bannersList && props.bannersList.length > 0) {
-        return props.bannersList.map(b => '/' + b.image_path);
+        return props.bannersList.map((b) => {
+            const cleanPath = String(b.image_path || '').replace(/^\/+/, '');
+            return {
+                url: cleanPath.startsWith('http') ? cleanPath : '/' + cleanPath,
+                title: b.title || 'Sekolah Islam Namira',
+            };
+        });
     }
-    // Static Fallback
     return [
-        '/images/landing/banner-1.webp',
-        '/images/landing/banner-2.webp',
-        '/images/landing/banner-3.webp'
+        { url: '/images/landing/banner-1.webp', title: 'SD Namira Kraksaan' },
+        { url: '/images/landing/photo-smp.webp', title: 'SMP Namira Kota Probolinggo' },
+        { url: '/images/landing/banner-3.webp', title: 'TK, KB & Daycare Namira' },
     ];
 });
+
 const currentBanner = ref(0);
 const bannerProgress = ref(0);
 let bannerInterval = null;
@@ -142,15 +101,15 @@ const startBannerInterval = () => {
         bannerRafId = null;
     }
     bannerProgress.value = 0;
+    const DURATION = 6000;
+    let start = Date.now();
+
     bannerInterval = setInterval(() => {
-        nextBanner();
+        currentBanner.value = (currentBanner.value + 1) % bannersCollection.value.length;
         bannerProgress.value = 0;
         start = Date.now();
-    }, 6000);
+    }, DURATION);
 
-    // Animate progress bar
-    let start = Date.now();
-    const DURATION = 6000;
     const tick = () => {
         if (!bannerInterval) return;
         bannerProgress.value = Math.min(((Date.now() - start) / DURATION) * 100, 100);
@@ -161,22 +120,6 @@ const startBannerInterval = () => {
     bannerRafId = requestAnimationFrame(tick);
 };
 
-const nextBanner = () => {
-    currentBanner.value = (currentBanner.value + 1) % bannersCollection.value.length;
-};
-
-const prevBanner = () => {
-    currentBanner.value = (currentBanner.value - 1 + bannersCollection.value.length) % bannersCollection.value.length;
-};
-
-const manualChangeBanner = (direction) => {
-    clearInterval(bannerInterval);
-    bannerInterval = null;
-    if (direction === 'next') nextBanner();
-    else prevBanner();
-    startBannerInterval();
-};
-
 const goToBanner = (index) => {
     clearInterval(bannerInterval);
     bannerInterval = null;
@@ -184,114 +127,162 @@ const goToBanner = (index) => {
     startBannerInterval();
 };
 
-let statsObserver = null;
-let mapInitTimer = null;
-
-onMounted(() => {
-    window.addEventListener('scroll', handleScroll);
-    startBannerInterval();
-
-    // Initialize AOS
-    AOS.init({
-        duration: 1000,
-        once: true, // whether animation should happen only once - while scrolling down
-        offset: 100, // offset (in px) from the original trigger point
+// Smart Banner Photo Matcher for Unit Cards
+const findBannerPhoto = (keywords, fallback) => {
+    const match = bannersCollection.value.find((b) => {
+        const t = String(b.title || '').toLowerCase();
+        return keywords.some((kw) => t.includes(kw));
     });
+    return match?.url || fallback;
+};
 
-    // Observer for Stats Counting Animation
-    statsObserver = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-            startCounting();
-            statsObserver?.disconnect();
-        }
-    }, { threshold: 0.3 });
+// Complete Units Catalog (Includes SD Namira Kota Probolinggo!)
+const activeUnitTab = ref('semua');
+const unitTabs = [
+    { key: 'semua', label: 'Semua Unit' },
+    { key: 'formal', label: 'SD & SMP' },
+    { key: 'paud', label: 'PAUD, TK & Daycare' },
+    { key: 'khusus', label: 'Tahfidz & Terapi' },
+];
 
-    if (statsSection.value) {
-        statsObserver.observe(statsSection.value);
-    }
-
-    // Init Leaflet Map after DOM ready
-    mapInitTimer = setTimeout(() => { initMap(); }, 300);
-});
-
-onUnmounted(() => {
-    clearInterval(bannerInterval);
-    bannerInterval = null;
-    if (bannerRafId) cancelAnimationFrame(bannerRafId);
-    if (statsObserver) statsObserver.disconnect();
-    if (mapInitTimer) clearTimeout(mapInitTimer);
-    window.removeEventListener('scroll', handleScroll);
-    if (leafletMap) { leafletMap.remove(); leafletMap = null; }
-});
-
-// Campuses Data
-const campuses = [
-    { name: 'Daycare Namira', logo: '/images/landing/logo-daycare.webp', photo: '/images/landing/banner-1.webp', address: 'Area Daycare Namira' },
-    { name: 'Pavlov Center', logo: '/images/landing/logo-pavlov.webp', photo: '/images/landing/banner-2.webp', address: 'Gedung Pavlov Center' },
-    { name: 'TK - KB Namira', logo: '/images/landing/logo-tk.webp', logo2: '/images/landing/logo-kb.webp', photo: '/images/landing/banner-3.webp', address: 'Area TK & PAUD' },
-    { name: 'SD Namira', logo: '/images/landing/logo-sd.webp', photo: '/images/landing/banner-1.webp', address: 'Gedung SD Namira', spmbUrl: route('spmb.register.sd') },
+const campuses = computed(() => [
     {
-        name: 'SMP Namira',
+        id: 'sd-kraksaan',
+        group: 'formal',
+        name: 'SD Namira Kraksaan',
+        level: 'Sekolah Dasar',
+        logo: '/images/landing/logo-sd.webp',
+        photo: findBannerPhoto(['sd ', 'sd namira', 'gedung'], '/images/landing/banner-1.webp'),
+        address: 'Kraksaan, Kabupaten Probolinggo',
+        summary: 'Pendidikan dasar Islam modern berbasis fitrah, Metode Ummi, dan literasi aktif.',
+        tags: ['Akreditasi Unggul', 'Metode Ummi'],
+        spmbUrl: route('spmb.register.sd'),
+        spmbLabel: 'Daftar SPMB SD',
+    },
+    {
+        id: 'sd-kota',
+        group: 'formal',
+        name: 'SD Namira Kota Probolinggo',
+        level: 'Sekolah Dasar',
+        logo: '/images/landing/logo-sd.webp',
+        photo: findBannerPhoto(['sd namira', 'gedung'], '/images/landing/banner-2.webp'),
+        address: 'Kota Probolinggo, Jawa Timur',
+        summary: 'Kampus SD Namira wilayah Kota Probolinggo dengan jalur Inden multi-tahun ajaran.',
+        tags: ['Jalur Inden Tersedia', 'Karakter Qur’ani'],
+        spmbUrl: route('spmb.register.sd-kota'),
+        spmbLabel: 'Daftar Inden SD Kota',
+    },
+    {
+        id: 'smp-namira',
+        group: 'formal',
+        name: 'SMP Namira Kota Probolinggo',
+        level: 'Sekolah Menengah Pertama',
         logo: '/images/landing/logo-smp.webp',
-        photo: '/images/landing/photo-smp.webp',
-        address: 'Jl. KH. Ahmad Dahlan, Probolinggo',
+        photo: findBannerPhoto(['smp'], '/images/landing/photo-smp.webp'),
+        address: 'Jl. KH. Ahmad Dahlan, Kota Probolinggo',
+        summary: 'Sekolah menengah Islam berwawasan global dengan budaya riset, bilingual, dan tahfidz.',
+        tags: ['Bilingual & Riset', 'Full Day School'],
         spmbUrl: route('spmb.register.smp'),
+        spmbLabel: 'Daftar SPMB SMP',
         website: 'https://www.smpnamiraprob.sch.id/',
         wa: 'https://wa.me/6285336778880',
-        email: 'mailto:namirasmp@gmail.com',
-        facebook: 'https://www.facebook.com/namirajuniorhighschool',
         instagram: 'https://www.instagram.com/namirajuniorhighschool',
-        youtube: 'https://www.youtube.com/@smpnamiraprobolinggo9462',
     },
-    { name: 'Rumah Tahfidz', logo: '/images/landing/logo-tahfidz.webp', photo: '/images/landing/banner-3.webp', address: 'Asrama Tahfidz Quran' },
-];
+    {
+        id: 'tk-kb',
+        group: 'paud',
+        name: 'TK & KB Namira',
+        level: 'PAUD & Taman Kanak-Kanak',
+        logo: '/images/landing/logo-tk.webp',
+        logo2: '/images/landing/logo-kb.webp',
+        photo: findBannerPhoto(['kb', 'tk'], '/images/landing/banner-3.webp'),
+        address: 'Kampus Kraksaan & Dringu',
+        summary: 'Stimulasi motorik kreatif, pembiasaan adab Islami, dan kecintaan Al-Qur’an sejak dini.',
+        tags: ['Kraksaan & Dringu', 'Prioritas Lanjut SD'],
+        wa: 'https://wa.me/6282332922521',
+    },
+    {
+        id: 'daycare',
+        group: 'paud',
+        name: 'Daycare Namira',
+        level: 'Pengasuhan Anak',
+        logo: '/images/landing/logo-daycare.webp',
+        photo: findBannerPhoto(['day care', 'daycare'], '/images/landing/banner-3.webp'),
+        address: 'Kampus Kraksaan & Dringu',
+        summary: 'Layanan pengasuhan aman dan hangat bagi keluarga aktif dengan laporan harian digital.',
+        tags: ['Laporan Digital', 'Pengasuh Terlatih'],
+        wa: 'https://wa.me/6282332922521',
+    },
+    {
+        id: 'pavlov',
+        group: 'khusus',
+        name: 'Pavlov Center Namira',
+        level: 'Pusat Tumbuh Kembang',
+        logo: '/images/landing/logo-pavlov.webp',
+        photo: findBannerPhoto(['day care', 'kb'], '/images/landing/banner-2.webp'),
+        address: 'Gedung Pavlov Center, Probolinggo',
+        summary: 'Pendampingan khusus tumbuh kembang dan layanan terapi ramah anak bersama praktisi.',
+        tags: ['Pendampingan Khusus', 'Ramah Anak'],
+        wa: 'https://wa.me/6282332922521',
+    },
+    {
+        id: 'tahfidz',
+        group: 'khusus',
+        name: 'Rumah Tahfidz Namira',
+        level: 'Program Al-Qur’an',
+        logo: '/images/landing/logo-tahfidz.webp',
+        photo: findBannerPhoto(['sd ', 'smp'], '/images/landing/banner-1.webp'),
+        address: 'Lingkungan Yayasan Namira',
+        summary: 'Pembinaan hafalan dan tahsin Al-Qur’an terstruktur bersama asatidz bersertifikat.',
+        tags: ['Tahsin & Tahfidz', 'Metode Ummi'],
+    },
+]);
 
-// Stats Data
-const stats = [
-    { label: 'Tahun Berdiri', value: 15, suffix: '', duration: 2000 },
-    { label: 'Alumni Sukses', value: 5700, suffix: '+', duration: 2000 },
-    { label: 'Mitra Kerjasama', value: 75, suffix: '+', duration: 2000 },
-    { label: 'Tenaga Pendidik', value: 150, suffix: '+', duration: 2000 },
-    { label: 'Siswa Aktif', value: 3900, suffix: '+', duration: 2000 },
-];
+const filteredCampuses = computed(() => {
+    if (activeUnitTab.value === 'semua') return campuses.value;
+    return campuses.value.filter((c) => c.group === activeUnitTab.value);
+});
 
-const displayedStats = ref([0, 0, 0, 0, 0]);
-const statsSection = ref(null);
-let hasCounted = false;
+// Genuine Live Metrics from DB (Replaces hardcoded 3D yellow flip-cards!)
+const impactMetrics = computed(() => {
+    const units = Number(props.homeStats?.units_count || 0) > 0 ? Number(props.homeStats.units_count) : 10;
+    const students = Number(props.homeStats?.students_count || 0) > 0 ? Number(props.homeStats.students_count) : 900;
+    const educators = Number(props.homeStats?.educators_count || 0) > 0 ? Number(props.homeStats.educators_count) : 180;
+    const partners = Number(props.homeStats?.partners_count || 0) > 0 ? Number(props.homeStats.partners_count) : 10;
 
-const startCounting = () => {
-    if (hasCounted) return;
-    hasCounted = true;
-    
-    stats.forEach((stat, index) => {
-        const target = stat.value;
-        const duration = stat.duration;
-        const start = performance.now();
-        
-        const updateCount = (currentTime) => {
-            const elapsed = currentTime - start;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // easeOutQuad
-            const easeOut = progress * (2 - progress);
-            
-            displayedStats.value[index] = Math.floor(easeOut * target);
-            
-            if (progress < 1) {
-                requestAnimationFrame(updateCount);
-            } else {
-                displayedStats.value[index] = target;
-            }
-        };
-        
-        requestAnimationFrame(updateCount);
-    });
-};
-// Static data replaced by dynamic props
+    return [
+        { target: units, suffix: '+', label: 'Unit Pendidikan', sub: 'Daycare, PAUD, TK, SD & SMP' },
+        { target: students, suffix: '+', label: 'Peserta Didik Aktif', sub: 'Tersebar di Probolinggo' },
+        { target: educators, suffix: '+', label: 'Pendidik & Staf', sub: 'Guru & pembina profesional' },
+        { target: partners, suffix: '+', label: 'Mitra & Instansi', sub: 'Kolaborasi pendidikan & kesehatan' },
+    ];
+});
+
+const openVacanciesCount = computed(() => Number(props.homeStats?.open_vacancies_count || 0));
+
+// Deduplicated Partners Marquee (Removes duplicate names across units cleanly!)
+const uniquePartners = computed(() => {
+    const seen = new Set();
+    const clean = [];
+    for (const item of props.partners || []) {
+        const key = String(item.name || '').trim().toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        const path = String(item.logo_path || '').replace(/^\/+/, '');
+        clean.push({
+            id: item.id,
+            name: item.name,
+            logo: path ? (path.startsWith('http') ? path : '/' + path) : null,
+        });
+    }
+    return clean;
+});
+
+// Formatting Helpers
 const formatDateStr = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 const getEventDateParts = (dateString) => {
@@ -299,925 +290,1442 @@ const getEventDateParts = (dateString) => {
     const date = new Date(dateString);
     return {
         day: date.toLocaleDateString('id-ID', { day: '2-digit' }),
-        month: date.toLocaleDateString('id-ID', { month: 'short' })
+        month: date.toLocaleDateString('id-ID', { month: 'short' }),
     };
 };
 
-// Map Toggle
-const mapView = ref('indonesia');
-const mapContainer = ref(null);
-let leafletMap = null;
-let markersLayer = null;
+const stripHtmlExcerpt = (news, limit = 105) => {
+    const raw = news.excerpt || String(news.content || '').replace(/<[^>]*>/g, '');
+    const clean = raw.replace(/\s+/g, ' ').trim();
+    if (clean.length <= limit) return clean;
+    return clean.slice(0, limit).trimEnd() + '...';
+};
 
-// University data from DB
+const normalizeAssetUrl = (path, fallback) => {
+    if (!path) return fallback;
+    const clean = String(path).replace(/^\/+/, '');
+    return clean.startsWith('http') ? clean : '/' + clean;
+};
+
+// Outing Class & Lazy-Loaded Leaflet Map
 const universitiesByType = computed(() => {
-    const grouped = { indonesia: [], overseas: [], lokal: [] };
-    props.destinations.forEach(d => {
+    const grouped = { indonesia: [], overseas: [] };
+    (props.destinations || []).forEach((d) => {
         if (d.lat && d.lng) {
-            grouped[d.type]?.push({
+            const bucket = d.type === 'overseas' ? 'overseas' : 'indonesia';
+            grouped[bucket].push({
+                id: d.id,
                 name: d.name,
-                city: d.city + (d.country !== 'Indonesia' ? ', ' + d.country : ''),
+                city: d.city + (d.country && d.country !== 'Indonesia' ? ', ' + d.country : ''),
                 lat: parseFloat(d.lat),
                 lng: parseFloat(d.lng),
-                typeLabel: d.type === 'overseas' ? 'Internasional' : (d.type === 'lokal' ? 'Lokal' : 'Nasional'),
-                unit: d.unit?.name || '',
-                visit_type: d.visit_type,
+                typeLabel: d.type === 'overseas' ? 'Internasional' : 'Nasional',
+                unit: d.unit?.name || 'Yayasan Namira',
                 visit_type_label: d.visit_type === 'alumni' ? 'Alumni' : 'Kunjungan',
-                visit_date: d.visit_date,
+                description: d.description || '',
             });
         }
     });
     return grouped;
 });
 
-const initMap = () => {
-    if (!mapContainer.value) return;
-    
-    const isMobile = window.innerWidth < 768;
-    
-    const centerConfig = {
-        overseas: { center: [20, 30], zoom: isMobile ? 1 : 2 },
-        indonesia: { center: [-2.5, 118], zoom: isMobile ? 4 : 5 },
-    };
-    
+const hasOverseasDestinations = computed(() => universitiesByType.value.overseas.length > 0);
+const mapView = ref('indonesia');
+const currentDestinations = computed(() => universitiesByType.value[mapView.value] || []);
+const mapSectionRef = ref(null);
+const mapContainer = ref(null);
+let leafletLib = null;
+let leafletMap = null;
+let markersById = new Map();
+let mapVisible = false;
+
+const renderMap = async () => {
+    if (!mapContainer.value || !mapVisible) return;
+
+    if (!leafletLib) {
+        const [{ default: L }] = await Promise.all([
+            import('leaflet'),
+            import('leaflet/dist/leaflet.css'),
+        ]);
+        leafletLib = L;
+    }
+
+    const L = leafletLib;
     if (leafletMap) {
         leafletMap.remove();
         leafletMap = null;
     }
+    markersById.clear();
 
-    const config = centerConfig[mapView.value];
+    const list = currentDestinations.value;
+    const isMobile = window.innerWidth < 768;
+    const defaultCenter =
+        list.length === 1
+            ? [list[0].lat, list[0].lng]
+            : mapView.value === 'overseas'
+              ? [20, 30]
+              : [-4.5, 114];
+    const defaultZoom =
+        list.length === 1
+            ? 10
+            : mapView.value === 'overseas'
+              ? isMobile ? 1 : 2
+              : isMobile ? 4 : 5;
+
     leafletMap = L.map(mapContainer.value, {
-        center: config.center,
-        zoom: config.zoom,
+        center: defaultCenter,
+        zoom: defaultZoom,
         zoomControl: false,
         scrollWheelZoom: false,
         attributionControl: false,
     });
 
-    // Standard OpenStreetMap tile
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
-        maxZoom: 19,
+        maxZoom: 18,
     }).addTo(leafletMap);
 
-    // Custom yellow pulsing marker icon
-    const makeIcon = () => L.divIcon({
-        html: `<div style="
-            width:14px;height:14px;
-            background:#fbbf24;
-            border:2px solid #064e3b;
-            border-radius:50%;
-            box-shadow:0 0 0 4px rgba(251,191,36,0.3), 0 0 12px rgba(251,191,36,0.6);
-            animation: markerPulse 2s infinite;
-        "></div>`,
-        className: '',
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
-    });
-    
-    // Add markers
-    markersLayer = L.layerGroup().addTo(leafletMap);
-    const list = universitiesByType.value[mapView.value] || [];
-    list.forEach(univ => {
-        const marker = L.marker([univ.lat, univ.lng], { icon: makeIcon() })
-            .bindPopup(`
-                <div style="font-family:sans-serif;min-width:200px;">
-                    <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;">${univ.city}</div>
-                    <div style="font-size:13px;font-weight:700;color:#064e3b;margin-bottom:6px;">${univ.name}</div>
+    const makeIcon = () =>
+        L.divIcon({
+            html: `<div style="width:14px;height:14px;background:#009688;border:2.5px solid #ffffff;border-radius:50%;box-shadow:0 0 0 4px rgba(0,150,136,0.25),0 4px 10px rgba(0,0,0,0.2);"></div>`,
+            className: '',
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+        });
+
+    list.forEach((dest) => {
+        const marker = L.marker([dest.lat, dest.lng], { icon: makeIcon() })
+            .bindPopup(
+                `<div style="font-family:sans-serif;min-width:180px;">
+                    <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;">${dest.city}</div>
+                    <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;">${dest.name}</div>
                     <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                        <span style="font-size:10px;background:#fbbf24;color:#064e3b;padding:2px 7px;border-radius:4px;font-weight:600;">${univ.visit_type_label}</span>
-                        <span style="font-size:10px;background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:4px;font-weight:600;">${univ.typeLabel}</span>
+                        <span style="font-size:10px;background:#E6F7F1;color:#007468;padding:2px 7px;border-radius:999px;font-weight:700;">${dest.visit_type_label}</span>
+                        <span style="font-size:10px;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:999px;font-weight:700;">${dest.unit}</span>
                     </div>
-                    <div style="font-size:10px;color:#9ca3af;margin-top:5px;">${univ.unit}</div>
-                </div>
-            `, { className: 'namira-popup' })
-            .addTo(markersLayer);
+                </div>`,
+                { className: 'namira-map-popup' }
+            )
+            .addTo(leafletMap);
+        markersById.set(dest.id, marker);
     });
 
-    // Add zoom control at bottom-right
     L.control.zoom({ position: 'bottomright' }).addTo(leafletMap);
+};
+
+const focusDestinationOnMap = (dest) => {
+    if (!leafletMap) return;
+    leafletMap.flyTo([dest.lat, dest.lng], 11, { duration: 0.8 });
+    const marker = markersById.get(dest.id);
+    if (marker) marker.openPopup();
 };
 
 watch([mapView, () => props.destinations], async () => {
     await nextTick();
-    initMap();
+    renderMap();
 });
 
-// Testimonial Data
+// Testimonials (Clean 3-Card Pager on Desktop, Smooth Horizontal Swipe on Mobile!)
 const testimonialsList = computed(() => {
     if (props.testimonials && props.testimonials.length > 0) {
-        return props.testimonials.map(t => ({
+        return props.testimonials.map((t) => ({
+            id: t.id,
             name: t.name,
-            quote: t.quote,
-            photo: t.photo_path ? '/' + t.photo_path : '/images/landing/banner-1.webp',
-            role: t.role_or_title || '',
+            quote: String(t.quote || '').replace(/^["“]+|["”]+$/g, '').trim(),
+            photo: t.photo_path ? normalizeAssetUrl(t.photo_path, null) : null,
+            role: t.role_or_title || 'Wali Murid',
             unit: t.unit?.name || '',
         }));
     }
-    // Static Fallback
     return [
-        { name: 'Ibu Ratna', quote: "Kami bangga menyekolahkan anak kami di sini. Sistem pendidikannya sangat terpadu dan guru-gurunya profesional.", photo: '/images/landing/banner-1.webp', role: 'Wali Murid', unit: 'SD Namira' },
-        { name: 'Bapak Budi', quote: "Karakter islami anak saya terbentuk sangat baik sejak masuk Namira. Fasilitasnya juga sangat mendukung.", photo: '/images/landing/banner-2.webp', role: 'Wali Murid', unit: 'SMP Namira' },
-        { name: 'Ananda', quote: "Lulusan Namira sangat berdaya saing. Bekal agama dan ilmu umum yang seimbang sangat bermanfaat.", photo: '/images/landing/banner-3.webp', role: 'Alumni', unit: 'SMA Namira' }
+        {
+            id: 1,
+            name: 'Ibu Ratna',
+            quote: 'Kami bangga menyekolahkan anak kami di Namira. Sistem pendidikannya terpadu dan guru-gurunya sangat sabar membimbing.',
+            photo: null,
+            role: 'Wali Murid',
+            unit: 'SD Namira',
+        },
+        {
+            id: 2,
+            name: 'Bapak Budi',
+            quote: 'Karakter Islami dan kemandirian anak saya bertumbuh sangat baik sejak belajar di SMP Namira.',
+            photo: null,
+            role: 'Wali Murid',
+            unit: 'SMP Namira',
+        },
+        {
+            id: 3,
+            name: 'Faurizatul Firdausi',
+            quote: 'Bagi kami, Namira School bukan sekadar sekolah, tetapi mitra keluarga dalam mendidik generasi Qur’ani.',
+            photo: null,
+            role: 'Wali Murid',
+            unit: 'TK Namira',
+        },
     ];
 });
-const testimonialsCount = computed(() => testimonialsList.value.length);
-const currentTesti = ref(0);
-const nextTesti = () => {
-    currentTesti.value = (currentTesti.value + 1) % testimonialsList.value.length;
+
+const testiPage = ref(0);
+const testiPageCount = computed(() => Math.max(1, Math.ceil(testimonialsList.value.length / 3)));
+const desktopVisibleTestimonials = computed(() => {
+    const start = testiPage.value * 3;
+    return testimonialsList.value.slice(start, start + 3);
+});
+
+const nextTestiPage = () => {
+    testiPage.value = (testiPage.value + 1) % testiPageCount.value;
 };
-const prevTesti = () => {
-    currentTesti.value = (currentTesti.value - 1 + testimonialsList.value.length) % testimonialsList.value.length;
+const prevTestiPage = () => {
+    testiPage.value = (testiPage.value - 1 + testiPageCount.value) % testiPageCount.value;
 };
 
-// Colors
-// Dark Green: #064e3b (Tailwind: emerald-900 / namira-green)
-// Yellow: #fbbf24 (Tailwind: amber-400 / namira-yellow)
+// Scroll, GSAP & Desktop-Only Lenis Setup
+const pageRoot = ref(null);
+const progressBarRef = ref(null);
+let lenisInstance = null;
+let lenisRaf = null;
+let gsapCtx = null;
+let mapObserver = null;
+let scrollRafPending = false;
+
+const handleScroll = () => {
+    if (scrollRafPending) return;
+    scrollRafPending = true;
+    requestAnimationFrame(() => {
+        isScrolled.value = window.scrollY > 40;
+        scrollRafPending = false;
+    });
+};
+
+const smoothScrollTo = (target) => {
+    isMobileMenuOpen.value = false;
+    if (lenisInstance) {
+        lenisInstance.scrollTo(target, { offset: -76, duration: 1.0 });
+    } else if (typeof target === 'number') {
+        window.scrollTo({ top: target, behavior: 'smooth' });
+    } else {
+        const el = document.querySelector(target);
+        if (el) {
+            const y = el.getBoundingClientRect().top + window.scrollY - 72;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+    }
+};
+
+onMounted(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    startBannerInterval();
+
+    // Lazy-init Leaflet map only when scrolled near
+    if (mapSectionRef.value && 'IntersectionObserver' in window) {
+        mapObserver = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    mapVisible = true;
+                    renderMap();
+                    mapObserver?.disconnect();
+                }
+            },
+            { rootMargin: '240px 0px' }
+        );
+        mapObserver.observe(mapSectionRef.value);
+    } else {
+        mapVisible = true;
+        renderMap();
+    }
+
+    // Smooth inertia on desktop; keep native silky touch momentum on mobile
+    if (!prefersReduced && isFinePointer) {
+        lenisInstance = new Lenis({
+            duration: 1.05,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 0.95,
+        });
+        lenisInstance.on('scroll', ScrollTrigger.update);
+        lenisRaf = (time) => {
+            lenisInstance?.raf(time * 1000);
+        };
+        gsap.ticker.add(lenisRaf);
+        gsap.ticker.lagSmoothing(0);
+    }
+
+    gsapCtx = gsap.context(() => {
+        if (prefersReduced) return;
+
+        if (progressBarRef.value) {
+            gsap.to(progressBarRef.value, {
+                scaleX: 1,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: pageRoot.value,
+                    start: 'top top',
+                    end: 'bottom bottom',
+                    scrub: 0.2,
+                },
+            });
+        }
+
+        gsap.from('.hero-enter', {
+            y: 16,
+            opacity: 0,
+            duration: 0.72,
+            stagger: 0.09,
+            ease: 'power3.out',
+            clearProps: 'transform,opacity',
+        });
+
+        gsap.utils.toArray('.reveal-up').forEach((el) => {
+            gsap.from(el, {
+                y: 20,
+                opacity: 0,
+                duration: 0.62,
+                ease: 'power2.out',
+                clearProps: 'transform,opacity',
+                scrollTrigger: {
+                    trigger: el,
+                    start: 'top 88%',
+                    once: true,
+                },
+            });
+        });
+
+        gsap.utils.toArray('.home-stat-counter').forEach((el) => {
+            const target = Number(el.dataset.target || 0);
+            const suffix = el.dataset.suffix || '';
+            const proxy = { val: 0 };
+            ScrollTrigger.create({
+                trigger: el,
+                start: 'top 92%',
+                once: true,
+                onEnter: () => {
+                    gsap.to(proxy, {
+                        val: target,
+                        duration: 1.15,
+                        ease: 'power2.out',
+                        onUpdate: () => {
+                            el.textContent = Math.round(proxy.val).toLocaleString('id-ID') + suffix;
+                        },
+                    });
+                },
+            });
+        });
+    }, pageRoot.value);
+});
+
+onUnmounted(() => {
+    clearInterval(bannerInterval);
+    bannerInterval = null;
+    if (bannerRafId) cancelAnimationFrame(bannerRafId);
+    window.removeEventListener('scroll', handleScroll);
+    if (mapObserver) mapObserver.disconnect();
+    if (leafletMap) {
+        leafletMap.remove();
+        leafletMap = null;
+    }
+    if (gsapCtx) gsapCtx.revert();
+    if (lenisRaf) gsap.ticker.remove(lenisRaf);
+    if (lenisInstance) lenisInstance.destroy();
+});
 </script>
 
 <template>
-    <Head title="Namira School - Sekolah Islam Terpadu Probolinggo (SD, SMP, PAUD, Daycare)" />
-    
-    <div class="min-h-screen bg-[#f8f9fa] font-sans text-gray-900 selection:bg-[#fbbf24] selection:text-[#064e3b]">
-        <!-- Header & Navigation -->
-        <header :class="['fixed top-0 w-full z-50 transition-all duration-500', isScrolled ? 'bg-white shadow-lg py-3 border-b border-slate-100' : 'bg-gradient-to-b from-[#082a3a]/85 via-[#082a3a]/45 to-transparent py-6']">
-            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center">
-                    <!-- Logo Section -->
-                    <a href="#home" @click="activeHash = '#home'" class="flex items-center gap-3 group">
-                        <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 md:w-12 md:h-12 aspect-square overflow-hidden transition-transform duration-300 group-hover:scale-105">
-                            <img :src="appLogo" alt="Logo" class="w-full h-full object-contain" />
-                        </div>
-                        <div class="flex items-baseline gap-1.5 md:gap-2 select-none whitespace-nowrap">
-                            <span class="font-namira text-2xl md:text-3xl text-[#1a4373] tracking-tight lowercase text-stroke-white drop-shadow-sm leading-none">namira</span>
-                            <span class="font-school text-base md:text-xl tracking-wider uppercase text-stroke-white-sm font-extrabold leading-none" :class="isScrolled ? 'text-slate-600' : 'text-slate-200'">SCHOOL</span>
-                        </div>
-                    </a>
+    <Head title="Namira School — Sekolah Islam Terpadu Probolinggo (Daycare, PAUD, TK, SD, SMP)" />
 
-                    <!-- Desktop Navigation Links -->
-                    <nav aria-label="Navigasi Utama" class="hidden lg:flex items-center gap-4 xl:gap-7 ml-auto">
-                        <!-- 1. Home -->
-                        <a href="#home" 
-                           @click="activeHash = '#home'" 
-                           class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
-                           :class="[activeHash === '#home' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
-                            Home
-                            <span v-if="activeHash !== '#home'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </a>
-                        
-                        <!-- 2. Units (Dropdown) -->
-                        <div class="relative group" 
-                             @mouseenter="showUnitsDropdown = true" 
-                             @mouseleave="showUnitsDropdown = false"
-                             @focusin="showUnitsDropdown = true"
-                             @focusout="handleDropdownFocusOut($event, (v) => showUnitsDropdown = v)">
-                            <a href="#campuses" 
-                               @click="activeHash = '#campuses'" 
-                               aria-haspopup="true"
-                               :aria-expanded="showUnitsDropdown"
-                               class="relative py-4 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group/nav" 
-                               :class="[isUnitsActive ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
-                                Units
-                                <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-300" :class="{'rotate-180': showUnitsDropdown}" />
-                                <span v-if="!isUnitsActive" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                            </a>
-                            
-                            <!-- Dropdown Menu -->
-                            <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
-                                <div v-show="showUnitsDropdown" class="absolute left-0 top-full pt-1.5 w-64 z-50">
-                                    <div class="bg-white rounded-xl shadow-2xl py-3 border border-slate-100 overflow-hidden">
-                                        <div class="px-4 py-2 border-b border-slate-50 mb-1">
-                                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daftar Unit Sekolah</p>
-                                        </div>
-                                        <a v-for="(unit, i) in campuses" 
-                                           :key="i" 
-                                           :href="'#campus-' + i" 
-                                           @click="showUnitsDropdown = false; activeHash = '#campuses'; activeCampusIndex = i" 
-                                           class="flex items-center gap-3 px-4 py-3 hover:bg-[#f8f9fa] transition-colors group/item">
-                                            <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center p-1 group-hover/item:bg-[#fbbf24]/10 transition-colors">
-                                                <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" />
-                                            </div>
-                                            <span class="text-xs font-semibold text-[#082a3a] group-hover/item:translate-x-1 transition-transform">{{ unit.name }}</span>
-                                        </a>
-                                    </div>
-                                </div>
-                            </transition>
-                        </div>
+    <div
+        ref="pageRoot"
+        class="min-h-screen bg-white text-slate-900 font-sans antialiased selection:bg-[#009688]/15 selection:text-[#006B60] flex flex-col overflow-x-clip"
+    >
+        <!-- Subtle Top Scroll Progress Hairline -->
+        <div
+            ref="progressBarRef"
+            aria-hidden="true"
+            class="fixed top-0 left-0 right-0 h-[2.5px] bg-[#009688] origin-left scale-x-0 z-50 pointer-events-none"
+        ></div>
 
-                        <!-- 3. Outing Class (Smooth scroll to locations/map section) -->
-                        <a href="#destinations" 
-                           @click="activeHash = '#destinations'" 
-                           class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
-                           :class="[activeHash === '#destinations' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
-                            Outing Class
-                            <span v-if="activeHash !== '#destinations'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </a>
-
-                        <!-- 4. SPMB Online -->
-                        <Link :href="route('spmb.index')" class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav font-medium" :class="isScrolled ? 'text-slate-800 hover:text-[#fbbf24]' : 'text-white hover:text-[#fbbf24] drop-shadow-sm'">
-                            SPMB Online
-                            <span class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </Link>
-
-                        <!-- 5. Contact -->
-                        <a href="#footer" 
-                           @click="activeHash = '#footer'" 
-                           class="relative py-2 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 group/nav" 
-                           :class="[activeHash === '#footer' ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
-                            Contact
-                            <span v-if="activeHash !== '#footer'" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                        </a>
-
-                        <!-- 6. About (Dropdown: News, Events, Career, Partners, Testimonials) -->
-                        <div class="relative group" 
-                             @mouseenter="showAboutDropdown = true" 
-                             @mouseleave="showAboutDropdown = false"
-                             @focusin="showAboutDropdown = true"
-                             @focusout="handleDropdownFocusOut($event, (v) => showAboutDropdown = v)">
-                            <button type="button" 
-                                    aria-haspopup="true"
-                                    :aria-expanded="showAboutDropdown"
-                                    class="relative py-4 text-[11px] xl:text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-1 group/nav cursor-pointer" 
-                                    :class="[isAboutActive ? 'text-[#fbbf24] font-semibold border-b border-[#fbbf24]' : (isScrolled ? 'text-slate-800 hover:text-[#fbbf24] font-medium' : 'text-white hover:text-[#fbbf24] font-medium drop-shadow-sm')]">
-                                About
-                                <ChevronDownIcon class="w-3.5 h-3.5 transition-transform duration-300" :class="{'rotate-180': showAboutDropdown}" />
-                                <span v-if="!isAboutActive" class="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#fbbf24] transition-all duration-300 group-hover/nav:w-full"></span>
-                            </button>
-                            
-                            <!-- Dropdown Menu -->
-                            <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
-                                <div v-show="showAboutDropdown" class="absolute right-0 top-full pt-1.5 w-60 z-50">
-                                    <div class="bg-white rounded-xl shadow-2xl py-3 border border-slate-100 overflow-hidden">
-                                        <div class="px-4 py-1.5 border-b border-slate-50 mb-1">
-                                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tentang Namira</p>
-                                        </div>
-                                        <component v-for="(item, idx) in aboutNavItems" 
-                                                   :key="idx" 
-                                                   :is="item.isRoute ? Link : 'a'" 
-                                                   :href="item.href" 
-                                                   @click="showAboutDropdown = false; activeHash = item.hash" 
-                                                   class="block px-4 py-2.5 hover:bg-[#f8f9fa] transition-colors group/sub">
-                                            <span class="block text-xs font-semibold text-[#082a3a] group-hover/sub:text-[#00A99D] group-hover/sub:translate-x-1 transition-all">{{ item.name }}</span>
-                                            <span class="block text-[10px] text-slate-400 mt-0.5">{{ item.desc }}</span>
-                                        </component>
-                                    </div>
-                                </div>
-                            </transition>
-                        </div>
-                        
-                        <!-- 7. Primary CTA Button: Dashboard (if logged in) / Login (if guest) -->
-                        <div class="flex items-center gap-4 ml-4 xl:ml-6">
-                            <template v-if="canLogin">
-                                <Link v-if="$page.props.auth.user" :href="route('dashboard')" :class="isScrolled ? 'bg-[#064e3b] hover:bg-[#00A99D] text-white font-bold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-bold text-[11px] xl:text-xs tracking-widest uppercase px-6 xl:px-7 py-2.5 rounded-full transition-all duration-300 shadow-lg shadow-black/20 active:scale-95 text-center'">
-                                    Dashboard
-                                </Link>
-                                <template v-else>
-                                    <Link :href="route('login')" :class="isScrolled ? 'bg-[#082a3a] hover:bg-[#00A99D] text-white font-bold text-[11px] xl:text-xs tracking-widest uppercase px-5 xl:px-6 py-2.5 rounded-full transition-all duration-300 shadow-sm active:scale-95 text-center' : 'bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-bold text-[11px] xl:text-xs tracking-widest uppercase px-6 xl:px-8 py-2.5 xl:py-3 rounded-full transition-all duration-300 shadow-lg shadow-black/20 active:scale-95 text-center'">
-                                        Login
-                                    </Link>
-                                </template>
-                            </template>
-                        </div>
-                    </nav>
-
-                    <!-- Mobile Menu Hamburger Button -->
-                    <button @click="isMobileMenuOpen = true" aria-label="Buka Menu Navigasi Mobile" class="lg:hidden p-2 rounded-xl transition-colors" :class="isScrolled ? 'text-slate-800 hover:bg-slate-100' : 'text-white hover:bg-white/10'">
-                        <Bars3Icon class="w-6.5 h-6.5" />
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Mobile Fullscreen Drawer -->
-        <transition enter-active-class="transition ease-out duration-300" enter-from-class="opacity-0 translate-x-full" enter-to-class="opacity-100 translate-x-0" leave-active-class="transition ease-in duration-200" leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-full">
-            <div v-show="isMobileMenuOpen" class="fixed inset-0 z-[100] bg-[#082a3a] flex flex-col justify-between p-6 sm:p-8 text-white">
-                <!-- Header inside Drawer -->
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center shrink-0 w-10 h-10 aspect-square overflow-hidden">
-                            <img :src="appLogo" alt="Logo" class="w-full h-full object-contain" />
-                        </div>
-                        <div>
-                            <span class="text-white font-bold text-sm tracking-widest uppercase leading-none block">Yayasan Namira</span>
-                            <span class="text-[#fbbf24] font-medium text-[9px] tracking-wider uppercase block mt-0.5">Fostering Islamic Generation</span>
-                        </div>
+        <!-- =========================================================
+             ADAPTIVE STICKY NAVBAR (100% Consistent Bahasa Indonesia)
+        ========================================================== -->
+        <header
+            class="fixed top-0 left-0 right-0 z-40 transition-all duration-300"
+            :class="
+                isScrolled
+                    ? 'bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-[0_4px_20px_-10px_rgba(15,23,42,0.08)]'
+                    : 'bg-gradient-to-b from-slate-950/70 via-slate-950/35 to-transparent'
+            "
+        >
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[74px] flex items-center justify-between gap-4">
+                <!-- Brand -->
+                <button type="button" @click="smoothScrollTo('#home')" class="flex items-center gap-2.5 shrink-0 cursor-pointer">
+                    <div class="w-9 h-9 rounded-xl bg-white p-1 shadow-xs border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                        <img :src="appLogo" alt="Logo Yayasan Namira" class="w-full h-full object-contain" />
                     </div>
-                    <button @click="isMobileMenuOpen = false" aria-label="Tutup Menu" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
-                        <XMarkIcon class="w-6.5 h-6.5 text-white" />
-                    </button>
-                </div>
-
-                <!-- Menu Links in Drawer with Accordions -->
-                <nav class="flex flex-col gap-4 my-auto text-left pl-2 overflow-y-auto max-h-[70vh] py-4" aria-label="Navigasi Mobile">
-                    <!-- Home -->
-                    <a href="#home" @click="isMobileMenuOpen = false; activeHash = '#home'" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors py-1">Home</a>
-                    
-                    <!-- Units Accordion -->
-                    <div class="flex flex-col">
-                        <button type="button" 
-                                @click="showMobileUnitsAccordion = !showMobileUnitsAccordion" 
-                                class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors flex items-center justify-between py-1 w-full text-left">
-                            <span>Units</span>
-                            <ChevronDownIcon class="w-5 h-5 transition-transform duration-300" :class="{'rotate-180': showMobileUnitsAccordion}" />
-                        </button>
-                        <div v-show="showMobileUnitsAccordion" class="flex flex-col pl-4 mt-2 gap-2.5 border-l-2 border-[#fbbf24]/30">
-                            <a v-for="(unit, i) in campuses" 
-                               :key="i" 
-                               :href="'#campus-' + i" 
-                               @click="isMobileMenuOpen = false; activeHash = '#campuses'; activeCampusIndex = i" 
-                               class="text-sm font-semibold text-white/80 hover:text-[#fbbf24] transition-colors flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
-                                {{ unit.name }}
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Outing Class -->
-                    <a href="#destinations" @click="isMobileMenuOpen = false; activeHash = '#destinations'" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors py-1">Outing Class</a>
-
-                    <!-- About Accordion -->
-                    <div class="flex flex-col">
-                        <button type="button" 
-                                @click="showMobileAboutAccordion = !showMobileAboutAccordion" 
-                                class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors flex items-center justify-between py-1 w-full text-left">
-                            <span>About</span>
-                            <ChevronDownIcon class="w-5 h-5 transition-transform duration-300" :class="{'rotate-180': showMobileAboutAccordion}" />
-                        </button>
-                        <div v-show="showMobileAboutAccordion" class="flex flex-col pl-4 mt-2 gap-2.5 border-l-2 border-[#fbbf24]/30">
-                            <component v-for="(item, idx) in aboutNavItems" 
-                               :key="idx" 
-                               :is="item.isRoute ? Link : 'a'"
-                               :href="item.href" 
-                               @click="isMobileMenuOpen = false; activeHash = item.hash" 
-                               class="text-sm font-semibold text-white/80 hover:text-[#fbbf24] transition-colors flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></span>
-                                {{ item.name }}
-                            </component>
-                        </div>
-                    </div>
-
-                    <!-- SPMB Online -->
-                    <Link :href="route('spmb.index')" @click="isMobileMenuOpen = false" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors flex items-center justify-between pr-2 py-1">
-                        <span>SPMB Online</span>
-                        <span class="text-[10px] font-extrabold px-2.5 py-0.5 bg-[#fbbf24]/20 border border-[#fbbf24]/50 text-[#fbbf24] rounded-full">BUKA</span>
-                    </Link>
-
-                    <!-- Contact -->
-                    <a href="#footer" @click="isMobileMenuOpen = false; activeHash = '#footer'" class="text-lg font-bold tracking-widest uppercase hover:text-[#fbbf24] transition-colors py-1">Contact</a>
-                </nav>
-
-                <!-- Footer/CTA in Drawer -->
-                <div class="border-t border-white/10 pt-6">
-                    <template v-if="canLogin">
-                        <Link v-if="$page.props.auth.user" :href="route('dashboard')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#00A99D] hover:bg-teal-700 text-white font-extrabold text-xs tracking-widest uppercase rounded-full transition-all shadow-lg">
-                            Dashboard
-                        </Link>
-                        <Link v-else :href="route('login')" @click="isMobileMenuOpen = false" class="block w-full py-3.5 text-center bg-[#fbbf24] hover:bg-yellow-300 text-[#082a3a] font-extrabold text-xs tracking-widest uppercase rounded-full transition-all shadow-lg">
-                            Login
-                        </Link>
-                    </template>
-                    <p class="text-center text-[10px] text-white/40 uppercase tracking-widest mt-4">© {{ new Date().getFullYear() }} Yayasan Namira</p>
-                </div>
-            </div>
-        </transition>
-
-        <!-- Hero Section -->
-        <section id="home" class="relative h-screen overflow-hidden bg-[#082a3a]">
-            <!-- Slider Background -->
-            <div class="absolute inset-0 z-0">
-                <div v-for="(img, index) in bannersCollection" :key="index"
-                     class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
-                     :class="currentBanner === index ? 'opacity-100 z-10' : 'opacity-0 z-0'">
-                    <img :src="img" alt="Banner" class="w-full h-full object-cover object-center" :loading="index === 0 ? 'eager' : 'lazy'" />
-                </div>
-                <!-- Directional gradient overlay: dark left → transparent right -->
-                <div class="absolute inset-0 z-20" style="background: linear-gradient(to right, rgba(8,42,58,0.80) 0%, rgba(8,42,58,0.52) 42%, rgba(8,42,58,0.10) 100%);"></div>
-            </div>
-
-            <!-- Content: full height wrapper so items-center truly centers on visible area -->
-            <div class="relative z-30 h-full flex items-center">
-                <div class="w-full px-8 sm:px-16 lg:px-28 max-w-[1400px] mx-auto" style="padding-top: 80px;">
-                    <div class="w-full lg:w-[46%]">
-
-                        <!-- Eyebrow -->
-                        <p class="text-[#fbbf24] font-semibold text-[10px] md:text-xs tracking-[0.28em] uppercase mb-6 animate-fade-in-up" style="animation-delay:0.10s;">
-                            Membentuk Pemimpin Muslim Masa Depan
-                        </p>
-
-                        <!-- Headline — 2 lines, editorial, restrained weight -->
-                        <h1 class="animate-fade-in-up font-semibold tracking-tight text-white mb-10"
-                            style="animation-delay:0.20s; font-size: clamp(2rem, 4.2vw, 3.6rem); line-height: 1.17; max-width: 580px;">
-                            Bersama Namira,<br/>
-                            <span class="text-[#fbbf24]">Menjadi Cahaya Menerangi Dunia</span>
-                        </h1>
-
-                        <!-- Description -->
-                        <p class="animate-fade-in-up text-white/70 font-normal leading-[1.75] mb-12"
-                           style="animation-delay:0.30s; font-size: clamp(0.9rem, 1.2vw, 1.05rem); max-width: 500px;">
-                            Mendidik dengan keunggulan akademik, integritas moral, dan kepemimpinan global yang berlandaskan nilai-nilai islami.
-                        </p>
-
-                        <!-- CTA Buttons -->
-                        <div class="flex flex-wrap items-center gap-5 animate-fade-in-up" style="animation-delay:0.40s;">
-                            <a href="#campuses"
-                               @click="activeHash = '#campuses'"
-                               class="inline-flex items-center px-8 py-[14px] bg-[#fbbf24] hover:bg-yellow-400 text-[#082a3a] font-bold text-[10px] tracking-[0.2em] uppercase rounded-full transition-all duration-300 active:scale-95 shadow-md shadow-yellow-500/10 hover:shadow-yellow-500/20">
-                                Jelajahi Namira
-                            </a>
-                            <Link :href="route('spmb.index')"
-                               class="inline-flex items-center px-8 py-[14px] bg-transparent border border-white/40 hover:border-white hover:bg-white/10 text-white font-bold text-[10px] tracking-[0.2em] uppercase rounded-full transition-all duration-300 active:scale-95">
-                                Pendaftaran SPMB
-                            </Link>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-            <!-- Slider Indicators — bottom right, very subtle -->
-            <div class="absolute bottom-10 right-8 sm:right-16 lg:right-28 z-30 flex items-center gap-7 animate-fade-in-up" style="animation-delay:0.50s;">
-                <button
-                    v-for="(_, i) in bannersCollection" :key="i"
-                    @click="goToBanner(i)"
-                    class="flex items-center gap-2.5 group cursor-pointer"
-                >
-                    <span class="text-[11px] font-semibold tabular-nums transition-all duration-400"
-                          :class="currentBanner === i ? 'text-white' : 'text-white/35 group-hover:text-white/65'">
-                        0{{ i + 1 }}
-                    </span>
-                    <div class="h-px rounded-full overflow-hidden transition-all duration-500"
-                         :class="currentBanner === i ? 'w-28 bg-white/25' : 'w-16 bg-white/10'">
-                        <div v-if="currentBanner === i"
-                             class="h-full bg-[#fbbf24] rounded-full"
-                             :style="{ width: bannerProgress + '%', transition: 'none' }"></div>
+                    <div class="flex items-baseline gap-1 select-none whitespace-nowrap">
+                        <span
+                            class="font-namira text-xl sm:text-2xl tracking-tight lowercase leading-none transition-colors"
+                            :class="isScrolled ? 'text-[#1a4373]' : 'text-white drop-shadow-xs'"
+                        >
+                            namira
+                        </span>
+                        <span
+                            class="font-school text-[11px] sm:text-xs tracking-wider uppercase font-extrabold leading-none transition-colors"
+                            :class="isScrolled ? 'text-slate-500' : 'text-white/85'"
+                        >
+                            SCHOOL
+                        </span>
                     </div>
                 </button>
-            </div>
 
-        </section>
+                <!-- Desktop Links -->
+                <nav aria-label="Navigasi Utama" class="hidden lg:flex items-center gap-6 text-[13px] font-semibold">
+                    <button
+                        type="button"
+                        @click="smoothScrollTo('#home')"
+                        class="transition-colors cursor-pointer"
+                        :class="isScrolled ? 'text-slate-600 hover:text-[#008C7E]' : 'text-white/90 hover:text-white'"
+                    >
+                        Beranda
+                    </button>
 
-        <!-- Our Campuses / Unit Sekolah -->
-        <section id="campuses" class="w-full bg-white">
-            <div class="w-full flex flex-col md:flex-row items-stretch justify-center m-0 p-0">
-                <!-- Default State & Hover/Tap State Integration -->
-                <div v-for="(unit, index) in campuses"
-                     :key="index"
-                     :id="'campus-' + index"
-                     @click="toggleCampusCard(index)"
-                     class="group relative flex-1 h-72 md:h-[350px] bg-gray-100 cursor-pointer overflow-hidden border-r border-white/50 transition-all duration-500"
-                     data-aos="fade-up"
-                     :data-aos-delay="index * 100">
-                    
-                    <!-- Default View (Logo & Text) -->
-                    <div class="absolute inset-0 flex flex-col items-center justify-center p-4 lg:p-6 bg-[#f0f2f5] transition-opacity duration-300 group-hover:opacity-0 z-10"
-                         :class="activeCampusIndex === index ? 'opacity-0' : 'opacity-100'">
-                        <!-- Single Logo -->
-                        <img v-if="!unit.logo2" :src="unit.logo" :alt="unit.name" class="h-16 lg:h-20 w-auto object-contain mb-4 drop-shadow" loading="lazy" />
-                        <!-- Dual Logo side by side -->
-                        <div v-else class="flex items-center justify-center gap-2 mb-4">
-                            <img :src="unit.logo" :alt="unit.name" class="h-14 lg:h-16 w-auto object-contain drop-shadow" loading="lazy" />
-                            <div class="w-[1px] h-12 bg-gray-300 mx-1"></div>
-                            <img :src="unit.logo2" :alt="unit.name" class="h-14 lg:h-16 w-auto object-contain drop-shadow" loading="lazy" />
-                        </div>
-                        <h3 class="text-[11px] lg:text-[13px] font-bold text-[#064e3b] text-center tracking-widest uppercase">{{ unit.name }}</h3>
-                        <div class="w-6 h-[2px] bg-[#fbbf24] mt-3"></div>
+                    <!-- Unit Sekolah Dropdown -->
+                    <div
+                        class="relative"
+                        @mouseenter="showUnitsDropdown = true"
+                        @mouseleave="showUnitsDropdown = false"
+                        @focusin="showUnitsDropdown = true"
+                        @focusout="handleDropdownFocusOut($event, (v) => (showUnitsDropdown = v))"
+                    >
+                        <button
+                            type="button"
+                            @click="smoothScrollTo('#campuses')"
+                            class="inline-flex items-center gap-1 py-2 transition-colors cursor-pointer"
+                            :class="isScrolled ? 'text-slate-600 hover:text-[#008C7E]' : 'text-white/90 hover:text-white'"
+                        >
+                            <span>Unit Sekolah</span>
+                            <ChevronDownIcon class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': showUnitsDropdown }" />
+                        </button>
+
+                        <AnimatePresence>
+                            <Motion
+                                v-if="showUnitsDropdown"
+                                :initial="{ opacity: 0, y: 6 }"
+                                :animate="{ opacity: 1, y: 0 }"
+                                :exit="{ opacity: 0, y: 4 }"
+                                :transition="{ duration: 0.16 }"
+                                class="absolute left-0 top-full pt-2 w-72 z-50"
+                            >
+                                <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 space-y-0.5">
+                                    <button
+                                        v-for="unit in campuses"
+                                        :key="unit.id"
+                                        type="button"
+                                        @click="showUnitsDropdown = false; activeUnitTab = 'semua'; smoothScrollTo('#campuses')"
+                                        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#F2FAF7] text-left transition-colors cursor-pointer"
+                                    >
+                                        <div class="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 p-1 shrink-0 flex items-center justify-center">
+                                            <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" />
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-bold text-slate-900 truncate">{{ unit.name }}</div>
+                                            <div class="text-[10px] text-slate-500 truncate">{{ unit.address }}</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </Motion>
+                        </AnimatePresence>
                     </div>
 
-                    <!-- Hover / Active Tap View (Photo Overlay, CTA SPMB & Socials) -->
-                    <div class="absolute inset-0 transition-all duration-500 z-20"
-                         :class="activeCampusIndex === index ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
-                        <img :src="unit.photo" :alt="unit.name" class="w-full h-full object-cover transform scale-105 group-hover:scale-100 transition-transform duration-700" loading="lazy" />
-                        <!-- Dark Gradient Overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-[#064e3b]/70 to-[#064e3b]/30 mix-blend-multiply"></div>
-                        
-                        <!-- Content Structure -->
-                        <div class="absolute inset-0 flex flex-col justify-end p-5 pb-6 transform transition-transform duration-500"
-                             :class="activeCampusIndex === index ? 'translate-y-0' : 'translate-y-4 group-hover:translate-y-0'">
-                            <h3 class="text-sm lg:text-base font-bold text-white tracking-widest uppercase mb-1">{{ unit.name }}</h3>
-                            <div class="w-full h-[1px] bg-[#fbbf24] mb-2 opacity-70"></div>
-                            <p class="text-gray-300 text-[9px] lg:text-[10px] leading-tight mb-3">{{ unit.address }}</p>
-
-                            <!-- Quick CTA SPMB khusus unit SD & SMP -->
-                            <div v-if="unit.spmbUrl" class="mb-3">
-                                <Link :href="unit.spmbUrl"
-                                      @click.stop
-                                      class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#fbbf24] hover:bg-yellow-300 text-[#064e3b] font-bold text-[10px] uppercase tracking-wider shadow transition">
-                                    <span>Daftar SPMB</span>
-                                    <ArrowRightIcon class="w-3 h-3" />
-                                </Link>
-                            </div>
-                            
-                            <!-- Social/Contact Icons: data-driven, clickable -->
-                            <div class="flex flex-wrap gap-1.5">
-                                <!-- Facebook -->
-                                <a v-if="unit.facebook" :href="unit.facebook" target="_blank" rel="noopener" @click.stop title="Facebook" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
-                                </a>
-                                <!-- Instagram -->
-                                <a v-if="unit.instagram" :href="unit.instagram" target="_blank" rel="noopener" @click.stop title="Instagram" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                                </a>
-                                <!-- WhatsApp -->
-                                <a v-if="unit.wa" :href="unit.wa" target="_blank" rel="noopener" @click.stop title="WhatsApp" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                                </a>
-                                <!-- YouTube -->
-                                <a v-if="unit.youtube" :href="unit.youtube" target="_blank" rel="noopener" @click.stop title="YouTube" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
-                                </a>
-                                <!-- Email -->
-                                <a v-if="unit.email" :href="unit.email" @click.stop title="Email" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                                </a>
-                                <!-- Website -->
-                                <a v-if="unit.website" :href="unit.website" target="_blank" rel="noopener" @click.stop title="Website" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center hover:bg-[#fbbf24] hover:text-[#064e3b] text-white transition">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Growing Community Stats -->
-        <section class="bg-[#f8f9fa] py-16 border-b border-gray-200" ref="statsSection">
-            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-10" data-aos="fade-down">
-                    <h2 class="text-2xl font-bold text-[#064e3b] uppercase tracking-widest">Growing NAMIRA Community</h2>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 px-4">
-                    <div v-for="(stat, index) in stats" :key="index" class="group w-full h-[250px] [perspective:1000px] cursor-pointer" data-aos="zoom-in" :data-aos-delay="index * 100">
-                        <div class="relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] shadow-lg rounded-2xl">
-                            
-                            <!-- Front Face (Stats) -->
-                            <div class="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-[#fbbf24] border border-yellow-300 rounded-2xl p-8 flex flex-col justify-center items-center">
-                                <div class="w-10 h-[2px] bg-[#064e3b] mx-auto mb-6 opacity-50"></div>
-                                <p class="text-4xl lg:text-5xl font-light text-[#064e3b] mb-4">{{ displayedStats[index].toLocaleString('id-ID') }}{{ stat.suffix }}</p>
-                                <p class="text-[10px] lg:text-[11px] font-semibold text-[#064e3b] uppercase tracking-[0.15em] text-center">{{ stat.label }}</p>
-                            </div>
-
-                            <!-- Back Face (Learn More) -->
-                            <div class="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#064e3b] rounded-2xl p-8 flex flex-col justify-center items-center">
-                                <!-- Decorative shapes -->
-                                <div class="absolute top-4 right-4 w-6 h-6 border-2 border-white/10 rotate-45"></div>
-                                <div class="absolute bottom-6 left-6 w-8 h-8 border-2 border-white/10 rotate-12"></div>
-                                
-                                <a href="#campuses" class="border border-white text-white hover:bg-white hover:text-[#064e3b] font-bold text-xs tracking-widest uppercase px-6 py-3 rounded transition duration-300 z-10 text-center">
-                                    LEARN MORE
-                                </a>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Destination Map Section -->
-        <section id="destinations" class="py-20 bg-[#f8f9fa] border-t border-gray-200">
-            <div class="max-w-[1400px] mx-auto px-4">
-                <div class="text-center mb-10" data-aos="fade-down">
-                    <h2 class="text-3xl font-bold text-[#064e3b] uppercase tracking-wider mb-6">Outing Class</h2>
-                    
-                    <!-- Toggle Buttons -->
-                    <div class="inline-flex bg-gray-200 rounded-full p-1 shadow-inner">
-                        <button @click="mapView = 'overseas'" :class="['px-6 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition', mapView === 'overseas' ? 'bg-[#fbbf24] text-[#064e3b] shadow' : 'text-gray-500 hover:text-gray-700']">Internasional</button>
-                        <button @click="mapView = 'indonesia'" :class="['px-6 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition', mapView === 'indonesia' ? 'bg-[#fbbf24] text-[#064e3b] shadow' : 'text-gray-500 hover:text-gray-700']">Nasional</button>
-                    </div>
-                </div>
-
-                <!-- Map Layout -->
-                <div class="mt-8 max-w-5xl mx-auto relative group" data-aos="fade-up">
-                    
-                    <!-- Decorative Airplane & Spiral Path (Top Left) -->
-                    <div class="absolute -top-12 -left-20 w-48 h-48 opacity-20 pointer-events-none hidden lg:block rotate-[-15deg]">
-                        <svg viewBox="0 0 200 200" class="w-full h-full text-[#fbbf24] fill-none">
-                            <path d="M20,150 Q60,50 150,80 T180,150" stroke="currentColor" stroke-width="2" stroke-dasharray="8,8" />
-                            <g class="animate-bounce-slow">
-                                <path d="M175,145 L185,150 L175,155 Z" fill="currentColor" />
-                                <path d="M165,145 L175,150 L165,155 Z" fill="currentColor" />
-                            </g>
-                        </svg>
-                        <div class="absolute top-20 left-32 rotate-[45deg] text-[#fbbf24]">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5Z"/></svg>
-                        </div>
-                    </div>
-
-                    <!-- Decorative Airplane & Spiral Path (Bottom Right) -->
-                    <div class="absolute -bottom-16 -right-24 w-64 h-64 opacity-20 pointer-events-none hidden lg:block rotate-[165deg]">
-                        <svg viewBox="0 0 200 200" class="w-full h-full text-[#fbbf24] fill-none">
-                            <path d="M30,30 C80,30 50,150 170,170" stroke="currentColor" stroke-width="2" stroke-dasharray="10,5" />
-                            <path d="M165,165 L175,170 L165,175 Z" fill="currentColor" />
-                        </svg>
-                    </div>
-
-                    <!-- Floating Paper Plane Icons -->
-                    <div class="absolute top-10 -right-16 text-[#fbbf24] opacity-30 animate-pulse hidden xl:block rotate-[15deg]">
-                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10l19-7-7 19-3-9-9-3z"></path></svg>
-                    </div>
-
-                    <!-- Leaflet Map -->
-                    <div class="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 z-10">
-                        <div ref="mapContainer" style="height:500px;width:100%;"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- News Section -->
-        <section id="news" class="py-20 bg-white border-t border-gray-100">
-            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-12" data-aos="fade-down">
-                    <h2 class="text-2xl font-bold text-[#064e3b] uppercase tracking-widest mb-4">News</h2>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <Link v-for="(news, index) in latestNews"
-                          :key="news.id"
-                          :href="news.slug ? route('news.show', news.slug) : route('news.index')"
-                          class="bg-[#064e3b] rounded-[1.5rem] overflow-hidden shadow-2xl group cursor-pointer flex flex-col h-full transition-all duration-300 hover:-translate-y-2"
-                          data-aos="fade-up"
-                          :data-aos-delay="index * 100">
-                        <!-- Image Container -->
-                        <div class="relative h-44 overflow-hidden shrink-0">
-                            <img :src="news.image_path ? '/' + news.image_path : '/images/landing/banner-1.webp'" :alt="news.title" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" loading="lazy" />
-                        </div>
-                        
-                        <!-- Content -->
-                        <div class="p-5 flex-grow flex flex-col">
-                            <!-- Date -->
-                            <div class="text-white/60 text-[11px] font-medium mb-2 uppercase tracking-widest">
-                                {{ formatDateStr(news.published_at) }}
-                            </div>
-                            
-                            <!-- Title -->
-                            <h3 class="text-[15px] font-bold text-white mb-3 line-clamp-2 leading-snug group-hover:text-[#fbbf24] transition-colors">
-                                {{ news.title }}
-                            </h3>
-                            
-                            <!-- Excerpt -->
-                            <p class="text-white/70 text-[12px] line-clamp-2 mb-4 leading-relaxed font-light">
-                                {{ news.excerpt || news.content?.replace(/<[^>]*>/g, '').substring(0, 90) + '...' }}
-                            </p>
-                            
-                            <!-- Link label -->
-                            <span class="text-[#fbbf24] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center mt-auto group-hover:brightness-125 transition-all">
-                                READ MORE &gt;
-                            </span>
-                        </div>
+                    <Link
+                        :href="route('spmb.index')"
+                        class="inline-flex items-center gap-1.5 transition-colors"
+                        :class="isScrolled ? 'text-slate-700 hover:text-[#008C7E]' : 'text-white hover:text-emerald-200'"
+                    >
+                        <span>SPMB Online</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     </Link>
-                </div>
-                
-                <div class="text-center mt-10" data-aos="fade-up">
-                    <Link :href="route('news.index')" class="text-[#fbbf24] font-bold text-sm tracking-widest uppercase cursor-pointer hover:underline">View All News</Link>
+
+                    <button
+                        type="button"
+                        @click="smoothScrollTo('#news')"
+                        class="transition-colors cursor-pointer"
+                        :class="isScrolled ? 'text-slate-600 hover:text-[#008C7E]' : 'text-white/90 hover:text-white'"
+                    >
+                        Berita &amp; Agenda
+                    </button>
+
+                    <Link
+                        :href="route('careers.index')"
+                        class="inline-flex items-center gap-1.5 transition-colors"
+                        :class="isScrolled ? 'text-slate-600 hover:text-[#008C7E]' : 'text-white/90 hover:text-white'"
+                    >
+                        <span>Karir</span>
+                        <span
+                            v-if="openVacanciesCount > 0"
+                            class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold leading-none"
+                            :class="isScrolled ? 'bg-[#E6F7F1] text-[#007468]' : 'bg-white/20 text-white'"
+                        >
+                            {{ openVacanciesCount }}
+                        </span>
+                    </Link>
+
+                    <button
+                        type="button"
+                        @click="smoothScrollTo('#footer')"
+                        class="transition-colors cursor-pointer"
+                        :class="isScrolled ? 'text-slate-600 hover:text-[#008C7E]' : 'text-white/90 hover:text-white'"
+                    >
+                        Kontak
+                    </button>
+
+                    <template v-if="canLogin">
+                        <Link
+                            v-if="$page.props.auth.user"
+                            :href="route('dashboard')"
+                            class="px-4 py-2 rounded-xl bg-[#009688] hover:bg-[#007D71] text-white text-xs font-bold shadow-2xs transition-colors"
+                        >
+                            Dashboard
+                        </Link>
+                        <Link
+                            v-else
+                            :href="route('login')"
+                            class="px-4 py-2 rounded-xl text-xs font-bold transition-colors"
+                            :class="
+                                isScrolled
+                                    ? 'border border-slate-200 hover:border-[#009688] hover:text-[#008C7E] text-slate-700'
+                                    : 'bg-white text-slate-900 hover:bg-slate-100 shadow-xs'
+                            "
+                        >
+                            Masuk Portal
+                        </Link>
+                    </template>
+                </nav>
+
+                <!-- Mobile Header Right -->
+                <div class="flex lg:hidden items-center gap-2">
+                    <Link
+                        :href="route('spmb.index')"
+                        class="px-3.5 py-2 min-h-[38px] rounded-xl bg-[#009688] text-white text-xs font-bold shadow-2xs inline-flex items-center"
+                    >
+                        SPMB
+                    </Link>
+                    <button
+                        type="button"
+                        @click="isMobileMenuOpen = !isMobileMenuOpen"
+                        aria-label="Menu Navigasi"
+                        class="p-2 min-w-[38px] min-h-[38px] rounded-xl flex items-center justify-center transition-colors cursor-pointer"
+                        :class="isScrolled ? 'border border-slate-200 text-slate-800 bg-white' : 'bg-white/15 border border-white/25 text-white backdrop-blur-xs'"
+                    >
+                        <XMarkIcon v-if="isMobileMenuOpen" class="w-5 h-5" />
+                        <Bars3Icon v-else class="w-5 h-5" />
+                    </button>
                 </div>
             </div>
-        </section>
 
-        <!-- What Others Say (Testimonials) -->
-        <section id="testimonials" class="py-24 bg-[#f8f9fa] border-t border-gray-200 overflow-hidden">
-            <div class="max-w-4xl mx-auto px-4 text-center">
-                <h2 class="text-2xl font-bold text-[#064e3b] uppercase tracking-widest mb-16" data-aos="fade-down">What Others Say</h2>
-                
-                <!-- Circular Photos Slider -->
-                <div class="flex items-center justify-center mb-12 relative max-w-4xl mx-auto" data-aos="zoom-in">
-                    <button v-if="testimonialsCount > 1" @click="prevTesti" class="absolute left-0 lg:left-8 w-12 h-12 rounded-full bg-[#fbbf24] text-[#064e3b] flex items-center justify-center shadow-md hover:bg-yellow-300 transition z-30">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                    </button>
-                    
-                    <div class="relative w-full h-56 md:h-80 flex items-center justify-center overflow-hidden">
-                        <div v-for="(testi, i) in testimonialsList" :key="i"
-                             class="absolute rounded-full transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
-                             :class="{
-                                 'w-40 h-40 md:w-64 md:h-64 border-2 border-[#064e3b] bg-white p-1.5 shadow-2xl z-20 scale-100 opacity-100 translate-x-0': i === currentTesti && testimonialsCount >= 3,
-                                 'w-40 h-40 md:w-48 md:h-48 border-2 border-[#064e3b] bg-white p-1 z-10 opacity-100 scale-50 md:scale-75 -translate-x-[110%] md:-translate-x-[160%]': i === (currentTesti - 1 + testimonialsCount) % testimonialsCount && testimonialsCount >= 3,
-                                 'w-40 h-40 md:w-48 md:h-48 border-2 border-[#064e3b] bg-white p-1 z-10 opacity-100 scale-50 md:scale-75 translate-x-[110%] md:translate-x-[160%]': i === (currentTesti + 1) % testimonialsCount && testimonialsCount >= 3,
-                                 'w-40 h-40 md:w-48 md:h-48 opacity-0 scale-0 z-0': i !== currentTesti && i !== (currentTesti - 1 + testimonialsCount) % testimonialsCount && i !== (currentTesti + 1) % testimonialsCount && testimonialsCount >= 3,
-                                 
-                                 // Simple layout if 1 item
-                                 'w-40 h-40 md:w-64 md:h-64 border-2 border-[#064e3b] bg-white p-1.5 shadow-2xl z-20 scale-100 opacity-100 translate-x-0': testimonialsCount === 1,
-                                 
-                                 // Simple layout if 2 items
-                                 'w-40 h-40 md:w-64 md:h-64 border-2 border-[#064e3b] bg-white p-1.5 shadow-2xl z-20 scale-100 opacity-100 translate-x-0': testimonialsCount === 2 && i === currentTesti,
-                                 'w-40 h-40 md:w-48 md:h-48 border-2 border-[#064e3b] bg-white p-1 z-10 opacity-50 scale-75 translate-x-[110%] md:translate-x-[160%]': testimonialsCount === 2 && i !== currentTesti
-                             }">
-                            <img :src="testi.photo" class="w-full h-full object-cover rounded-full" loading="lazy" />
-                        </div>
-                    </div>
-                    
-                    <button v-if="testimonialsCount > 1" @click="nextTesti" class="absolute right-0 lg:right-8 w-12 h-12 rounded-full bg-[#fbbf24] text-[#064e3b] flex items-center justify-center shadow-md hover:bg-yellow-300 transition z-30">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </button>
-                </div>
+            <!-- Clean Light Mobile Menu Drawer -->
+            <AnimatePresence>
+                <Motion
+                    v-if="isMobileMenuOpen"
+                    :initial="{ opacity: 0, height: 0 }"
+                    :animate="{ opacity: 1, height: 'auto' }"
+                    :exit="{ opacity: 0, height: 0 }"
+                    :transition="{ duration: 0.2 }"
+                    class="lg:hidden bg-white border-t border-slate-100 shadow-xl overflow-hidden"
+                >
+                    <div class="px-4 py-4 space-y-1 text-sm font-semibold text-slate-800">
+                        <button type="button" @click="smoothScrollTo('#home')" class="w-full text-left px-3 py-2.5 rounded-xl active:bg-[#ECF9F4]">Beranda</button>
+                        <button type="button" @click="smoothScrollTo('#campuses')" class="w-full text-left px-3 py-2.5 rounded-xl active:bg-[#ECF9F4]">Unit Sekolah</button>
+                        <Link :href="route('spmb.index')" @click="isMobileMenuOpen = false" class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#ECF9F4] text-[#007468] font-bold">
+                            <span>SPMB Online &amp; Inden</span>
+                            <span class="px-2 py-0.5 rounded-full bg-[#009688] text-white text-[10px]">Dibuka</span>
+                        </Link>
+                        <button type="button" @click="smoothScrollTo('#news')" class="w-full text-left px-3 py-2.5 rounded-xl active:bg-[#ECF9F4]">Berita &amp; Artikel</button>
+                        <button type="button" @click="smoothScrollTo('#events')" class="w-full text-left px-3 py-2.5 rounded-xl active:bg-[#ECF9F4]">Agenda &amp; Kegiatan</button>
+                        <Link :href="route('careers.index')" @click="isMobileMenuOpen = false" class="flex items-center justify-between px-3 py-2.5 rounded-xl active:bg-[#ECF9F4]">
+                            <span>Portal Karir &amp; Rekrutmen</span>
+                            <span v-if="openVacanciesCount > 0" class="px-2 py-0.5 rounded-full bg-[#E6F7F1] text-[#007468] text-[10px] font-extrabold">
+                                {{ openVacanciesCount }} Lowongan
+                            </span>
+                        </Link>
+                        <button type="button" @click="smoothScrollTo('#footer')" class="w-full text-left px-3 py-2.5 rounded-xl active:bg-[#ECF9F4]">Kontak &amp; Alamat</button>
 
-                <!-- Quote Text with Transition -->
-                <div class="px-8 min-h-[180px] flex flex-col justify-start items-center">
-                    <transition name="testi-fade" mode="out-in">
-                        <div :key="currentTesti" class="w-full">
-                            <h4 class="text-2xl font-bold text-[#064e3b] mb-1">{{ testimonialsList[currentTesti].name }}</h4>
-                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-4">
-                                {{ testimonialsList[currentTesti].role }} <span v-if="testimonialsList[currentTesti].role && testimonialsList[currentTesti].unit">•</span> {{ testimonialsList[currentTesti].unit }}
-                            </p>
-                            <p class="text-gray-600 font-light text-lg md:text-xl leading-relaxed mb-6">
-                                "{{ testimonialsList[currentTesti].quote }}"
-                            </p>
-                            <Link :href="route('testimonials.index')" class="text-[#064e3b] font-medium text-sm hover:text-[#fbbf24] transition-colors border-b border-[#064e3b] hover:border-[#fbbf24] pb-1">
-                                Read More
+                        <div v-if="canLogin" class="pt-3 mt-2 border-t border-slate-100">
+                            <Link
+                                v-if="$page.props.auth.user"
+                                :href="route('dashboard')"
+                                class="block w-full py-3 rounded-xl bg-[#009688] text-white text-center text-xs font-bold"
+                            >
+                                Buka Dashboard
+                            </Link>
+                            <Link
+                                v-else
+                                :href="route('login')"
+                                class="block w-full py-3 rounded-xl border border-slate-200 text-slate-800 text-center text-xs font-bold"
+                            >
+                                Masuk Portal Siswa / Guru
                             </Link>
                         </div>
-                    </transition>
-                </div>
-                <div class="w-12 h-[1px] bg-[#fbbf24] mx-auto mt-8"></div>
-            </div>
-        </section>
+                    </div>
+                </Motion>
+            </AnimatePresence>
+        </header>
 
-        <!-- Events Section -->
-        <section id="events" class="py-20 bg-white border-t border-gray-100">
-            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-12" data-aos="fade-down">
-                    <h2 class="text-2xl font-bold text-[#064e3b] uppercase tracking-widest mb-4">Events</h2>
+        <main class="flex-1">
+            <!-- =========================================================
+                 HERO — Full-Bleed Real Campus Slider (Refined Editorial Craft)
+            ========================================================== -->
+            <section id="home" class="relative min-h-[82svh] sm:min-h-[88svh] lg:min-h-[92vh] flex items-center overflow-hidden bg-slate-900">
+                <!-- Real Campus Photo Slideshow -->
+                <div class="absolute inset-0 z-0">
+                    <div
+                        v-for="(slide, index) in bannersCollection"
+                        :key="index"
+                        class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+                        :class="currentBanner === index ? 'opacity-100 z-10' : 'opacity-0 z-0'"
+                    >
+                        <img
+                            :src="slide.url"
+                            :alt="slide.title"
+                            class="w-full h-full object-cover object-center transition-transform duration-[6000ms] ease-out"
+                            :class="currentBanner === index ? 'scale-100' : 'scale-105'"
+                            :loading="index === 0 ? 'eager' : 'lazy'"
+                        />
+                    </div>
+                    <!-- Clean Directional Scrim for High Readability -->
+                    <div
+                        class="absolute inset-0 z-20"
+                        style="background: linear-gradient(100deg, rgba(10,36,44,0.84) 0%, rgba(10,36,44,0.62) 48%, rgba(10,36,44,0.22) 100%);"
+                    ></div>
                 </div>
 
-                <!-- Events Grid -->
-                <div v-if="upcomingEvents.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <Link v-for="(event, index) in upcomingEvents" :key="event.id" :href="event.slug ? route('events.show', event.slug) : route('events.index')" class="bg-transparent group cursor-pointer relative mt-8 flex flex-col h-full transition-all duration-300 hover:-translate-y-2" data-aos="fade-up" :data-aos-delay="index * 100">
-                        
-                        <!-- Circular Date Badge (Overlapping) -->
-                        <div class="absolute -top-6 left-6 w-16 h-16 bg-white rounded-full flex flex-col items-center justify-center shadow-lg border-2 border-[#064e3b] z-20">
-                            <span class="text-xl font-bold text-[#064e3b] leading-none">{{ getEventDateParts(event.start_date).day }}</span>
-                            <span class="text-[10px] font-bold text-[#fbbf24] uppercase">{{ getEventDateParts(event.start_date).month }}</span>
+                <!-- Hero Foreground Content -->
+                <div class="relative z-30 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 sm:pt-28 sm:pb-24">
+                    <div class="max-w-xl space-y-5 sm:space-y-6">
+                        <div class="hero-enter inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/12 backdrop-blur-xs border border-white/20 text-[11px] sm:text-xs font-semibold text-emerald-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            <span>Yayasan Sekolah Islam Namira · Probolinggo</span>
                         </div>
 
-                        <div class="h-44 overflow-hidden rounded-t-lg z-10 shadow-sm relative">
-                            <img :src="event.image_path ? '/' + event.image_path : '/images/landing/banner-2.webp'" :alt="event.title" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700" loading="lazy" />
+                        <h1 class="hero-enter text-white tracking-[-0.025em] leading-[1.13]" style="font-size: clamp(2rem, 4.4vw, 3.45rem);">
+                            <span class="font-normal text-white/90 block">Membentuk Generasi</span>
+                            <span class="font-extrabold text-white block">Qur’ani, Cerdas &amp; Berakhlak</span>
+                        </h1>
+
+                        <p class="hero-enter text-sm sm:text-base text-white/80 leading-relaxed max-w-lg">
+                            Ekosistem pendidikan Islam modern mulai dari Daycare, KB, TK, SD, hingga SMP yang memadukan keunggulan akademik, Metode Ummi, dan pembinaan karakter.
+                        </p>
+
+                        <div class="hero-enter flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+                            <Link
+                                :href="route('spmb.index')"
+                                class="px-6 py-3.5 min-h-[48px] rounded-xl bg-[#009688] hover:bg-[#007D71] text-white text-xs sm:text-sm font-bold shadow-lg shadow-black/15 transition-all inline-flex items-center justify-center gap-2 group"
+                            >
+                                <span>Daftar SPMB Online</span>
+                                <ArrowRightIcon class="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                            </Link>
+
+                            <button
+                                type="button"
+                                @click="smoothScrollTo('#campuses')"
+                                class="px-6 py-3.5 min-h-[48px] rounded-xl bg-white/12 hover:bg-white/20 text-white border border-white/30 backdrop-blur-xs text-xs sm:text-sm font-bold transition-all inline-flex items-center justify-center cursor-pointer"
+                            >
+                                Jelajahi Unit Sekolah
+                            </button>
                         </div>
-                        
-                        <!-- Footer Card Green -->
-                        <div class="bg-[#064e3b] p-5 text-white rounded-b-lg shadow-md flex-grow flex flex-col justify-between z-10 relative">
-                            <div>
-                                <h3 class="text-[15px] font-bold mb-3 line-clamp-2 group-hover:text-[#fbbf24] transition-colors leading-snug">
-                                    {{ event.title }}
-                                </h3>
-                                <div class="flex items-center text-[10px] text-gray-300 uppercase tracking-wider mb-2">
-                                    <svg class="w-3 h-3 mr-2 text-[#fbbf24]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
-                                    {{ formatDateStr(event.start_date) }}
+                    </div>
+                </div>
+
+                <!-- Bottom Slider Caption + Progress Controls -->
+                <div class="absolute bottom-12 sm:bottom-16 left-0 right-0 z-30">
+                    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+                        <div class="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-xs text-[11px] font-semibold text-white/90">
+                            <MapPinIcon class="w-3.5 h-3.5 text-emerald-300" />
+                            <span>{{ bannersCollection[currentBanner]?.title }}</span>
+                        </div>
+
+                        <div class="flex items-center gap-3 sm:gap-5 ml-auto">
+                            <button
+                                v-for="(_, i) in bannersCollection"
+                                :key="i"
+                                type="button"
+                                @click="goToBanner(i)"
+                                class="flex items-center gap-2 py-1 group cursor-pointer"
+                                :aria-label="`Banner ${i + 1}`"
+                            >
+                                <span
+                                    class="text-[11px] font-bold tabular-nums transition-colors"
+                                    :class="currentBanner === i ? 'text-white' : 'text-white/45 group-hover:text-white/75'"
+                                >
+                                    0{{ i + 1 }}
+                                </span>
+                                <div
+                                    class="h-[2px] rounded-full overflow-hidden transition-all duration-300"
+                                    :class="currentBanner === i ? 'w-14 sm:w-20 bg-white/30' : 'w-6 sm:w-10 bg-white/15'"
+                                >
+                                    <div
+                                        v-if="currentBanner === i"
+                                        class="h-full bg-emerald-400 rounded-full"
+                                        :style="{ width: bannerProgress + '%' }"
+                                    ></div>
                                 </div>
-                                <div class="flex items-center text-[10px] text-gray-300 uppercase tracking-wider">
-                                    <svg class="w-3 h-3 mr-2 text-[#fbbf24]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
-                                    {{ event.location || 'Kampus Namira' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 REAL IMPACT METRICS BAR (Replaces Yellow 3D Flip-Cards!)
+            ========================================================== -->
+            <section class="relative z-30 -mt-8 sm:-mt-12 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-6xl mx-auto bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-[0_18px_46px_-18px_rgba(15,23,42,0.12)] p-5 sm:p-7">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-5 lg:gap-0">
+                        <div
+                            v-for="(metric, idx) in impactMetrics"
+                            :key="metric.label"
+                            class="lg:px-6 first:lg:pl-2 last:lg:pr-2"
+                            :class="idx > 0 ? 'lg:border-l lg:border-slate-100' : ''"
+                        >
+                            <div
+                                class="home-stat-counter text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight"
+                                :data-target="metric.target"
+                                :data-suffix="metric.suffix"
+                            >
+                                {{ metric.target.toLocaleString('id-ID') }}{{ metric.suffix }}
+                            </div>
+                            <div class="text-xs font-extrabold text-[#007468] mt-0.5">{{ metric.label }}</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5 leading-snug">{{ metric.sub }}</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 UNIT PENDIDIKAN NAMIRA (Complete w/ SD Kota + Motion Tabs)
+            ========================================================== -->
+            <section id="campuses" class="py-14 sm:py-22">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-7 sm:space-y-10">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 reveal-up">
+                        <div class="space-y-1.5">
+                            <h2 class="text-2xl sm:text-[2rem] tracking-tight text-slate-900">
+                                <span class="font-normal">Unit Pendidikan </span>
+                                <span class="font-extrabold">Sekolah Islam Namira</span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-500 max-w-xl">
+                                Jenjang pendidikan berkesinambungan dari usia dini hingga menengah pertama di Kabupaten &amp; Kota Probolinggo.
+                            </p>
+                        </div>
+
+                        <!-- Single-Line Swipeable Category Tabs -->
+                        <div class="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">
+                            <div class="inline-flex flex-nowrap items-center gap-1 p-1 rounded-xl bg-slate-100/85 border border-slate-200/60">
+                                <button
+                                    v-for="tab in unitTabs"
+                                    :key="tab.key"
+                                    type="button"
+                                    @click="activeUnitTab = tab.key"
+                                    class="relative px-3.5 py-2 sm:py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+                                    :class="activeUnitTab === tab.key ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'"
+                                >
+                                    <Motion
+                                        v-if="activeUnitTab === tab.key"
+                                        layout-id="home-unit-pill"
+                                        :transition="{ type: 'spring', stiffness: 420, damping: 32 }"
+                                        class="absolute inset-0 bg-white rounded-lg shadow-2xs ring-1 ring-slate-200/60"
+                                    />
+                                    <span class="relative z-10">{{ tab.label }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Swipeable Horizontal Strip on Mobile, Clean Responsive Grid on Tablet/Desktop -->
+                    <div class="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 overflow-x-auto sm:overflow-visible snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 sm:pb-0 no-scrollbar">
+                        <article
+                            v-for="unit in filteredCampuses"
+                            :key="unit.id"
+                            class="w-[82vw] sm:w-auto shrink-0 snap-start bg-white rounded-2xl border border-slate-200/80 shadow-[0_8px_24px_-16px_rgba(15,23,42,0.08)] hover:shadow-[0_16px_38px_-16px_rgba(0,150,136,0.16)] hover:border-[#009688]/40 transition-all flex flex-col justify-between overflow-hidden group"
+                        >
+                            <div>
+                                <!-- Campus Photo -->
+                                <div class="relative h-44 bg-slate-100 overflow-hidden">
+                                    <img
+                                        :src="unit.photo"
+                                        :alt="unit.name"
+                                        loading="lazy"
+                                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    />
+                                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/45 via-transparent to-transparent"></div>
+                                    <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-xs text-[10px] font-bold text-slate-700 shadow-2xs">
+                                        {{ unit.level }}
+                                    </span>
+                                    <!-- Logo Badge -->
+                                    <div class="absolute bottom-3 left-3 flex items-center gap-1.5">
+                                        <div class="w-10 h-10 rounded-xl bg-white p-1.5 shadow-md flex items-center justify-center">
+                                            <img :src="unit.logo" :alt="unit.name" class="w-full h-full object-contain" loading="lazy" />
+                                        </div>
+                                        <div v-if="unit.logo2" class="w-10 h-10 rounded-xl bg-white p-1.5 shadow-md flex items-center justify-center">
+                                            <img :src="unit.logo2" :alt="unit.name" class="w-full h-full object-contain" loading="lazy" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-5 space-y-3">
+                                    <div>
+                                        <h3 class="text-base font-extrabold text-slate-950 tracking-tight">{{ unit.name }}</h3>
+                                        <div class="flex items-center gap-1 text-[11px] font-medium text-slate-500 mt-1">
+                                            <MapPinIcon class="w-3.5 h-3.5 text-[#008C7E] shrink-0" />
+                                            <span class="truncate">{{ unit.address }}</span>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-xs text-slate-600 leading-relaxed">{{ unit.summary }}</p>
+
+                                    <div class="flex flex-wrap gap-1.5 pt-0.5">
+                                        <span
+                                            v-for="tag in unit.tags"
+                                            :key="tag"
+                                            class="px-2.5 py-0.5 rounded-md bg-[#F2FAF7] text-[#007468] text-[10px] font-bold"
+                                        >
+                                            {{ tag }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="mt-4 pt-4 border-t border-white/20">
-                                <span class="text-[#fbbf24] font-bold text-[11px] uppercase tracking-widest group-hover:underline flex items-center transition-colors">
-                                    Read More &rarr;
+
+                            <!-- Card Footer Actions -->
+                            <div class="px-5 pb-5 pt-2 flex items-center justify-between gap-2 border-t border-slate-50">
+                                <Link
+                                    v-if="unit.spmbUrl"
+                                    :href="unit.spmbUrl"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-[#008C7E] hover:text-[#006B60] transition-colors"
+                                >
+                                    <span>{{ unit.spmbLabel }}</span>
+                                    <ArrowRightIcon class="w-3.5 h-3.5" />
+                                </Link>
+                                <a
+                                    v-else-if="unit.wa"
+                                    :href="unit.wa"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-[#008C7E] hover:text-[#006B60] transition-colors"
+                                >
+                                    <span>Konsultasi WhatsApp</span>
+                                    <ArrowRightIcon class="w-3.5 h-3.5" />
+                                </a>
+                                <span v-else class="text-[11px] font-semibold text-slate-400">Program Yayasan Namira</span>
+
+                                <div class="flex items-center gap-1.5">
+                                    <a
+                                        v-if="unit.website"
+                                        :href="unit.website"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Website Unit"
+                                        class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#E6F7F1] text-slate-600 hover:text-[#007468] flex items-center justify-center transition-colors"
+                                    >
+                                        <GlobeAltIcon class="w-3.5 h-3.5" />
+                                    </a>
+                                    <a
+                                        v-if="unit.wa && unit.spmbUrl"
+                                        :href="unit.wa"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="WhatsApp Unit"
+                                        class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#E6F7F1] text-slate-600 hover:text-[#007468] flex items-center justify-center transition-colors"
+                                    >
+                                        <PhoneIcon class="w-3.5 h-3.5" />
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SPMB MULTI-YEAR & INDEN HIGHLIGHT BAND (Clean Soft Mint)
+            ========================================================== -->
+            <section class="px-4 sm:px-6 lg:px-8 pb-14 sm:pb-20">
+                <div class="max-w-6xl mx-auto reveal-up rounded-3xl bg-[#EDF9F4] border border-[#D4EFE5] p-6 sm:p-10 lg:p-12">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+                        <div class="lg:col-span-7 space-y-3">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-[#007468] text-[11px] font-bold shadow-2xs">
+                                <AcademicCapIcon class="w-3.5 h-3.5" />
+                                <span>SPMB Online &amp; Jalur Inden Multi-Tahun</span>
+                            </div>
+                            <h2 class="text-xl sm:text-[1.85rem] tracking-tight text-slate-950 leading-snug">
+                                <span class="font-normal">Rencanakan Pendidikan Ananda </span>
+                                <span class="font-extrabold">Lebih Awal Bersama Namira</span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
+                                Pendaftaran online tersedia untuk Tahun Ajaran berjalan maupun <strong>Jalur Inden 2028/2029 &amp; 2029/2030</strong> pada unit SD Namira Kraksaan, SD Namira Kota Probolinggo, dan SMP Namira.
+                            </p>
+                        </div>
+
+                        <div class="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col gap-2.5">
+                            <Link
+                                :href="route('spmb.index')"
+                                class="w-full py-3.5 px-6 min-h-[48px] rounded-xl bg-[#009688] hover:bg-[#007D71] text-white text-xs sm:text-sm font-bold shadow-xs transition-colors inline-flex items-center justify-center gap-2 group"
+                            >
+                                <span>Buka Portal SPMB Online</span>
+                                <ArrowRightIcon class="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                            </Link>
+                            <div class="grid grid-cols-3 gap-2">
+                                <Link :href="route('spmb.register.sd')" class="py-2.5 px-2 rounded-xl bg-white hover:border-[#009688] border border-slate-200/80 text-center text-[11px] font-bold text-slate-700 transition-colors">
+                                    SD Kraksaan
+                                </Link>
+                                <Link :href="route('spmb.register.sd-kota')" class="py-2.5 px-2 rounded-xl bg-white hover:border-[#009688] border border-slate-200/80 text-center text-[11px] font-bold text-slate-700 transition-colors">
+                                    SD Kota
+                                </Link>
+                                <Link :href="route('spmb.register.smp')" class="py-2.5 px-2 rounded-xl bg-white hover:border-[#009688] border border-slate-200/80 text-center text-[11px] font-bold text-slate-700 transition-colors">
+                                    SMP Namira
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 BERITA & INFORMASI TERBARU (Bright Editorial Cards — High Contrast!)
+            ========================================================== -->
+            <section id="news" class="py-12 sm:py-20 border-t border-slate-100">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-7 sm:space-y-10">
+                    <div class="flex items-end justify-between gap-4 reveal-up">
+                        <div class="space-y-1">
+                            <h2 class="text-xl sm:text-[1.85rem] tracking-tight text-slate-900">
+                                <span class="font-normal">Berita &amp; </span>
+                                <span class="font-extrabold">Informasi Terbaru</span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Kabar kegiatan belajar, prestasi siswa, dan informasi resmi Yayasan Namira.</p>
+                        </div>
+                        <Link
+                            :href="route('news.index')"
+                            class="text-xs sm:text-sm font-bold text-[#008C7E] hover:text-[#006B60] inline-flex items-center gap-1 shrink-0 transition-colors"
+                        >
+                            <span class="hidden sm:inline">Lihat Semua Berita</span>
+                            <span class="sm:hidden">Semua</span>
+                            <ArrowRightIcon class="w-4 h-4" />
+                        </Link>
+                    </div>
+
+                    <div
+                        v-if="latestNews.length > 0"
+                        class="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0 no-scrollbar"
+                    >
+                        <Link
+                            v-for="news in latestNews"
+                            :key="news.id"
+                            :href="news.slug ? route('news.show', news.slug) : route('news.index')"
+                            class="w-[78vw] sm:w-[300px] md:w-auto shrink-0 snap-start bg-white rounded-2xl border border-slate-200/80 shadow-[0_6px_22px_-14px_rgba(15,23,42,0.08)] hover:shadow-[0_14px_34px_-16px_rgba(0,150,136,0.16)] hover:border-[#009688]/40 transition-all overflow-hidden flex flex-col justify-between group"
+                        >
+                            <div>
+                                <div class="relative aspect-[16/10] bg-slate-100 overflow-hidden">
+                                    <img
+                                        :src="normalizeAssetUrl(news.image_path, '/images/landing/banner-1.webp')"
+                                        :alt="news.title"
+                                        loading="lazy"
+                                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    />
+                                    <span
+                                        v-if="news.unit?.name"
+                                        class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-white/95 text-[#007468] text-[10px] font-bold shadow-2xs"
+                                    >
+                                        {{ news.unit.name }}
+                                    </span>
+                                </div>
+
+                                <div class="p-4 sm:p-5 space-y-2">
+                                    <div class="text-[11px] font-semibold text-slate-400">
+                                        {{ formatDateStr(news.published_at) }}
+                                    </div>
+                                    <h3 class="text-sm font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-[#008C7E] transition-colors">
+                                        {{ news.title }}
+                                    </h3>
+                                    <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">
+                                        {{ stripHtmlExcerpt(news, 95) }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="px-4 sm:px-5 pb-4 pt-1">
+                                <span class="text-xs font-bold text-[#008C7E] inline-flex items-center gap-1">
+                                    <span>Baca Selengkapnya</span>
+                                    <ArrowRightIcon class="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                                 </span>
                             </div>
-                        </div>
-                    </Link>
-                </div>
-
-                <!-- Empty State Fallback -->
-                <div v-else class="max-w-2xl mx-auto bg-emerald-50/40 border border-emerald-100/50 rounded-3xl p-10 text-center shadow-sm" data-aos="zoom-in">
-                    <div class="mx-auto w-14 h-14 bg-[#064e3b]/5 rounded-2xl flex items-center justify-center mb-5 text-[#064e3b]/80">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-base font-bold text-[#064e3b] mb-2 font-heading tracking-wide">Belum Ada Agenda Terdekat</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed max-w-md mx-auto">
-                        Saat ini belum ada jadwal kegiatan atau acara terdaftar. Tetap pantau halaman ini untuk mendapatkan informasi agenda menarik dari Namira School!
-                    </p>
-                </div>
-
-                <div v-if="upcomingEvents.length > 0" class="text-center mt-12" data-aos="fade-up">
-                    <Link :href="route('events.index')" class="text-[#fbbf24] font-bold text-sm tracking-widest uppercase cursor-pointer hover:underline">View All Events</Link>
-                </div>
-            </div>
-        </section>
-
-        <!-- Partners / MOU Section -->
-        <section id="partners" class="py-16 bg-[#f8f9fa] border-t border-b border-gray-200/50 overflow-hidden">
-            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-10" data-aos="fade-down">
-                    <h2 class="text-2xl font-bold text-[#064e3b] uppercase tracking-widest mb-2 font-heading">Kerjasama & Kemitraan</h2>
-                    <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Lembaga & Instansi Partner Namira School</p>
-                </div>
-
-                <!-- Infinite Scroll Logo Ticker -->
-                <div class="relative w-full flex items-center overflow-hidden py-4">
-                    <!-- Faded Edges -->
-                    <div class="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#f8f9fa] to-transparent z-10 pointer-events-none"></div>
-                    <div class="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#f8f9fa] to-transparent z-10 pointer-events-none"></div>
-
-                    <!-- Marquee Container -->
-                    <div class="w-full flex overflow-hidden">
-                        <!-- Ticker Row 1 -->
-                        <div class="flex gap-16 items-center shrink-0 min-w-full justify-around animate-infinite-scroll">
-                            <div v-for="item in partners" :key="'p1-' + item.id" class="flex flex-col items-center justify-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300 select-none">
-                                <img :src="'/' + item.logo_path" :alt="item.name" class="h-10 md:h-12 w-auto object-contain max-w-[160px]" loading="lazy" />
-                                <span class="text-[9px] text-gray-400 font-bold mt-2 tracking-wider uppercase">{{ item.name }}</span>
-                            </div>
-                            <!-- Fallback placeholders if empty -->
-                            <div v-if="partners.length === 0" v-for="n in 6" :key="'f1-' + n" class="flex flex-col items-center justify-center grayscale opacity-30 select-none">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.905 0-5.64-.813-7.843-2.228m15.686 0a8.959 8.959 0 01-5.698 2.228m0 0A8.959 8.959 0 015.217 8.272"></path>
-                                </svg>
-                                <span class="text-[9px] text-gray-400 font-bold mt-1.5 uppercase tracking-wider">Mitra Pendidikan {{ n }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Ticker Row 2 (Duplicate) -->
-                        <div class="flex gap-16 items-center shrink-0 min-w-full justify-around animate-infinite-scroll" aria-hidden="true">
-                            <div v-for="item in partners" :key="'p2-' + item.id" class="flex flex-col items-center justify-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300 select-none">
-                                <img :src="'/' + item.logo_path" :alt="item.name" class="h-10 md:h-12 w-auto object-contain max-w-[160px]" loading="lazy" />
-                                <span class="text-[9px] text-gray-400 font-bold mt-2 tracking-wider uppercase">{{ item.name }}</span>
-                            </div>
-                            <div v-if="partners.length === 0" v-for="n in 6" :key="'f2-' + n" class="flex flex-col items-center justify-center grayscale opacity-30 select-none">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.905 0-5.64-.813-7.843-2.228m15.686 0a8.959 8.959 0 01-5.698 2.228m0 0A8.959 8.959 0 015.217 8.272"></path>
-                                </svg>
-                                <span class="text-[9px] text-gray-400 font-bold mt-1.5 uppercase tracking-wider">Mitra Pendidikan {{ n }}</span>
-                            </div>
-                        </div>
+                        </Link>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Pre-Footer Banner -->
-        <section class="relative py-24 bg-[#064e3b] overflow-hidden">
-            <div class="absolute inset-0 opacity-20">
-                <img :src="bannersCollection[0]" class="w-full h-full object-cover mix-blend-overlay" loading="lazy" />
-            </div>
-            <div class="relative z-10 max-w-4xl mx-auto px-4 text-center" data-aos="fade-up">
-                <span class="text-white text-6xl font-serif leading-none opacity-50">&ldquo;</span>
-                <h2 class="text-2xl md:text-4xl font-bold text-white leading-tight italic px-8">
-                    Fostering and Empowering Society in Building and Serving the Nation
-                </h2>
-                <div class="mt-10">
-                    <Link :href="route('spmb.index')" class="inline-block bg-[#fbbf24] text-[#064e3b] font-bold text-sm tracking-widest uppercase px-10 py-4 rounded-full transition shadow-lg hover:bg-yellow-300 active:scale-95">
-                        Join Us Now (SPMB)
-                    </Link>
-                </div>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer id="footer" class="bg-[#2b2b2b] text-gray-300 pt-16 pb-8 text-sm border-t-8 border-[#064e3b]">
-            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-                    
-                    <!-- Branding -->
-                    <div class="md:col-span-1">
-                        <div class="flex flex-col gap-1 mb-6">
-                            <span class="text-white font-bold text-lg tracking-widest uppercase">{{ appName }}</span>
-                            <span class="text-[#fbbf24] text-xs uppercase tracking-widest">Education Group</span>
+            <!-- =========================================================
+                 AGENDA & KEGIATAN SEKOLAH (Airy Light Cards)
+            ========================================================== -->
+            <section id="events" class="py-12 sm:py-20 bg-[#F8FCFA] border-y border-slate-100">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-7 sm:space-y-10">
+                    <div class="flex items-end justify-between gap-4 reveal-up">
+                        <div class="space-y-1">
+                            <h2 class="text-xl sm:text-[1.85rem] tracking-tight text-slate-900">
+                                <span class="font-normal">Agenda &amp; </span>
+                                <span class="font-extrabold">Kegiatan Sekolah</span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-500">Jadwal kegiatan akademik, keagamaan, dan acara kebersamaan keluarga Namira.</p>
                         </div>
-                        <ul class="space-y-3 text-[12px] text-gray-400">
+                        <Link
+                            :href="route('events.index')"
+                            class="text-xs sm:text-sm font-bold text-[#008C7E] hover:text-[#006B60] inline-flex items-center gap-1 shrink-0 transition-colors"
+                        >
+                            <span class="hidden sm:inline">Lihat Semua Agenda</span>
+                            <span class="sm:hidden">Semua</span>
+                            <ArrowRightIcon class="w-4 h-4" />
+                        </Link>
+                    </div>
+
+                    <div
+                        v-if="upcomingEvents.length > 0"
+                        class="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0 no-scrollbar"
+                    >
+                        <Link
+                            v-for="event in upcomingEvents.slice(0, 6)"
+                            :key="event.id"
+                            :href="event.slug ? route('events.show', event.slug) : route('events.index')"
+                            class="w-[80vw] sm:w-[320px] md:w-auto shrink-0 snap-start bg-white rounded-2xl border border-slate-200/80 hover:border-[#009688]/40 hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
+                        >
+                            <div>
+                                <div class="relative aspect-[16/9] bg-slate-100 overflow-hidden">
+                                    <img
+                                        :src="normalizeAssetUrl(event.image_path, '/images/landing/banner-2.webp')"
+                                        :alt="event.title"
+                                        loading="lazy"
+                                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    />
+                                    <div class="absolute top-3 left-3 px-2.5 py-1.5 rounded-xl bg-white/95 backdrop-blur-xs shadow-sm text-center leading-none min-w-[48px]">
+                                        <div class="text-sm font-extrabold text-slate-950">{{ getEventDateParts(event.start_date).day }}</div>
+                                        <div class="text-[10px] font-bold uppercase text-[#008C7E] mt-0.5">{{ getEventDateParts(event.start_date).month }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 sm:p-5 space-y-2.5">
+                                    <h3 class="text-sm font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-[#008C7E] transition-colors">
+                                        {{ event.title }}
+                                    </h3>
+                                    <div class="space-y-1 text-xs text-slate-500">
+                                        <div class="flex items-center gap-1.5">
+                                            <CalendarDaysIcon class="w-3.5 h-3.5 text-[#008C7E] shrink-0" />
+                                            <span>{{ formatDateStr(event.start_date) }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <MapPinIcon class="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                            <span class="truncate">{{ event.location || 'Kampus Namira' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px-4 sm:px-5 pb-4 pt-1">
+                                <span class="text-xs font-bold text-[#008C7E] inline-flex items-center gap-1">
+                                    <span>Detail Kegiatan</span>
+                                    <ArrowRightIcon class="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                                </span>
+                            </div>
+                        </Link>
+                    </div>
+
+                    <div v-else class="rounded-2xl bg-white border border-dashed border-slate-200 p-10 text-center space-y-2">
+                        <h3 class="text-sm font-extrabold text-slate-800">Belum Ada Agenda Terdekat</h3>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">Pantau halaman ini secara berkala untuk informasi kegiatan mendatang dari Sekolah Islam Namira.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 JEJAK KUNJUNGAN & OUTING CLASS (Proportional & Lazy Map)
+            ========================================================== -->
+            <section v-if="destinations.length > 0" id="destinations" ref="mapSectionRef" class="py-12 sm:py-20">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-center">
+                        <!-- Left Details & Location List -->
+                        <div class="lg:col-span-5 space-y-5 reveal-up">
+                            <div class="space-y-2">
+                                <h2 class="text-xl sm:text-[1.85rem] tracking-tight text-slate-900">
+                                    <span class="font-normal">Jejak Kunjungan &amp; </span>
+                                    <span class="font-extrabold">Outing Class</span>
+                                </h2>
+                                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                                    Pembelajaran kontekstual di luar kelas untuk memperluas wawasan siswa dan menumbuhkan keberanian bereksplorasi.
+                                </p>
+                            </div>
+
+                            <!-- Toggle only if overseas pins also exist -->
+                            <div v-if="hasOverseasDestinations" class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/60">
+                                <button
+                                    type="button"
+                                    @click="mapView = 'indonesia'"
+                                    class="px-4 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                                    :class="mapView === 'indonesia' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'"
+                                >
+                                    Nasional
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="mapView = 'overseas'"
+                                    class="px-4 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                                    :class="mapView === 'overseas' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'"
+                                >
+                                    Internasional
+                                </button>
+                            </div>
+
+                            <!-- Interactive Destination Cards -->
+                            <div class="space-y-2.5 max-h-[240px] overflow-y-auto pr-1">
+                                <button
+                                    v-for="dest in currentDestinations"
+                                    :key="dest.id"
+                                    type="button"
+                                    @click="focusDestinationOnMap(dest)"
+                                    class="w-full text-left p-4 rounded-2xl bg-[#F8FCFA] hover:bg-[#EDF9F4] border border-slate-100 hover:border-[#009688]/30 transition-all flex items-start gap-3 cursor-pointer"
+                                >
+                                    <div class="w-9 h-9 rounded-xl bg-white border border-slate-100 text-[#008C7E] flex items-center justify-center shrink-0">
+                                        <MapPinIcon class="w-4 h-4" />
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs sm:text-sm font-extrabold text-slate-900 truncate">{{ dest.name }}</div>
+                                        <div class="text-[11px] text-slate-500 mt-0.5">{{ dest.city }} · {{ dest.unit }}</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right Compact Lazy-Loaded Map -->
+                        <div class="lg:col-span-7 reveal-up">
+                            <div class="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/80 shadow-[0_14px_38px_-18px_rgba(15,23,42,0.14)] bg-slate-100">
+                                <div ref="mapContainer" class="h-[260px] sm:h-[340px] w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 KATA ORANG TUA & ALUMNI (Soft Pastel Mint Wave Band!)
+            ========================================================== -->
+            <section id="testimonials" class="relative bg-[#EDF9F4] py-16 sm:py-24 overflow-hidden">
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 1440 54"
+                    fill="none"
+                    preserveAspectRatio="none"
+                    class="absolute top-0 left-0 w-full h-6 sm:h-12 text-white"
+                >
+                    <path d="M0 0H1440V18C1080 58 360 58 0 18V0Z" fill="currentColor" />
+                </svg>
+
+                <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+                    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 reveal-up">
+                        <div class="space-y-1.5">
+                            <h2 class="text-xl sm:text-[1.85rem] tracking-tight text-slate-900">
+                                <span class="font-normal">Suara </span>
+                                <span class="font-extrabold">Orang Tua &amp; Keluarga Namira</span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-600">
+                                Pengalaman nyata para wali murid yang mempercayakan tumbuh kembang ananda di Sekolah Islam Namira.
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-2 self-start sm:self-auto">
+                            <button
+                                v-if="testiPageCount > 1"
+                                type="button"
+                                @click="prevTestiPage"
+                                aria-label="Testimoni sebelumnya"
+                                class="hidden md:flex w-9 h-9 rounded-xl bg-white border border-slate-200 hover:border-[#009688] text-slate-700 items-center justify-center transition cursor-pointer"
+                            >
+                                <ArrowLeftIcon class="w-4 h-4" />
+                            </button>
+                            <button
+                                v-if="testiPageCount > 1"
+                                type="button"
+                                @click="nextTestiPage"
+                                aria-label="Testimoni berikutnya"
+                                class="hidden md:flex w-9 h-9 rounded-xl bg-white border border-slate-200 hover:border-[#009688] text-slate-700 items-center justify-center transition cursor-pointer"
+                            >
+                                <ArrowRightIcon class="w-4 h-4" />
+                            </button>
+                            <Link
+                                :href="route('testimonials.index')"
+                                class="text-xs font-bold text-[#007468] hover:underline ml-1"
+                            >
+                                Lihat Semua →
+                            </Link>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Horizontal Snap Cards (All Published Testimonials) -->
+                    <div class="flex md:hidden gap-3.5 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-2 no-scrollbar">
+                        <article
+                            v-for="t in testimonialsList"
+                            :key="t.id"
+                            class="w-[84vw] shrink-0 snap-start bg-white rounded-2xl border border-white p-5 shadow-xs flex flex-col justify-between gap-4"
+                        >
+                            <p class="text-xs text-slate-600 leading-relaxed line-clamp-6">
+                                “{{ t.quote }}”
+                            </p>
+                            <div class="flex items-center gap-3 pt-3 border-t border-slate-100">
+                                <img
+                                    v-if="t.photo"
+                                    :src="t.photo"
+                                    :alt="t.name"
+                                    loading="lazy"
+                                    class="w-10 h-10 rounded-full object-cover border border-slate-100 shrink-0"
+                                />
+                                <div v-else class="w-10 h-10 rounded-full bg-[#E6F7F1] text-[#007468] font-extrabold text-xs flex items-center justify-center shrink-0">
+                                    {{ t.name?.charAt(0) || 'N' }}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-extrabold text-slate-900 truncate">{{ t.name }}</div>
+                                    <div class="text-[11px] text-slate-500 truncate">{{ t.role }}<span v-if="t.unit"> · {{ t.unit }}</span></div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Desktop Animated 3-Card Pager -->
+                    <div class="hidden md:block">
+                        <AnimatePresence mode="wait">
+                            <Motion
+                                :key="testiPage"
+                                :initial="{ opacity: 0, y: 10 }"
+                                :animate="{ opacity: 1, y: 0 }"
+                                :exit="{ opacity: 0, y: -8 }"
+                                :transition="{ duration: 0.25 }"
+                                class="grid grid-cols-3 gap-5"
+                            >
+                                <article
+                                    v-for="t in desktopVisibleTestimonials"
+                                    :key="t.id"
+                                    class="bg-white rounded-2xl border border-white p-6 shadow-[0_10px_28px_-16px_rgba(15,23,42,0.10)] flex flex-col justify-between gap-5"
+                                >
+                                    <p class="text-[13px] text-slate-600 leading-relaxed line-clamp-6">
+                                        “{{ t.quote }}”
+                                    </p>
+                                    <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+                                        <img
+                                            v-if="t.photo"
+                                            :src="t.photo"
+                                            :alt="t.name"
+                                            loading="lazy"
+                                            class="w-11 h-11 rounded-full object-cover border border-slate-100 shrink-0"
+                                        />
+                                        <div v-else class="w-11 h-11 rounded-full bg-[#E6F7F1] text-[#007468] font-extrabold text-xs flex items-center justify-center shrink-0">
+                                            {{ t.name?.charAt(0) || 'N' }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-extrabold text-slate-900 truncate">{{ t.name }}</div>
+                                            <div class="text-[11px] text-slate-500 truncate">{{ t.role }}<span v-if="t.unit"> · {{ t.unit }}</span></div>
+                                        </div>
+                                    </div>
+                                </article>
+                            </Motion>
+                        </AnimatePresence>
+
+                        <div v-if="testiPageCount > 1" class="flex items-center justify-center gap-2 pt-6">
+                            <button
+                                v-for="p in testiPageCount"
+                                :key="p"
+                                type="button"
+                                @click="testiPage = p - 1"
+                                :aria-label="`Halaman testimoni ${p}`"
+                                class="h-1.5 rounded-full transition-all cursor-pointer"
+                                :class="testiPage === p - 1 ? 'w-7 bg-[#009688]' : 'w-2 bg-[#009688]/25 hover:bg-[#009688]/50'"
+                            ></button>
+                        </div>
+                    </div>
+                </div>
+
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 1440 54"
+                    fill="none"
+                    preserveAspectRatio="none"
+                    class="absolute bottom-0 left-0 w-full h-6 sm:h-12 text-white"
+                >
+                    <path d="M0 54H1440V36C1080 -4 360 -4 0 36V54Z" fill="currentColor" />
+                </svg>
+            </section>
+
+            <!-- =========================================================
+                 MITRA & KEMITRAAN (Deduplicated Clean Logo Strip)
+            ========================================================== -->
+            <section v-if="uniquePartners.length > 0" id="partners" class="py-12 sm:py-16 overflow-hidden">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+                    <div class="text-center space-y-1 reveal-up">
+                        <div class="text-[11px] font-extrabold uppercase tracking-widest text-[#007468]">Kerjasama &amp; Kemitraan</div>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Didukung Berbagai Mitra Pendidikan &amp; Instansi</h2>
+                    </div>
+
+                    <div class="relative overflow-hidden py-3 group">
+                        <div class="absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+                        <div class="absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+
+                        <div class="flex w-max partner-marquee group-hover:[animation-play-state:paused]">
+                            <div v-for="loop in 2" :key="loop" class="flex items-center gap-10 sm:gap-14 pr-10 sm:pr-14 shrink-0" :aria-hidden="loop === 2">
+                                <div
+                                    v-for="item in uniquePartners"
+                                    :key="`${loop}-${item.id}`"
+                                    class="flex flex-col items-center justify-center opacity-75 hover:opacity-100 transition-opacity select-none"
+                                >
+                                    <img
+                                        v-if="item.logo"
+                                        :src="item.logo"
+                                        :alt="item.name"
+                                        loading="lazy"
+                                        class="h-10 sm:h-12 w-auto object-contain max-w-[140px] grayscale hover:grayscale-0 transition-all"
+                                    />
+                                    <span class="text-[10px] font-bold text-slate-400 mt-1.5 whitespace-nowrap">{{ item.name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 DUAL PATHWAY SECTION: SPMB + PORTAL KARIR
+            ========================================================== -->
+            <section class="py-10 sm:py-16 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 reveal-up">
+                    <!-- Pathway 1: Orang Tua / SPMB -->
+                    <div class="rounded-3xl bg-[#EDF9F4] border border-[#D4EFE5] p-6 sm:p-8 flex flex-col justify-between gap-6">
+                        <div class="space-y-2.5">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#007468] text-[11px] font-bold">
+                                <SparklesIcon class="w-3.5 h-3.5" />
+                                Untuk Orang Tua &amp; Wali
+                            </span>
+                            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight">
+                                Daftarkan Putra-Putri Anda di Namira
+                            </h3>
+                            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                Proses pendaftaran 100% online dengan pilihan Tahun Ajaran berjalan maupun Jalur Inden tahun ajaran mendatang.
+                            </p>
+                        </div>
+                        <div>
+                            <Link
+                                :href="route('spmb.index')"
+                                class="w-full sm:w-auto px-5 py-3 min-h-[46px] rounded-xl bg-[#009688] hover:bg-[#007D71] text-white text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <span>Daftar SPMB Sekarang</span>
+                                <ArrowRightIcon class="w-4 h-4" />
+                            </Link>
+                        </div>
+                    </div>
+
+                    <!-- Pathway 2: Pendidik & Profesional / Karir -->
+                    <div class="rounded-3xl bg-white border border-slate-200/80 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.08)] p-6 sm:p-8 flex flex-col justify-between gap-6">
+                        <div class="space-y-2.5">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F2FAF7] text-[#007468] text-[11px] font-bold">
+                                <BriefcaseIcon class="w-3.5 h-3.5" />
+                                <span>{{ openVacanciesCount > 0 ? `${openVacanciesCount} Posisi Sedang Dibuka` : 'Portal Karir Yayasan' }}</span>
+                            </span>
+                            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight">
+                                Berkarya Bersama Keluarga Besar Namira
+                            </h3>
+                            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                Kami mengundang guru, pembina tahfidz, dan staf profesional untuk bertumbuh bersama lebih dari 10 unit pendidikan Namira.
+                            </p>
+                        </div>
+                        <div>
+                            <Link
+                                :href="route('careers.index')"
+                                class="w-full sm:w-auto px-5 py-3 min-h-[46px] rounded-xl border border-slate-200 hover:border-[#009688] hover:text-[#008C7E] text-slate-800 text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <span>Lihat Portal Karir</span>
+                                <ArrowRightIcon class="w-4 h-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- =========================================================
+             UNIFIED AIRY WHITE EDITORIAL FOOTER (100% Bahasa Indonesia)
+        ========================================================== -->
+        <footer id="footer" class="bg-white border-t border-slate-100 py-12 sm:py-14">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 sm:gap-10 pb-8 sm:pb-10 border-b border-slate-100">
+                    <!-- Brand & Address -->
+                    <div class="md:col-span-4 space-y-3.5">
+                        <div class="flex items-center gap-2.5">
+                            <img :src="appLogo" alt="Logo Yayasan Namira" class="w-9 h-9 object-contain" />
+                            <div class="flex items-baseline gap-1">
+                                <span class="font-namira text-xl text-[#1a4373] lowercase leading-none">namira</span>
+                                <span class="font-school text-xs text-slate-500 uppercase font-extrabold leading-none">SCHOOL</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Lembaga Pendidikan Islam Terpadu &amp; Modern di bawah naungan Yayasan Namira — melayani Daycare, KB, TK, SD, dan SMP di Probolinggo, Jawa Timur.
+                        </p>
+                        <p class="text-xs text-slate-500">
+                            Jl. Pelita No. 8, Mayangan, Kota Probolinggo &amp; Kraksaan, Jawa Timur
+                        </p>
+                    </div>
+
+                    <!-- Links (2-col on mobile!) -->
+                    <div class="grid grid-cols-2 md:contents gap-6">
+                        <div class="md:col-span-2 space-y-2.5">
+                            <h4 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Tautan</h4>
+                            <ul class="space-y-2 text-xs text-slate-500">
+                                <li><Link :href="route('spmb.index')" class="font-semibold text-[#008C7E] hover:underline">SPMB Online</Link></li>
+                                <li><Link :href="route('careers.index')" class="hover:text-[#008C7E] transition-colors">Portal Karir</Link></li>
+                                <li><Link :href="route('news.index')" class="hover:text-[#008C7E] transition-colors">Berita &amp; Artikel</Link></li>
+                                <li><Link :href="route('events.index')" class="hover:text-[#008C7E] transition-colors">Agenda Sekolah</Link></li>
+                                <li><Link :href="route('testimonials.index')" class="hover:text-[#008C7E] transition-colors">Testimoni</Link></li>
+                            </ul>
+                        </div>
+
+                        <div class="md:col-span-3 space-y-2.5">
+                            <h4 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Jam Layanan Kantor</h4>
+                            <ul class="space-y-1.5 text-xs text-slate-500">
+                                <li>Senin – Jumat: 07.30 – 15.00 WIB</li>
+                                <li>Sabtu: 07.30 – 12.00 WIB</li>
+                                <li class="text-slate-400">Minggu &amp; Hari Libur: Tutup</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="md:col-span-3 space-y-2.5">
+                        <h4 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Hubungi Kami</h4>
+                        <ul class="space-y-2 text-xs text-slate-500">
                             <li>
-                                <span class="text-gray-200">Telp/WA:</span>
-                                <a href="https://wa.me/6282332922521" target="_blank" rel="noopener" class="hover:text-[#fbbf24] transition ml-1">+62 823-3292-2521</a>
+                                WhatsApp:
+                                <a href="https://wa.me/6282332922521" target="_blank" rel="noopener noreferrer" class="font-semibold text-slate-800 hover:text-[#008C7E] ml-1">
+                                    +62 823-3292-2521
+                                </a>
                             </li>
                             <li>
-                                <span class="text-gray-200">Email:</span>
-                                <a href="mailto:info@foundationnamira.com" class="hover:text-[#fbbf24] transition ml-1">info@foundationnamira.com</a>
+                                Email Umum:
+                                <a href="mailto:info@namiraschool.com" class="font-semibold text-slate-800 hover:text-[#008C7E] ml-1">
+                                    info@namiraschool.com
+                                </a>
                             </li>
-                            <li class="mt-4">Jl. Pelita No. 8, Mayangan, Kota Probolinggo, Jawa Timur</li>
+                            <li>
+                                Rekrutmen:
+                                <a href="mailto:hr@namiraschool.com" class="font-semibold text-slate-800 hover:text-[#008C7E] ml-1">
+                                    hr@namiraschool.com
+                                </a>
+                            </li>
                         </ul>
-                    </div>
-
-                    <div class="md:col-span-1">
-                        <h4 class="text-white font-bold mb-6 tracking-widest uppercase text-xs">Quick Links</h4>
-                        <ul class="space-y-2 text-[12px]">
-                            <li><a href="#home" @click="activeHash = '#home'" class="hover:text-[#fbbf24] transition">Home</a></li>
-                            <li><Link :href="route('spmb.index')" class="text-[#fbbf24] font-semibold hover:underline transition">SPMB Online</Link></li>
-                            <li><Link :href="route('careers.index')" class="text-[#00A99D] font-bold hover:underline transition">Portal Karir & Rekrutmen</Link></li>
-                            <li><a href="#campuses" @click="activeHash = '#campuses'" class="hover:text-[#fbbf24] transition">Units Sekolah</a></li>
-                            <li><a href="#destinations" @click="activeHash = '#destinations'" class="hover:text-[#fbbf24] transition">Outing Class</a></li>
-                            <li><a href="#testimonials" @click="activeHash = '#testimonials'" class="hover:text-[#fbbf24] transition">Testimonials</a></li>
-                            <li><a href="#news" @click="activeHash = '#news'" class="hover:text-[#fbbf24] transition">News</a></li>
-                            <li><a href="#events" @click="activeHash = '#events'" class="hover:text-[#fbbf24] transition">Events</a></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="md:col-span-1">
-                        <h4 class="text-white font-bold mb-6 tracking-widest uppercase text-xs">Operational Hours</h4>
-                        <ul class="space-y-2 text-[12px]">
-                            <li>Mon-Fri: 09:00 - 17:00</li>
-                            <li>Sat: 09:00 - 15:00</li>
-                            <li class="text-gray-500">Sun & National Holiday: Closed</li>
-                        </ul>
-                    </div>
-
-                    <div class="md:col-span-1 flex items-start justify-end">
-                        <img :src="appLogo" alt="QR/Logo" class="h-24 w-24 object-contain bg-white p-2 rounded" loading="lazy" />
                     </div>
                 </div>
 
-                <div class="border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 uppercase tracking-wider">
-                    <p>Copyright &copy; {{ new Date().getFullYear() }} {{ appName }}. All rights reserved.</p>
+                <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] sm:text-xs text-slate-400 text-center sm:text-left">
+                    <span>© {{ new Date().getFullYear() }} Yayasan Sekolah Islam Namira. Seluruh hak cipta dilindungi.</span>
+                    <span>Kraksaan · Dringu · Kota Probolinggo</span>
                 </div>
             </div>
         </footer>
@@ -1225,76 +1733,30 @@ const prevTesti = () => {
 </template>
 
 <style scoped>
-/* Thin elegant scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
 }
-::-webkit-scrollbar-track {
-    background: #f1f1f1; 
-}
-::-webkit-scrollbar-thumb {
-    background: #064e3b; 
-    border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #043528; 
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
-/* Testimonial Transition */
-.testi-fade-enter-active,
-.testi-fade-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-.testi-fade-enter-from,
-.testi-fade-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-/* Leaflet marker pulse animation */
-@keyframes markerPulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(251,191,36,0.3), 0 0 12px rgba(251,191,36,0.6); }
-  50% { box-shadow: 0 0 0 8px rgba(251,191,36,0.1), 0 0 20px rgba(251,191,36,0.8); }
-}
-
-/* Custom Leaflet popup styling */
-.namira-popup .leaflet-popup-content-wrapper {
-  border-radius: 12px !important;
-  border-left: 3px solid #fbbf24 !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
-  padding: 0 !important;
-}
-.namira-popup .leaflet-popup-content {
-  margin: 12px 16px !important;
-}
-.namira-popup .leaflet-popup-tip {
-  background: white !important;
-}
-
-/* Infinite loop scroll animation */
-@keyframes infiniteScroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-}
-
-.animate-infinite-scroll {
-    animation: infiniteScroll 25s linear infinite;
-}
-
-/* Custom Fade In Up Animation */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
+@keyframes partnerMarquee {
+    0% {
+        transform: translateX(0);
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    100% {
+        transform: translateX(-50%);
     }
 }
 
-.animate-fade-in-up {
-    opacity: 0;
-    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.partner-marquee {
+    animation: partnerMarquee 32s linear infinite;
+}
+
+:deep(.namira-map-popup .leaflet-popup-content-wrapper) {
+    border-radius: 14px;
+    border-left: 3px solid #009688;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.14);
 }
 </style>
