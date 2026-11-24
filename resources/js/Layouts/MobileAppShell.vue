@@ -47,7 +47,8 @@ import {
     Squares2X2Icon as Squares2X2IconSolid,
     NewspaperIcon as NewspaperIconSolid,
     FingerPrintIcon as FingerPrintIconSolid,
-    PresentationChartBarIcon as PresentationChartBarIconSolid
+    PresentationChartBarIcon as PresentationChartBarIconSolid,
+    BriefcaseIcon as BriefcaseIconSolid
 } from '@heroicons/vue/24/solid';
 
 const page = usePage();
@@ -57,6 +58,17 @@ const userRoles = computed(() => user.value?.roles || []);
 const isTeacher = computed(() => userRoles.value.includes('teacher') || userRoles.value.includes('guru') || (user.value?.is_teacher && !userRoles.value.includes('guru_alquran') && !userRoles.value.includes('koordinator_alquran')));
 const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
 const isGlobalAdmin = computed(() => userRoles.value.some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'].includes(r)));
+const canAccessRecruitment = computed(() => userRoles.value.some(r => [
+    'super_admin_yayasan',
+    'admin_yayasan',
+    'pembina_yayasan',
+    'pengawas_yayasan',
+    'humas_yayasan',
+    'staff_yayasan',
+    'humas_unit',
+    'admin_unit',
+    'kepala_sekolah',
+].includes(r)));
 
 const showDrawer = ref(false);
 const showUnitModal = ref(false);
@@ -275,7 +287,7 @@ const isRouteActive = (pattern) => {
 
                 <!-- Humas: Berita -->
                 <Link prefetch :cache-for="['15s', '45s']" 
-                    v-else-if="hasRole('humas_unit')"
+                    v-else-if="hasRole(['humas_unit', 'humas_yayasan'])"
                     :href="safeRoute('public-relations.news.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
                     :class="isRouteActive('public-relations.news.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
@@ -383,15 +395,18 @@ const isRouteActive = (pattern) => {
                     <span class="text-[10px] font-bold tracking-tight">Al-Qur'an</span>
                 </Link>
 
-                <!-- Humas: Kampus -->
+                <!-- Humas: Lowongan Karir -->
                 <Link prefetch :cache-for="['15s', '45s']" 
-                    v-else-if="hasRole('humas_unit')"
-                    :href="safeRoute('public-relations.university-destinations.index')"
+                    v-else-if="hasRole(['humas_unit', 'humas_yayasan'])"
+                    :href="safeRoute('yayasan.job-vacancies.index')"
                     class="flex flex-col items-center gap-1 py-1 px-3 transition-all duration-200 active:scale-95 flex-1"
-                    :class="isRouteActive('public-relations.university-destinations.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
+                    :class="isRouteActive('yayasan.job-vacancies.*') || isRouteActive('yayasan.applicants.*') ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'"
                 >
-                    <GlobeAltIcon class="w-6 h-6 transition-transform" />
-                    <span class="text-[10px] font-bold tracking-tight">Kampus</span>
+                    <component 
+                        :is="isRouteActive('yayasan.job-vacancies.*') || isRouteActive('yayasan.applicants.*') ? BriefcaseIconSolid : BriefcaseIcon" 
+                        class="w-6 h-6 transition-transform" 
+                    />
+                    <span class="text-[10px] font-bold tracking-tight">Lowongan</span>
                 </Link>
 
                 <!-- BK / Kesiswaan: Konseling -->
@@ -508,6 +523,54 @@ const isRouteActive = (pattern) => {
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Atur SPMB</span>
                                 </Link>
+                            </div>
+                        </div>
+
+                        <!-- 0B. KARIR & REKRUTMEN (LOWONGAN KERJA UNIT & YAYASAN) -->
+                        <div v-if="canAccessRecruitment" class="space-y-3 bg-blue-50/60 rounded-3xl p-3.5 sm:p-4 border border-blue-200/70">
+                            <div class="flex items-center justify-between px-1">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+                                    <p class="text-[11px] font-black uppercase text-blue-950 tracking-wider">
+                                        Karir &amp; Lowongan Kerja
+                                    </p>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider">Rekrutmen</span>
+                            </div>
+                            <div class="grid grid-cols-4 gap-y-4 gap-x-2 text-center">
+                                <Link prefetch :cache-for="['15s', '45s']" 
+                                    :href="safeRoute('yayasan.job-vacancies.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/80 border border-white ring-1 ring-blue-500/30 shadow-[0_8px_18px_-3px_rgba(37,99,235,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <BriefcaseIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Lowongan</span>
+                                </Link>
+
+                                <Link prefetch :cache-for="['15s', '45s']" 
+                                    :href="safeRoute('yayasan.applicants.index')" 
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-violet-50/80 border border-white ring-1 ring-violet-500/30 shadow-[0_8px_18px_-3px_rgba(139,92,246,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-violet-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Pelamar</span>
+                                </Link>
+
+                                <a
+                                    href="/karir"
+                                    target="_blank"
+                                    @click="showDrawer = false"
+                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                                >
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-teal-50/80 border border-white ring-1 ring-teal-500/30 shadow-[0_8px_18px_-3px_rgba(20,184,166,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                                        <GlobeAltIcon class="w-6 h-6 sm:w-7 sm:h-7 text-teal-600 stroke-[2.3]" />
+                                    </div>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-teal-700 transition-colors">Portal Karir</span>
+                                </a>
                             </div>
                         </div>
 
@@ -806,7 +869,7 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 3. HUMAS & PUBLIKASI -->
-                        <div v-if="isGlobalAdmin || hasRole(['humas_unit', 'kepala_sekolah', 'admin_unit'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
+                        <div v-if="isGlobalAdmin || hasRole(['humas_unit', 'humas_yayasan', 'kepala_sekolah', 'admin_unit'])" class="space-y-3 bg-slate-50/70 rounded-3xl p-3.5 sm:p-4 border border-slate-200/60">
                             <div class="flex items-center gap-2 px-1">
                                 <div class="w-2 h-2 rounded-full bg-blue-500"></div>
                                 <p class="text-[11px] font-black uppercase text-slate-700 tracking-wider">
@@ -870,6 +933,7 @@ const isRouteActive = (pattern) => {
                                 </Link>
 
                                 <Link prefetch :cache-for="['15s', '45s']" 
+                                    v-if="hasRole(['super_admin_yayasan', 'admin_yayasan'])"
                                     :href="safeRoute('public-relations.banners.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -878,30 +942,6 @@ const isRouteActive = (pattern) => {
                                         <MegaphoneIcon class="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 stroke-[2.3]" />
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-amber-600 transition-colors">Hero Banner</span>
-                                </Link>
-
-                                <Link prefetch :cache-for="['15s', '45s']" 
-                                    v-if="hasRole('humas_unit') && !isGlobalAdmin && !hasRole(['staff_yayasan', 'admin_unit'])"
-                                    :href="safeRoute('yayasan.job-vacancies.index')" 
-                                    @click="showDrawer = false"
-                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
-                                >
-                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/70 border border-white ring-1 ring-blue-400/25 shadow-[0_8px_18px_-3px_rgba(37,99,235,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
-                                        <BriefcaseIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
-                                    </div>
-                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Lowongan</span>
-                                </Link>
-
-                                <Link prefetch :cache-for="['15s', '45s']" 
-                                    v-if="hasRole('humas_unit') && !isGlobalAdmin && !hasRole(['staff_yayasan', 'admin_unit'])"
-                                    :href="safeRoute('yayasan.applicants.index')" 
-                                    @click="showDrawer = false"
-                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
-                                >
-                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-violet-50/70 border border-white ring-1 ring-violet-400/25 shadow-[0_8px_18px_-3px_rgba(139,92,246,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
-                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-violet-600 stroke-[2.3]" />
-                                    </div>
-                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Pelamar</span>
                                 </Link>
                             </div>
                         </div>
@@ -1249,30 +1289,6 @@ const isRouteActive = (pattern) => {
                                         <ClipboardDocumentListIcon class="w-6 h-6 sm:w-7 sm:h-7 text-cyan-600 stroke-[2.3]" />
                                     </div>
                                     <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-cyan-600 transition-colors">Rekap Absen</span>
-                                </Link>
-
-                                <Link prefetch :cache-for="['15s', '45s']" 
-                                    v-if="isGlobalAdmin || hasRole(['staff_yayasan', 'admin_unit'])"
-                                    :href="safeRoute('yayasan.job-vacancies.index')" 
-                                    @click="showDrawer = false"
-                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
-                                >
-                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/70 border border-white ring-1 ring-blue-400/25 shadow-[0_8px_18px_-3px_rgba(37,99,235,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
-                                        <MegaphoneIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
-                                    </div>
-                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-blue-600 transition-colors">Lowongan</span>
-                                </Link>
-
-                                <Link prefetch :cache-for="['15s', '45s']" 
-                                    v-if="isGlobalAdmin || hasRole(['staff_yayasan', 'admin_unit'])"
-                                    :href="safeRoute('yayasan.applicants.index')" 
-                                    @click="showDrawer = false"
-                                    class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
-                                >
-                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-violet-50/70 border border-white ring-1 ring-violet-400/25 shadow-[0_8px_18px_-3px_rgba(139,92,246,0.28)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
-                                        <UserGroupIcon class="w-6 h-6 sm:w-7 sm:h-7 text-violet-600 stroke-[2.3]" />
-                                    </div>
-                                    <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-0.5 group-hover:text-violet-600 transition-colors">Pelamar Kerja</span>
                                 </Link>
 
                                 <Link prefetch :cache-for="['15s', '45s']" 

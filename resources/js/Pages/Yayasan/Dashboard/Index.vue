@@ -52,7 +52,8 @@ import {
     ComputerDesktopIcon,
     BeakerIcon,
     CalculatorIcon,
-    PaintBrushIcon
+    PaintBrushIcon,
+    BriefcaseIcon
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -77,6 +78,17 @@ const hasRole = (roles) => {
 
 const isGlobalAdmin = computed(() => userRoles.value.some(r => ['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan'].includes(r)));
 const isPengawas = computed(() => userRoles.value.includes('pengawas_yayasan') && !userRoles.value.includes('super_admin_yayasan') && !userRoles.value.includes('admin_yayasan'));
+const canAccessRecruitment = computed(() => userRoles.value.some(r => [
+    'super_admin_yayasan',
+    'admin_yayasan',
+    'pembina_yayasan',
+    'pengawas_yayasan',
+    'humas_yayasan',
+    'staff_yayasan',
+    'humas_unit',
+    'admin_unit',
+    'kepala_sekolah',
+].includes(r)));
 
 const isDaycare = computed(() => {
     const activeUnitName = (page.props.session?.active_unit_name || '').toLowerCase();
@@ -707,6 +719,10 @@ const eventTypeLabels = {
                         <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><WrenchScrewdriverIcon class="w-5 h-5 stroke-[2.2]" /></div>
                         <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Pengguna</span>
                     </Link>
+                    <Link :href="safeRoute('yayasan.job-vacancies.index')" class="flex flex-col items-center gap-1 group active:scale-90 transition-transform">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform"><BriefcaseIcon class="w-5 h-5 stroke-[2.2]" /></div>
+                        <span class="text-[10px] font-bold text-slate-700 tracking-tight leading-tight">Lowongan</span>
+                    </Link>
                 </div>
             </div>
 
@@ -1106,7 +1122,7 @@ const eventTypeLabels = {
 
                     <!-- 11. Berita Humas -->
                     <Link 
-                        v-if="hasRole(['humas_unit', 'admin_unit'])"
+                        v-if="hasRole(['humas_unit', 'humas_yayasan', 'admin_unit', 'kepala_sekolah'])"
                         :href="safeRoute('public-relations.news.index')"
                         class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                     >
@@ -1114,6 +1130,31 @@ const eventTypeLabels = {
                             <NewspaperIcon class="w-6 h-6 sm:w-7 sm:h-7 text-slate-700 stroke-[2.3]" />
                         </div>
                         <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-slate-700 transition-colors">Berita</span>
+                    </Link>
+
+                    <!-- 11b. Lowongan Karir (Humas, Admin Unit, Kepsek & Yayasan) -->
+                    <Link 
+                        v-if="canAccessRecruitment"
+                        :href="safeRoute('yayasan.job-vacancies.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-blue-50/80 border border-white ring-1 ring-blue-500/30 shadow-[0_8px_20px_-3px_rgba(37,99,235,0.30)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150 relative">
+                            <BriefcaseIcon class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 stroke-[2.3]" />
+                            <span class="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[8px] font-black uppercase">Karir</span>
+                        </div>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-blue-600 transition-colors">Lowongan</span>
+                    </Link>
+
+                    <!-- 11c. Pelamar Kerja -->
+                    <Link 
+                        v-if="canAccessRecruitment"
+                        :href="safeRoute('yayasan.applicants.index')"
+                        class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
+                    >
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[22px] bg-gradient-to-b from-white via-white/95 to-violet-50/80 border border-white ring-1 ring-violet-500/30 shadow-[0_8px_20px_-3px_rgba(139,92,246,0.30)] flex items-center justify-center group-hover:scale-105 active:scale-90 transition-all duration-150">
+                            <UsersIcon class="w-6 h-6 sm:w-7 sm:h-7 text-violet-600 stroke-[2.3]" />
+                        </div>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-800 tracking-tight leading-tight mt-1 group-hover:text-violet-600 transition-colors">Pelamar</span>
                     </Link>
 
                     <!-- 12. Keuangan Unit (Finance) -->

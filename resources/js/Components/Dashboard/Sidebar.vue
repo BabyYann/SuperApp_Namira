@@ -356,6 +356,18 @@ const filteredMenuGroups = computed(() => {
                         active: 'yayasan.attendance-data.*',
                         icon: FingerPrintIcon 
                     },
+                    { 
+                        label: 'Kelola Lowongan Karir', 
+                        route: 'yayasan.job-vacancies.index', 
+                        active: 'yayasan.job-vacancies.*',
+                        icon: BriefcaseIcon 
+                    },
+                    { 
+                        label: 'Daftar Pelamar Kerja', 
+                        route: 'yayasan.applicants.index', 
+                        active: 'yayasan.applicants.*',
+                        icon: UserGroupIcon 
+                    },
                 ]
             }
         ];
@@ -640,6 +652,17 @@ const filteredMenuGroups = computed(() => {
         const isGlobalAdmin = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'pengawas_yayasan']);
         const isFinanceStaff = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'finance', 'staff_admin_keuangan']);
         const isKepalaSekolahOrGlobal = hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'kepala_sekolah']);
+        const canAccessRecruitment = hasAnyRole([
+            'super_admin_yayasan',
+            'admin_yayasan',
+            'pembina_yayasan',
+            'pengawas_yayasan',
+            'humas_yayasan',
+            'staff_yayasan',
+            'humas_unit',
+            'admin_unit',
+            'kepala_sekolah',
+        ]);
 
         let adminGroups = menuGroups.map(group => {
             let items = [...group.items];
@@ -653,6 +676,7 @@ const filteredMenuGroups = computed(() => {
             if (group.key === 'employee') {
                 items = items.filter(item => {
                     if (item.route === 'yayasan.attendance-approvals.index' && !isKepalaSekolahOrGlobal) return false;
+                    if ((item.route === 'yayasan.job-vacancies.index' || item.route === 'yayasan.applicants.index') && !canAccessRecruitment) return false;
                     return true;
                 });
             }

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Modules\Yayasan\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class JobVacancy extends Model
@@ -14,6 +15,7 @@ class JobVacancy extends Model
     protected $fillable = [
         'unit_id',
         'title',
+        'poster_path',
         'slug',
         'category',
         'type',
@@ -21,6 +23,8 @@ class JobVacancy extends Model
         'description',
         'requirements',
         'deadline',
+        'contact_whatsapp',
+        'placement_address',
         'status',
         'views_count',
         'created_by',
@@ -32,15 +36,26 @@ class JobVacancy extends Model
         'views_count' => 'integer',
     ];
 
+    protected $appends = [
+        'category_label',
+        'type_label',
+        'poster_url',
+    ];
+
     public static function boot()
     {
         parent::boot();
 
         static::creating(function ($vacancy) {
             if (empty($vacancy->slug)) {
-                $slug = Str::slug($vacancy->title);
-                $count = static::where('slug', 'like', "{$slug}%")->count();
-                $vacancy->slug = $count ? "{$slug}-{$count}" : $slug;
+                $baseSlug = Str::slug($vacancy->title) ?: 'lowongan';
+                $slug = $baseSlug;
+                $counter = 1;
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = "{$baseSlug}-{$counter}";
+                    $counter++;
+                }
+                $vacancy->slug = $slug;
             }
         });
     }
@@ -60,24 +75,39 @@ class JobVacancy extends Model
         return $this->hasMany(JobApplicant::class, 'job_vacancy_id');
     }
 
-    public function getCategoryLabelAttribute()
+    public function getPosterUrlAttribute(): ?string
+    {
+        if (empty($this->poster_path)) {
+            return null;
+        }
+
+        if (Str::startsWith($this->poster_path, ['http://', 'https://', '/'])) {
+            return $this->poster_path;
+        }
+
+        return Storage::url($this->poster_path);
+    }
+
+    public function getCategoryLabelAttribute(): string
     {
         $map = [
             'teacher' => 'Tenaga Pendidik (Guru)',
             'staff' => 'Tenaga Kependidikan (Staf)',
-            'operational' => 'Operasional & Sarpar',
+            'operational' => 'Operasional & Sarpras',
             'other' => 'Lainnya',
         ];
-        return $map[$this->category] ?? $this->category;
+
+        return $map[$this->category] ?? (string) $this->category;
     }
 
-    public function getTypeLabelAttribute()
+    public function getTypeLabelAttribute(): string
     {
         $map = [
             'full_time' => 'Penuh Waktu (Full Time)',
             'part_time' => 'Paruh Waktu (Part Time)',
             'contract' => 'Kontrak',
         ];
-        return $map[$this->type] ?? $this->type;
+
+        return $map[$this->type] ?? (string) $this->type;
     }
 }

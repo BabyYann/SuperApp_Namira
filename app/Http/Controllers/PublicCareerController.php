@@ -15,15 +15,16 @@ class PublicCareerController extends Controller
         $query = JobVacancy::with('unit')->where('status', 'open');
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = trim((string) $request->input('search'));
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('requirements', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('unit') && $request->unit !== 'all') {
-            $query->where('unit_id', $request->unit);
+            $query->where('unit_id', (int) $request->unit);
         }
 
         if ($request->filled('category')) {
@@ -31,7 +32,7 @@ class PublicCareerController extends Controller
         }
 
         $vacancies = $query->latest()->paginate(9)->withQueryString();
-        $units = Unit::select('id', 'name')->get();
+        $units = Unit::select('id', 'name')->orderBy('name')->get();
 
         return Inertia::render('Public/CareerIndex', [
             'vacancies' => $vacancies,
@@ -40,7 +41,7 @@ class PublicCareerController extends Controller
             'categories' => [
                 'teacher' => 'Tenaga Pendidik (Guru)',
                 'staff' => 'Tenaga Kependidikan (Staf)',
-                'operational' => 'Operasional & Sarpar',
+                'operational' => 'Operasional & Sarpras',
                 'other' => 'Lainnya',
             ],
         ]);
@@ -86,18 +87,27 @@ class PublicCareerController extends Controller
             'major' => 'required|string|max:255',
             'institution' => 'required|string|max:255',
             'gpa' => 'nullable|string|max:20',
-            'cv' => 'required|file|mimes:pdf|max:5120',
-            'cover_letter' => 'nullable|file|mimes:pdf|max:5120',
-            'certificate' => 'nullable|file|mimes:pdf|max:5120',
+            'cv' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'cover_letter' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'certificate' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'health_cert' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'ktp' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:10240',
+            'family_card' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
             'notes' => 'nullable|string|max:1000',
+        ], [
+            'cv.required' => 'File CV / Resume wajib diunggah (PDF atau Gambar, maks 5MB).',
+            'cv.mimes' => 'File CV harus berformat PDF, JPG, atau PNG.',
+            'cv.max' => 'Ukuran file CV maksimal 5MB.',
+            'photo.image' => 'Pas Foto harus berupa file gambar (JPG, PNG, atau WEBP).',
         ]);
 
         $cvPath = $request->file('cv')->store('recruitment/cv', 'public');
         $coverLetterPath = $request->hasFile('cover_letter') ? $request->file('cover_letter')->store('recruitment/cover_letters', 'public') : null;
         $certificatePath = $request->hasFile('certificate') ? $request->file('certificate')->store('recruitment/certificates', 'public') : null;
+        $healthCertPath = $request->hasFile('health_cert') ? $request->file('health_cert')->store('recruitment/health_certs', 'public') : null;
         $ktpPath = $request->hasFile('ktp') ? $request->file('ktp')->store('recruitment/ktp', 'public') : null;
+        $familyCardPath = $request->hasFile('family_card') ? $request->file('family_card')->store('recruitment/family_cards', 'public') : null;
         $photoPath = $request->hasFile('photo') ? $request->file('photo')->store('recruitment/photos', 'public') : null;
 
         $applicant = JobApplicant::create([
@@ -116,19 +126,21 @@ class PublicCareerController extends Controller
             'cv_path' => $cvPath,
             'cover_letter_path' => $coverLetterPath,
             'certificate_path' => $certificatePath,
+            'health_cert_path' => $healthCertPath,
             'ktp_path' => $ktpPath,
+            'family_card_path' => $familyCardPath,
             'photo_path' => $photoPath,
             'notes' => $validated['notes'] ?? null,
             'selection_status' => 'pending',
         ]);
 
-        // Dispatch In-App notification to Yayasan Admins
+        // Dispatch In-App notification to Yayasan & Unit Recruitment Stakeholders
         try {
             \App\Services\NotificationDispatcher::sendToRoles(
-                ['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan'],
+                ['super_admin_yayasan', 'admin_yayasan', 'pembina_yayasan', 'humas_yayasan', 'humas_unit', 'admin_unit', 'kepala_sekolah'],
                 $vacancy->unit_id,
                 '💼 Pelamar Kerja Baru',
-                "{$applicant->name} telah mengumpulkan lamaran untuk posisi {$vacancy->title}.",
+                "{$applicant->name} telah mengirimkan lamaran untuk posisi {$vacancy->title}.",
                 'recruitment',
                 ['applicant_id' => $applicant->id]
             );
@@ -136,6 +148,6 @@ class PublicCareerController extends Controller
             \Illuminate\Support\Facades\Log::error('Recruitment notification dispatch failed: ' . $e->getMessage());
         }
 
-        return redirect()->route('careers.show', $vacancy->slug)->with('success', "Pendaftaran lamaran kerja Anda berhasil dikirim dengan Kode Registrasi: {$applicant->applicant_code}. Tim Yayasan Namira akan meninjau berkas Anda.");
+        return redirect()->route('careers.show', $vacancy->slug)->with('success', "Pendaftaran lamaran kerja Anda berhasil dikirim dengan Kode Registrasi: {$applicant->applicant_code}. Tim rekrutmen akan meninjau berkas Anda.");
     }
 }
