@@ -77,15 +77,18 @@ const activeSessionLabel = computed(() => {
     return props.sessions?.find(s => String(s.id) === String(sessionFilter.value))?.name || null;
 });
 
+const shouldPassUnitId = computed(() => props.isGlobalAdmin || (props.eligibleUnits?.length || 0) > 1);
+
 const activeLevelLabel = computed(() => {
     if (levelFilter.value === 'all') return null;
+    if (levelFilter.value === 'inclusive') return 'Inklusi / Multi-Jilid';
     return props.levels?.find(l => String(l.id) === String(levelFilter.value))?.name || null;
 });
 
 const applyFilters = () => {
     isFiltering.value = true;
     router.get(route('quran.index'), {
-        unit_id: props.isGlobalAdmin ? props.unit.id : undefined,
+        unit_id: shouldPassUnitId.value ? props.unit.id : undefined,
         academic_year_id: props.activeYear.id,
         session_id: sessionFilter.value,
         level_id: levelFilter.value,
@@ -238,11 +241,15 @@ const seedSessions = () => {
 };
 
 // ==================== GROUP MODAL ====================
+const localTeachers = computed(() => (props.teachers || []).filter(t => !t.is_cross_unit));
+const pavlovTeachers = computed(() => (props.teachers || []).filter(t => t.is_cross_unit));
+
 const showGroupModal = ref(false);
 const editingGroup = ref(null);
 const groupForm = useForm({
     unit_id: props.unit.id,
     academic_year_id: props.activeYear.id,
+    is_inclusive: false,
     level_id: '',
     session_id: '',
     name: '',
@@ -257,6 +264,7 @@ const openCreateGroup = () => {
     groupForm.reset();
     groupForm.unit_id = props.unit.id;
     groupForm.academic_year_id = props.activeYear.id;
+    groupForm.is_inclusive = false;
     groupForm.level_id = props.levels?.[0]?.id || '';
     groupForm.session_id = props.sessions?.[0]?.id || '';
     groupForm.max_quota = 20;
@@ -267,7 +275,8 @@ const openEditGroup = (group) => {
     editingGroup.value = group;
     groupForm.unit_id = props.unit.id;
     groupForm.academic_year_id = props.activeYear.id;
-    groupForm.level_id = group.level_id;
+    groupForm.is_inclusive = Boolean(group.is_inclusive);
+    groupForm.level_id = group.is_inclusive ? (props.levels?.[0]?.id || '') : (group.level_id || '');
     groupForm.session_id = group.session_id || '';
     groupForm.name = group.name;
     groupForm.teacher_id = group.teacher_id || '';
@@ -277,12 +286,24 @@ const openEditGroup = (group) => {
     showGroupModal.value = true;
 };
 
+const setGroupInclusiveMode = (inclusive) => {
+    groupForm.is_inclusive = inclusive;
+    if (!inclusive && !groupForm.level_id) {
+        groupForm.level_id = props.levels?.[0]?.id || '';
+    }
+    autoSuggestGroupName();
+};
+
 const autoSuggestGroupName = () => {
     if (editingGroup.value || groupForm.name) return;
-    const lvl = props.levels.find(l => String(l.id) === String(groupForm.level_id));
     const t = props.teachers.find(u => String(u.id) === String(groupForm.teacher_id));
-    if (lvl && t) {
-        const firstName = t.name.split(',')[0].split(' ').slice(0, 2).join(' ');
+    const firstName = t ? t.name.split(',')[0].split(' ').slice(0, 2).join(' ') : '';
+    if (groupForm.is_inclusive) {
+        groupForm.name = firstName ? `Kelompok Inklusi - ${firstName}` : 'Kelompok Inklusi';
+        return;
+    }
+    const lvl = props.levels.find(l => String(l.id) === String(groupForm.level_id));
+    if (lvl && firstName) {
         groupForm.name = `${lvl.name} - ${firstName}`;
     } else if (lvl) {
         groupForm.name = `${lvl.name} A`;
@@ -290,13 +311,18 @@ const autoSuggestGroupName = () => {
 };
 
 const submitGroup = () => {
+    const payloadTransform = (data) => ({
+        ...data,
+        level_id: data.is_inclusive ? null : data.level_id,
+    });
+
     if (editingGroup.value) {
-        groupForm.put(route('quran.groups.update', editingGroup.value.id), {
+        groupForm.transform(payloadTransform).put(route('quran.groups.update', editingGroup.value.id), {
             preserveScroll: true,
             onSuccess: () => { showGroupModal.value = false; },
         });
     } else {
-        groupForm.post(route('quran.groups.store'), {
+        groupForm.transform(payloadTransform).post(route('quran.groups.store'), {
             preserveScroll: true,
             onSuccess: () => { showGroupModal.value = false; },
         });
@@ -325,12 +351,16 @@ const enrollSearch = ref('');
 const enrollClassroomFilter = ref('all');
 const enrollOnlyUnplotted = ref(true);
 const enrollSelectedIds = ref([]);
+const enrollDefaultLevelId = ref('');
+const enrollStudentLevels = ref({});
 const isLoadingEnrollStudents = ref(false);
 const enrollDisplayLimit = ref(60);
 
 const enrollForm = useForm({
     unit_id: props.unit.id,
     student_ids: [],
+    level_id: null,
+    student_levels: {},
     started_at: new Date().toISOString().slice(0, 10),
 });
 
@@ -340,6 +370,8 @@ const openEnrollDrawer = (group) => {
     enrollClassroomFilter.value = 'all';
     enrollOnlyUnplotted.value = true;
     enrollSelectedIds.value = [];
+    enrollDefaultLevelId.value = props.levels?.[0]?.id || '';
+    enrollStudentLevels.value = {};
     enrollDisplayLimit.value = 60;
     enrollForm.started_at = new Date().toISOString().slice(0, 10);
     showEnrollDrawer.value = true;
@@ -355,6 +387,28 @@ const openEnrollDrawer = (group) => {
             },
         });
     }
+};
+
+watch(enrollSelectedIds, (ids) => {
+    if (!enrollTargetGroup.value?.is_inclusive) return;
+    const next = { ...enrollStudentLevels.value };
+    const studentMap = new Map((props.allUnitStudents || []).map(s => [s.id, s]));
+    ids.forEach(sid => {
+        if (!next[sid]) {
+            const st = studentMap.get(sid);
+            next[sid] = st?.current_level_id || enrollDefaultLevelId.value || props.levels?.[0]?.id || '';
+        }
+    });
+    enrollStudentLevels.value = next;
+});
+
+const applyDefaultLevelToSelected = () => {
+    if (!enrollDefaultLevelId.value) return;
+    const next = { ...enrollStudentLevels.value };
+    enrollSelectedIds.value.forEach(sid => {
+        next[sid] = enrollDefaultLevelId.value;
+    });
+    enrollStudentLevels.value = next;
 };
 
 watch([enrollSearch, enrollClassroomFilter, enrollOnlyUnplotted], () => {
@@ -392,11 +446,41 @@ const submitEnroll = () => {
     if (!enrollTargetGroup.value || enrollSelectedIds.value.length === 0) return;
     enrollForm.unit_id = props.unit.id;
     enrollForm.student_ids = enrollSelectedIds.value;
+
+    if (enrollTargetGroup.value.is_inclusive) {
+        const levelsMap = {};
+        enrollSelectedIds.value.forEach(sid => {
+            levelsMap[sid] = Number(enrollStudentLevels.value[sid] || enrollDefaultLevelId.value);
+        });
+        enrollForm.level_id = enrollDefaultLevelId.value ? Number(enrollDefaultLevelId.value) : null;
+        enrollForm.student_levels = levelsMap;
+    } else {
+        enrollForm.level_id = null;
+        enrollForm.student_levels = {};
+    }
+
     enrollForm.post(route('quran.groups.enroll', enrollTargetGroup.value.id), {
         preserveScroll: true,
         onSuccess: () => {
             showEnrollDrawer.value = false;
             enrollSelectedIds.value = [];
+            enrollStudentLevels.value = {};
+        },
+    });
+};
+
+// Inline Jilid adjustment for members inside Inclusive (Multi-Jilid) groups
+const updatingMemberEnrollmentId = ref(null);
+const updateMemberLevel = (member, newLevelId) => {
+    if (!newLevelId || Number(newLevelId) === Number(member.level_id)) return;
+    updatingMemberEnrollmentId.value = member.enrollment_id;
+    router.patch(route('quran.enrollments.update-level', member.enrollment_id), {
+        unit_id: props.unit.id,
+        level_id: Number(newLevelId),
+    }, {
+        preserveScroll: true,
+        onFinish: () => {
+            updatingMemberEnrollmentId.value = null;
         },
     });
 };
@@ -644,6 +728,23 @@ const askRemoveMember = (member, groupName) => {
                         Semua Jilid
                     </button>
                     <button
+                        v-if="(stats?.inclusive_groups || 0) > 0 || levelFilter === 'inclusive'"
+                        type="button"
+                        @click="selectLevelFilter('inclusive')"
+                        class="h-7 px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 border inline-flex items-center gap-1.5"
+                        :class="levelFilter === 'inclusive'
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-indigo-50/70 text-indigo-700 border-indigo-200/80 hover:bg-indigo-100/70'"
+                    >
+                        <span>Inklusi</span>
+                        <span
+                            class="text-[10px] font-semibold tabular-nums px-1 rounded"
+                            :class="levelFilter === 'inclusive' ? 'bg-white/20 text-white' : 'text-indigo-500'"
+                        >
+                            {{ stats?.inclusive_groups || 0 }}
+                        </span>
+                    </button>
+                    <button
                         v-for="lvl in levelDistribution"
                         :key="lvl.id"
                         type="button"
@@ -738,7 +839,16 @@ const askRemoveMember = (member, groupName) => {
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap items-center gap-1.5">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70">
+                                    <span
+                                        v-if="group.is_inclusive"
+                                        class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/80"
+                                    >
+                                        Inklusi · Multi-Jilid
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70"
+                                    >
                                         {{ group.level?.name }}
                                     </span>
                                     <span v-if="group.session" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
@@ -756,13 +866,36 @@ const askRemoveMember = (member, groupName) => {
                                     {{ group.name }}
                                 </h3>
 
-                                <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                                <div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500">
                                     <span class="inline-flex items-center gap-1">
                                         <UserIcon class="w-3.5 h-3.5 text-slate-400" />
                                         <span class="font-medium text-slate-700">{{ group.teacher?.name || '-' }}</span>
                                     </span>
-                                    <span v-if="group.assistant_teacher" class="text-slate-400">
+                                    <span
+                                        v-if="group.teacher?.is_cross_unit"
+                                        class="inline-flex items-center px-1.5 py-px rounded text-[10px] font-medium bg-violet-50 text-violet-700 border border-violet-200/70"
+                                    >
+                                        Utusan {{ group.teacher.origin_unit_name || 'Pavlov' }}
+                                    </span>
+                                    <span v-if="group.assistant_teacher" class="text-slate-400 inline-flex items-center gap-1">
                                         Asisten: <span class="text-slate-600">{{ group.assistant_teacher.name }}</span>
+                                        <span
+                                            v-if="group.assistant_teacher.is_cross_unit"
+                                            class="px-1 py-px rounded text-[10px] font-medium bg-violet-50 text-violet-700 border border-violet-200/70"
+                                        >
+                                            Utusan {{ group.assistant_teacher.origin_unit_name || 'Pavlov' }}
+                                        </span>
+                                    </span>
+                                </div>
+
+                                <div v-if="group.is_inclusive && group.level_counts?.length" class="mt-2 flex flex-wrap items-center gap-1">
+                                    <span
+                                        v-for="lc in group.level_counts"
+                                        :key="lc.id"
+                                        class="inline-flex items-center gap-1 px-1.5 py-px rounded text-[10px] font-medium bg-slate-100/90 text-slate-600 border border-slate-200/70 tabular-nums"
+                                    >
+                                        <span>{{ lc.name }}</span>
+                                        <span class="text-slate-400">({{ lc.count }})</span>
                                     </span>
                                 </div>
                             </div>
@@ -812,7 +945,7 @@ const askRemoveMember = (member, groupName) => {
                                     <span>Plotting</span>
                                 </button>
                                 <Link
-                                    :href="route('quran.assessments.index', { group_id: group.id, unit_id: isGlobalAdmin ? unit.id : undefined, academic_year_id: activeYear.id })"
+                                    :href="route('quran.assessments.index', { group_id: group.id, unit_id: shouldPassUnitId ? unit.id : undefined, academic_year_id: activeYear.id })"
                                     class="h-7 px-2.5 rounded-lg text-xs font-medium text-[#00796B] bg-teal-50/80 border border-teal-200/70 hover:bg-teal-100/70 transition-colors inline-flex items-center gap-1"
                                 >
                                     <PencilSquareIcon class="w-3.5 h-3.5" />
@@ -867,6 +1000,21 @@ const askRemoveMember = (member, groupName) => {
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
+                                        <template v-if="group.is_inclusive">
+                                            <select
+                                                v-if="group.can_edit_member_level"
+                                                :value="m.level_id"
+                                                :disabled="updatingMemberEnrollmentId === m.enrollment_id"
+                                                @change="(e) => updateMemberLevel(m, e.target.value)"
+                                                class="h-6 pl-2 pr-6 py-0 rounded-md text-[11px] font-medium bg-teal-50/90 text-[#00796B] border border-teal-200/80 focus:border-[#00796B] focus:ring-1 focus:ring-[#00796B]/20 cursor-pointer disabled:opacity-50"
+                                                title="Ubah jilid siswa"
+                                            >
+                                                <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
+                                            </select>
+                                            <span v-else class="px-1.5 py-px rounded text-[10px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70">
+                                                {{ m.level_name }}
+                                            </span>
+                                        </template>
                                         <span
                                             class="inline-flex items-center gap-1 text-[11px] font-medium"
                                             :class="m.is_assessed ? 'text-[#00796B]' : 'text-slate-400'"
@@ -903,7 +1051,16 @@ const askRemoveMember = (member, groupName) => {
                         <div class="flex items-start justify-between gap-2">
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap items-center gap-1.5">
-                                    <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70">
+                                    <span
+                                        v-if="group.is_inclusive"
+                                        class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/80"
+                                    >
+                                        Inklusi · Multi-Jilid
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70"
+                                    >
                                         {{ group.level?.name }}
                                     </span>
                                     <span v-if="group.session" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
@@ -914,10 +1071,25 @@ const askRemoveMember = (member, groupName) => {
                                 <h3 class="text-[15px] font-semibold text-slate-900 mt-1.5 leading-snug">
                                     {{ group.name }}
                                 </h3>
-                                <p class="text-xs text-slate-500 mt-0.5">
-                                    {{ group.teacher?.name || '-' }}
-                                    <span v-if="group.room_name"> · {{ group.room_name }}</span>
-                                </p>
+                                <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 mt-0.5">
+                                    <span>{{ group.teacher?.name || '-' }}</span>
+                                    <span
+                                        v-if="group.teacher?.is_cross_unit"
+                                        class="px-1.5 py-px rounded text-[10px] font-medium bg-violet-50 text-violet-700 border border-violet-200/70"
+                                    >
+                                        Utusan {{ group.teacher.origin_unit_name || 'Pavlov' }}
+                                    </span>
+                                    <span v-if="group.room_name">· {{ group.room_name }}</span>
+                                </div>
+                                <div v-if="group.is_inclusive && group.level_counts?.length" class="mt-1.5 flex flex-wrap items-center gap-1">
+                                    <span
+                                        v-for="lc in group.level_counts"
+                                        :key="'mlc-' + lc.id"
+                                        class="px-1.5 py-px rounded text-[10px] font-medium bg-slate-100 text-slate-600 tabular-nums"
+                                    >
+                                        {{ lc.name }} ({{ lc.count }})
+                                    </span>
+                                </div>
                             </div>
 
                             <button
@@ -967,7 +1139,7 @@ const askRemoveMember = (member, groupName) => {
                             </button>
 
                             <Link
-                                :href="route('quran.assessments.index', { group_id: group.id, unit_id: isGlobalAdmin ? unit.id : undefined, academic_year_id: activeYear.id })"
+                                :href="route('quran.assessments.index', { group_id: group.id, unit_id: shouldPassUnitId ? unit.id : undefined, academic_year_id: activeYear.id })"
                                 class="h-10 rounded-xl text-xs font-semibold text-white bg-[#00796B] active:scale-[0.98] transition-all inline-flex items-center justify-center gap-1.5 shadow-xs"
                             >
                                 <PencilSquareIcon class="w-4 h-4" />
@@ -1008,6 +1180,20 @@ const askRemoveMember = (member, groupName) => {
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
+                                    <template v-if="group.is_inclusive">
+                                        <select
+                                            v-if="group.can_edit_member_level"
+                                            :value="m.level_id"
+                                            :disabled="updatingMemberEnrollmentId === m.enrollment_id"
+                                            @change="(e) => updateMemberLevel(m, e.target.value)"
+                                            class="h-7 pl-2 pr-6 py-0 rounded-lg text-[11px] font-medium bg-teal-50 text-[#00796B] border border-teal-200/80 disabled:opacity-50"
+                                        >
+                                            <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
+                                        </select>
+                                        <span v-else class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70">
+                                            {{ m.level_name }}
+                                        </span>
+                                    </template>
                                     <span class="w-2 h-2 rounded-full" :class="m.is_assessed ? 'bg-[#00796B]' : 'bg-slate-300'" />
                                     <button
                                         v-if="group.can_plot"
@@ -1082,6 +1268,16 @@ const askRemoveMember = (member, groupName) => {
                             Semua Jilid
                         </button>
                         <button
+                            v-if="(stats?.inclusive_groups || 0) > 0 || levelFilter === 'inclusive'"
+                            type="button"
+                            @click="levelFilter = levelFilter === 'inclusive' ? 'all' : 'inclusive'"
+                            class="h-9 px-3 rounded-xl text-xs font-medium border transition-colors inline-flex items-center gap-1.5"
+                            :class="levelFilter === 'inclusive' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50/70 text-indigo-700 border-indigo-200'"
+                        >
+                            <span>Inklusi</span>
+                            <span class="text-[10px] opacity-75 tabular-nums">{{ stats?.inclusive_groups || 0 }}</span>
+                        </button>
+                        <button
                             v-for="lvl in levelDistribution"
                             :key="'mf-' + lvl.id"
                             type="button"
@@ -1130,7 +1326,7 @@ const askRemoveMember = (member, groupName) => {
             :show="!!actionSheetGroup"
             variant="sheet"
             :title="actionSheetGroup?.name || ''"
-            :subtitle="`${actionSheetGroup?.level?.name || ''} · ${actionSheetGroup?.teacher?.name || '-'}`"
+            :subtitle="`${actionSheetGroup?.is_inclusive ? 'Multi-Jilid (Inklusi)' : (actionSheetGroup?.level?.name || '')} · ${actionSheetGroup?.teacher?.name || '-'}`"
             @close="actionSheetGroup = null"
         >
             <div v-if="actionSheetGroup" class="p-3 space-y-1">
@@ -1297,10 +1493,37 @@ const askRemoveMember = (member, groupName) => {
             @close="showGroupModal = false"
         >
             <form id="quran-group-form" @submit.prevent="submitGroup" class="space-y-3.5">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
+                <!-- Tipe Kelompok: Reguler vs Inklusi Multi-Jilid -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1.5">Tipe Kelompok</label>
+                    <div class="grid grid-cols-2 p-1 rounded-xl md:rounded-lg bg-slate-100 gap-1">
+                        <button
+                            type="button"
+                            @click="setGroupInclusiveMode(false)"
+                            class="h-9 md:h-8 rounded-lg md:rounded-md text-xs font-medium transition-all"
+                            :class="!groupForm.is_inclusive ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            Reguler (1 Jilid)
+                        </button>
+                        <button
+                            type="button"
+                            @click="setGroupInclusiveMode(true)"
+                            class="h-9 md:h-8 rounded-lg md:rounded-md text-xs font-medium transition-all"
+                            :class="groupForm.is_inclusive ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                        >
+                            Inklusi / ABK (Multi-Jilid)
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="groupForm.is_inclusive" class="rounded-xl bg-indigo-50/70 border border-indigo-200/80 px-3 py-2.5 text-[11px] text-indigo-900 leading-relaxed">
+                    Satu kelompok pendampingan dapat menampung siswa dengan <strong>jilid Ummi berbeda-beda</strong>. Jilid dipilih per siswa saat plotting, dan rapor F4 tetap tercetak standar sama seperti siswa reguler.
+                </div>
+
+                <div class="grid grid-cols-1 gap-3" :class="groupForm.is_inclusive ? '' : 'sm:grid-cols-2'">
+                    <div v-if="!groupForm.is_inclusive">
                         <label class="block text-xs font-medium text-slate-700 mb-1">Jilid / Tingkat <span class="text-rose-500">*</span></label>
-                        <select v-model="groupForm.level_id" @change="autoSuggestGroupName" required class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <select v-model="groupForm.level_id" @change="autoSuggestGroupName" :required="!groupForm.is_inclusive" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                             <option value="">Pilih Jilid</option>
                             <option v-for="l in levels" :key="l.id" :value="l.id">{{ l.name }}</option>
                         </select>
@@ -1318,25 +1541,43 @@ const askRemoveMember = (member, groupName) => {
                     <label class="block text-xs font-medium text-slate-700 mb-1">Guru Pengampu Utama <span class="text-rose-500">*</span></label>
                     <select v-model="groupForm.teacher_id" @change="autoSuggestGroupName" required class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                         <option value="">Pilih Guru Pengampu</option>
-                        <option v-for="t in teachers" :key="t.id" :value="t.id">
-                            {{ t.name }} — {{ t.role_label }}
-                        </option>
+                        <optgroup v-if="localTeachers.length" :label="`Guru ${unit.name}`">
+                            <option v-for="t in localTeachers" :key="t.id" :value="t.id">
+                                {{ t.name }} — {{ t.role_label }}
+                            </option>
+                        </optgroup>
+                        <optgroup v-if="pavlovTeachers.length" label="Guru Utusan Pavlov (Lintas Unit)">
+                            <option v-for="t in pavlovTeachers" :key="t.id" :value="t.id">
+                                {{ t.name }} — {{ t.role_label }}
+                            </option>
+                        </optgroup>
                     </select>
-                    <p class="text-[11px] text-slate-400 mt-1">Guru Al-Qur'an &amp; Koordinator ditampilkan paling atas.</p>
+                    <p class="text-[11px] text-slate-400 mt-1">
+                        {{ pavlovTeachers.length
+                            ? 'Termasuk Guru Utusan Pavlov — otomatis mendapat akses menu Al-Qur\'an khusus kelompok yang diampu.'
+                            : 'Guru Al-Qur\'an & Koordinator ditampilkan paling atas.' }}
+                    </p>
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Nama Kelompok <span class="text-rose-500">*</span></label>
-                    <input v-model="groupForm.name" required type="text" placeholder="Contoh: Jilid 5 A - Ustz. Nur Halimah" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
+                    <input v-model="groupForm.name" required type="text" :placeholder="groupForm.is_inclusive ? 'Contoh: Kelompok Inklusi - Ustz. Nabila' : 'Contoh: Jilid 5 A - Ustz. Nur Halimah'" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15" />
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-slate-700 mb-1">Guru Asisten (Opsional)</label>
                     <select v-model="groupForm.assistant_teacher_id" class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                         <option value="">Tidak Ada Asisten</option>
-                        <option v-for="t in teachers" :key="t.id" :value="t.id">
-                            {{ t.name }} — {{ t.role_label }}
-                        </option>
+                        <optgroup v-if="localTeachers.length" :label="`Guru ${unit.name}`">
+                            <option v-for="t in localTeachers" :key="'al-' + t.id" :value="t.id">
+                                {{ t.name }} — {{ t.role_label }}
+                            </option>
+                        </optgroup>
+                        <optgroup v-if="pavlovTeachers.length" label="Guru Utusan Pavlov (Lintas Unit)">
+                            <option v-for="t in pavlovTeachers" :key="'ap-' + t.id" :value="t.id">
+                                {{ t.name }} — {{ t.role_label }}
+                            </option>
+                        </optgroup>
                     </select>
                     <p v-if="groupForm.errors.assistant_teacher_id" class="text-xs text-rose-600 mt-1">{{ groupForm.errors.assistant_teacher_id }}</p>
                 </div>
@@ -1369,11 +1610,35 @@ const askRemoveMember = (member, groupName) => {
             variant="drawer"
             max-width="xl"
             :title="`Plotting Siswa — ${enrollTargetGroup?.name || ''}`"
-            :subtitle="`${enrollTargetGroup?.level?.name || ''} · Pilih siswa lintas kelas formal.`"
+            :subtitle="enrollTargetGroup?.is_inclusive
+                ? 'Multi-Jilid (Inklusi) · Tentukan jilid Ummi untuk setiap siswa yang dipilih.'
+                : `${enrollTargetGroup?.level?.name || ''} · Pilih siswa lintas kelas formal.`"
             @close="showEnrollDrawer = false"
         >
             <div class="flex flex-col h-full">
                 <div class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs border-b border-slate-200/80 px-4 sm:px-5 py-3 space-y-2.5">
+                    <div
+                        v-if="enrollTargetGroup?.is_inclusive"
+                        class="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-indigo-50/80 border border-indigo-200/80 px-3 py-2 text-xs"
+                    >
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="font-semibold text-indigo-900 shrink-0">Jilid Default:</span>
+                            <select
+                                v-model="enrollDefaultLevelId"
+                                class="h-7 pl-2 pr-7 rounded-lg border-indigo-200 bg-white text-xs font-medium text-slate-800 focus:border-[#00796B] focus:ring-1 focus:ring-[#00796B]/20"
+                            >
+                                <option v-for="l in levels" :key="'ed-' + l.id" :value="l.id">{{ l.name }}</option>
+                            </select>
+                        </div>
+                        <button
+                            v-if="enrollSelectedIds.length > 0"
+                            type="button"
+                            @click="applyDefaultLevelToSelected"
+                            class="h-7 px-2.5 rounded-lg bg-white border border-indigo-200 text-[11px] font-medium text-indigo-700 hover:bg-indigo-100/60 transition-colors"
+                        >
+                            Samakan {{ enrollSelectedIds.length }} dipilih
+                        </button>
+                    </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <div class="relative flex-1 min-w-[160px]">
                             <MagnifyingGlassIcon class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1442,22 +1707,25 @@ const askRemoveMember = (member, groupName) => {
                         </button>
                     </div>
                     <template v-else>
-                    <label
+                    <div
                         v-for="st in displayedEnrollCandidates"
                         :key="st.id"
                         class="flex items-center justify-between gap-3 px-2.5 py-3 md:py-2.5 rounded-lg transition-colors"
                         :class="st.locked_by_other
                             ? 'opacity-60 bg-slate-50/70 cursor-not-allowed'
-                            : 'hover:bg-slate-50 active:bg-slate-100 cursor-pointer'"
+                            : 'hover:bg-slate-50 active:bg-slate-100'"
                         :title="st.locked_by_other ? `Sudah terdaftar di ${st.current_group_name || 'kelompok pengampu lain'}` : ''"
                     >
-                        <div class="flex items-center gap-3 min-w-0">
+                        <label
+                            class="flex items-center gap-3 min-w-0 flex-1"
+                            :class="st.locked_by_other ? 'cursor-not-allowed' : 'cursor-pointer'"
+                        >
                             <input
                                 type="checkbox"
                                 :value="st.id"
                                 v-model="enrollSelectedIds"
                                 :disabled="st.locked_by_other"
-                                class="w-4 h-4 rounded border-slate-300 text-[#00796B] focus:ring-[#00796B]/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                                class="w-4 h-4 rounded border-slate-300 text-[#00796B] focus:ring-[#00796B]/30 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                             />
                             <div class="min-w-0">
                                 <div class="text-[13px] font-medium text-slate-800 truncate">{{ st.full_name }}</div>
@@ -1466,33 +1734,42 @@ const askRemoveMember = (member, groupName) => {
                                     <span v-if="st.nis" class="tabular-nums"> · {{ st.nis }}</span>
                                 </div>
                             </div>
+                        </label>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <select
+                                v-if="enrollTargetGroup?.is_inclusive && enrollSelectedIds.includes(st.id) && !st.locked_by_other"
+                                v-model="enrollStudentLevels[st.id]"
+                                class="h-7 pl-2 pr-6 rounded-lg border border-teal-300 bg-teal-50/90 text-[11px] font-semibold text-[#00796B] focus:border-[#00796B] focus:ring-1 focus:ring-[#00796B]/20 cursor-pointer"
+                            >
+                                <option v-for="l in levels" :key="'es-' + st.id + '-' + l.id" :value="l.id">{{ l.name }}</option>
+                            </select>
+                            <span
+                                v-if="!st.is_plotted"
+                                class="px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 border bg-slate-50 text-slate-500 border-slate-200/80"
+                            >
+                                Belum diplot
+                            </span>
+                            <span
+                                v-else-if="st.locked_by_other"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 max-w-[175px] truncate border bg-slate-100 text-slate-600 border-slate-200"
+                            >
+                                <LockClosedIcon class="w-3 h-3 text-slate-400 shrink-0" />
+                                <span class="truncate">{{ st.current_group_name || 'Kelompok lain' }}</span>
+                            </span>
+                            <span
+                                v-else-if="st.is_in_my_group"
+                                class="px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 max-w-[175px] truncate border bg-teal-50 text-[#00796B] border-teal-200/80"
+                            >
+                                Pindah · {{ st.current_group_name }}
+                            </span>
+                            <span
+                                v-else
+                                class="px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 max-w-[175px] truncate border bg-amber-50 text-amber-700 border-amber-200/80"
+                            >
+                                Pindah · {{ st.current_group_name || 'Akan dipindah' }}
+                            </span>
                         </div>
-                        <span
-                            v-if="!st.is_plotted"
-                            class="px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 border bg-slate-50 text-slate-500 border-slate-200/80"
-                        >
-                            Belum diplot
-                        </span>
-                        <span
-                            v-else-if="st.locked_by_other"
-                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 max-w-[175px] truncate border bg-slate-100 text-slate-600 border-slate-200"
-                        >
-                            <LockClosedIcon class="w-3 h-3 text-slate-400 shrink-0" />
-                            <span class="truncate">{{ st.current_group_name || 'Kelompok lain' }}</span>
-                        </span>
-                        <span
-                            v-else-if="st.is_in_my_group"
-                            class="px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 max-w-[175px] truncate border bg-teal-50 text-[#00796B] border-teal-200/80"
-                        >
-                            Pindah · {{ st.current_group_name }}
-                        </span>
-                        <span
-                            v-else
-                            class="px-2 py-0.5 rounded-md text-[10px] font-medium shrink-0 max-w-[175px] truncate border bg-amber-50 text-amber-700 border-amber-200/80"
-                        >
-                            Pindah · {{ st.current_group_name || 'Akan dipindah' }}
-                        </span>
-                    </label>
+                    </div>
                     <div
                         v-if="filteredEnrollCandidates.length > displayedEnrollCandidates.length"
                         class="py-3 px-2 flex items-center justify-center gap-2"

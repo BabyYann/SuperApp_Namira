@@ -16,6 +16,7 @@ use App\Modules\Yayasan\Models\AcademicYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class QuranStudentController extends Controller
@@ -32,7 +33,7 @@ class QuranStudentController extends Controller
         $this->setup->ensureUnitDefaults($unit);
 
         $activeYear = $this->access->resolveAcademicYear($request->integer('academic_year_id') ?: null);
-        $canManage = $this->access->canManage($user);
+        $canManage = $this->access->canManage($user, $unit->id);
         $isGlobalAdmin = $this->access->isGlobalAdmin($user);
         $setting = QuranSetting::where('unit_id', $unit->id)->first();
         $canPromote = $canManage || ($setting?->allow_teacher_promote ?? true);
@@ -48,7 +49,7 @@ class QuranStudentController extends Controller
             ->where('is_active', true)
             ->get()
             ->sortBy([
-                fn ($g) => $g->level?->sort_order ?? 999,
+                fn ($g) => $g->is_inclusive ? 998 : ($g->level?->sort_order ?? 999),
                 fn ($g) => $g->name,
             ])
             ->values();
@@ -119,6 +120,7 @@ class QuranStudentController extends Controller
                 'level_sort_order' => $enr?->level?->sort_order ?? 0,
                 'group_id' => $enr?->group_id,
                 'group_name' => $enr?->group?->name ?? '-',
+                'group_is_inclusive' => (bool) ($enr?->group?->is_inclusive ?? false),
                 'session_name' => $enr?->group?->session?->name ?? '-',
                 'teacher_name' => $enr?->group?->teacher?->name ?? '-',
                 'started_at' => $enr?->started_at?->format('Y-m-d'),
@@ -147,7 +149,7 @@ class QuranStudentController extends Controller
 
         return Inertia::render('Quran/Students', [
             'unit' => $unit->only(['id', 'name', 'code']),
-            'eligibleUnits' => $isGlobalAdmin ? $this->access->getEligibleUnits()->map->only(['id', 'name', 'code']) : [],
+            'eligibleUnits' => $this->access->getSwitchableUnits($user, $unit)->map->only(['id', 'name', 'code']),
             'academicYears' => AcademicYear::orderByDesc('is_active')->orderByDesc('id')->get(['id', 'name', 'semester', 'is_active']),
             'activeYear' => $activeYear->only(['id', 'name', 'semester', 'is_active']),
             'canManage' => $canManage,
@@ -156,8 +158,9 @@ class QuranStudentController extends Controller
             'groups' => $allGroups->map(fn ($g) => [
                 'id' => $g->id,
                 'name' => $g->name,
+                'is_inclusive' => (bool) $g->is_inclusive,
                 'level_id' => $g->level_id,
-                'level_name' => $g->level?->name,
+                'level_name' => $g->is_inclusive ? 'Multi-Jilid (Inklusi)' : $g->level?->name,
                 'session_name' => $g->session?->name,
                 'teacher_id' => $g->teacher_id,
                 'teacher_name' => $g->teacher?->name ?? '-',
@@ -177,6 +180,7 @@ class QuranStudentController extends Controller
 
     /**
      * Promote student to next jilid or transfer to another group & teacher with full history tracking.
+     * Supports same-group promotion when the target group is an Inclusive (Multi-Jilid) group.
      */
     public function promote(Request $request, Student $student)
     {
@@ -188,7 +192,7 @@ class QuranStudentController extends Controller
         }
 
         $activeYear = $this->access->resolveAcademicYear($request->integer('academic_year_id') ?: null);
-        $canManage = $this->access->canManage($user);
+        $canManage = $this->access->canManage($user, $unit->id);
         $setting = QuranSetting::where('unit_id', $student->unit_id)->first();
 
         $currentEnrollment = QuranEnrollment::with('group')
@@ -213,6 +217,7 @@ class QuranStudentController extends Controller
 
         $validated = $request->validate([
             'target_group_id' => 'required|exists:quran_groups,id',
+            'target_level_id' => 'nullable|integer|exists:quran_levels,id',
             'change_type' => 'required|in:promoted,transferred,initial',
             'changed_at' => 'required|date',
             'exam_score' => 'nullable|string|max:30',
@@ -223,11 +228,34 @@ class QuranStudentController extends Controller
             ->where('unit_id', $student->unit_id)
             ->findOrFail($validated['target_group_id']);
 
-        if ($currentEnrollment && $currentEnrollment->group_id === $targetGroup->id) {
-            return back()->with('error', 'Siswa sudah berada di kelompok tujuan tersebut.');
+        if ($targetGroup->is_inclusive) {
+            if (empty($validated['target_level_id'])) {
+                throw ValidationException::withMessages([
+                    'target_level_id' => 'Pilih jilid tujuan untuk kelompok Inklusi (Multi-Jilid).',
+                ]);
+            }
+            $targetLevel = QuranLevel::where('unit_id', $student->unit_id)
+                ->findOrFail($validated['target_level_id']);
+
+            if (
+                $currentEnrollment
+                && $currentEnrollment->group_id === $targetGroup->id
+                && (int) $currentEnrollment->level_id === (int) $targetLevel->id
+            ) {
+                return back()->with('error', 'Siswa sudah berada pada jilid dan kelompok inklusi tersebut.');
+            }
+        } else {
+            $targetLevel = $targetGroup->level;
+            if (!$targetLevel) {
+                abort(422, 'Kelompok tujuan belum memiliki jilid.');
+            }
+
+            if ($currentEnrollment && $currentEnrollment->group_id === $targetGroup->id) {
+                return back()->with('error', 'Siswa sudah berada di kelompok tujuan tersebut.');
+            }
         }
 
-        DB::transaction(function () use ($student, $activeYear, $currentEnrollment, $targetGroup, $validated, $user) {
+        DB::transaction(function () use ($student, $activeYear, $currentEnrollment, $targetGroup, $targetLevel, $validated, $user) {
             $fromLevelId = $currentEnrollment?->level_id;
             $fromGroupId = $currentEnrollment?->group_id;
             $fromTeacherId = $currentEnrollment?->group?->teacher_id;
@@ -251,7 +279,7 @@ class QuranStudentController extends Controller
                 'academic_year_id' => $activeYear->id,
                 'student_id' => $student->id,
                 'group_id' => $targetGroup->id,
-                'level_id' => $targetGroup->level_id,
+                'level_id' => $targetLevel->id,
                 'status' => QuranEnrollment::STATUS_ACTIVE,
                 'started_at' => $validated['changed_at'],
                 'notes' => $validated['notes'] ?? null,
@@ -263,7 +291,7 @@ class QuranStudentController extends Controller
                 'semester' => $activeYear->semester,
                 'student_id' => $student->id,
                 'from_level_id' => $fromLevelId,
-                'to_level_id' => $targetGroup->level_id,
+                'to_level_id' => $targetLevel->id,
                 'from_group_id' => $fromGroupId,
                 'to_group_id' => $targetGroup->id,
                 'from_teacher_id' => $fromTeacherId,
@@ -278,7 +306,7 @@ class QuranStudentController extends Controller
 
         $actionLabel = $validated['change_type'] === 'promoted' ? 'dinaikkan ke' : 'dipindahkan ke';
 
-        return back()->with('success', "Ananda {$student->full_name} berhasil {$actionLabel} {$targetGroup->level->name} ({$targetGroup->name}).");
+        return back()->with('success', "Ananda {$student->full_name} berhasil {$actionLabel} {$targetLevel->name} ({$targetGroup->name}).");
     }
 
     /**

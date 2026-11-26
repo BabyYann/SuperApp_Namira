@@ -436,8 +436,10 @@ const filteredMenuGroups = computed(() => {
         ]
     };
 
-    // Program Al-Qur'an (Metode Ummi) Menu — aktif di semua unit kecuali Daycare & Pavlov
+    // Program Al-Qur'an (Metode Ummi) Menu — aktif di semua unit kecuali Daycare & Pavlov,
+    // atau untuk guru lintas unit (mis. Guru Utusan Pavlov) yang ditugaskan mengampu kelompok Al-Qur'an
     const isQuranUnitEnabled = !page.props.session?.is_daycare && page.props.session?.features?.quran !== false && isFeatureEnabled('feature_quran');
+    const hasQuranAssignment = Boolean(page.props.session?.has_quran_assignment) && isFeatureEnabled('feature_quran');
 
     const quranMenu = {
         title: 'Program Al-Qur\'an (Ummi)',
@@ -704,6 +706,7 @@ const filteredMenuGroups = computed(() => {
         if (isFeatureEnabled('feature_counseling')) adminGroups.push(counselingMenu);
         if (isFeatureEnabled('feature_extracurricular')) adminGroups.push(extracurricularMenu);
         if (isQuranUnitEnabled) adminGroups.push(quranMenu);
+        else if (hasQuranAssignment) adminGroups.push(quranTeacherMenu);
         adminGroups.push(humasMenu);
 
         return adminGroups;
@@ -954,13 +957,15 @@ const filteredMenuGroups = computed(() => {
         groups.push(extracurricularMenu);
     }
 
-    // F2. PROGRAM AL-QUR'AN / UMMI (Koordinator Al-Qur'an / Guru Al-Qur'an / Kurikulum)
+    // F2. PROGRAM AL-QUR'AN / UMMI (Koordinator Al-Qur'an / Guru Al-Qur'an / Kurikulum / Guru Utusan Pavlov)
     if (isQuranUnitEnabled) {
         if (hasRole('koordinator_alquran') || hasRole('koordinator_kurikulum')) {
             groups.push(quranMenu);
-        } else if (hasRole('guru_alquran')) {
+        } else if (hasRole('guru_alquran') || hasQuranAssignment) {
             groups.push(quranTeacherMenu);
         }
+    } else if (hasQuranAssignment) {
+        groups.push(quranTeacherMenu);
     }
 
     // G. KOORDINATOR SARPAR

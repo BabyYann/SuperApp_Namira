@@ -81,10 +81,12 @@ const activeFilterChips = computed(() => {
     return chips;
 });
 
+const shouldPassUnitId = computed(() => props.isGlobalAdmin || (props.eligibleUnits?.length || 0) > 1);
+
 const applyFilters = () => {
     isFiltering.value = true;
     router.get(route('quran.students.index'), {
-        unit_id: props.isGlobalAdmin ? props.unit.id : undefined,
+        unit_id: shouldPassUnitId.value ? props.unit.id : undefined,
         academic_year_id: props.activeYear.id,
         classroom_id: classroomFilter.value,
         level_id: levelFilter.value,
@@ -118,18 +120,60 @@ const promoteForm = useForm({
     unit_id: props.unit.id,
     academic_year_id: props.activeYear.id,
     target_group_id: '',
+    target_level_id: '',
     change_type: 'promoted',
     changed_at: new Date().toISOString().slice(0, 10),
     exam_score: '',
     notes: '',
 });
 
+const selectedTargetGroup = computed(() => {
+    if (!promoteForm.target_group_id) return null;
+    return (props.groups || []).find(g => String(g.id) === String(promoteForm.target_group_id)) || null;
+});
+
 const availableTargetGroups = computed(() => {
     return (props.groups || []).filter(g => {
-        if (targetStudent.value && g.id === targetStudent.value.group_id) return false;
-        if (selectedTargetLevelId.value !== 'all' && String(g.level_id) !== String(selectedTargetLevelId.value)) return false;
+        // Inclusive groups allow same-group Jilid promotion (when not transferring to another group)
+        if (targetStudent.value && g.id === targetStudent.value.group_id) {
+            if (!(g.is_inclusive && promoteForm.change_type !== 'transferred')) {
+                return false;
+            }
+        }
+        // Inclusive groups support every Jilid, so always keep them selectable under any Jilid filter
+        if (!g.is_inclusive && selectedTargetLevelId.value !== 'all' && String(g.level_id) !== String(selectedTargetLevelId.value)) {
+            return false;
+        }
         return true;
     });
+});
+
+const getNextLevelFor = (currentLevelId) => {
+    if (!currentLevelId) return props.levels?.[0] || null;
+    const sortedLevels = [...(props.levels || [])].sort((a, b) => a.sort_order - b.sort_order);
+    const curIdx = sortedLevels.findIndex(l => l.id === currentLevelId);
+    return curIdx >= 0 && curIdx + 1 < sortedLevels.length ? sortedLevels[curIdx + 1] : null;
+};
+
+watch(() => promoteForm.target_group_id, () => {
+    if (selectedTargetGroup.value?.is_inclusive) {
+        if (selectedTargetLevelId.value !== 'all') {
+            promoteForm.target_level_id = selectedTargetLevelId.value;
+        } else if (!promoteForm.target_level_id) {
+            const nextLvl = promoteForm.change_type === 'transferred'
+                ? props.levels?.find(l => l.id === targetStudent.value?.level_id)
+                : getNextLevelFor(targetStudent.value?.level_id);
+            promoteForm.target_level_id = nextLvl?.id || props.levels?.[0]?.id || '';
+        }
+    } else {
+        promoteForm.target_level_id = '';
+    }
+});
+
+watch(selectedTargetLevelId, (newLvl) => {
+    if (selectedTargetGroup.value?.is_inclusive && newLvl !== 'all') {
+        promoteForm.target_level_id = newLvl;
+    }
 });
 
 const openPromoteModal = (student) => {
@@ -144,14 +188,20 @@ const openPromoteModal = (student) => {
         selectedTargetLevelId.value = 'all';
     } else {
         promoteForm.change_type = 'promoted';
-        const sortedLevels = [...props.levels].sort((a, b) => a.sort_order - b.sort_order);
-        const curIdx = sortedLevels.findIndex(l => l.id === student.level_id);
-        const nextLevel = curIdx >= 0 && curIdx + 1 < sortedLevels.length ? sortedLevels[curIdx + 1] : null;
+        const nextLevel = getNextLevelFor(student.level_id);
         selectedTargetLevelId.value = nextLevel ? nextLevel.id : 'all';
     }
 
-    const candidates = availableTargetGroups.value;
-    promoteForm.target_group_id = candidates.length === 1 ? candidates[0].id : '';
+    // If student is already in an Inclusive group, pre-select same group + next Jilid for 1-click promotion
+    if (student.group_is_inclusive && student.group_id && promoteForm.change_type === 'promoted') {
+        promoteForm.target_group_id = student.group_id;
+        promoteForm.target_level_id = selectedTargetLevelId.value !== 'all'
+            ? selectedTargetLevelId.value
+            : (props.levels?.[0]?.id || '');
+    } else {
+        const candidates = availableTargetGroups.value;
+        promoteForm.target_group_id = candidates.length === 1 ? candidates[0].id : '';
+    }
     showPromoteModal.value = true;
 };
 
@@ -159,13 +209,19 @@ const onChangeTypeSwitch = (type) => {
     promoteForm.change_type = type;
     if (type === 'transferred' && targetStudent.value?.level_id) {
         selectedTargetLevelId.value = targetStudent.value.level_id;
+        promoteForm.target_group_id = '';
+        promoteForm.target_level_id = '';
     } else if (type === 'promoted' && targetStudent.value?.level_id) {
-        const sortedLevels = [...props.levels].sort((a, b) => a.sort_order - b.sort_order);
-        const curIdx = sortedLevels.findIndex(l => l.id === targetStudent.value.level_id);
-        const nextLevel = curIdx >= 0 && curIdx + 1 < sortedLevels.length ? sortedLevels[curIdx + 1] : null;
+        const nextLevel = getNextLevelFor(targetStudent.value.level_id);
         selectedTargetLevelId.value = nextLevel ? nextLevel.id : 'all';
+        if (targetStudent.value.group_is_inclusive && targetStudent.value.group_id) {
+            promoteForm.target_group_id = targetStudent.value.group_id;
+            promoteForm.target_level_id = nextLevel ? nextLevel.id : '';
+        } else {
+            promoteForm.target_group_id = '';
+            promoteForm.target_level_id = '';
+        }
     }
-    promoteForm.target_group_id = '';
 };
 
 const submitPromote = () => {
@@ -193,7 +249,7 @@ const openHistory = async (student) => {
 
     try {
         const res = await axios.get(route('quran.students.history', student.id), {
-            params: { unit_id: props.isGlobalAdmin ? props.unit.id : undefined },
+            params: { unit_id: shouldPassUnitId.value ? props.unit.id : undefined },
         });
         historyRows.value = res.data.histories || [];
     } catch (err) {
@@ -380,7 +436,10 @@ const changeTypeMeta = (type) => {
                                     </span>
                                 </td>
                                 <td class="px-4 py-2.5">
-                                    <div class="text-xs font-medium text-slate-700">{{ st.group_name }}</div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-xs font-medium text-slate-700">{{ st.group_name }}</span>
+                                        <span v-if="st.group_is_inclusive" class="px-1.5 py-px rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200/70">Inklusi</span>
+                                    </div>
                                     <div v-if="st.session_name !== '-'" class="text-[11px] text-slate-400">{{ st.session_name }}</div>
                                 </td>
                                 <td class="px-4 py-2.5 text-xs text-slate-600">
@@ -627,11 +686,29 @@ const changeTypeMeta = (type) => {
                     <select v-model="promoteForm.target_group_id" required class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-slate-200 text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
                         <option value="">Pilih Kelompok Tujuan</option>
                         <option v-for="g in availableTargetGroups" :key="g.id" :value="g.id">
-                            [{{ g.level_name }}] {{ g.name }} — {{ g.teacher_name }}{{ g.session_name ? ` (${g.session_name})` : '' }}
+                            [{{ g.level_name }}] {{ g.name }} — {{ g.teacher_name }}{{ g.session_name ? ` (${g.session_name})` : '' }}{{ targetStudent && g.id === targetStudent.group_id ? ' · Kelompok Saat Ini' : '' }}
                         </option>
                     </select>
                     <p v-if="availableTargetGroups.length === 0" class="text-xs text-amber-600 mt-1.5">
                         Belum ada kelompok di jilid tujuan ini. Buat kelompoknya terlebih dahulu di tab Kelompok &amp; Sesi.
+                    </p>
+                </div>
+
+                <div v-if="selectedTargetGroup?.is_inclusive" class="p-3 rounded-xl bg-indigo-50/60 border border-indigo-200/80 space-y-2">
+                    <label class="block text-xs font-semibold text-indigo-900">
+                        Jilid Tujuan di Kelompok Inklusi <span class="text-rose-500">*</span>
+                    </label>
+                    <select v-model="promoteForm.target_level_id" required class="w-full h-10 md:h-9 rounded-xl md:rounded-lg border-indigo-200 bg-white text-sm focus:border-[#00796B] focus:ring-2 focus:ring-[#00796B]/15">
+                        <option value="">Pilih Jilid Tujuan</option>
+                        <option v-for="l in levels" :key="l.id" :value="l.id">
+                            {{ l.name }}{{ targetStudent && l.id === targetStudent.level_id ? ' (Jilid Saat Ini)' : '' }}
+                        </option>
+                    </select>
+                    <p v-if="promoteForm.errors.target_level_id" class="text-xs text-rose-600">{{ promoteForm.errors.target_level_id }}</p>
+                    <p class="text-[11px] text-indigo-700/90 leading-snug">
+                        {{ targetStudent && selectedTargetGroup.id === targetStudent.group_id
+                            ? 'Siswa tetap berada bersama guru pendamping yang sama dan naik ke jilid baru dengan riwayat tercatat.'
+                            : 'Kelompok Inklusi mendukung Multi-Jilid; tentukan jilid Ummi yang diikuti siswa.' }}
                     </p>
                 </div>
 
@@ -656,7 +733,7 @@ const changeTypeMeta = (type) => {
                 <button type="button" @click="showPromoteModal = false" class="h-10 md:h-8 px-4 md:px-3.5 rounded-xl md:rounded-lg text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors">
                     Batal
                 </button>
-                <button type="submit" form="quran-promote-form" :disabled="promoteForm.processing || !promoteForm.target_group_id" class="h-10 md:h-8 px-4 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-40 transition-colors">
+                <button type="submit" form="quran-promote-form" :disabled="promoteForm.processing || !promoteForm.target_group_id || (selectedTargetGroup?.is_inclusive && !promoteForm.target_level_id)" class="h-10 md:h-8 px-4 rounded-xl md:rounded-lg text-xs font-medium text-white bg-[#00796B] hover:bg-[#00695C] disabled:opacity-40 transition-colors">
                     {{ promoteForm.processing ? 'Menyimpan...' : 'Simpan & Catat Riwayat' }}
                 </button>
             </template>

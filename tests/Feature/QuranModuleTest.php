@@ -35,7 +35,7 @@ class QuranModuleTest extends TestCase
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        foreach (['super_admin_yayasan', 'admin_unit', 'teacher', 'guru_alquran', 'koordinator_alquran', 'siswa'] as $r) {
+        foreach (['super_admin_yayasan', 'admin_unit', 'kepala_sekolah', 'teacher', 'guru_alquran', 'koordinator_alquran', 'siswa'] as $r) {
             Role::firstOrCreate(['name' => $r, 'guard_name' => 'web']);
         }
 
@@ -602,5 +602,321 @@ class QuranModuleTest extends TestCase
                 ->where('quranProfile.assessments.0.is_locked_for_parent', true)
                 ->where('quranProfile.assessments.0.teacher_note', null)
             );
+    }
+
+    public function test_inclusive_multi_jilid_group_with_cross_unit_pavlov_teacher_end_to_end(): void
+    {
+        $coordinator = $this->makeUserWithRoles(['koordinator_alquran'], $this->sdUnit->id);
+        $regularUstadzah = $this->makeUserWithRoles(['guru_alquran'], $this->sdUnit->id);
+
+        // Register a Pavlov teacher whose employment unit is PVO (unit_type=daycare / Pavlov)
+        $pavlovTeacher = $this->makeUserWithRoles(['teacher'], $this->pavlovUnit->id);
+        $pavlovTeacher->update(['name' => 'Ustadzah Nabila Pavlov']);
+        \DB::table('teachers')->insert([
+            'user_id' => $pavlovTeacher->id,
+            'unit_id' => $this->pavlovUnit->id,
+            'full_name' => 'Ustadzah Nabila Pavlov',
+            'gender' => 'P',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 1. Unassigned Pavlov teacher MUST still be blocked (403)
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->get(route('quran.index'))
+            ->assertStatus(403);
+
+        // 2. SD Coordinator sees Pavlov teacher in eligible teachers dropdown marked as cross-unit
+        $this->actingAs($coordinator)
+            ->withSession(['active_unit_id' => $this->sdUnit->id])
+            ->get(route('quran.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('teachers', function ($teachers) use ($pavlovTeacher) {
+                    $found = collect($teachers)->firstWhere('id', $pavlovTeacher->id);
+
+                    return $found !== null
+                        && ($found['is_cross_unit'] ?? false) === true
+                        && ($found['origin_unit_code'] ?? null) === 'PVO';
+                })
+            );
+
+        // 3. SD Coordinator creates an Inclusive Multi-Jilid group assigned to the Pavlov teacher
+        $this->actingAs($coordinator)
+            ->withSession(['active_unit_id' => $this->sdUnit->id])
+            ->post(route('quran.groups.store'), [
+                'is_inclusive' => true,
+                'level_id' => null,
+                'name' => 'Kelompok Pendampingan - Ustz. Nabila',
+                'teacher_id' => $pavlovTeacher->id,
+                'room_name' => 'Ruang Sumber',
+            ])
+            ->assertRedirect();
+
+        $inclusiveGroup = QuranGroup::where('unit_id', $this->sdUnit->id)
+            ->where('is_inclusive', true)
+            ->firstOrFail();
+
+        $this->assertNull($inclusiveGroup->level_id);
+        $this->assertTrue($inclusiveGroup->is_inclusive);
+        $this->assertEquals($pavlovTeacher->id, $inclusiveGroup->teacher_id);
+
+        // Create a regular group owned by regularUstadzah (for anti-steal verification)
+        $jilid1 = QuranLevel::where('unit_id', $this->sdUnit->id)->where('name', 'Jilid 1')->firstOrFail();
+        $jilid2 = QuranLevel::where('unit_id', $this->sdUnit->id)->where('name', 'Jilid 2')->firstOrFail();
+        $jilid3 = QuranLevel::where('unit_id', $this->sdUnit->id)->where('name', 'Jilid 3')->firstOrFail();
+
+        $regularGroup = QuranGroup::create([
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'level_id' => $jilid1->id,
+            'is_inclusive' => false,
+            'name' => 'Jilid 1 Reguler',
+            'teacher_id' => $regularUstadzah->id,
+        ]);
+
+        // 4. Assigned Pavlov teacher (still logged in with active_unit_id = PVO) now gains access strictly to SD Namira & their own group
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->get(route('quran.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('session.has_quran_assignment', true)
+                ->where('unit.id', $this->sdUnit->id)
+                ->where('canManage', false)
+                ->has('groups', 1)
+                ->where('groups.0.id', $inclusiveGroup->id)
+                ->where('groups.0.is_inclusive', true)
+                ->where('groups.0.teacher.is_cross_unit', true)
+                ->where('groups.0.can_plot', true)
+            );
+
+        // Create 3 SD students across different grades
+        $kls1 = Classroom::create(['unit_id' => $this->sdUnit->id, 'academic_year_id' => $this->activeYear->id, 'name' => '1A', 'level' => '1']);
+        $kls3 = Classroom::create(['unit_id' => $this->sdUnit->id, 'academic_year_id' => $this->activeYear->id, 'name' => '3B', 'level' => '3']);
+
+        $studentAUser = $this->makeUserWithRoles(['siswa'], $this->sdUnit->id);
+        $studentA = Student::create([
+            'user_id' => $studentAUser->id,
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'classroom_id' => $kls1->id,
+            'nis' => 'SD901',
+            'full_name' => 'Rayyan Pratama',
+            'gender' => 'L',
+            'status' => 'active',
+        ]);
+
+        $studentB = Student::create([
+            'user_id' => User::factory()->create()->id,
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'classroom_id' => $kls3->id,
+            'nis' => 'SD902',
+            'full_name' => 'Zahra Aulia',
+            'gender' => 'P',
+            'status' => 'active',
+        ]);
+
+        $studentLocked = Student::create([
+            'user_id' => User::factory()->create()->id,
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'classroom_id' => $kls1->id,
+            'nis' => 'SD903',
+            'full_name' => 'Farhan Reguler',
+            'gender' => 'L',
+            'status' => 'active',
+        ]);
+
+        QuranEnrollment::create([
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'student_id' => $studentLocked->id,
+            'group_id' => $regularGroup->id,
+            'level_id' => $jilid1->id,
+            'status' => 'active',
+            'started_at' => '2026-07-15',
+        ]);
+
+        // 5. Pavlov teacher self-plots studentA (Jilid 1) & studentB (Jilid 3) into the SAME Inclusive group;
+        //    studentLocked (already in regularUstadzah's group) MUST be skipped by anti-steal guardrail!
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->post(route('quran.groups.enroll', $inclusiveGroup->id), [
+                'student_ids' => [$studentA->id, $studentB->id, $studentLocked->id],
+                'level_id' => $jilid1->id,
+                'student_levels' => [
+                    $studentA->id => $jilid1->id,
+                    $studentB->id => $jilid3->id,
+                    $studentLocked->id => $jilid1->id,
+                ],
+                'started_at' => '2026-07-20',
+            ])
+            ->assertRedirect();
+
+        $this->assertEquals(2, $inclusiveGroup->activeEnrollments()->count());
+        $enrA = QuranEnrollment::where('student_id', $studentA->id)->where('status', 'active')->firstOrFail();
+        $enrB = QuranEnrollment::where('student_id', $studentB->id)->where('status', 'active')->firstOrFail();
+        $this->assertEquals($jilid1->id, $enrA->level_id);
+        $this->assertEquals($jilid3->id, $enrB->level_id);
+        // studentLocked stays in regularGroup
+        $this->assertEquals($regularGroup->id, QuranEnrollment::where('student_id', $studentLocked->id)->where('status', 'active')->value('group_id'));
+
+        // 6. Same-group promotion: promote studentA from Jilid 1 -> Jilid 2 staying in the SAME Inclusive group
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->post(route('quran.students.promote', $studentA->id), [
+                'target_group_id' => $inclusiveGroup->id,
+                'target_level_id' => $jilid2->id,
+                'change_type' => 'promoted',
+                'changed_at' => '2026-09-15',
+                'exam_score' => 'A',
+                'notes' => 'Lulus Jilid 1 lanjut Jilid 2 di kelompok yang sama',
+            ])
+            ->assertRedirect();
+
+        $enrAAfter = QuranEnrollment::where('student_id', $studentA->id)->where('status', 'active')->firstOrFail();
+        $this->assertEquals($inclusiveGroup->id, $enrAAfter->group_id);
+        $this->assertEquals($jilid2->id, $enrAAfter->level_id);
+        $this->assertEquals(2, QuranLevelHistory::where('student_id', $studentA->id)->count());
+
+        // Also test inline Jilid adjustment endpoint (Jilid 3 -> Jilid 2 -> back to Jilid 3)
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->patch(route('quran.enrollments.update-level', $enrB->id), [
+                'level_id' => $jilid2->id,
+            ])
+            ->assertRedirect();
+        $this->assertEquals($jilid2->id, $enrB->fresh()->level_id);
+
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->patch(route('quran.enrollments.update-level', $enrB->id), [
+                'level_id' => $jilid3->id,
+            ])
+            ->assertRedirect();
+        $this->assertEquals($jilid3->id, $enrB->fresh()->level_id);
+
+        // 7. Multi-Jilid Assessment page loads levelRubricsByLevel for BOTH Jilid 2 & Jilid 3
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->get(route('quran.assessments.index', ['group_id' => $inclusiveGroup->id]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('selectedGroup.is_inclusive', true)
+                ->has('levelRubricsByLevel.' . $jilid2->id)
+                ->has('levelRubricsByLevel.' . $jilid3->id)
+                ->has('students', 2)
+            );
+
+        $materiJ2 = QuranRubricItem::where('level_id', $jilid2->id)->where('scope', 'level')->where('category', 'materi')->firstOrFail();
+        $materiJ3 = QuranRubricItem::where('level_id', $jilid3->id)->where('scope', 'level')->where('category', 'materi')->firstOrFail();
+        $hadistKls1 = QuranRubricItem::where('unit_id', $this->sdUnit->id)->where('scope', 'grade')->where('grade_level', '1')->where('category', 'hadist')->firstOrFail();
+
+        // Save scores for both students in one bulk submit — each receives their own Jilid's rubrics
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->post(route('quran.assessments.store'), [
+                'group_id' => $inclusiveGroup->id,
+                'academic_year_id' => $this->activeYear->id,
+                'semester' => 'ganjil',
+                'entries' => [
+                    [
+                        'student_id' => $studentA->id,
+                        'grades' => [
+                            (string) $materiJ2->id => 'A',
+                            (string) $hadistKls1->id => 'B',
+                        ],
+                        'teacher_note' => 'Rayyan semakin lancar membaca Jilid 2.',
+                    ],
+                    [
+                        'student_id' => $studentB->id,
+                        'grades' => [
+                            (string) $materiJ3->id => 'A',
+                        ],
+                        'teacher_note' => 'Zahra sangat baik pada Jilid 3.',
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $assessA = QuranAssessment::where('student_id', $studentA->id)->firstOrFail();
+        $assessB = QuranAssessment::where('student_id', $studentB->id)->firstOrFail();
+        $this->assertEquals($jilid2->id, $assessA->level_id);
+        $this->assertEquals($jilid3->id, $assessB->level_id);
+        $this->assertEquals('A', $assessA->scores[(string) $materiJ2->id]['grade']);
+        $this->assertEquals('A', $assessB->scores[(string) $materiJ3->id]['grade']);
+
+        // 8. Printed F4 report is 100% identical to regular students — NO "ABK", "Inklusi", or "Khusus" labels!
+        $this->actingAs($pavlovTeacher)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->get(route('quran.reports.print', [
+                'academic_year_id' => $this->activeYear->id,
+                'semester' => 'ganjil',
+                'student_ids' => $studentA->id . ',' . $studentB->id,
+            ]))
+            ->assertOk()
+            ->assertSee('Rayyan Pratama')
+            ->assertSee('Materi Pelajaran Jilid 2')
+            ->assertSee('Zahra Aulia')
+            ->assertSee('Materi Pelajaran Jilid 3')
+            ->assertSee('Ustadzah Nabila Pavlov')
+            ->assertDontSee('ABK')
+            ->assertDontSee('Inklusi')
+            ->assertDontSee('Berkebutuhan Khusus');
+
+        // 9. Parent / Student portal shows studentA's exact Jilid 2 cleanly even though group.level_id is null
+        $this->actingAs($studentAUser)
+            ->get(route('student.dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Student/Dashboard')
+                ->where('quranProfile.enabled', true)
+                ->where('quranProfile.current.level_name', 'Jilid 2')
+                ->where('quranProfile.current.teacher_name', 'Ustadzah Nabila Pavlov')
+            );
+    }
+
+    public function test_pavlov_unit_manager_assigned_to_sd_quran_group_does_not_inherit_sd_manager_permissions(): void
+    {
+        $pavlovKepsek = $this->makeUserWithRoles(['kepala_sekolah'], $this->pavlovUnit->id);
+
+        $inclusiveGroup = QuranGroup::create([
+            'unit_id' => $this->sdUnit->id,
+            'academic_year_id' => $this->activeYear->id,
+            'level_id' => null,
+            'is_inclusive' => true,
+            'name' => 'Kelompok Inklusi SD',
+            'teacher_id' => $pavlovKepsek->id,
+        ]);
+
+        // Can open Quran index for SD strictly as a teacher (canManage = false)
+        $this->actingAs($pavlovKepsek)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->get(route('quran.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('unit.id', $this->sdUnit->id)
+                ->where('canManage', false)
+                ->has('groups', 1)
+                ->where('groups.0.id', $inclusiveGroup->id)
+            );
+
+        // Cannot open SD Quran Settings or create new groups in SD
+        $this->actingAs($pavlovKepsek)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->get(route('quran.settings.index'))
+            ->assertStatus(403);
+
+        $this->actingAs($pavlovKepsek)
+            ->withSession(['active_unit_id' => $this->pavlovUnit->id])
+            ->post(route('quran.groups.store'), [
+                'is_inclusive' => true,
+                'name' => 'Kelompok Unauthorized',
+                'teacher_id' => $pavlovKepsek->id,
+            ])
+            ->assertStatus(403);
     }
 }

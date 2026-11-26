@@ -91,6 +91,26 @@ class HandleInertiaRequests extends Middleware
                 $isDaycare = $activeUnit ? $activeUnit->isDaycare() : false;
                 $isFormal = $activeUnit ? $activeUnit->isFormalSchool() : true;
 
+                // Check if user is actively assigned as a Quran group teacher/assistant in any eligible formal unit
+                // (enables cross-unit Pavlov teachers & regular teachers assigned to Quran groups to see the menu)
+                $hasQuranAssignment = false;
+                if ($user && \Illuminate\Support\Facades\Schema::hasTable('quran_groups')) {
+                    $eligibleUnitIds = $allUnits
+                        ->filter(fn ($u) => !$u->isDaycare() && strtoupper((string) $u->code) !== 'YAYASAN' && $u->hasFeature('quran'))
+                        ->pluck('id')
+                        ->all();
+
+                    if (!empty($eligibleUnitIds)) {
+                        $hasQuranAssignment = \App\Modules\Quran\Models\QuranGroup::where('is_active', true)
+                            ->whereIn('unit_id', $eligibleUnitIds)
+                            ->where(function ($q) use ($user) {
+                                $q->where('teacher_id', $user->id)
+                                    ->orWhere('assistant_teacher_id', $user->id);
+                            })
+                            ->exists();
+                    }
+                }
+
                 return [
                     'active_unit_id' => $activeUnitId,
                     'active_unit_name' => $activeUnit?->name ?? 'Pilih Unit',
@@ -98,6 +118,7 @@ class HandleInertiaRequests extends Middleware
                     'active_unit_type' => $activeUnit?->unit_type ?? ($isDaycare ? 'daycare' : 'formal_school'),
                     'is_daycare' => $isDaycare,
                     'is_formal_school' => $isFormal,
+                    'has_quran_assignment' => $hasQuranAssignment,
                     'features' => $activeUnit ? [
                         'academic' => $activeUnit->hasFeature('academic'),
                         'quran' => $activeUnit->hasFeature('quran'),

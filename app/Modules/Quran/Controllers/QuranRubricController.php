@@ -25,7 +25,7 @@ class QuranRubricController extends Controller
         $unit = $this->access->resolveUnit($request, $user);
         $this->setup->ensureUnitDefaults($unit);
 
-        $canManage = $this->access->canManage($user);
+        $canManage = $this->access->canManage($user, $unit->id);
         $isGlobalAdmin = $this->access->isGlobalAdmin($user);
 
         $levels = QuranLevel::with([
@@ -74,10 +74,10 @@ class QuranRubricController extends Controller
     public function storeLevel(Request $request)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
 
         $validated = $request->validate([
             'name' => [
@@ -106,10 +106,10 @@ class QuranRubricController extends Controller
     public function updateLevel(Request $request, QuranLevel $level)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
         if ($level->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
             abort(403);
         }
@@ -134,10 +134,10 @@ class QuranRubricController extends Controller
     public function storeItem(Request $request)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
 
         $validated = $request->validate([
             'scope' => 'nullable|in:level,grade',
@@ -193,10 +193,10 @@ class QuranRubricController extends Controller
     public function updateItem(Request $request, QuranRubricItem $item)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
         if ($item->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
             abort(403);
         }
@@ -219,10 +219,10 @@ class QuranRubricController extends Controller
     public function destroyItem(Request $request, QuranRubricItem $item)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
         if ($item->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
             abort(403);
         }

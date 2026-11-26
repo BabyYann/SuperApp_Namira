@@ -18,6 +18,7 @@ use App\Modules\Yayasan\Models\AcademicYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class QuranGroupController extends Controller
@@ -34,10 +35,11 @@ class QuranGroupController extends Controller
         $this->setup->ensureUnitDefaults($unit);
 
         $activeYear = $this->access->resolveAcademicYear($request->integer('academic_year_id') ?: null);
-        $canManage = $this->access->canManage($user);
+        $canManage = $this->access->canManage($user, $unit->id);
         $isGlobalAdmin = $this->access->isGlobalAdmin($user);
         $unitSetting = QuranSetting::where('unit_id', $unit->id)->first();
         $allowSelfPlotting = $unitSetting ? (bool) ($unitSetting->allow_teacher_self_plotting ?? true) : true;
+        $allowTeacherPromote = $unitSetting ? (bool) ($unitSetting->allow_teacher_promote ?? true) : true;
 
         $levels = QuranLevel::where('unit_id', $unit->id)
             ->where('is_active', true)
@@ -56,17 +58,20 @@ class QuranGroupController extends Controller
                 'teacher:id,name,email,phone',
                 'assistantTeacher:id,name,email,phone',
                 'activeEnrollments' => function ($q) {
-                    $q->with(['student' => function ($sq) {
-                        $sq->select('id', 'nis', 'nisn', 'full_name', 'gender', 'classroom_id')
-                           ->with('classroom:id,name');
-                    }])->orderBy('id');
+                    $q->with([
+                        'level:id,name,code,sort_order',
+                        'student' => function ($sq) {
+                            $sq->select('id', 'nis', 'nisn', 'full_name', 'gender', 'classroom_id')
+                                ->with('classroom:id,name');
+                        },
+                    ])->orderBy('id');
                 },
             ])
             ->where('unit_id', $unit->id)
             ->where('academic_year_id', $activeYear->id)
             ->where('is_active', true);
 
-        // Regular Guru Al-Qur'an only sees their own groups by default unless manager
+        // Regular Guru Al-Qur'an & cross-unit Pavlov teachers only see their own groups unless unit manager
         if (!$canManage) {
             $groupsQuery->where(function ($q) use ($user) {
                 $q->where('teacher_id', $user->id)
@@ -83,16 +88,33 @@ class QuranGroupController extends Controller
         }
 
         if ($request->filled('level_id') && $request->level_id !== 'all') {
-            $groupsQuery->where('level_id', $request->integer('level_id'));
+            if ($request->level_id === 'inclusive') {
+                $groupsQuery->where('is_inclusive', true);
+            } else {
+                $filterLevelId = $request->integer('level_id');
+                $groupsQuery->where(function ($q) use ($filterLevelId) {
+                    $q->where('level_id', $filterLevelId)
+                        ->orWhere(function ($iq) use ($filterLevelId) {
+                            $iq->where('is_inclusive', true)
+                                ->whereHas('activeEnrollments', fn ($eq) => $eq->where('level_id', $filterLevelId));
+                        });
+                });
+            }
         }
 
         if ($request->filled('search')) {
             $search = trim($request->search);
-            $groupsQuery->where(function ($q) use ($search) {
+            $searchLower = strtolower($search);
+            $groupsQuery->where(function ($q) use ($search, $searchLower) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('room_name', 'like', "%{$search}%")
                     ->orWhereHas('teacher', fn ($tq) => $tq->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('level', fn ($lq) => $lq->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('level', fn ($lq) => $lq->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('activeEnrollments.student', fn ($sq) => $sq->where('full_name', 'like', "%{$search}%"));
+
+                if (str_contains('inklusi', $searchLower) || str_contains('abk', $searchLower) || str_contains('khusus', $searchLower)) {
+                    $q->orWhere('is_inclusive', true);
+                }
             });
         }
 
@@ -100,10 +122,19 @@ class QuranGroupController extends Controller
             ->get()
             ->sortBy([
                 fn ($g) => $g->session?->sort_order ?? 999,
-                fn ($g) => $g->level?->sort_order ?? 999,
+                fn ($g) => $g->is_inclusive ? 998 : ($g->level?->sort_order ?? 999),
                 fn ($g) => $g->name,
             ])
             ->values();
+
+        // Detect cross-unit Pavlov origins for displayed teachers in a single batched lookup
+        $teacherUserIds = $groups
+            ->flatMap(fn ($g) => [$g->teacher_id, $g->assistant_teacher_id])
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        $crossUnitOrigins = $this->access->getCrossUnitTeacherOrigins($teacherUserIds, $unit->id);
 
         // Count assessments filled this semester per group
         $assessedStudentIds = QuranAssessment::where('unit_id', $unit->id)
@@ -112,18 +143,42 @@ class QuranGroupController extends Controller
             ->pluck('student_id')
             ->flip();
 
-        $groups->transform(function ($group) use ($assessedStudentIds, $user, $canManage, $allowSelfPlotting) {
+        $groups->transform(function ($group) use ($assessedStudentIds, $user, $canManage, $allowSelfPlotting, $allowTeacherPromote, $crossUnitOrigins) {
             $members = $group->activeEnrollments
                 ->filter(fn ($e) => $e->student !== null)
-                ->sortBy(fn ($e) => strtolower($e->student->full_name))
+                ->sortBy([
+                    fn ($e) => $group->is_inclusive ? ($e->level?->sort_order ?? 999) : 0,
+                    fn ($e) => strtolower($e->student->full_name),
+                ])
                 ->values();
 
             $assessedCount = $members->filter(fn ($e) => $assessedStudentIds->has($e->student_id))->count();
             $isMyGroup = $group->teacher_id === $user->id || $group->assistant_teacher_id === $user->id;
 
+            $levelCounts = [];
+            if ($group->is_inclusive) {
+                $levelCounts = $members
+                    ->filter(fn ($e) => $e->level !== null)
+                    ->groupBy('level_id')
+                    ->map(fn ($items) => [
+                        'id' => $items->first()->level->id,
+                        'name' => $items->first()->level->name,
+                        'code' => $items->first()->level->code,
+                        'sort_order' => $items->first()->level->sort_order,
+                        'count' => $items->count(),
+                    ])
+                    ->sortBy('sort_order')
+                    ->values()
+                    ->all();
+            }
+
+            $teacherOrigin = $group->teacher_id ? ($crossUnitOrigins[$group->teacher_id] ?? null) : null;
+            $assistantOrigin = $group->assistant_teacher_id ? ($crossUnitOrigins[$group->assistant_teacher_id] ?? null) : null;
+
             return [
                 'id' => $group->id,
                 'name' => $group->name,
+                'is_inclusive' => (bool) $group->is_inclusive,
                 'level_id' => $group->level_id,
                 'level' => $group->level ? [
                     'id' => $group->level->id,
@@ -131,6 +186,7 @@ class QuranGroupController extends Controller
                     'code' => $group->level->code,
                     'sort_order' => $group->level->sort_order,
                 ] : null,
+                'level_counts' => $levelCounts,
                 'session_id' => $group->session_id,
                 'session' => $group->session ? [
                     'id' => $group->session->id,
@@ -147,6 +203,9 @@ class QuranGroupController extends Controller
                     'name' => $group->teacher->name,
                     'email' => $group->teacher->email,
                     'phone' => $group->teacher->phone,
+                    'is_cross_unit' => $teacherOrigin !== null,
+                    'origin_unit_name' => $teacherOrigin['unit_name'] ?? null,
+                    'origin_unit_code' => $teacherOrigin['unit_code'] ?? null,
                 ] : null,
                 'assistant_teacher_id' => $group->assistant_teacher_id,
                 'assistant_teacher' => $group->assistantTeacher ? [
@@ -154,11 +213,15 @@ class QuranGroupController extends Controller
                     'name' => $group->assistantTeacher->name,
                     'email' => $group->assistantTeacher->email,
                     'phone' => $group->assistantTeacher->phone,
+                    'is_cross_unit' => $assistantOrigin !== null,
+                    'origin_unit_name' => $assistantOrigin['unit_name'] ?? null,
+                    'origin_unit_code' => $assistantOrigin['unit_code'] ?? null,
                 ] : null,
                 'room_name' => $group->room_name,
                 'max_quota' => $group->max_quota,
                 'is_my_group' => $isMyGroup,
                 'can_plot' => $canManage || ($allowSelfPlotting && $isMyGroup),
+                'can_edit_member_level' => (bool) $group->is_inclusive && ($canManage || ($isMyGroup && ($allowSelfPlotting || $allowTeacherPromote))),
                 'my_role' => $group->teacher_id === $user->id ? 'main' : ($group->assistant_teacher_id === $user->id ? 'assistant' : null),
                 'members_count' => $members->count(),
                 'assessed_count' => $assessedCount,
@@ -170,6 +233,8 @@ class QuranGroupController extends Controller
                     'nisn' => $e->student->nisn,
                     'gender' => $e->student->gender,
                     'classroom_name' => $e->student->classroom?->name ?? '-',
+                    'level_id' => $e->level_id,
+                    'level_name' => $e->level?->name ?? ($group->level?->name ?? '-'),
                     'started_at' => $e->started_at?->format('Y-m-d'),
                     'is_assessed' => $assessedStudentIds->has($e->student_id),
                 ])->all(),
@@ -191,6 +256,16 @@ class QuranGroupController extends Controller
             ->where('status', QuranEnrollment::STATUS_ACTIVE)
             ->distinct('student_id')
             ->count('student_id');
+
+        $inclusiveGroupsCount = QuranGroup::where('unit_id', $unit->id)
+            ->where('academic_year_id', $activeYear->id)
+            ->where('is_active', true)
+            ->where('is_inclusive', true)
+            ->when(!$canManage, fn ($q) => $q->where(function ($sub) use ($user) {
+                $sub->where('teacher_id', $user->id)
+                    ->orWhere('assistant_teacher_id', $user->id);
+            }))
+            ->count();
 
         $levelDistribution = $levels->map(function ($lvl) use ($levelCounts) {
             return [
@@ -222,7 +297,10 @@ class QuranGroupController extends Controller
                 return [];
             }
 
-            $activeEnrollmentsByStudent = QuranEnrollment::with('group:id,name,teacher_id,assistant_teacher_id')
+            $activeEnrollmentsByStudent = QuranEnrollment::with([
+                    'group:id,name,teacher_id,assistant_teacher_id',
+                    'level:id,name',
+                ])
                 ->where('unit_id', $unit->id)
                 ->where('academic_year_id', $activeYear->id)
                 ->where('status', QuranEnrollment::STATUS_ACTIVE)
@@ -249,6 +327,8 @@ class QuranGroupController extends Controller
                         'is_plotted' => $enr !== null,
                         'current_group_id' => $enr?->group_id,
                         'current_group_name' => $currentGroup?->name,
+                        'current_level_id' => $enr?->level_id,
+                        'current_level_name' => $enr?->level?->name,
                         'is_in_my_group' => $isInMyGroup,
                         'locked_by_other' => !$canManage && $enr !== null && !$isInMyGroup,
                     ];
@@ -259,7 +339,7 @@ class QuranGroupController extends Controller
 
         return Inertia::render('Quran/Index', [
             'unit' => $unit->only(['id', 'name', 'code']),
-            'eligibleUnits' => $isGlobalAdmin ? $this->access->getEligibleUnits()->map->only(['id', 'name', 'code']) : [],
+            'eligibleUnits' => $this->access->getSwitchableUnits($user, $unit)->map->only(['id', 'name', 'code']),
             'academicYears' => AcademicYear::orderByDesc('is_active')->orderByDesc('id')->get(['id', 'name', 'semester', 'is_active']),
             'activeYear' => $activeYear->only(['id', 'name', 'semester', 'is_active']),
             'canManage' => $canManage,
@@ -277,6 +357,7 @@ class QuranGroupController extends Controller
                 'plotted_students' => $plottedStudentCount,
                 'unplotted_students' => max(0, $totalActiveStudents - $plottedStudentCount),
                 'total_groups' => $groups->count(),
+                'inclusive_groups' => $inclusiveGroupsCount,
                 'assessed_students' => $assessedStudentIds->count(),
                 'promotions_semester' => $promotionsThisSemester,
             ],
@@ -293,11 +374,10 @@ class QuranGroupController extends Controller
     public function storeSession(Request $request)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403, 'Hanya Koordinator Al-Qur\'an / Admin yang dapat mengelola sesi.');
         }
-
-        $unit = $this->access->resolveUnit($request, $user);
 
         $validated = $request->validate([
             'name' => 'required|string|max:100',
@@ -327,10 +407,10 @@ class QuranGroupController extends Controller
     public function updateSession(Request $request, QuranSession $session)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
         if ($session->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
             abort(403);
         }
@@ -352,10 +432,10 @@ class QuranGroupController extends Controller
     public function destroySession(Request $request, QuranSession $session)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
         if ($session->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
             abort(403);
         }
@@ -368,10 +448,10 @@ class QuranGroupController extends Controller
     public function seedDefaultSessions(Request $request)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
 
         $defaults = [
             ['name' => 'Sesi 1 (Pagi)', 'start_time' => '07:30', 'end_time' => '08:30', 'days' => 'Senin - Jumat', 'target_note' => 'Kelas 1 & 2', 'sort_order' => 1],
@@ -392,15 +472,17 @@ class QuranGroupController extends Controller
     public function storeGroup(Request $request)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403, 'Hanya Koordinator Al-Qur\'an / Admin yang dapat membuat kelompok.');
         }
 
-        $unit = $this->access->resolveUnit($request, $user);
         $activeYear = $this->access->resolveAcademicYear($request->integer('academic_year_id') ?: null);
+        $isInclusive = $request->boolean('is_inclusive');
 
         $validated = $request->validate([
-            'level_id' => 'required|exists:quran_levels,id',
+            'is_inclusive' => 'nullable|boolean',
+            'level_id' => ($isInclusive ? 'nullable' : 'required') . '|exists:quran_levels,id',
             'session_id' => 'nullable|exists:quran_sessions,id',
             'name' => 'required|string|max:120',
             'teacher_id' => 'required|exists:users,id',
@@ -409,8 +491,9 @@ class QuranGroupController extends Controller
             'max_quota' => 'nullable|integer|min:1|max:200',
         ]);
 
-        // Ensure level belongs to unit
-        QuranLevel::where('unit_id', $unit->id)->findOrFail($validated['level_id']);
+        if (!$isInclusive) {
+            QuranLevel::where('unit_id', $unit->id)->findOrFail($validated['level_id']);
+        }
 
         if (!empty($validated['session_id'])) {
             QuranSession::where('unit_id', $unit->id)->findOrFail($validated['session_id']);
@@ -419,32 +502,38 @@ class QuranGroupController extends Controller
         QuranGroup::create([
             'unit_id' => $unit->id,
             'academic_year_id' => $activeYear->id,
-            'level_id' => $validated['level_id'],
-            'session_id' => $validated['session_id'] ?: null,
+            'level_id' => $isInclusive ? null : $validated['level_id'],
+            'is_inclusive' => $isInclusive,
+            'session_id' => ($validated['session_id'] ?? null) ?: null,
             'name' => $validated['name'],
             'teacher_id' => $validated['teacher_id'],
-            'assistant_teacher_id' => $validated['assistant_teacher_id'] ?: null,
+            'assistant_teacher_id' => ($validated['assistant_teacher_id'] ?? null) ?: null,
             'room_name' => $validated['room_name'] ?? null,
             'max_quota' => $validated['max_quota'] ?? null,
             'is_active' => true,
         ]);
 
-        return back()->with('success', 'Kelompok mengaji berhasil ditambahkan.');
+        return back()->with('success', $isInclusive
+            ? 'Kelompok Inklusi (Multi-Jilid) berhasil ditambahkan.'
+            : 'Kelompok mengaji berhasil ditambahkan.');
     }
 
     public function updateGroup(Request $request, QuranGroup $group)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
         if ($group->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
             abort(403);
         }
 
+        $isInclusive = $request->boolean('is_inclusive');
+
         $validated = $request->validate([
-            'level_id' => 'required|exists:quran_levels,id',
+            'is_inclusive' => 'nullable|boolean',
+            'level_id' => ($isInclusive ? 'nullable' : 'required') . '|exists:quran_levels,id',
             'session_id' => 'nullable|exists:quran_sessions,id',
             'name' => 'required|string|max:120',
             'teacher_id' => 'required|exists:users,id',
@@ -453,21 +542,31 @@ class QuranGroupController extends Controller
             'max_quota' => 'nullable|integer|min:1|max:200',
         ]);
 
-        QuranLevel::where('unit_id', $group->unit_id)->findOrFail($validated['level_id']);
+        if (!$isInclusive) {
+            QuranLevel::where('unit_id', $group->unit_id)->findOrFail($validated['level_id']);
+        }
 
-        DB::transaction(function () use ($group, $validated) {
+        if (!empty($validated['session_id'])) {
+            QuranSession::where('unit_id', $group->unit_id)->findOrFail($validated['session_id']);
+        }
+
+        DB::transaction(function () use ($group, $validated, $isInclusive) {
             $oldLevelId = $group->level_id;
+            $wasInclusive = (bool) $group->is_inclusive;
+
             $group->update([
-                'level_id' => $validated['level_id'],
-                'session_id' => $validated['session_id'] ?: null,
+                'level_id' => $isInclusive ? null : $validated['level_id'],
+                'is_inclusive' => $isInclusive,
+                'session_id' => ($validated['session_id'] ?? null) ?: null,
                 'name' => $validated['name'],
                 'teacher_id' => $validated['teacher_id'],
-                'assistant_teacher_id' => $validated['assistant_teacher_id'] ?: null,
+                'assistant_teacher_id' => ($validated['assistant_teacher_id'] ?? null) ?: null,
                 'room_name' => $validated['room_name'] ?? null,
                 'max_quota' => $validated['max_quota'] ?? null,
             ]);
 
-            if ((int) $oldLevelId !== (int) $validated['level_id']) {
+            // Only sync all members' level_id for regular single-jilid groups
+            if (!$isInclusive && ($wasInclusive || (int) $oldLevelId !== (int) $validated['level_id'])) {
                 $group->activeEnrollments()->update(['level_id' => $validated['level_id']]);
             }
         });
@@ -478,10 +577,10 @@ class QuranGroupController extends Controller
     public function destroyGroup(Request $request, QuranGroup $group)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
-        $unit = $this->access->resolveUnit($request, $user);
         if ($group->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
             abort(403);
         }
@@ -498,13 +597,18 @@ class QuranGroupController extends Controller
 
     /**
      * Bulk enroll students into a Quran group (initial plotting or direct move).
-     * Managers have full access; pengampu can self-plot unplotted students (or move between their own groups)
-     * into their assigned group when unit setting `allow_teacher_self_plotting` is enabled.
+     * For inclusive (multi-jilid) groups, accepts per-student `student_levels[student_id] => level_id`
+     * or a batch fallback `level_id`.
      */
     public function enrollStudents(Request $request, QuranGroup $group)
     {
         $user = Auth::user();
-        $canManage = $this->access->canManage($user);
+        $unit = $this->access->resolveUnit($request, $user);
+        if ($group->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
+            abort(403);
+        }
+
+        $canManage = $this->access->canManage($user, $unit->id);
         $isMyGroup = $group->teacher_id === $user->id || $group->assistant_teacher_id === $user->id;
         $unitSetting = QuranSetting::where('unit_id', $group->unit_id)->first();
         $allowSelfPlotting = $unitSetting ? (bool) ($unitSetting->allow_teacher_self_plotting ?? true) : true;
@@ -518,27 +622,32 @@ class QuranGroupController extends Controller
             }
         }
 
-        $unit = $this->access->resolveUnit($request, $user);
-        if ($group->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
-            abort(403);
-        }
-
         $validated = $request->validate([
             'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'integer|exists:students,id',
+            'level_id' => 'nullable|integer|exists:quran_levels,id',
+            'student_levels' => 'nullable|array',
+            'student_levels.*' => 'nullable|integer|exists:quran_levels,id',
             'started_at' => 'nullable|date',
             'notes' => 'nullable|string|max:255',
         ]);
+
+        $validUnitLevelIds = QuranLevel::where('unit_id', $group->unit_id)
+            ->pluck('id')
+            ->flip();
 
         $activeYear = $group->academicYear ?: $this->access->resolveAcademicYear();
         $startedAt = $validated['started_at'] ?? now()->toDateString();
         $addedCount = 0;
         $skippedLocked = [];
 
-        DB::transaction(function () use ($group, $validated, $activeYear, $startedAt, $user, $canManage, &$addedCount, &$skippedLocked) {
+        DB::transaction(function () use ($group, $validated, $validUnitLevelIds, $activeYear, $startedAt, $user, $canManage, &$addedCount, &$skippedLocked) {
             $students = Student::where('unit_id', $group->unit_id)
                 ->whereIn('id', $validated['student_ids'])
                 ->get();
+
+            $studentLevelsMap = $validated['student_levels'] ?? [];
+            $defaultLevelId = isset($validated['level_id']) ? (int) $validated['level_id'] : null;
 
             foreach ($students as $student) {
                 $existingActive = QuranEnrollment::with('group:id,name,teacher_id,assistant_teacher_id')
@@ -564,6 +673,23 @@ class QuranGroupController extends Controller
                     }
                 }
 
+                if ($group->is_inclusive) {
+                    $pickedLevelId = (int) ($studentLevelsMap[$student->id]
+                        ?? $studentLevelsMap[(string) $student->id]
+                        ?? $defaultLevelId
+                        ?? $existingActive?->level_id
+                        ?? 0);
+
+                    if ($pickedLevelId <= 0 || !$validUnitLevelIds->has($pickedLevelId)) {
+                        throw ValidationException::withMessages([
+                            'level_id' => "Pilih jilid yang valid untuk ananda {$student->full_name} di kelompok inklusi.",
+                        ]);
+                    }
+                    $targetLevelId = $pickedLevelId;
+                } else {
+                    $targetLevelId = (int) $group->level_id;
+                }
+
                 $fromLevelId = null;
                 $fromGroupId = null;
                 $fromTeacherId = null;
@@ -574,7 +700,7 @@ class QuranGroupController extends Controller
                     $fromLevelId = $existingActive->level_id;
                     $fromGroupId = $existingActive->group_id;
                     $fromTeacherId = $existingGroup?->teacher_id;
-                    $changeType = $existingActive->level_id === $group->level_id
+                    $changeType = (int) $existingActive->level_id === $targetLevelId
                         ? QuranLevelHistory::TYPE_TRANSFERRED
                         : QuranLevelHistory::TYPE_PROMOTED;
 
@@ -591,7 +717,7 @@ class QuranGroupController extends Controller
                     'academic_year_id' => $activeYear->id,
                     'student_id' => $student->id,
                     'group_id' => $group->id,
-                    'level_id' => $group->level_id,
+                    'level_id' => $targetLevelId,
                     'status' => QuranEnrollment::STATUS_ACTIVE,
                     'started_at' => $startedAt,
                     'notes' => $validated['notes'] ?? null,
@@ -603,7 +729,7 @@ class QuranGroupController extends Controller
                     'semester' => $activeYear->semester,
                     'student_id' => $student->id,
                     'from_level_id' => $fromLevelId,
-                    'to_level_id' => $group->level_id,
+                    'to_level_id' => $targetLevelId,
                     'from_group_id' => $fromGroupId,
                     'to_group_id' => $group->id,
                     'from_teacher_id' => $fromTeacherId,
@@ -632,10 +758,88 @@ class QuranGroupController extends Controller
         return back()->with('success', "{$addedCount} siswa berhasil dimasukkan ke kelompok {$group->name}.");
     }
 
+    /**
+     * Inline update of an individual student's Jilid inside an Inclusive (Multi-Jilid) group.
+     */
+    public function updateEnrollmentLevel(Request $request, QuranEnrollment $enrollment)
+    {
+        $user = Auth::user();
+        $unit = $this->access->resolveUnit($request, $user);
+        if ($enrollment->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
+            abort(403);
+        }
+
+        $enrollment->load(['group', 'level', 'student', 'academicYear']);
+        $group = $enrollment->group;
+        if (!$group || !$group->is_inclusive) {
+            abort(422, 'Pengubahan jilid langsung per siswa hanya berlaku untuk kelompok Inklusi (Multi-Jilid).');
+        }
+
+        $canManage = $this->access->canManage($user, $unit->id);
+        $isMyGroup = $group->teacher_id === $user->id || $group->assistant_teacher_id === $user->id;
+        $unitSetting = QuranSetting::where('unit_id', $enrollment->unit_id)->first();
+        $allowSelfPlotting = $unitSetting ? (bool) ($unitSetting->allow_teacher_self_plotting ?? true) : true;
+        $allowPromote = $unitSetting ? (bool) ($unitSetting->allow_teacher_promote ?? true) : true;
+
+        if (!$canManage && !($isMyGroup && ($allowSelfPlotting || $allowPromote))) {
+            abort(403, 'Anda tidak memiliki akses mengubah jilid siswa pada kelompok ini.');
+        }
+
+        $validated = $request->validate([
+            'level_id' => 'required|integer|exists:quran_levels,id',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $newLevel = QuranLevel::where('unit_id', $enrollment->unit_id)->findOrFail($validated['level_id']);
+
+        if ((int) $enrollment->level_id === (int) $newLevel->id) {
+            return back()->with('success', 'Jilid siswa tidak berubah.');
+        }
+
+        $activeYear = $enrollment->academicYear ?: $this->access->resolveAcademicYear();
+        $oldLevel = $enrollment->level;
+
+        DB::transaction(function () use ($enrollment, $group, $oldLevel, $newLevel, $activeYear, $validated, $user) {
+            $changeType = ($oldLevel && $newLevel->sort_order > $oldLevel->sort_order)
+                ? QuranLevelHistory::TYPE_PROMOTED
+                : QuranLevelHistory::TYPE_TRANSFERRED;
+
+            $enrollment->update([
+                'level_id' => $newLevel->id,
+            ]);
+
+            QuranLevelHistory::create([
+                'unit_id' => $enrollment->unit_id,
+                'academic_year_id' => $activeYear->id,
+                'semester' => $activeYear->semester,
+                'student_id' => $enrollment->student_id,
+                'from_level_id' => $oldLevel?->id,
+                'to_level_id' => $newLevel->id,
+                'from_group_id' => $group->id,
+                'to_group_id' => $group->id,
+                'from_teacher_id' => $group->teacher_id,
+                'to_teacher_id' => $group->teacher_id,
+                'change_type' => $changeType,
+                'changed_at' => now()->toDateString(),
+                'notes' => $validated['notes'] ?? 'Penyesuaian jilid di kelompok inklusi',
+                'recorded_by' => $user->id,
+            ]);
+        });
+
+        $studentName = $enrollment->student?->full_name ?? 'Siswa';
+
+        return back()->with('success', "Jilid ananda {$studentName} diperbarui ke {$newLevel->name}.");
+    }
+
     public function removeEnrollment(Request $request, QuranEnrollment $enrollment)
     {
         $user = Auth::user();
-        $canManage = $this->access->canManage($user);
+        $unit = $this->access->resolveUnit($request, $user);
+        if ($enrollment->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
+            abort(403);
+        }
+
+        $canManage = $this->access->canManage($user, $unit->id);
         $group = $enrollment->group;
         $isMyGroup = $group && ($group->teacher_id === $user->id || $group->assistant_teacher_id === $user->id);
         $unitSetting = QuranSetting::where('unit_id', $enrollment->unit_id)->first();
@@ -648,11 +852,6 @@ class QuranGroupController extends Controller
             if (!$isMyGroup) {
                 abort(403, 'Anda hanya dapat mengeluarkan siswa dari kelompok yang Anda ampu.');
             }
-        }
-
-        $unit = $this->access->resolveUnit($request, $user);
-        if ($enrollment->unit_id !== $unit->id && !$this->access->isGlobalAdmin($user)) {
-            abort(403);
         }
 
         $enrollment->delete();

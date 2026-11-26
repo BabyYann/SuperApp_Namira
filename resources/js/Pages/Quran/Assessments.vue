@@ -36,6 +36,7 @@ const props = defineProps({
     groups: Array,
     selectedGroup: Object,
     rubrics: Object,
+    levelRubricsByLevel: { type: Object, default: () => ({}) },
     gradeRubricsByGrade: { type: Object, default: () => ({}) },
     students: Array,
 });
@@ -82,19 +83,24 @@ const discardChanges = () => {
     localEntries.value = JSON.parse(JSON.stringify(initialSnapshot.value));
 };
 
-const materiList = computed(() => props.rubrics?.materi || []);
-const surahList = computed(() => props.rubrics?.surah_pendek || []);
-const fallbackDoaList = computed(() => props.rubrics?.doa_harian || []);
-const fallbackHadistList = computed(() => props.rubrics?.hadist || []);
+const shouldPassUnitId = computed(() => props.isGlobalAdmin || (props.eligibleUnits?.length || 0) > 1);
+
+const getLevelRubrics = (levelId) => {
+    if (levelId !== null && levelId !== undefined && props.levelRubricsByLevel?.[String(levelId)]) {
+        return props.levelRubricsByLevel[String(levelId)];
+    }
+    return props.rubrics || { materi: [], surah_pendek: [], doa_harian: [], hadist: [] };
+};
 
 const getStudentRubricIds = (st) => {
+    const lvlRub = getLevelRubrics(st?.level_id);
     const ids = [
-        ...materiList.value.map(i => String(i.id)),
-        ...surahList.value.map(i => String(i.id)),
+        ...(lvlRub.materi || []).map(i => String(i.id)),
+        ...(lvlRub.surah_pendek || []).map(i => String(i.id)),
     ];
     if (!props.usesGradeRubrics) {
-        ids.push(...fallbackHadistList.value.map(i => String(i.id)));
-        ids.push(...fallbackDoaList.value.map(i => String(i.id)));
+        ids.push(...(lvlRub.hadist || []).map(i => String(i.id)));
+        ids.push(...(lvlRub.doa_harian || []).map(i => String(i.id)));
     } else if (st?.grade_level) {
         const gRub = props.gradeRubricsByGrade?.[String(st.grade_level)] || {};
         ['hadist', 'doa_harian', 'niat_sholat', 'bacaan_sholat'].forEach(cat => {
@@ -118,15 +124,19 @@ const studentProgress = (st) => {
 
 const studentSections = computed(() => {
     const list = props.students || [];
-    if (!props.usesGradeRubrics) {
+    const isInclusive = Boolean(props.selectedGroup?.is_inclusive);
+
+    if (!props.usesGradeRubrics && !isInclusive) {
+        const lvlRub = getLevelRubrics(props.selectedGroup?.level_id);
         return [{
             key: 'all',
+            levelLabel: props.selectedGroup?.level_name || '-',
             gradeLabel: null,
             students: list,
-            materi: materiList.value,
-            surah: surahList.value,
-            doa: fallbackDoaList.value,
-            hadist: fallbackHadistList.value,
+            materi: lvlRub.materi || [],
+            surah: lvlRub.surah_pendek || [],
+            doa: lvlRub.doa_harian || [],
+            hadist: lvlRub.hadist || [],
             niatSholat: [],
             bacaanSholat: [],
         }];
@@ -134,29 +144,51 @@ const studentSections = computed(() => {
 
     const grouped = new Map();
     list.forEach(st => {
-        const gKey = st.grade_level ? String(st.grade_level) : 'other';
-        if (!grouped.has(gKey)) grouped.set(gKey, []);
-        grouped.get(gKey).push(st);
+        const lvlKey = isInclusive ? String(st.level_id ?? 'none') : String(props.selectedGroup?.level_id ?? 'single');
+        const gKey = props.usesGradeRubrics ? (st.grade_level ? String(st.grade_level) : 'other') : 'all';
+        const compositeKey = `${lvlKey}::${gKey}`;
+        if (!grouped.has(compositeKey)) {
+            grouped.set(compositeKey, {
+                key: compositeKey,
+                levelId: st.level_id ?? props.selectedGroup?.level_id,
+                levelName: st.level_name || props.selectedGroup?.level_name || '-',
+                levelSort: st.level_sort_order ?? 999,
+                gKey,
+                students: [],
+            });
+        }
+        grouped.get(compositeKey).students.push(st);
     });
 
-    const sortedKeys = Array.from(grouped.keys()).sort((a, b) => {
-        if (a === 'other') return 1;
-        if (b === 'other') return -1;
-        return Number(a) - Number(b);
+    const sortedBuckets = Array.from(grouped.values()).sort((a, b) => {
+        if (isInclusive && a.levelSort !== b.levelSort) {
+            return a.levelSort - b.levelSort;
+        }
+        if (a.gKey === b.gKey) return 0;
+        if (a.gKey === 'other' || a.gKey === 'all') return 1;
+        if (b.gKey === 'other' || b.gKey === 'all') return -1;
+        return Number(a.gKey) - Number(b.gKey);
     });
 
-    return sortedKeys.map(gKey => {
-        const gRub = props.gradeRubricsByGrade?.[gKey] || {};
+    return sortedBuckets.map(bucket => {
+        const lvlRub = getLevelRubrics(bucket.levelId);
+        const gRub = props.usesGradeRubrics && bucket.gKey !== 'all'
+            ? (props.gradeRubricsByGrade?.[bucket.gKey] || {})
+            : {};
+
         return {
-            key: gKey,
-            gradeLabel: gKey === 'other' ? 'Tanpa Tingkat Kelas' : `Kelas ${gKey}`,
-            students: grouped.get(gKey),
-            materi: materiList.value,
-            surah: surahList.value,
-            doa: gRub.doa_harian || [],
-            hadist: gRub.hadist || [],
-            niatSholat: gRub.niat_sholat || [],
-            bacaanSholat: gRub.bacaan_sholat || [],
+            key: bucket.key,
+            levelLabel: bucket.levelName,
+            gradeLabel: props.usesGradeRubrics
+                ? (bucket.gKey === 'other' ? 'Tanpa Tingkat Kelas' : `Kelas ${bucket.gKey}`)
+                : null,
+            students: bucket.students,
+            materi: lvlRub.materi || [],
+            surah: lvlRub.surah_pendek || [],
+            doa: props.usesGradeRubrics ? (gRub.doa_harian || []) : (lvlRub.doa_harian || []),
+            hadist: props.usesGradeRubrics ? (gRub.hadist || []) : (lvlRub.hadist || []),
+            niatSholat: props.usesGradeRubrics ? (gRub.niat_sholat || []) : [],
+            bacaanSholat: props.usesGradeRubrics ? (gRub.bacaan_sholat || []) : [],
         };
     });
 });
@@ -204,7 +236,7 @@ const showMobileGroupSheet = ref(false);
 
 const executeNavigate = (overrides = {}) => {
     router.get(route('quran.assessments.index'), {
-        unit_id: props.isGlobalAdmin ? props.unit.id : undefined,
+        unit_id: shouldPassUnitId.value ? props.unit.id : undefined,
         academic_year_id: props.activeYear.id,
         semester: overrides.semester ?? props.semester,
         role_filter: overrides.role_filter ?? props.roleFilter,
@@ -272,20 +304,22 @@ const mobileRubricBlocks = computed(() => {
     const st = mobileStudent.value;
     if (!st) return [];
 
+    const lvlRub = getLevelRubrics(st.level_id);
+    const levelLabel = st.level_name || props.selectedGroup?.level_name || '-';
     const blocks = [];
-    if (materiList.value.length) {
-        blocks.push({ key: 'materi', shortLabel: 'Materi', prefix: 'M', title: `Materi Pokok (${props.selectedGroup?.level_name})`, dot: 'bg-[#00796B]', items: materiList.value });
+    if (lvlRub.materi?.length) {
+        blocks.push({ key: 'materi', shortLabel: 'Materi', prefix: 'M', title: `Materi Pokok (${levelLabel})`, dot: 'bg-[#00796B]', items: lvlRub.materi });
     }
-    if (surahList.value.length) {
-        blocks.push({ key: 'surah', shortLabel: 'Surah', prefix: 'S', title: `Surah Pendek (${props.selectedGroup?.level_name})`, dot: 'bg-amber-500', items: surahList.value });
+    if (lvlRub.surah_pendek?.length) {
+        blocks.push({ key: 'surah', shortLabel: 'Surah', prefix: 'S', title: `Surah Pendek (${levelLabel})`, dot: 'bg-amber-500', items: lvlRub.surah_pendek });
     }
 
     if (!props.usesGradeRubrics) {
-        if (fallbackHadistList.value.length) {
-            blocks.push({ key: 'hadist', shortLabel: 'Hadist', prefix: 'H', title: 'Hadist', dot: 'bg-violet-500', items: fallbackHadistList.value });
+        if (lvlRub.hadist?.length) {
+            blocks.push({ key: 'hadist', shortLabel: 'Hadist', prefix: 'H', title: 'Hadist', dot: 'bg-violet-500', items: lvlRub.hadist });
         }
-        if (fallbackDoaList.value.length) {
-            blocks.push({ key: 'doa', shortLabel: 'Doa', prefix: 'D', title: 'Doa Harian', dot: 'bg-sky-500', items: fallbackDoaList.value });
+        if (lvlRub.doa_harian?.length) {
+            blocks.push({ key: 'doa', shortLabel: 'Doa', prefix: 'D', title: 'Doa Harian', dot: 'bg-sky-500', items: lvlRub.doa_harian });
         }
     } else {
         const gKey = st.grade_level ? String(st.grade_level) : null;
@@ -510,7 +544,12 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
                                 <h2 class="text-sm font-semibold text-slate-900">{{ selectedGroup.name }}</h2>
-                                <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-teal-50 text-[#00796B] border border-teal-200/70">
+                                <span
+                                    class="px-2 py-0.5 rounded-md text-[11px] font-medium border"
+                                    :class="selectedGroup.is_inclusive
+                                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200/80'
+                                        : 'bg-teal-50 text-[#00796B] border-teal-200/70'"
+                                >
                                     {{ selectedGroup.level_name }}
                                 </span>
                                 <span class="text-xs text-slate-500">
@@ -518,7 +557,10 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                                     <span v-if="selectedGroup.session_name"> · {{ selectedGroup.session_name }}</span>
                                 </span>
                             </div>
-                            <p v-if="usesGradeRubrics" class="text-[11px] text-slate-400 mt-1">
+                            <p v-if="selectedGroup.is_inclusive" class="text-[11px] text-slate-400 mt-1">
+                                Kelompok Inklusi Multi-Jilid: tabel otomatis dikelompokkan berdasarkan jilid masing-masing siswa{{ usesGradeRubrics ? ' dan kelas formalnya' : '' }}.
+                            </p>
+                            <p v-else-if="usesGradeRubrics" class="text-[11px] text-slate-400 mt-1">
                                 Materi &amp; Surah mengikuti {{ selectedGroup.level_name }}, sedangkan Hadist / Doa / Niat / Bacaan Sholat otomatis mengikuti kelas formal siswa.
                             </p>
                         </div>
@@ -545,12 +587,15 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                         >
                             <div class="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center justify-between gap-3">
                                 <div class="flex items-center gap-2">
+                                    <span v-if="selectedGroup.is_inclusive" class="px-2 py-0.5 rounded-md text-xs font-semibold bg-teal-50 text-[#00796B] border border-teal-200/80">
+                                        {{ sec.levelLabel }}
+                                    </span>
                                     <span v-if="sec.gradeLabel" class="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-900 text-white">
                                         {{ sec.gradeLabel }}
                                     </span>
                                     <span class="text-xs font-medium text-slate-600 tabular-nums">{{ sec.students.length }} siswa</span>
                                     <span v-if="sec.gradeLabel" class="text-[11px] text-slate-400">
-                                        · {{ selectedGroup.level_name }} + Materi {{ sec.gradeLabel }}
+                                        · {{ sec.levelLabel }} + Materi {{ sec.gradeLabel }}
                                     </span>
                                 </div>
 
@@ -572,11 +617,11 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                             <QuranCollapse :open="!!showLegendMap[sec.key]">
                                 <div class="px-4 py-3 bg-white border-b border-slate-100 grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                                     <div v-if="sec.materi.length" class="space-y-1">
-                                        <div class="font-semibold text-[#00796B] text-[11px]">Materi Pokok ({{ selectedGroup.level_name }})</div>
+                                        <div class="font-semibold text-[#00796B] text-[11px]">Materi Pokok ({{ sec.levelLabel }})</div>
                                         <div v-for="(item, idx) in sec.materi" :key="item.id" class="text-slate-600 leading-snug"><span class="font-semibold text-slate-800 mr-1">M{{ idx + 1 }}</span>{{ item.title }}</div>
                                     </div>
                                     <div v-if="sec.surah.length" class="space-y-1">
-                                        <div class="font-semibold text-amber-700 text-[11px]">Surah Pendek ({{ selectedGroup.level_name }})</div>
+                                        <div class="font-semibold text-amber-700 text-[11px]">Surah Pendek ({{ sec.levelLabel }})</div>
                                         <div v-for="(item, idx) in sec.surah" :key="item.id" class="text-slate-600 leading-snug"><span class="font-semibold text-slate-800 mr-1">S{{ idx + 1 }}</span>{{ item.title }}</div>
                                     </div>
                                     <div v-if="sec.hadist.length" class="space-y-1">
@@ -755,7 +800,15 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
                                         <span v-else>{{ st.full_name?.charAt(0) }}</span>
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <div class="text-sm font-semibold text-slate-900 truncate">{{ st.full_name }}</div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-sm font-semibold text-slate-900 truncate">{{ st.full_name }}</span>
+                                            <span
+                                                v-if="selectedGroup?.is_inclusive && st.level_name"
+                                                class="px-1.5 py-px rounded text-[10px] font-semibold bg-teal-50 text-[#00796B] border border-teal-200/70 shrink-0"
+                                            >
+                                                {{ st.level_name }}
+                                            </span>
+                                        </div>
                                         <div class="flex items-center gap-2 mt-1">
                                             <span class="text-[11px] text-slate-500 shrink-0">Kls {{ st.classroom_name }}</span>
                                             <div class="flex-1 max-w-[90px] h-1.5 rounded-full bg-slate-100 overflow-hidden">
@@ -889,7 +942,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload)
             :show="showMobileSheet && !!mobileStudent && !!localEntries[mobileStudent?.student_id]"
             variant="sheet"
             :title="mobileStudent?.full_name || ''"
-            :subtitle="`Kelas ${mobileStudent?.classroom_name || ''} · ${selectedGroup?.level_name || ''} (${mobileStudentIndex + 1}/${students.length})`"
+            :subtitle="`Kelas ${mobileStudent?.classroom_name || ''} · ${mobileStudent?.level_name || selectedGroup?.level_name || ''} (${mobileStudentIndex + 1}/${students.length})`"
             @close="closeMobileInput"
         >
             <div v-if="mobileStudent && localEntries[mobileStudent.student_id]">

@@ -17,6 +17,7 @@ class QuranGroup extends Model
         'unit_id',
         'academic_year_id',
         'level_id',
+        'is_inclusive',
         'session_id',
         'name',
         'teacher_id',
@@ -27,6 +28,7 @@ class QuranGroup extends Model
     ];
 
     protected $casts = [
+        'is_inclusive' => 'boolean',
         'max_quota' => 'integer',
         'is_active' => 'boolean',
     ];

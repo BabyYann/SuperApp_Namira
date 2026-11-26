@@ -39,7 +39,7 @@ class QuranReportController extends Controller
             $semester = $activeYear->semester;
         }
 
-        $canManage = $this->access->canManage($user);
+        $canManage = $this->access->canManage($user, $unit->id);
         $isGlobalAdmin = $this->access->isGlobalAdmin($user);
         $setting = QuranSetting::where('unit_id', $unit->id)->first();
         $isLocked = !$canManage && (bool) ($setting?->lock_cetak_rapor ?? false);
@@ -150,7 +150,7 @@ class QuranReportController extends Controller
 
         return Inertia::render('Quran/Reports', [
             'unit' => $unit->only(['id', 'name', 'code']),
-            'eligibleUnits' => $isGlobalAdmin ? $this->access->getEligibleUnits()->map->only(['id', 'name', 'code']) : [],
+            'eligibleUnits' => $this->access->getSwitchableUnits($user, $unit)->map->only(['id', 'name', 'code']),
             'academicYears' => AcademicYear::orderByDesc('is_active')->orderByDesc('id')->get(['id', 'name', 'semester', 'is_active']),
             'activeYear' => $activeYear->only(['id', 'name', 'semester', 'is_active']),
             'semester' => $semester,
@@ -160,7 +160,8 @@ class QuranReportController extends Controller
             'groups' => $groups->map(fn ($g) => [
                 'id' => $g->id,
                 'name' => $g->name,
-                'level_name' => $g->level?->name,
+                'is_inclusive' => (bool) $g->is_inclusive,
+                'level_name' => $g->is_inclusive ? 'Multi-Jilid (Inklusi)' : ($g->level?->name ?? '-'),
                 'teacher_name' => $g->teacher?->name,
             ]),
             'levels' => $levels,
@@ -191,7 +192,7 @@ class QuranReportController extends Controller
             $semester = $activeYear->semester;
         }
 
-        $canManage = $this->access->canManage($user);
+        $canManage = $this->access->canManage($user, $unit->id);
         $setting = QuranSetting::where('unit_id', $unit->id)->first();
 
         if (!$canManage && ($setting?->lock_cetak_rapor ?? false)) {

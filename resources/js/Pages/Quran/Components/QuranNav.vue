@@ -78,9 +78,13 @@ const tabs = computed(() => {
     return base;
 });
 
+const canSwitchUnits = computed(() => {
+    return (props.eligibleUnits?.length || 0) > 1;
+});
+
 const queryParams = computed(() => {
     const p = {};
-    if (props.isGlobalAdmin && props.unit?.id) p.unit_id = props.unit.id;
+    if ((props.isGlobalAdmin || canSwitchUnits.value) && props.unit?.id) p.unit_id = props.unit.id;
     if (props.activeYear?.id) p.academic_year_id = props.activeYear.id;
     return p;
 });
@@ -94,7 +98,7 @@ const switchUnitById = (newUnitId) => {
 
 const switchYearById = (newYearId) => {
     router.get(route(routeNameMap[props.activeTab] || 'quran.index'), {
-        unit_id: props.isGlobalAdmin ? props.unit?.id : undefined,
+        unit_id: (props.isGlobalAdmin || canSwitchUnits.value) ? props.unit?.id : undefined,
         academic_year_id: newYearId,
     }, { preserveScroll: true });
 };
@@ -106,12 +110,12 @@ const onSwitchYear = (e) => switchYearById(e.target.value);
 const showContextSheet = ref(false);
 const mobileRailRef = ref(null);
 const hasContextSwitchers = computed(() => {
-    return (props.isGlobalAdmin && props.eligibleUnits.length > 1) || (props.academicYears.length > 0 && props.activeYear);
+    return canSwitchUnits.value || (props.academicYears.length > 0 && props.activeYear);
 });
 
 const mobileContextSummary = computed(() => {
     const parts = [];
-    if (props.isGlobalAdmin && props.unit?.name) parts.push(props.unit.name);
+    if ((props.isGlobalAdmin || canSwitchUnits.value) && props.unit?.name) parts.push(props.unit.name);
     if (props.activeYear) {
         parts.push(`${props.activeYear.name} (${props.activeYear.semester === 'ganjil' ? 'Ganjil' : 'Genap'})`);
     }
@@ -192,7 +196,7 @@ watch(() => props.activeTab, centerActiveMobileTab);
 
                 <div class="flex flex-wrap items-center gap-2">
                     <div
-                        v-if="isGlobalAdmin && eligibleUnits.length > 1"
+                        v-if="canSwitchUnits"
                         class="relative inline-flex items-center"
                     >
                         <BuildingOffice2Icon class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
@@ -326,7 +330,7 @@ watch(() => props.activeTab, centerActiveMobileTab);
             @close="showContextSheet = false"
         >
             <div class="p-4 space-y-5">
-                <div v-if="isGlobalAdmin && eligibleUnits.length > 1" class="space-y-2">
+                <div v-if="canSwitchUnits" class="space-y-2">
                     <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Sekolah</div>
                     <div class="divide-y divide-slate-100 rounded-xl border border-slate-200/80 overflow-hidden bg-white">
                         <button

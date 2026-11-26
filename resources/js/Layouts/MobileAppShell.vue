@@ -723,7 +723,7 @@ const isRouteActive = (pattern) => {
                         </div>
 
                         <!-- 2A. PROGRAM AL-QUR'AN (METODE UMMI) -->
-                        <div v-if="!isDaycare && page.props.session?.features?.quran !== false && (isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran', 'guru_alquran']))" class="space-y-3 bg-emerald-50/50 rounded-3xl p-3.5 sm:p-4 border border-emerald-200/60">
+                        <div v-if="(!isDaycare && page.props.session?.features?.quran !== false && (isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran', 'guru_alquran']))) || page.props.session?.has_quran_assignment" class="space-y-3 bg-emerald-50/50 rounded-3xl p-3.5 sm:p-4 border border-emerald-200/60">
                             <div class="flex items-center gap-2 px-1">
                                 <div class="w-2 h-2 rounded-full bg-emerald-600"></div>
                                 <p class="text-[11px] font-black uppercase text-emerald-900 tracking-wider">
@@ -776,7 +776,7 @@ const isRouteActive = (pattern) => {
                                 </Link>
 
                                 <Link prefetch :cache-for="['15s', '45s']" 
-                                    v-if="isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran'])"
+                                    v-if="isGlobalAdmin || (!isDaycare && page.props.session?.features?.quran !== false && hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran']))"
                                     :href="safeRoute('quran.rubrics.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
@@ -788,7 +788,7 @@ const isRouteActive = (pattern) => {
                                 </Link>
 
                                 <Link prefetch :cache-for="['15s', '45s']" 
-                                    v-if="isGlobalAdmin || hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran'])"
+                                    v-if="isGlobalAdmin || (!isDaycare && page.props.session?.features?.quran !== false && hasRole(['admin_unit', 'kepala_sekolah', 'koordinator_kurikulum', 'koordinator_alquran']))"
                                     :href="safeRoute('quran.settings.index')" 
                                     @click="showDrawer = false"
                                     class="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"

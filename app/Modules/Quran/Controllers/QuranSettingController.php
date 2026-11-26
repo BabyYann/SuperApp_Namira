@@ -21,11 +21,11 @@ class QuranSettingController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403, 'Hanya Koordinator Al-Qur\'an / Admin yang dapat membuka pengaturan rapor.');
         }
 
-        $unit = $this->access->resolveUnit($request, $user);
         $this->setup->ensureUnitDefaults($unit);
 
         $setting = QuranSetting::where('unit_id', $unit->id)->firstOrFail();
@@ -44,11 +44,11 @@ class QuranSettingController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
-        if (!$this->access->canManage($user)) {
+        $unit = $this->access->resolveUnit($request, $user);
+        if (!$this->access->canManage($user, $unit->id)) {
             abort(403);
         }
 
-        $unit = $this->access->resolveUnit($request, $user);
         $this->setup->ensureUnitDefaults($unit);
         $setting = QuranSetting::where('unit_id', $unit->id)->firstOrFail();
 

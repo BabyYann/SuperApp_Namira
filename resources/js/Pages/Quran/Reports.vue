@@ -82,10 +82,12 @@ const activeFilterChips = computed(() => {
     return chips;
 });
 
+const shouldPassUnitId = computed(() => props.isGlobalAdmin || (props.eligibleUnits?.length || 0) > 1);
+
 const applyFilters = (semOverride = null) => {
     isFiltering.value = true;
     router.get(route('quran.reports.index'), {
-        unit_id: props.isGlobalAdmin ? props.unit.id : undefined,
+        unit_id: shouldPassUnitId.value ? props.unit.id : undefined,
         academic_year_id: props.activeYear.id,
         semester: semOverride ?? props.semester,
         group_id: groupFilter.value,
@@ -144,7 +146,7 @@ const toggleStudentSelect = (id) => {
 const openReportUrl = (routeName, ids) => {
     if (!ids || ids.length === 0) return;
     const params = new URLSearchParams();
-    if (props.isGlobalAdmin) params.set('unit_id', props.unit.id);
+    if (shouldPassUnitId.value) params.set('unit_id', props.unit.id);
     params.set('academic_year_id', props.activeYear.id);
     params.set('semester', props.semester);
     params.set('student_ids', ids.join(','));

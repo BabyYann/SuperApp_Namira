@@ -38,6 +38,7 @@ class QuranStudentProfileService
         $activeEnrollment = null;
         if ($activeYear) {
             $activeEnrollment = QuranEnrollment::with([
+                'level',
                 'group.level',
                 'group.session',
                 'group.teacher',
@@ -53,6 +54,7 @@ class QuranStudentProfileService
 
         if (!$activeEnrollment) {
             $activeEnrollment = QuranEnrollment::with([
+                'level',
                 'group.level',
                 'group.session',
                 'group.teacher',
@@ -167,14 +169,16 @@ class QuranStudentProfileService
             ];
         })->values();
 
+        $currentLevel = $activeEnrollment?->level ?? $activeEnrollment?->group?->level;
+
         return [
             'enabled' => true,
             'is_report_locked' => $isReportLocked,
             'current' => $activeEnrollment ? [
                 'enrollment_id' => $activeEnrollment->id,
-                'level_id' => $activeEnrollment->group?->level?->id,
-                'level_name' => $activeEnrollment->group?->level?->name ?? '-',
-                'level_code' => $activeEnrollment->group?->level?->code ?? '',
+                'level_id' => $currentLevel?->id,
+                'level_name' => $currentLevel?->name ?? '-',
+                'level_code' => $currentLevel?->code ?? '',
                 'group_id' => $activeEnrollment->group?->id,
                 'group_name' => $activeEnrollment->group?->name ?? '-',
                 'room_name' => $activeEnrollment->group?->room_name,

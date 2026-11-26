@@ -34,7 +34,7 @@ class QuranAssessmentController extends Controller
             $semester = $activeYear->semester;
         }
 
-        $canManage = $this->access->canManage($user);
+        $canManage = $this->access->canManage($user, $unit->id);
         $isGlobalAdmin = $this->access->isGlobalAdmin($user);
         $setting = QuranSetting::where('unit_id', $unit->id)->first();
         $isLocked = !$canManage && (bool) ($setting?->lock_input_nilai ?? false);
@@ -66,7 +66,7 @@ class QuranAssessmentController extends Controller
 
         $groups = $groupsQuery->get()
             ->sortBy([
-                fn ($g) => $g->level?->sort_order ?? 999,
+                fn ($g) => $g->is_inclusive ? 998 : ($g->level?->sort_order ?? 999),
                 fn ($g) => $g->session?->sort_order ?? 999,
                 fn ($g) => $g->name,
             ])
@@ -75,7 +75,7 @@ class QuranAssessmentController extends Controller
         $selectedGroupId = $request->integer('group_id') ?: $groups->first()?->id;
         $selectedGroup = $groups->firstWhere('id', $selectedGroupId) ?? $groups->first();
 
-        // Lightweight aggregate counts per group (avoids eager-loading all 356 students & scores for unselected groups)
+        // Lightweight aggregate counts per group (joins on qe.level_id so both regular & inclusive multi-jilid groups match accurately)
         $groupIds = $groups->pluck('id')->all();
         $memberCountsByGroup = empty($groupIds)
             ? collect()
@@ -89,10 +89,9 @@ class QuranAssessmentController extends Controller
         $filledCountsByGroup = empty($groupIds)
             ? collect()
             : DB::table('quran_enrollments as qe')
-                ->join('quran_groups as qg', 'qg.id', '=', 'qe.group_id')
                 ->join('quran_assessments as qa', function ($join) use ($unit, $activeYear, $semester) {
                     $join->on('qa.student_id', '=', 'qe.student_id')
-                        ->on('qa.level_id', '=', 'qg.level_id')
+                        ->on('qa.level_id', '=', 'qe.level_id')
                         ->where('qa.unit_id', '=', $unit->id)
                         ->where('qa.academic_year_id', '=', $activeYear->id)
                         ->where('qa.semester', '=', $semester);
@@ -135,45 +134,73 @@ class QuranAssessmentController extends Controller
             $gradeRubricsByGrade[(string) $gradeKey] = $bucket;
         }
 
-        $levelRubrics = [
+        $emptyLevelBucket = [
             'materi' => [],
             'surah_pendek' => [],
             'doa_harian' => [],
             'hadist' => [],
         ];
 
+        $levelRubrics = $emptyLevelBucket;
+        $levelRubricsByLevel = [];
         $studentsPayload = [];
 
-        if ($selectedGroup && $selectedGroup->level) {
-            // Load rubrics & enrollments ONLY for the currently selected group
+        if ($selectedGroup) {
             $selectedGroup->load([
-                'level.activeRubricItems' => fn ($rq) => $rq->where('scope', QuranRubricItem::SCOPE_LEVEL),
                 'activeEnrollments' => fn ($q) => $q->with([
+                    'level:id,name,code,sort_order',
                     'student' => fn ($sq) => $sq->select('id', 'nis', 'nisn', 'full_name', 'classroom_id')->with('classroom:id,name,level'),
                 ]),
             ]);
 
-            $activeLevelItems = $selectedGroup->level->activeRubricItems;
-
-            foreach ($activeLevelItems as $item) {
-                // If unit uses grade-scoped rubrics, ignore any leftover level doa/hadist
-                if ($usesGradeRubrics && in_array($item->category, [QuranRubricItem::CATEGORY_DOA, QuranRubricItem::CATEGORY_HADIST], true)) {
-                    continue;
-                }
-                if (isset($levelRubrics[$item->category])) {
-                    $levelRubrics[$item->category][] = [
-                        'id' => $item->id,
-                        'title' => $item->title,
-                        'category' => $item->category,
-                        'scope' => 'level',
-                    ];
-                }
-            }
-
             $members = $selectedGroup->activeEnrollments
                 ->filter(fn ($e) => $e->student !== null)
-                ->sortBy(fn ($e) => strtolower($e->student->full_name))
+                ->sortBy([
+                    fn ($e) => $selectedGroup->is_inclusive ? ($e->level?->sort_order ?? 999) : 0,
+                    fn ($e) => strtolower($e->student->full_name),
+                ])
                 ->values();
+
+            $neededLevelIds = $members
+                ->pluck('level_id')
+                ->push($selectedGroup->level_id)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $itemsByLevel = empty($neededLevelIds)
+                ? collect()
+                : QuranRubricItem::where('unit_id', $unit->id)
+                    ->where('scope', QuranRubricItem::SCOPE_LEVEL)
+                    ->where('is_active', true)
+                    ->whereIn('level_id', $neededLevelIds)
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->get()
+                    ->groupBy('level_id');
+
+            foreach ($neededLevelIds as $lvlId) {
+                $bucket = $emptyLevelBucket;
+                foreach ($itemsByLevel->get($lvlId, collect()) as $item) {
+                    if ($usesGradeRubrics && in_array($item->category, [QuranRubricItem::CATEGORY_DOA, QuranRubricItem::CATEGORY_HADIST], true)) {
+                        continue;
+                    }
+                    if (isset($bucket[$item->category])) {
+                        $bucket[$item->category][] = [
+                            'id' => $item->id,
+                            'title' => $item->title,
+                            'category' => $item->category,
+                            'scope' => 'level',
+                        ];
+                    }
+                }
+                $levelRubricsByLevel[(string) $lvlId] = $bucket;
+            }
+
+            if ($selectedGroup->level_id && isset($levelRubricsByLevel[(string) $selectedGroup->level_id])) {
+                $levelRubrics = $levelRubricsByLevel[(string) $selectedGroup->level_id];
+            }
 
             $memberStudentIds = $members->pluck('student_id')->all();
             $assessmentsByStudent = empty($memberStudentIds)
@@ -187,15 +214,19 @@ class QuranAssessmentController extends Controller
 
             foreach ($members as $enrollment) {
                 $st = $enrollment->student;
+                $studentLevelId = $enrollment->level_id ?? $selectedGroup->level_id;
+                $studentLevelName = $enrollment->level?->name ?? $selectedGroup->level?->name ?? '-';
+                $studentLevelSort = $enrollment->level?->sort_order ?? $selectedGroup->level?->sort_order ?? 999;
+
                 $gradeLevel = $this->setup->extractGradeLevel($st->classroom?->level, $st->classroom?->name);
                 $assessment = $assessmentsByStudent->get($st->id);
-                $sameLevel = $assessment !== null && (int) $assessment->level_id === (int) $selectedGroup->level_id;
+                $sameLevel = $assessment !== null && $studentLevelId !== null && (int) $assessment->level_id === (int) $studentLevelId;
                 $rawSaved = $assessment?->scores ?? [];
 
                 $gradeMap = [];
 
-                // 1. Hydrate level-scoped items (only if saved under same level)
-                foreach ($activeLevelItems as $item) {
+                // 1. Hydrate student's own level-scoped items (only if saved under the same level)
+                foreach ($itemsByLevel->get($studentLevelId, collect()) as $item) {
                     if ($usesGradeRubrics && in_array($item->category, [QuranRubricItem::CATEGORY_DOA, QuranRubricItem::CATEGORY_HADIST], true)) {
                         continue;
                     }
@@ -222,6 +253,9 @@ class QuranAssessmentController extends Controller
                     'nis' => $st->nis,
                     'classroom_name' => $st->classroom?->name ?? '-',
                     'grade_level' => $gradeLevel,
+                    'level_id' => $studentLevelId,
+                    'level_name' => $studentLevelName,
+                    'level_sort_order' => $studentLevelSort,
                     'is_main_teacher' => $selectedGroup->teacher_id === $user->id,
                     'has_saved_assessment' => $sameLevel,
                     'previous_level_mismatch' => $assessment !== null && !$sameLevel,
@@ -233,7 +267,7 @@ class QuranAssessmentController extends Controller
 
         return Inertia::render('Quran/Assessments', [
             'unit' => $unit->only(['id', 'name', 'code']),
-            'eligibleUnits' => $isGlobalAdmin ? $this->access->getEligibleUnits()->map->only(['id', 'name', 'code']) : [],
+            'eligibleUnits' => $this->access->getSwitchableUnits($user, $unit)->map->only(['id', 'name', 'code']),
             'academicYears' => AcademicYear::orderByDesc('is_active')->orderByDesc('id')->get(['id', 'name', 'semester', 'is_active']),
             'activeYear' => $activeYear->only(['id', 'name', 'semester', 'is_active']),
             'semester' => $semester,
@@ -246,8 +280,9 @@ class QuranAssessmentController extends Controller
                 return [
                     'id' => $g->id,
                     'name' => $g->name,
+                    'is_inclusive' => (bool) $g->is_inclusive,
                     'level_id' => $g->level_id,
-                    'level_name' => $g->level?->name ?? '-',
+                    'level_name' => $g->is_inclusive ? 'Multi-Jilid (Inklusi)' : ($g->level?->name ?? '-'),
                     'session_name' => $g->session?->name,
                     'teacher_name' => $g->teacher?->name ?? '-',
                     'assistant_name' => $g->assistantTeacher?->name,
@@ -259,12 +294,14 @@ class QuranAssessmentController extends Controller
             'selectedGroup' => $selectedGroup ? [
                 'id' => $selectedGroup->id,
                 'name' => $selectedGroup->name,
+                'is_inclusive' => (bool) $selectedGroup->is_inclusive,
                 'level_id' => $selectedGroup->level_id,
-                'level_name' => $selectedGroup->level?->name ?? '-',
+                'level_name' => $selectedGroup->is_inclusive ? 'Multi-Jilid (Inklusi)' : ($selectedGroup->level?->name ?? '-'),
                 'session_name' => $selectedGroup->session?->name,
                 'teacher_name' => $selectedGroup->teacher?->name ?? '-',
             ] : null,
             'rubrics' => $levelRubrics,
+            'levelRubricsByLevel' => $levelRubricsByLevel,
             'gradeRubricsByGrade' => $gradeRubricsByGrade,
             'students' => $studentsPayload,
         ]);
@@ -274,7 +311,7 @@ class QuranAssessmentController extends Controller
     {
         $user = Auth::user();
         $unit = $this->access->resolveUnit($request, $user);
-        $canManage = $this->access->canManage($user);
+        $canManage = $this->access->canManage($user, $unit->id);
         $setting = QuranSetting::where('unit_id', $unit->id)->first();
 
         if (!$canManage && ($setting?->lock_input_nilai ?? false)) {
@@ -292,7 +329,7 @@ class QuranAssessmentController extends Controller
         ]);
 
         $group = QuranGroup::with([
-                'level.activeRubricItems' => fn ($q) => $q->where('scope', QuranRubricItem::SCOPE_LEVEL),
+                'level:id,name',
                 'activeEnrollments.student.classroom:id,name,level',
             ])
             ->where('unit_id', $unit->id)
@@ -302,9 +339,23 @@ class QuranAssessmentController extends Controller
             abort(403, 'Anda tidak memiliki akses mengisi nilai kelompok ini.');
         }
 
-        $levelRubricMap = $group->level
-            ? $group->level->activeRubricItems->keyBy('id')
-            : collect();
+        $neededLevelIds = $group->activeEnrollments
+            ->pluck('level_id')
+            ->push($group->level_id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $levelRubricsByLevelId = empty($neededLevelIds)
+            ? collect()
+            : QuranRubricItem::where('unit_id', $group->unit_id)
+                ->where('scope', QuranRubricItem::SCOPE_LEVEL)
+                ->where('is_active', true)
+                ->whereIn('level_id', $neededLevelIds)
+                ->get()
+                ->groupBy('level_id')
+                ->map(fn ($items) => $items->keyBy('id'));
 
         $gradeRubricMap = QuranRubricItem::where('unit_id', $group->unit_id)
             ->where('scope', QuranRubricItem::SCOPE_GRADE)
@@ -315,7 +366,7 @@ class QuranAssessmentController extends Controller
         $enrollmentsByStudent = $group->activeEnrollments->keyBy('student_id');
         $savedCount = 0;
 
-        DB::transaction(function () use ($validated, $group, $levelRubricMap, $gradeRubricMap, $enrollmentsByStudent, $user, &$savedCount) {
+        DB::transaction(function () use ($validated, $group, $levelRubricsByLevelId, $gradeRubricMap, $enrollmentsByStudent, $user, &$savedCount) {
             foreach ($validated['entries'] as $entry) {
                 $studentId = (int) $entry['student_id'];
                 $enrollment = $enrollmentsByStudent->get($studentId);
@@ -323,6 +374,12 @@ class QuranAssessmentController extends Controller
                     continue;
                 }
 
+                $studentLevelId = (int) ($enrollment->level_id ?: $group->level_id);
+                if ($studentLevelId <= 0) {
+                    continue;
+                }
+
+                $studentLevelRubricMap = $levelRubricsByLevelId->get($studentLevelId, collect());
                 $studentGrade = $this->setup->extractGradeLevel(
                     $enrollment->student?->classroom?->level,
                     $enrollment->student?->classroom?->name
@@ -331,7 +388,7 @@ class QuranAssessmentController extends Controller
                 $structuredScores = [];
                 foreach (($entry['grades'] ?? []) as $rubricId => $grade) {
                     $rId = (int) $rubricId;
-                    $rubric = $levelRubricMap->get($rId);
+                    $rubric = $studentLevelRubricMap->get($rId);
 
                     if (!$rubric) {
                         $candidate = $gradeRubricMap->get($rId);
@@ -364,7 +421,7 @@ class QuranAssessmentController extends Controller
                         'semester' => $validated['semester'],
                     ],
                     [
-                        'level_id' => $group->level_id,
+                        'level_id' => $studentLevelId,
                         'group_id' => $group->id,
                         'teacher_id' => $group->teacher_id,
                         'scores' => $structuredScores,
@@ -377,6 +434,8 @@ class QuranAssessmentController extends Controller
             }
         });
 
-        return back()->with('success', "Berhasil menyimpan nilai untuk {$savedCount} siswa di {$group->name} ({$group->level->name}).");
+        $levelLabel = $group->is_inclusive ? 'Multi-Jilid Inklusi' : ($group->level?->name ?? '-');
+
+        return back()->with('success', "Berhasil menyimpan nilai untuk {$savedCount} siswa di {$group->name} ({$levelLabel}).");
     }
 }

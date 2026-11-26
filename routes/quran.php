@@ -23,6 +23,7 @@ Route::prefix('quran')->name('quran.')->middleware([
     Route::put('/groups/{group}', [QuranGroupController::class, 'updateGroup'])->name('groups.update');
     Route::delete('/groups/{group}', [QuranGroupController::class, 'destroyGroup'])->name('groups.destroy');
     Route::post('/groups/{group}/enroll', [QuranGroupController::class, 'enrollStudents'])->name('groups.enroll');
+    Route::patch('/enrollments/{enrollment}/level', [QuranGroupController::class, 'updateEnrollmentLevel'])->name('enrollments.update-level');
     Route::delete('/enrollments/{enrollment}', [QuranGroupController::class, 'removeEnrollment'])->name('enrollments.destroy');
 
     // 2. Tracking Siswa & Naik Jilid
