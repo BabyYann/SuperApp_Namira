@@ -251,3 +251,53 @@ it('hides TP 2027/2028 Kraksaan fee guide for future-year Inden applicants', fun
         ->get(route('spmb.applicant.print-fee-guide', $applicant->id))
         ->assertForbidden();
 });
+
+it('shows fee guide preview in admin Show view and auto-fills Dec 5 schedule on payment verification', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin_yayasan');
+
+    $applicant = SpmbApplicant::create([
+        'registration_number' => 'SPMB-SD-27099',
+        'unit_id' => $this->sdKraksaan->id,
+        'academic_year' => '2027/2028',
+        'category' => 'internal_tk',
+        'status' => 'submitted',
+        'full_name' => 'Calon Murid Kraksaan',
+        'gender' => 'P',
+        'parent_phone' => '081234560199',
+    ]);
+
+    // Before verification: admin sees isSdKraksaan=true, sdKraksaanFeeGuide=null
+    $this->actingAs($admin)
+        ->get(route('spmb.admin.show', $applicant->id))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('SPMB/Admin/Show')
+            ->where('isSdKraksaan', true)
+            ->where('sdKraksaanFeeGuide', null)
+        );
+
+    // Verify payment -> auto-fills observation_date & psychotest_date to 2026-12-05!
+    $this->actingAs($admin)
+        ->post(route('spmb.admin.verify-payment', $applicant->id))
+        ->assertRedirect();
+
+    $applicant->refresh();
+    expect($applicant->observation_date?->format('Y-m-d'))->toBe('2026-12-05')
+        ->and($applicant->psychotest_date?->format('Y-m-d'))->toBe('2026-12-05');
+
+    // After verification: admin sees populated Putri fee guide & can download PDF
+    $this->actingAs($admin)
+        ->get(route('spmb.admin.show', $applicant->id))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('isSdKraksaan', true)
+            ->where('sdKraksaanFeeGuide.totals.applicant_total', 7365000)
+            ->where('sdKraksaanFeeGuide.totals.remaining_estimate', 7115000)
+        );
+
+    $this->actingAs($admin)
+        ->get(route('spmb.applicant.print-fee-guide', $applicant->id))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
+});

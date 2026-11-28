@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Modules\Academic\Models\Teacher;
 use App\Modules\SPMB\Models\SpmbApplicant;
 use App\Modules\SPMB\Models\SpmbSetting;
+use App\Modules\SPMB\Services\SpmbSdKraksaanFeeService;
 use App\Modules\SPMB\Services\SpmbService;
 use App\Modules\SPMB\Services\SpmbSmpFeeService;
 use App\Modules\SPMB\Services\SpmbVaImportService;
@@ -460,12 +461,16 @@ class AdminSpmbController extends Controller
         }
         usort($allowedYears, fn ($a, $b) => (SpmbSetting::extractStartYear($a) ?? 0) <=> (SpmbSetting::extractStartYear($b) ?? 0));
 
+        $sdKraksaanFeeService = app(SpmbSdKraksaanFeeService::class);
+
         return Inertia::render('SPMB/Admin/Show', [
             'applicant' => $applicant,
             'setting' => $setting,
             'classrooms' => $classrooms,
             'academicYearOptions' => $allowedYears,
             'isFutureInden' => $setting ? $setting->isFutureIndenYear($applicant->academic_year) : false,
+            'isSdKraksaan' => $sdKraksaanFeeService->isSdKraksaanApplicant($applicant),
+            'sdKraksaanFeeGuide' => $sdKraksaanFeeService->buildFeeGuide($applicant, $setting),
         ]);
     }
 
@@ -476,11 +481,25 @@ class AdminSpmbController extends Controller
     {
         $this->authorizeSpmb($applicant->unit_id);
 
-        $applicant->update([
+        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+        $isFutureInden = $setting ? $setting->isFutureIndenYear($applicant->academic_year) : false;
+
+        $updateData = [
             'status' => 'verified',
             'registration_payment_verified_at' => now(),
             'registration_payment_verified_by' => Auth::id(),
-        ]);
+        ];
+
+        if (!$isFutureInden && $setting?->selection_date) {
+            if (!$applicant->observation_date) {
+                $updateData['observation_date'] = $setting->selection_date;
+            }
+            if (!$applicant->psychotest_date) {
+                $updateData['psychotest_date'] = $setting->selection_date;
+            }
+        }
+
+        $applicant->update($updateData);
 
         return back()->with('success', "Pembayaran pendaftaran calon siswa {$applicant->full_name} berhasil diverifikasi.");
     }

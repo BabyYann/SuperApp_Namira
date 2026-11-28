@@ -42,6 +42,26 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    isSdKraksaan: {
+        type: Boolean,
+        default: false,
+    },
+    sdKraksaanFeeGuide: {
+        type: Object,
+        default: null,
+    },
+});
+
+const effectiveObservationDate = computed(() => (
+    props.applicant?.observation_date || (!props.isFutureInden ? props.setting?.selection_date : null)
+));
+const effectivePsychotestDate = computed(() => (
+    props.applicant?.psychotest_date || effectiveObservationDate.value
+));
+const isSameSelectionDay = computed(() => {
+    const d1 = toDateInputValue(effectiveObservationDate.value);
+    const d2 = toDateInputValue(effectivePsychotestDate.value);
+    return Boolean(d1 && d2 && d1 === d2);
 });
 
 const isSmp = computed(() => {
@@ -713,23 +733,32 @@ const formatRupiah = (amount) => {
 
                     <!-- Dua Agenda Offline Card -->
                     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
-                        <h3 class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider pb-2 border-b border-slate-100 dark:border-slate-800">
-                            C. Jadwal Agenda Offline
-                        </h3>
+                        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                            <h3 class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                                C. Jadwal Agenda Offline
+                            </h3>
+                            <span
+                                v-if="isSameSelectionDay && !isSmp"
+                                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold"
+                            >
+                                <CheckCircleIcon class="w-3.5 h-3.5" />
+                                <span>Observasi Dasar &amp; Psikotes Bersamaan (Satu Hari)</span>
+                            </span>
+                        </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                             <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                                 <strong class="text-emerald-700 dark:text-emerald-400 block mb-1.5 font-bold">{{ isSmp ? '1. Seleksi Akademik (B. Indonesia & MTK)' : '1. Observasi Dasar Anak' }}</strong>
-                                <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ formatIndonesianDate(applicant.observation_date) || 'Belum diatur' }}</strong></p>
-                                <p class="text-slate-700 dark:text-slate-300">Jam: {{ applicant.observation_time || '-' }}</p>
-                                <p class="text-slate-700 dark:text-slate-300">Ruang: {{ applicant.observation_location || '-' }}</p>
+                                <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ formatIndonesianDate(effectiveObservationDate) || 'Belum diatur' }}</strong></p>
+                                <p class="text-slate-700 dark:text-slate-300">Jam: {{ applicant.observation_time || 'Akan diinfokan via WA' }}</p>
+                                <p class="text-slate-700 dark:text-slate-300">Ruang: {{ applicant.observation_location || (isSdKraksaan ? 'Gedung SD Namira Kraksaan' : '-') }}</p>
                             </div>
 
                             <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                                 <strong class="text-amber-700 dark:text-amber-400 block mb-1.5 font-bold">{{ isSmp ? '2. Observasi Calon Murid (Wawancara & Mengaji)' : '2. Psikotes Calon Siswa' }}</strong>
-                                <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ formatIndonesianDate(applicant.psychotest_date) || 'Belum diatur' }}</strong></p>
-                                <p class="text-slate-700 dark:text-slate-300">Jam: {{ applicant.psychotest_time || '-' }}</p>
-                                <p class="text-slate-700 dark:text-slate-300">Ruang: {{ applicant.psychotest_location || '-' }}</p>
+                                <p class="text-slate-700 dark:text-slate-300">Tgl: <strong>{{ formatIndonesianDate(effectivePsychotestDate) || 'Belum diatur' }}</strong></p>
+                                <p class="text-slate-700 dark:text-slate-300">Jam: {{ applicant.psychotest_time || 'Akan diinfokan via WA' }}</p>
+                                <p class="text-slate-700 dark:text-slate-300">Ruang: {{ applicant.psychotest_location || (isSdKraksaan ? 'Gedung SD Namira Kraksaan' : '-') }}</p>
                             </div>
                         </div>
 
@@ -749,6 +778,114 @@ const formatRupiah = (amount) => {
 
                         <div v-if="applicant.evaluation_notes" class="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-300">
                             <strong>Catatan Evaluasi / Observasi:</strong> {{ applicant.evaluation_notes }}
+                        </div>
+                    </div>
+
+                    <!-- Pratinjau Rincian Biaya Pendidikan SD Namira Kraksaan (TP 2027/2028) di Panel Admin -->
+                    <div
+                        v-if="isSdKraksaan && !isFutureInden"
+                        class="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900 rounded-3xl p-6 shadow-sm space-y-4"
+                    >
+                        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                                    Rincian Biaya Pendidikan SD Namira Kraksaan (TP 2027/2028)
+                                </h3>
+                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                    Pratinjau rincian biaya yang tampil di <strong>Portal Orang Tua</strong> khusus bagi pendaftar yang pembayarannya sudah terverifikasi.
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    v-if="sdKraksaanFeeGuide"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold"
+                                >
+                                    <CheckCircleIcon class="w-3.5 h-3.5" />
+                                    <span>Aktif di Portal Ortu</span>
+                                </span>
+                                <span
+                                    v-else
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold"
+                                >
+                                    <ClockIcon class="w-3.5 h-3.5" />
+                                    <span>Menunggu Verifikasi Bayar</span>
+                                </span>
+                                <a
+                                    v-if="sdKraksaanFeeGuide"
+                                    :href="route('spmb.applicant.print-fee-guide', applicant.id)"
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-[11px] font-bold transition shadow-2xs"
+                                >
+                                    <ArrowDownTrayIcon class="w-3.5 h-3.5 text-amber-300" />
+                                    <span>Lihat / Unduh PDF</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <template v-if="sdKraksaanFeeGuide">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                    <span class="text-[10px] text-slate-500 uppercase font-bold block">Total ({{ sdKraksaanFeeGuide.applicant_gender_label }})</span>
+                                    <strong class="text-sm font-black font-mono text-slate-900 dark:text-white">{{ formatRupiah(sdKraksaanFeeGuide.totals.applicant_total) }}*</strong>
+                                </div>
+                                <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                                    <span class="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase font-bold block">Formulir Awal</span>
+                                    <strong class="text-sm font-black font-mono text-emerald-800 dark:text-emerald-300">{{ formatRupiah(sdKraksaanFeeGuide.totals.already_paid_registration) }} &check;</strong>
+                                </div>
+                                <div class="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                                    <span class="text-[10px] text-amber-800 dark:text-amber-300 uppercase font-bold block">Estimasi Sisa Disiapkan</span>
+                                    <strong class="text-sm font-black font-mono text-amber-900 dark:text-amber-200">{{ formatRupiah(sdKraksaanFeeGuide.totals.remaining_estimate) }}*</strong>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                <table class="min-w-full text-[11px] divide-y divide-slate-200 dark:divide-slate-700">
+                                    <thead class="bg-[#064e3b] text-white uppercase text-[10px]">
+                                        <tr>
+                                            <th class="px-2.5 py-2 text-center w-8">No</th>
+                                            <th class="px-2.5 py-2 text-left">Komponen</th>
+                                            <th class="px-2.5 py-2 text-right">Putra</th>
+                                            <th class="px-2.5 py-2 text-right">Putri</th>
+                                            <th class="px-2.5 py-2 text-left">Tahapan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                        <tr v-for="item in sdKraksaanFeeGuide.initial_items" :key="item.key">
+                                            <td class="px-2.5 py-2 text-center font-bold text-slate-500">{{ item.no }}</td>
+                                            <td class="px-2.5 py-2">
+                                                <strong class="text-slate-900 dark:text-slate-100 block">{{ item.label }}</strong>
+                                                <span v-if="item.sublabel" class="text-[10px] text-slate-500">{{ item.sublabel }}</span>
+                                            </td>
+                                            <template v-if="item.is_tbd">
+                                                <td colspan="2" class="px-2.5 py-2 text-center italic text-slate-500">Sesuai penerbit</td>
+                                            </template>
+                                            <template v-else>
+                                                <td class="px-2.5 py-2 text-right font-mono whitespace-nowrap" :class="sdKraksaanFeeGuide.applicant_gender === 'L' ? 'bg-emerald-50/70 dark:bg-emerald-950/30 font-extrabold text-emerald-800 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'">{{ formatRupiah(item.putra) }}</td>
+                                                <td class="px-2.5 py-2 text-right font-mono whitespace-nowrap" :class="sdKraksaanFeeGuide.applicant_gender === 'P' ? 'bg-emerald-50/70 dark:bg-emerald-950/30 font-extrabold text-emerald-800 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'">{{ formatRupiah(item.putri) }}</td>
+                                            </template>
+                                            <td class="px-2.5 py-2 text-slate-600 dark:text-slate-300">
+                                                {{ item.stage }}
+                                                <span v-if="item.is_paid" class="ml-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold">Lunas</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] text-slate-600 dark:text-slate-300">
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                    <strong class="text-slate-900 dark:text-white block">2. SPP &amp; Bekal Sehat: {{ formatRupiah(sdKraksaanFeeGuide.monthly_spp.amount) }}/bln</strong>
+                                    <span>{{ sdKraksaanFeeGuide.monthly_spp.due_note }}</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                    <strong class="text-slate-900 dark:text-white block">3. Tabungan &amp; Komite: {{ formatRupiah(sdKraksaanFeeGuide.monthly_savings.total) }}/bln</strong>
+                                    <span>Rihlah Rp 15.000 &bull; Tutup Tahun Rp 10.000 &bull; Komite Rp 5.000</span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div v-else class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-300">
+                            Rincian biaya TP 2027/2028 akan otomatis muncul di <strong>Portal Orang Tua</strong> dan di panel ini setelah tombol <strong>Verifikasi QRIS Pendaftaran</strong> diklik.
                         </div>
                     </div>
 
