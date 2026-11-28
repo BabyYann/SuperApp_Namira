@@ -38,6 +38,17 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    sdKraksaanFeeGuide: {
+        type: Object,
+        default: null,
+    },
+});
+
+const isSameSelectionDay = computed(() => {
+    if (props.isFutureInden) return false;
+    const d1 = toDateInputValue(props.applicant?.observation_date) || toDateInputValue(props.setting?.selection_date);
+    const d2 = toDateInputValue(props.applicant?.psychotest_date) || d1;
+    return Boolean(d1 && d2 && d1 === d2);
 });
 
 const applicantAcademicYear = computed(() => props.applicant?.academic_year || props.setting?.academic_year || '2027/2028');
@@ -974,10 +985,19 @@ const supportingDocsCompletedCount = computed(() => {
 
             <!-- Two Offline Schedule Cards -->
             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-4 flex items-center gap-2">
-                    <CalendarDaysIcon class="w-4 h-4 text-emerald-700" />
-                    <span>{{ isSmp ? 'Jadwal Seleksi Akademik & Observasi Calon Murid' : 'Jadwal Kegiatan Seleksi Tatap Muka di Sekolah' }}</span>
-                </h3>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                        <CalendarDaysIcon class="w-4 h-4 text-emerald-700" />
+                        <span>{{ isSmp ? 'Jadwal Seleksi Akademik & Observasi Calon Murid' : 'Jadwal Kegiatan Seleksi Tatap Muka di Sekolah' }}</span>
+                    </h3>
+                    <span
+                        v-if="isSameSelectionDay && !isSmp"
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold"
+                    >
+                        <CheckCircleIcon class="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Observasi Dasar &amp; Psikotes Dilaksanakan Bersamaan (Satu Hari)</span>
+                    </span>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Agenda 1 -->
@@ -1009,6 +1029,229 @@ const supportingDocsCompletedCount = computed(() => {
 
                 <div v-if="applicant.schedule_notes" class="mt-4 p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900">
                     <strong>Catatan Panitia:</strong> {{ applicant.schedule_notes }}
+                </div>
+            </div>
+
+            <!-- Official Cost Breakdown Guide — STRICTLY SD Namira Kraksaan Verified Paid Applicants (TP 2027/2028) -->
+            <div
+                v-if="sdKraksaanFeeGuide"
+                class="bg-white border border-emerald-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-5"
+            >
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                            Khusus Pendaftar Terverifikasi &bull; {{ sdKraksaanFeeGuide.unit_name }}
+                        </span>
+                        <h3 class="text-sm sm:text-base font-black text-slate-900 leading-snug">
+                            Rincian &amp; Estimasi Biaya Pendidikan (TP {{ sdKraksaanFeeGuide.academic_year }})
+                        </h3>
+                        <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+                            Informasi persiapan pembiayaan bagi Ayah &amp; Bunda — kolom <strong class="text-emerald-800">{{ sdKraksaanFeeGuide.applicant_gender_label }}</strong> ditandai sesuai data Ananda.
+                        </p>
+                    </div>
+                    <a
+                        :href="route('spmb.applicant.print-fee-guide', applicant.id)"
+                        target="_blank"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#064e3b] hover:bg-emerald-800 text-white text-xs font-bold transition shadow-xs shrink-0"
+                    >
+                        <ArrowDownTrayIcon class="w-4 h-4 text-amber-300" />
+                        <span>Unduh Rincian Biaya (PDF)</span>
+                    </a>
+                </div>
+
+                <!-- Personalized Summary Strip for This Child -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            Total Estimasi Awal Masuk ({{ sdKraksaanFeeGuide.applicant_gender_label }})
+                        </span>
+                        <strong class="text-lg sm:text-xl font-black text-slate-900 font-mono block mt-0.5">
+                            {{ formatRupiah(sdKraksaanFeeGuide.totals.applicant_total) }}*
+                        </strong>
+                        <span class="text-[10px] text-slate-500">{{ sdKraksaanFeeGuide.totals.note }}</span>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
+                            Sudah Dibayar (Formulir Awal)
+                        </span>
+                        <strong class="text-lg sm:text-xl font-black text-emerald-800 font-mono block mt-0.5">
+                            {{ formatRupiah(sdKraksaanFeeGuide.totals.already_paid_registration) }}
+                        </strong>
+                        <span class="text-[10px] font-bold text-emerald-700">Terverifikasi &check;</span>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">
+                            Estimasi Sisa Perlu Disiapkan
+                        </span>
+                        <strong class="text-lg sm:text-xl font-black text-amber-900 font-mono block mt-0.5">
+                            {{ formatRupiah(sdKraksaanFeeGuide.totals.remaining_estimate) }}*
+                        </strong>
+                        <span class="text-[10px] text-amber-800">Termasuk Psikotes Rp 200.000 saat observasi</span>
+                    </div>
+                </div>
+
+                <!-- 1. Table Rincian Biaya Awal Masuk -->
+                <div>
+                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 mb-2.5 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-[#064e3b] text-white text-[11px] font-black inline-flex items-center justify-center">1</span>
+                        <span>Rincian Biaya Awal Masuk (Murid Baru TP {{ sdKraksaanFeeGuide.academic_year }})</span>
+                    </h4>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="min-w-full text-xs divide-y divide-slate-200">
+                            <thead class="bg-[#064e3b] text-white text-[11px] uppercase">
+                                <tr>
+                                    <th class="px-3 py-2.5 text-center w-10">No</th>
+                                    <th class="px-3 py-2.5 text-left">Komponen Investasi Pendidikan</th>
+                                    <th
+                                        class="px-3 py-2.5 text-right whitespace-nowrap"
+                                        :class="sdKraksaanFeeGuide.applicant_gender === 'L' ? 'bg-emerald-800 text-amber-200' : ''"
+                                    >
+                                        Muslim (Putra)
+                                    </th>
+                                    <th
+                                        class="px-3 py-2.5 text-right whitespace-nowrap"
+                                        :class="sdKraksaanFeeGuide.applicant_gender === 'P' ? 'bg-emerald-800 text-amber-200' : ''"
+                                    >
+                                        Muslimah (Putri)
+                                    </th>
+                                    <th class="px-3 py-2.5 text-left">Tahapan Pembayaran</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 bg-white">
+                                <tr v-for="item in sdKraksaanFeeGuide.initial_items" :key="item.key" class="hover:bg-slate-50/70">
+                                    <td class="px-3 py-2.5 text-center font-bold text-slate-500">{{ item.no }}</td>
+                                    <td class="px-3 py-2.5">
+                                        <strong class="text-slate-900 font-bold block">{{ item.label }}</strong>
+                                        <span v-if="item.sublabel" class="text-[11px] text-slate-500">{{ item.sublabel }}</span>
+                                    </td>
+                                    <template v-if="item.is_tbd">
+                                        <td colspan="2" class="px-3 py-2.5 text-center italic text-slate-500 text-[11px]">
+                                            Disampaikan saat masuk TP baru (sesuai penerbit)
+                                        </td>
+                                    </template>
+                                    <template v-else>
+                                        <td
+                                            class="px-3 py-2.5 text-right font-mono whitespace-nowrap"
+                                            :class="sdKraksaanFeeGuide.applicant_gender === 'L' ? 'bg-emerald-50/60 font-extrabold text-emerald-900' : 'text-slate-700 font-semibold'"
+                                        >
+                                            {{ formatRupiah(item.putra) }}
+                                        </td>
+                                        <td
+                                            class="px-3 py-2.5 text-right font-mono whitespace-nowrap"
+                                            :class="sdKraksaanFeeGuide.applicant_gender === 'P' ? 'bg-emerald-50/60 font-extrabold text-emerald-900' : 'text-slate-700 font-semibold'"
+                                        >
+                                            {{ formatRupiah(item.putri) }}
+                                        </td>
+                                    </template>
+                                    <td class="px-3 py-2.5 text-[11px] text-slate-700">
+                                        <span class="block font-semibold">{{ item.stage }}</span>
+                                        <span
+                                            v-if="item.is_paid"
+                                            class="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold"
+                                        >
+                                            Sudah Dibayar &check;
+                                        </span>
+                                        <span
+                                            v-else-if="item.is_observation_stage"
+                                            class="inline-block mt-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold"
+                                        >
+                                            Disiapkan Saat Observasi
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-slate-50 border-t-2 border-emerald-700">
+                                <tr>
+                                    <td colspan="2" class="px-3 py-3">
+                                        <strong class="text-xs font-black text-slate-900 uppercase block">Total Estimasi Biaya Awal Masuk</strong>
+                                        <span class="text-[10px] text-slate-500">{{ sdKraksaanFeeGuide.totals.note }}</span>
+                                    </td>
+                                    <td
+                                        class="px-3 py-3 text-right font-mono font-black text-sm whitespace-nowrap"
+                                        :class="sdKraksaanFeeGuide.applicant_gender === 'L' ? 'bg-emerald-100/70 text-emerald-950' : 'text-slate-800'"
+                                    >
+                                        {{ formatRupiah(sdKraksaanFeeGuide.totals.putra) }}*
+                                    </td>
+                                    <td
+                                        class="px-3 py-3 text-right font-mono font-black text-sm whitespace-nowrap"
+                                        :class="sdKraksaanFeeGuide.applicant_gender === 'P' ? 'bg-emerald-100/70 text-emerald-950' : 'text-slate-800'"
+                                    >
+                                        {{ formatRupiah(sdKraksaanFeeGuide.totals.putri) }}*
+                                    </td>
+                                    <td class="px-3 py-3 text-[11px] font-bold text-emerald-800">
+                                        Sisa disiapkan: {{ formatRupiah(sdKraksaanFeeGuide.totals.remaining_estimate) }}*
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2 & 3. Biaya Bulanan & Tabungan -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full bg-[#064e3b] text-white text-[11px] font-black inline-flex items-center justify-center shrink-0">2</span>
+                            <h4 class="text-xs font-extrabold uppercase text-slate-800">{{ sdKraksaanFeeGuide.monthly_spp.title }}</h4>
+                        </div>
+                        <div class="flex flex-wrap items-baseline gap-2">
+                            <strong class="text-lg font-black text-emerald-800 font-mono">
+                                {{ formatRupiah(sdKraksaanFeeGuide.monthly_spp.amount) }} / bulan
+                            </strong>
+                            <span class="text-[11px] font-bold text-amber-800">({{ sdKraksaanFeeGuide.monthly_spp.due_note }})</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">{{ sdKraksaanFeeGuide.monthly_spp.description }}</p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full bg-[#064e3b] text-white text-[11px] font-black inline-flex items-center justify-center shrink-0">3</span>
+                            <h4 class="text-xs font-extrabold uppercase text-slate-800">{{ sdKraksaanFeeGuide.monthly_savings.title }}</h4>
+                        </div>
+                        <div class="flex flex-wrap items-baseline gap-2">
+                            <strong class="text-lg font-black text-emerald-800 font-mono">
+                                {{ formatRupiah(sdKraksaanFeeGuide.monthly_savings.total) }} / bulan
+                            </strong>
+                            <span class="text-[11px] text-slate-500">({{ sdKraksaanFeeGuide.monthly_savings.note }})</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 pt-1">
+                            <div
+                                v-for="sav in sdKraksaanFeeGuide.monthly_savings.items"
+                                :key="sav.label"
+                                class="p-2 rounded-lg bg-white border border-slate-200 text-center"
+                            >
+                                <span class="text-[10px] text-slate-500 block">{{ sav.label }}</span>
+                                <strong class="text-xs font-extrabold text-slate-900 font-mono">{{ formatRupiah(sav.amount) }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ketentuan Administrasi & Info Rekening / Kontak -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 text-xs">
+                    <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-2">
+                        <h4 class="font-extrabold text-slate-800 uppercase tracking-wider text-[11px]">Ketentuan Administrasi &amp; Pembayaran</h4>
+                        <ol class="list-decimal pl-4 space-y-1 text-[11px] text-slate-600 leading-relaxed">
+                            <li v-for="(term, idx) in sdKraksaanFeeGuide.terms" :key="idx">{{ term }}</li>
+                        </ol>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-white border border-slate-200 space-y-2.5">
+                        <div>
+                            <h4 class="font-extrabold text-slate-800 uppercase tracking-wider text-[11px]">Pembayaran Via Rekening</h4>
+                            <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">{{ sdKraksaanFeeGuide.payment_channel_note }}</p>
+                        </div>
+                        <div class="pt-2 border-t border-slate-100 space-y-1 text-[11px] text-slate-600">
+                            <div v-for="loc in sdKraksaanFeeGuide.locations" :key="loc.name">
+                                <strong class="text-slate-800">{{ loc.name }}:</strong> {{ loc.address }}
+                            </div>
+                            <div class="pt-1 font-bold text-emerald-800">
+                                Layanan Informasi &amp; Pembayaran: WA {{ sdKraksaanFeeGuide.contact_whatsapp }} ({{ sdKraksaanFeeGuide.contact_label }})
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

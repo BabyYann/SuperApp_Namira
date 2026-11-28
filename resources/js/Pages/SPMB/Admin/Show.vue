@@ -185,21 +185,23 @@ const submitResetPassword = () => {
 };
 
 // Form: Atur Jadwal
+const defaultSelectionDate = toDateInputValue(props.setting?.selection_date);
 const scheduleForm = useForm({
-    observation_date: toDateInputValue(props.applicant.observation_date),
+    observation_date: toDateInputValue(props.applicant.observation_date) || defaultSelectionDate,
     observation_time: props.applicant.observation_time || '08:00 - 10:00 WIB',
     observation_location: props.applicant.observation_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Ruang Konseling & Bermain SD Namira'),
-    psychotest_date: toDateInputValue(props.applicant.psychotest_date),
+    psychotest_date: toDateInputValue(props.applicant.psychotest_date) || toDateInputValue(props.applicant.observation_date) || defaultSelectionDate,
     psychotest_time: props.applicant.psychotest_time || (isSmp.value ? '10:00 - 12:00 WIB' : '08:00 - 11:30 WIB'),
     psychotest_location: props.applicant.psychotest_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Aula Pertemuan SD Namira'),
     schedule_notes: props.applicant.schedule_notes || '',
 });
 
 const openScheduleModal = () => {
-    scheduleForm.observation_date = toDateInputValue(props.applicant.observation_date);
+    const fallbackDate = toDateInputValue(props.setting?.selection_date);
+    scheduleForm.observation_date = toDateInputValue(props.applicant.observation_date) || fallbackDate;
     scheduleForm.observation_time = props.applicant.observation_time || '08:00 - 10:00 WIB';
     scheduleForm.observation_location = props.applicant.observation_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Ruang Konseling & Bermain SD Namira');
-    scheduleForm.psychotest_date = toDateInputValue(props.applicant.psychotest_date);
+    scheduleForm.psychotest_date = toDateInputValue(props.applicant.psychotest_date) || toDateInputValue(props.applicant.observation_date) || fallbackDate;
     scheduleForm.psychotest_time = props.applicant.psychotest_time || (isSmp.value ? '10:00 - 12:00 WIB' : '08:00 - 11:30 WIB');
     scheduleForm.psychotest_location = props.applicant.psychotest_location || (isSmp.value ? 'Gedung SMP Namira Kota Probolinggo' : 'Aula Pertemuan SD Namira');
     scheduleForm.schedule_notes = props.applicant.schedule_notes || '';

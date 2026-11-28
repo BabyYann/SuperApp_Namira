@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\SPMB\Models\SpmbApplicant;
 use App\Modules\SPMB\Models\SpmbSetting;
+use App\Modules\SPMB\Services\SpmbSdKraksaanFeeService;
 use App\Modules\SPMB\Services\SpmbService;
 use App\Modules\SPMB\Services\SpmbSmpFeeService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -129,12 +130,15 @@ class ApplicantPortalController extends Controller
         }
         $applicant->makeHidden($hiddenFields);
 
+        $sdKraksaanFeeGuide = app(SpmbSdKraksaanFeeService::class)->buildFeeGuide($applicant, $setting);
+
         return Inertia::render('SPMB/Applicant/Dashboard', [
             'applicant' => $applicant,
             'siblings' => $siblings,
             'setting' => $setting,
             'isAnnouncementReleased' => $isAnnouncementReleased,
             'isFutureInden' => $isFutureInden,
+            'sdKraksaanFeeGuide' => $sdKraksaanFeeGuide,
         ]);
     }
 
@@ -253,6 +257,34 @@ class ApplicantPortalController extends Controller
         ))->setPaper('a4', 'portrait');
 
         return $pdf->download("Kwitansi_Daftar_Ulang_SPMB_{$applicant->registration_number}.pdf");
+    }
+
+    /**
+     * Download / Print Official TP 2027/2028 Cost Breakdown PDF (SD Namira Kraksaan verified applicants only).
+     */
+    public function printFeeGuide(SpmbApplicant $applicant, SpmbSdKraksaanFeeService $feeService)
+    {
+        $user = Auth::user();
+        $isStaff = $user->hasAnyRole(['super_admin_yayasan', 'admin_yayasan', 'admin_unit', 'kepala_sekolah', 'panitia_spmb']);
+        if (!$this->isApplicantOwner($applicant, $user) && !$isStaff) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $applicant->load('unit');
+        $setting = SpmbSetting::where('unit_id', $applicant->unit_id)->first();
+
+        $feeGuide = $feeService->buildFeeGuide($applicant, $setting);
+        if (!$feeGuide) {
+            abort(403, 'Rincian biaya pendidikan ini khusus untuk pendaftar terverifikasi SD Namira Kraksaan TP 2027/2028.');
+        }
+
+        $pdf = Pdf::loadView('pdf.spmb.rincian-biaya-sd-kraksaan', compact(
+            'applicant',
+            'setting',
+            'feeGuide'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->download("Rincian_Biaya_SD_Namira_Kraksaan_{$applicant->registration_number}.pdf");
     }
 
     /**
